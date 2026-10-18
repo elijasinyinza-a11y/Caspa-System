@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light mode only in v1. Safe areas keep content clear of phone system bars. */
+:root { color-scheme: light; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); }
+html, body, #root { height: 100%; }
+body { @apply bg-cream text-text font-sans text-14; font-variant-numeric: normal; }
+.tabular { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid theme('colors.focus'); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
