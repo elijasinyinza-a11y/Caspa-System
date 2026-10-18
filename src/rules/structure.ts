@@ -1,5 +1,5 @@
 /** Pure lookups over the cascade. Links are by ID; objective and goal derive through the KPI. */
-import type { Activity, BudgetVersion, Goal, Kpi, Objective } from '../contract/caspa-data-contract';
+import type { Activity, BudgetLine, BudgetVersion, Goal, Kpi, Objective } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 
 export const kpiOf = (s: Store, a: Activity): Kpi | undefined => s.kpis.find((k) => k.id === a.kpiId);
@@ -35,9 +35,47 @@ export const fundedActivityIds = (s: Store, fy: number): Set<string> =>
 export const activitiesOfGoal = (s: Store, goalId: string, fy: number): Activity[] =>
   s.activities.filter((a) => a.financialYear === fy && a.status !== 'archived' && goalOfActivity(s, a)?.id === goalId);
 
-/** The unit's head positions: those in the unit whose line manager sits outside it. */
-export const headsOfUnit = (s: Store, unitId: string): string[] => {
+/** Positions above a position in its single reporting line, nearest first. Guards against loops. */
+export const managersOf = (s: Store, positionId: string): string[] => {
+  const chain: string[] = [];
+  const seen = new Set<string>([positionId]);
+  let next = s.positions.find((p) => p.id === positionId)?.reportsToPositionId ?? null;
+  while (next && !seen.has(next)) {
+    chain.push(next);
+    seen.add(next);
+    next = s.positions.find((p) => p.id === next)?.reportsToPositionId ?? null;
+  }
+  return chain;
+};
+
+/**
+ * The position accountable for a unit (contract v1.2, budget_holder). The single position in the unit
+ * that all others report up to; if the unit has several top positions, their lowest common manager;
+ * if the unit has no positions, its parent unit's accountable position. Null if none can be derived.
+ */
+export const accountablePositionOfUnit = (s: Store, unitId: string, depth = 0): string | null => {
+  if (depth > s.units.length) return null;
   const inUnit = s.positions.filter((p) => p.unitId === unitId);
-  const ids = new Set(inUnit.map((p) => p.id));
-  return inUnit.filter((p) => !p.reportsToPositionId || !ids.has(p.reportsToPositionId)).map((p) => p.id);
+  if (inUnit.length === 0) {
+    const parent = s.units.find((u) => u.id === unitId)?.parentId;
+    return parent ? accountablePositionOfUnit(s, parent, depth + 1) : null;
+  }
+  const ids = new Set<string>(inUnit.map((p) => p.id));
+  const tops = inUnit.filter((p) => !p.reportsToPositionId || !ids.has(p.reportsToPositionId)).map((p) => p.id);
+  if (tops.length === 1) return tops[0]!;
+  const [first, ...rest] = tops.map((t) => managersOf(s, t));
+  return first?.find((m) => rest.every((chain) => chain.includes(m))) ?? null;
+};
+
+/** Positions holding a budget line (contract v1.2): accountable position, funded activity owner, and all above them. */
+export const budgetHolderPositions = (s: Store, line: BudgetLine): Set<string> => {
+  const anchors = [accountablePositionOfUnit(s, line.holderUnitId)];
+  if (line.activityId) anchors.push(s.activities.find((a) => a.id === line.activityId)?.ownerPositionId ?? null);
+  const out = new Set<string>();
+  for (const a of anchors) {
+    if (!a) continue;
+    out.add(a);
+    managersOf(s, a).forEach((m) => out.add(m));
+  }
+  return out;
 };

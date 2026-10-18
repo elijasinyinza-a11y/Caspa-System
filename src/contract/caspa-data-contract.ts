@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.1
+ * CASPA™ data contract — v1.2
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -32,6 +32,15 @@
  *  8. ConsultationRound gains 'scheduled' status and an attribution setting.
  *  9. Formation stages carry an owner; organisations record whether board
  *     approval is required for the plan and the budget.
+ * v1.2 (18 October 2026): the budget_holder principal is redefined by
+ *     accountability, not unit membership (no field changes). A line's
+ *     budget holders are the holder unit's accountable position, the funded
+ *     activity's owner, and every position above either of them in the
+ *     reporting line. The accountable position is the single position in the
+ *     unit that all others report up to; if there is none, the lowest common
+ *     manager of the unit's top positions; a unit with no positions uses its
+ *     parent's. Derived by the rules engine from positions, so it fits any
+ *     depth or naming of units, and acting holders inherit it.
  * Friction signals are removed for now and may return only with a confirmed
  * source. Leadership assessments are described generically.
  */
@@ -722,7 +731,7 @@ export type Principal =
   | AssignedRole
   | 'owner' // holds the owning position
   | 'objective_owner'
-  | 'budget_holder' // holds a position in the line's holder unit
+  | 'budget_holder' // v1.2: holder unit's accountable position, the funded activity's owner, or anyone above either in the reporting line
   | 'self' // the contract's employee
   | 'supervisor' // holds the position the employee's position reports to
   | 'next_level_reviewer' // the supervisor's supervisor

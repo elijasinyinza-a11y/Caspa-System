@@ -13,7 +13,7 @@ The build is done in Claude chat sessions within the CASPA™ Project. Each slic
 ## 2. Rules you must never break
 
 1. **One source of truth.** Every total, percentage, count, progress figure, status and finding is computed from stored records by a selector or the rules engine. Never hard-code a figure in a component. Never store a computed value.
-2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.1). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
+2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.2). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
 3. **Rules engine separate from screens.** Integrity rules, gates, KPI progress and ratings are pure TypeScript functions in `src/rules`. No React, no I/O, no dates from the system clock (pass "now" in). They must run unchanged on a server later.
 4. **The AI is stubbed.** Anything AI does (explain a finding, draft text, extract from documents) goes through `src/ai`, which in this build returns fixed sample text labelled "AI draft". The AI never decides, scores, confirms or clears anything.
 5. **Permissions are enforced in the data-access layer**, not only hidden in the UI. A screen asking for data it may not see gets the restricted version (e.g. "funded" instead of an amount).
@@ -189,3 +189,9 @@ When sources disagree: (1) Elijah's confirmed decisions, the latest winning; (2)
 - **Leadership assessment:** described generically in the product. Where GOLD is named outside the product it is written GOLD™ until registered.
 - **Contract v1.1:** nullable 6P level on draft activities (blocks cascade.publish); DraftMeta on activities and deficiencies; compliance role; plan document record with live figures; personal targets on contract objectives; activities visible to all members; Finance may draft budget lines; consultation attribution (default unit only, author kept in audit, small units shown as their parent); stage owners and board-approval settings.
 
+
+## 14. Decisions after v1.1 (18 October 2026)
+
+- **Contract v1.2, budget holders:** budget visibility follows accountability, not unit membership. A line's budget holders are the holder unit's accountable position, the funded activity's owner, and every position above either in the reporting line. The accountable position is derived from positions and the reporting line (`accountablePositionOfUnit` in `src/rules/structure.ts`), so it fits any unit depth or naming. Orphan-line findings route to the same accountable position.
+- **KPI progress (P1–P10) moved into slice 2**, because the cascade-node pages for KPIs, objectives and goals need it. Ratings stay in slice 4. Status compares progress with the share of the financial year elapsed at "now" (P10).
+- **Cascade-node page:** roles that cannot read 4Q entries see how many reasons are recorded, not their text; roles that cannot see contracts see contract coverage (count and assigned quantity) without names, positions or progress.

@@ -33,7 +33,7 @@ describe('data access', () => {
     const v = (m: string) => resolveViewer(s, m, NOW, 2026);
     const line = { type: 'BudgetLine', id: 'bl-1' };
     expect(can(s, v(DEV_ROLE_MEMBERSHIPS.finance), 'view', line)).toBe(true);
-    expect(can(s, v(DEV_ROLE_MEMBERSHIPS.supervisor), 'view', line)).toBe(true); // holds a position in Commercial
+    expect(can(s, v(DEV_ROLE_MEMBERSHIPS.supervisor), 'view', line)).toBe(false); // in Commercial, but not accountable (v1.2)
     expect(can(s, v(DEV_ROLE_MEMBERSHIPS.employee), 'view', line)).toBe(false);
   });
 

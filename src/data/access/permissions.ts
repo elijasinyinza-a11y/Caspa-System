@@ -1,6 +1,6 @@
 /** Permission checks applied by the data-access layer (decisions B2, B3). Default is deny. */
 import { PERMISSIONS, type Action, type Principal } from '../../contract/caspa-data-contract';
-import { objectiveOfActivity } from '../../rules/structure';
+import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structure';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
 
@@ -42,7 +42,9 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
     }
     case 'budget_holder': {
       const l = s.budgetLines.find((x) => x.id === subject.id);
-      return !!l && v.unitIds.includes(l.holderUnitId);
+      if (!l) return false;
+      const holders = budgetHolderPositions(s, l);
+      return v.positionIds.some((p) => holders.has(p));
     }
     case 'self':
       return contractOf(s, subject)?.personId === v.personId;

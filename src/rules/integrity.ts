@@ -6,7 +6,7 @@ import type { Finding, GateCode, Id, IntegrityRule } from '../contract/caspa-dat
 import type { Store } from '../data/access/store';
 import { en } from '../strings/en';
 import { activityFingerprint } from './fingerprint';
-import { activitiesOfGoal, fundedActivityIds, linesOfVersion, objectiveOfActivity, objectiveOfKpi, headsOfUnit } from './structure';
+import { activitiesOfGoal, fundedActivityIds, linesOfVersion, objectiveOfActivity, objectiveOfKpi, accountablePositionOfUnit } from './structure';
 
 export const RULES = {
   budgetLineNoActivity: { id: 'STRUCT-BUDGETLINE-NO-ACTIVITY', source: 'structural', description: 'Budget line has no parent activity', blocksAt: ['budget.submit_unit', 'budget.submit_consolidated'] },
@@ -46,7 +46,7 @@ export function computeFindings(s: Store, ctx: CheckContext): Finding[] {
   const activities = s.activities.filter((a) => a.financialYear === fy && a.status !== 'archived');
 
   for (const l of linesOfVersion(s, fy)) {
-    if (!l.activityId) push('budgetLineNoActivity', { type: 'BudgetLine', id: l.id }, en.findings.budgetLineNoActivity(l.description), headsOfUnit(s, l.holderUnitId));
+    if (!l.activityId) push('budgetLineNoActivity', { type: 'BudgetLine', id: l.id }, en.findings.budgetLineNoActivity(l.description), [accountablePositionOfUnit(s, l.holderUnitId)]);
   }
   for (const a of activities) {
     if (a.decisionLevel === null) push('activityNo6P', { type: 'Activity', id: a.id }, en.findings.activityNo6P(a.code, a.title), [a.ownerPositionId ?? objectiveOfActivity(s, a)?.ownerPositionId]);
