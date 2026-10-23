@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.2
+ * CASPA™ data contract — v1.3
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -41,6 +41,12 @@
  *     manager of the unit's top positions; a unit with no positions uses its
  *     parent's. Derived by the rules engine from positions, so it fits any
  *     depth or naming of units, and acting holders inherit it.
+ * v1.3 (23 October 2026): who may acknowledge an advisory flag (no field
+ *     changes). New principal 'finding_recipient': holds a position the
+ *     finding is routed to. Acknowledgement is drafted by recipients, the
+ *     Executive and the Strategy office. An acknowledgement lapses when the
+ *     finding's subject record is updated after it (compared by the existing
+ *     updated stamp). Acknowledged flags stay listed and are counted apart.
  * Friction signals are removed for now and may return only with a confirmed
  * source. Leadership assessments are described generically.
  */
@@ -735,6 +741,7 @@ export type Principal =
   | 'self' // the contract's employee
   | 'supervisor' // holds the position the employee's position reports to
   | 'next_level_reviewer' // the supervisor's supervisor
+  | 'finding_recipient' // v1.3: holds a position the finding is routed to
   | 'all_members';
 
 export type PermissionMatrix = Partial<Record<string, Partial<Record<Action, Principal[]>>>>;
@@ -765,6 +772,8 @@ export const PERMISSIONS: PermissionMatrix = {
   OrgUnit: { view: ['all_members'], draft: ['org_admin'] },
   Position: { view: ['all_members'], draft: ['org_admin'] },
   Membership: { view: ['org_admin'], draft: ['org_admin'] },
+  // v1.3: advisory flags only; hard blocks are never acknowledged. Viewing also needs sight of the finding's subject.
+  Acknowledgement: { view: ['all_members'], draft: ['finding_recipient', 'executive', 'strategy_office'] },
 };
 // BudgetLine non-viewers see funded/unfunded status only, including on activity pages.
 // Facilitators never see personnel lines or reviews (B4); their access ends at Membership.endsOn.

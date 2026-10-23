@@ -13,7 +13,7 @@ The build is done in Claude chat sessions within the CASPA™ Project. Each slic
 ## 2. Rules you must never break
 
 1. **One source of truth.** Every total, percentage, count, progress figure, status and finding is computed from stored records by a selector or the rules engine. Never hard-code a figure in a component. Never store a computed value.
-2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.2). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
+2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.3). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
 3. **Rules engine separate from screens.** Integrity rules, gates, KPI progress and ratings are pure TypeScript functions in `src/rules`. No React, no I/O, no dates from the system clock (pass "now" in). They must run unchanged on a server later.
 4. **The AI is stubbed.** Anything AI does (explain a finding, draft text, extract from documents) goes through `src/ai`, which in this build returns fixed sample text labelled "AI draft". The AI never decides, scores, confirms or clears anything.
 5. **Permissions are enforced in the data-access layer**, not only hidden in the UI. A screen asking for data it may not see gets the restricted version (e.g. "funded" instead of an amount).
@@ -212,3 +212,10 @@ Recorded in full in the *CASPA™ Organisation Setup Specification v0.2*.
 - **Consultants:** a consultant may build and stage the structure on an administrator membership with an end date; confirmation comes from an administrator on the client's own staff, keeping the rule that facilitators never confirm, approve or sign.
 - **Template columns:** unit path, unit type, position title, reports to, holder's full name, holder's email, acting, assigned roles; plus an optional position reference for repeated titles in one unit. A blank holder means a vacant position.
 - **Invitation emails:** sent at pilot go-live, when sign-in exists, not at confirmation.
+
+
+## 16. Decisions on acknowledgements (23 October 2026)
+
+- **Contract v1.3, who may acknowledge:** an advisory flag may be acknowledged by those it is sent to, the Executive and the Strategy office. A new principal, `finding_recipient`, covers "those it is sent to"; the matrix gains one row, `Acknowledgement`. No field changes. Hard blocks are never acknowledged, and a person may act only on findings they are shown.
+- **Lapse:** an acknowledgement lapses when the finding's subject record is updated after it, compared by the existing `updated` stamps (`src/rules/acknowledgement.ts`). A lapsed flag is open again and can be acknowledged afresh; earlier acknowledgements are kept.
+- **Display:** acknowledged flags stay in the list, marked "Acknowledged" with who, when and the reason, and are counted apart from open flags in the pill, on Home and in the drawer filters.

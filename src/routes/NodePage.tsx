@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
 import { identity } from '../components/identity';
 import { ProgressBar, StatusBadge } from '../components/Status';
+import { FindingCard } from '../components/FindingCard';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import { isBlocking } from '../rules/integrity';
 import type { KpiProgress } from '../rules/kpi-progress';
@@ -75,22 +76,14 @@ function Lineage({ n }: { n: NodeView }) {
 }
 
 function Findings({ n }: { n: NodeView }) {
+  const { repo } = useApp();
   if (n.findings.length === 0) return null;
   const items = [...n.findings].sort((a, b) => Number(isBlocking(b)) - Number(isBlocking(a)));
   return (
     <section aria-labelledby="node-findings" className="mb-6">
       <h2 id="node-findings" className="text-16 font-bold text-navy">{en.node.findingsTitle}</h2>
       <ul className="mt-2 space-y-2">
-        {items.map((f) => {
-          const block = isBlocking(f);
-          return (
-            <li key={f.key} className={`rounded-lg p-3 ${block ? 'border-2 border-block-border bg-block-bg' : 'border border-advisory-border bg-advisory-bg'}`}>
-              <span className={`text-12 font-bold ${block ? 'text-block-text' : 'text-advisory-text'}`}>{block ? en.integrity.hardBlock : en.integrity.advisoryFlag}</span>
-              <p className="text-14 text-text">{f.message}</p>
-              {block && <p className="text-12 text-muted">{en.integrity.blocks(en.list(f.blocksAt.map((g) => en.gates[g])))}</p>}
-            </li>
-          );
-        })}
+        {items.map((f) => <FindingCard key={f.key} view={repo.describeFinding(f)} here={{ node: n.ref.kind, id: n.ref.id }} />)}
       </ul>
     </section>
   );

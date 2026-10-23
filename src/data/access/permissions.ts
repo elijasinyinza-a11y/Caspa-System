@@ -1,5 +1,5 @@
 /** Permission checks applied by the data-access layer (decisions B2, B3). Default is deny. */
-import { PERMISSIONS, type Action, type Principal } from '../../contract/caspa-data-contract';
+import { PERMISSIONS, type Action, type Finding, type Principal } from '../../contract/caspa-data-contract';
 import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structure';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
@@ -72,4 +72,16 @@ export function can(s: Store, v: Viewer, action: Action, subject: Subject): bool
   const type = GOVERNED_BY[subject.type] ?? subject.type;
   const principals = PERMISSIONS[type]?.[action] ?? [];
   return principals.some((p) => holds(s, v, p, subject));
+}
+
+/**
+ * Whether this viewer may acknowledge a finding (contract v1.3). Advisory flags only; the viewer must be
+ * able to see the finding's subject, and hold a principal in the Acknowledgement row of the matrix.
+ */
+export function canAcknowledge(s: Store, v: Viewer, f: Finding): boolean {
+  if (f.blocksAt.length > 0) return false;
+  if (!can(s, v, 'view', f.subject)) return false;
+  return (PERMISSIONS.Acknowledgement?.draft ?? []).some((p) =>
+    p === 'finding_recipient' ? f.routeToPositionIds.some((pid) => v.positionIds.includes(pid)) : holds(s, v, p, f.subject),
+  );
 }

@@ -19,7 +19,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 
 1. Shell — done (v0.1.0)
 2. Universal cascade-node page, cascade tree, KPI progress (P1–P10), test organisations — done (v0.2.0)
-3. Integrity drawer: explain, fix links, acknowledgements
+3. Integrity drawer: explain, fix links, acknowledgements — done (v0.3.0)
 4. Role homes, with ratings (R1–R10) in the rules engine
 5. Budget gate
 6. Six-point decision map

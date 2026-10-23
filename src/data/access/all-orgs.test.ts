@@ -18,6 +18,19 @@ const records = (o: (typeof orgs)[number]) => ({
 }) as Record<NodeKind, { id: string }[]>;
 
 describe.each(orgs.map((o) => [o.store.organisation.name, o] as const))('%s', (_name, org) => {
+  it.each(DEV_ROLES)('every finding the %s role sees links to a page that opens', (role) => {
+    const repo = createMemoryRepository(stores, org.orgId, org.devRoles[role], NOW);
+    for (const v of repo.findings()) {
+      expect(v.fix, v.finding.key).not.toBeNull();
+      if (v.fix?.kind === 'node') expect(repo.node(v.fix.node, v.fix.id), v.finding.key).not.toBeNull();
+      if (v.fix?.kind === 'workspace') expect(repo.workspaces()).toContain(v.fix.w);
+      expect(v.routedTo).toHaveLength(v.finding.routeToPositionIds.length);
+      // Hard blocks are never acknowledgeable; nothing is acknowledged in the seeds.
+      if (v.finding.blocksAt.length > 0) expect(v.canAcknowledge).toBe(false);
+      expect(v.ack.state).toBe('open');
+    }
+  });
+
   it.each(DEV_ROLES)('every node page renders for the %s role, restricted correctly', (role) => {
     const repo = createMemoryRepository(stores, org.orgId, org.devRoles[role], NOW);
     const viewer = repo.viewer;

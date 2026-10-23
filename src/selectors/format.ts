@@ -39,3 +39,7 @@ export const formatDate = (d: ISODate): string => {
   const [y, m, day] = d.split('-').map(Number) as [number, number, number];
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, day)));
 };
+
+/** The calendar date of an instant in the organisation's time zone, for display with formatDate. */
+export const dateInZone = (at: string, timeZone: string): ISODate =>
+  new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at)) as ISODate;

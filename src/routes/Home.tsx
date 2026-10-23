@@ -1,6 +1,6 @@
 import { useApp } from '../components/AppContext';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
-import { isBlocking } from '../rules/integrity';
+import { countFindings } from '../data/access/repository';
 import { formatFinancialYear, formatNumber, formatPercent } from '../selectors/format';
 import { nodeHref } from './router';
 import { en } from '../strings/en';
@@ -10,8 +10,7 @@ export function Home() {
   const { repo, openFindings } = useApp();
   const h = repo.home();
   const t = repo.settings().termLabels;
-  const f = repo.findings();
-  const blocking = f.filter((x) => isBlocking(x.finding)).length;
+  const c = countFindings(repo.findings());
   const funded = h.coverage.reduce((n, g) => n + g.funded, 0);
   const total = h.coverage.reduce((n, g) => n + g.total, 0);
 
@@ -33,7 +32,7 @@ export function Home() {
       <div className="grid gap-4 sm:grid-cols-3">
         {tile(en.home.goals(t.goal.plural), formatNumber(h.goalCount), h.planTitle ? en.home.goalsNote(h.planTitle) : '')}
         {tile(en.home.funded(t.activity.plural), total ? formatPercent(funded / total) : '—', en.home.fundedNote(funded, total, t.activity.plural, t.budgetLine.singular))}
-        {tile(en.home.findings, formatNumber(f.length), en.home.findingsNote(blocking, f.length - blocking), openFindings)}
+        {tile(en.home.findings, formatNumber(c.open), en.home.findingsNote(c.blocking, c.advisory, c.acknowledged), openFindings)}
       </div>
       <section className="mt-6 rounded-xl border border-border bg-white p-5" aria-labelledby="coverage">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

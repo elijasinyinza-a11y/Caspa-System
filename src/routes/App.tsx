@@ -4,7 +4,7 @@ import { BottomBar } from '../components/BottomBar';
 import { IntegrityDrawer } from '../components/IntegrityDrawer';
 import { Sidebar } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
-import { createMemoryRepository } from '../data/access/repository';
+import { createMemoryRepository, sampleClock } from '../data/access/repository';
 import { createSampleOrgs } from '../data/sample/all';
 import { SAMPLE_NOW } from '../data/sample/seed';
 import { en } from '../strings/en';
@@ -20,11 +20,15 @@ export function App() {
   const [role, setRole] = useState<DevRole>('executive');
   const [route, navigate] = useRoute();
   const [drawer, setDrawer] = useState(false);
+  // Every stored change bumps the revision, so findings and counts recompute on every screen at once.
+  const [revision, setRevision] = useState(0);
+  const [clock] = useState(() => sampleClock(SAMPLE_NOW));
   const scroller = useRef<HTMLDivElement>(null);
   const org = orgs.find((o) => o.orgId === orgId) ?? orgs[0]!;
   const repo = useMemo(
-    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, org.devRoles[role], SAMPLE_NOW),
-    [orgs, org, role],
+    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, org.devRoles[role], SAMPLE_NOW, { clock, onChange: () => setRevision((r) => r + 1) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- revision is the signal that the store changed
+    [orgs, org, role, clock, revision],
   );
   const closeDrawer = useCallback(() => setDrawer(false), []);
   const setOrgId = (id: string) => {
