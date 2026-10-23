@@ -1,5 +1,5 @@
 import { en } from '../strings/en';
-import { useApp } from './AppContext';
+import { useApp, workspaceOf } from './AppContext';
 import { IntegrityPill } from './IntegrityPill';
 import { RoleSwitcher } from './RoleSwitcher';
 
@@ -11,10 +11,18 @@ export function TopBar() {
         <div className="text-16 font-bold text-navy">{en.product}</div>
       </div>
       <nav aria-label={en.breadcrumbLabel} className="hidden flex-1 md:block">
-        <ol className="flex items-center gap-2 text-14">
-          <li className="text-muted">{repo.organisation().name}</li>
+        <ol className="flex min-w-0 items-center gap-2 whitespace-nowrap text-14">
+          <li className="max-w-[220px] truncate text-muted" title={repo.organisation().name}>{repo.organisation().name}</li>
           <li aria-hidden="true" className="text-muted">›</li>
-          <li aria-current="page" className="font-semibold text-navy">{en.nav[route]}</li>
+          {route.kind === 'node' ? (
+            <>
+              <li>{repo.workspaces().includes('cascade') ? <a href="#/cascade" className="text-muted hover:text-navy hover:underline">{en.nav.cascade}</a> : <span className="text-muted">{en.nav.cascade}</span>}</li>
+              <li aria-hidden="true" className="text-muted">›</li>
+              <li aria-current="page" className="font-semibold text-navy">{repo.node(route.node, route.id)?.ref.code ?? '—'}</li>
+            </>
+          ) : (
+            <li aria-current="page" className="font-semibold text-navy">{en.nav[workspaceOf(route)]}</li>
+          )}
         </ol>
       </nav>
       <div className="ml-auto flex items-center gap-2 md:gap-3">

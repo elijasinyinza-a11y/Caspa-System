@@ -1,9 +1,9 @@
 import { en } from '../strings/en';
-import { useApp } from './AppContext';
+import { useApp, workspaceOf } from './AppContext';
 import { identity } from './identity';
 
 export function Sidebar() {
-  const { repo, route, navigate } = useApp();
+  const { repo, route, navigate, orgId, setOrgId } = useApp();
   const orgs = repo.organisationsForPerson();
   return (
     <aside className="hidden md:flex w-[232px] shrink-0 flex-col bg-navy text-white">
@@ -17,12 +17,12 @@ export function Sidebar() {
       <nav aria-label={en.nav.label} className="flex-1 px-3">
         <ul className="space-y-1">
           {repo.workspaces().map((w) => {
-            const active = route === w;
+            const active = workspaceOf(route) === w;
             return (
               <li key={w}>
                 <a
                   href={`#/${w}`}
-                  onClick={(e) => { e.preventDefault(); navigate(w); }}
+                  onClick={(e) => { e.preventDefault(); navigate({ kind: 'workspace', w }); }}
                   aria-current={active ? 'page' : undefined}
                   className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-14 ${active ? 'bg-white/15 font-semibold' : 'text-white/85 hover:bg-white/10'}`}
                 >
@@ -37,7 +37,7 @@ export function Sidebar() {
       {orgs.length > 1 && (
         <div className="m-3 rounded-lg bg-white/10 p-3">
           <label htmlFor="org-switch" className="text-12 text-white/70">{en.orgSwitcher.label}</label>
-          <select id="org-switch" className="mt-1 min-h-11 w-full rounded-lg border border-white/30 bg-navy px-2 text-14 text-white" defaultValue={repo.organisation().id}>
+          <select id="org-switch" className="mt-1 min-h-11 w-full rounded-lg border border-white/30 bg-navy px-2 text-14 text-white" value={orgId} onChange={(e) => setOrgId(e.target.value)}>
             {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </div>

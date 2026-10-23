@@ -61,7 +61,14 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
   return false;
 }
 
+/** Personnel cost detail is for Finance and HR only (B6), on top of the matrix. */
+const personnelHidden = (s: Store, v: Viewer, subject: Subject): boolean =>
+  subject.type === 'BudgetLine' &&
+  s.budgetLines.find((l) => l.id === subject.id)?.costCategory === 'personnel' &&
+  !v.roles.includes('finance') && !v.roles.includes('hr');
+
 export function can(s: Store, v: Viewer, action: Action, subject: Subject): boolean {
+  if (action === 'view' && personnelHidden(s, v, subject)) return false;
   const type = GOVERNED_BY[subject.type] ?? subject.type;
   const principals = PERMISSIONS[type]?.[action] ?? [];
   return principals.some((p) => holds(s, v, p, subject));

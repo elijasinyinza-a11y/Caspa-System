@@ -5,6 +5,7 @@
 import type { Finding, ISODate } from '../../contract/caspa-data-contract';
 import { computeFindings, RULES } from '../../rules/integrity';
 import { activePlanTitle, fundingCoverage, type GoalCoverage } from '../../selectors/home';
+import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeView } from '../../selectors/node';
 import { workspacesFor } from '../../selectors/nav';
 import type { WorkspaceKey } from '../../strings/en';
 import { can } from './permissions';
@@ -33,6 +34,12 @@ export interface Repository {
   /** Findings this viewer may see and is concerned with, computed fresh on every call. */
   findings(): FindingView[];
   home(): HomeView;
+  /** The cascade from goals to activities, with progress and funded status (never amounts). */
+  cascadeTree(): CascadeTree;
+  /** One cascade-node page, with every panel already restricted to what this viewer may see. Null if not found here. */
+  node(kind: NodeKind, id: string): NodeView | null;
+  /** Display settings the screens need: currency, year start, perspective and term labels. */
+  settings(): { baseCurrency: string; financialYearStartMonth: number; termLabels: Store['organisation']['termLabels'] };
 }
 
 const OVERSIGHT_ROLES = ['executive', 'strategy_office'] as const;
@@ -65,6 +72,13 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
       computeFindings(s, { financialYear })
         .filter(concerned)
         .map((finding) => ({ finding, routedTo: finding.routeToPositionIds.map(title) })),
+    cascadeTree: () => cascadeTree(s, { financialYear, now }),
+    node: (kind, id) => nodeView(s, kind, id, { financialYear, now }, { canView: (subject) => can(s, viewer, 'view', subject) }),
+    settings: () => ({
+      baseCurrency: s.organisation.baseCurrency,
+      financialYearStartMonth: s.organisation.financialYearStartMonth,
+      termLabels: s.organisation.termLabels,
+    }),
     home: () => ({
       financialYear,
       planTitle: activePlanTitle(s),

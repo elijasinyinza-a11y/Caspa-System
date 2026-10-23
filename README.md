@@ -7,7 +7,7 @@ store through a data-access layer that the real backend replaces later. Read `BU
 
     npm install
     npm run dev       # local development
-    npm run verify    # typecheck, lint, tests, name and colour checks
+    npm run verify    # typecheck, lint, tests, name, colour and sector checks
     npm run build     # dist/index.html: one self-contained file for review
 
 ## Continuing in a new chat
@@ -18,10 +18,18 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 ## Slices
 
 1. Shell — done (v0.1.0)
-2. Universal cascade-node page
+2. Universal cascade-node page, cascade tree, KPI progress (P1–P10), test organisations — done (v0.2.0)
 3. Integrity drawer: explain, fix links, acknowledgements
-4. Role homes, with KPI progress (P1–P10) and ratings (R1–R10) in the rules engine
+4. Role homes, with ratings (R1–R10) in the rules engine
 5. Budget gate
 6. Six-point decision map
 7. Onboarding: the two doors
 8. Phone layout review (responsive from slice 1)
+
+## Sample organisations
+
+Sample Water Utility is the demo used for review. Three test organisations break its assumptions:
+Sample Community Health NGO (flat, July–June year, UGX, renamed terms), Sample Packaging Manufacturer
+(five levels, April–March year, staff reporting outside their unit) and Sample Scale Test Organisation
+(288 activities, long names). Every rules and selector test runs against all four. In the review build,
+the Executive of Sample Water Utility belongs to all four, so the organisation switcher reaches them.

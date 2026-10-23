@@ -8,7 +8,7 @@ describe('integrity rules on the Sample Water Utility seed', () => {
   it('finds exactly the seeded gaps', () => {
     expect(ids()).toEqual(
       [
-        'BOOK-GOAL-NO-WHY:Goal:g1', 'BOOK-GOAL-NO-WHY:Goal:g2', 'BOOK-GOAL-NO-WHY:Goal:g3', 'BOOK-GOAL-NO-WHY:Goal:g4',
+        'BOOK-GOAL-NO-WHY:Goal:g3', // G1, G2 and G4 carry a sample 4Q entry
         'STRUCT-BUDGETLINE-NO-ACTIVITY:BudgetLine:bl-5',
         'STRUCT-DEFICIENCY-UNADDRESSED:Deficiency:def-5',
         'STRUCT-GOAL-NO-FUNDED-ACTIVITY:Goal:g3',
@@ -17,10 +17,10 @@ describe('integrity rules on the Sample Water Utility seed', () => {
     );
   });
 
-  it('counts one blocking and seven advisory findings', () => {
+  it('counts one blocking and four advisory findings', () => {
     const f = computeFindings(createSeed(), { financialYear: FY });
     expect(f.filter(isBlocking)).toHaveLength(1);
-    expect(f.filter((x) => !isBlocking(x))).toHaveLength(7);
+    expect(f.filter((x) => !isBlocking(x))).toHaveLength(4);
   });
 
   it('blocks budget submission on the orphan line, and clears when it is linked', () => {

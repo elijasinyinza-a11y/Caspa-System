@@ -1,7 +1,7 @@
 {
   "name": "caspa-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,9 @@
     "test": "vitest run",
     "check:names": "node scripts/check-names.mjs",
     "check:colours": "node scripts/check-colours.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run check:names && npm run check:colours",
-    "lint": "eslint src"
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run check:names && npm run check:colours && npm run check:sector",
+    "lint": "eslint src",
+    "check:sector": "node scripts/check-sector.mjs"
   },
   "dependencies": {
     "react": "18.3.1",

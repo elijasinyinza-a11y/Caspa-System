@@ -22,8 +22,8 @@ describe('data access', () => {
   });
 
   it('gives each role only the findings it may see and is concerned with', () => {
-    expect(counts('executive')).toEqual([1, 7]);
-    expect(counts('finance')).toEqual([1, 2]);
+    expect(counts('executive')).toEqual([1, 4]);
+    expect(counts('finance')).toEqual([1, 1]); // orphan line and G3 unfunded; G1 now has a recorded why
     expect(counts('supervisor')).toEqual([0, 0]); // the orphan line goes to the head of Commercial
     expect(counts('employee')).toEqual([0, 0]);
   });

@@ -9,3 +9,5 @@ body { @apply bg-cream text-text font-sans text-14; font-variant-numeric: normal
 .tabular { font-variant-numeric: tabular-nums; }
 :focus-visible { outline: 3px solid theme('colors.focus'); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* The skip-link target takes focus on every page change; it needs no ring of its own. */
+#main:focus { outline: none; }

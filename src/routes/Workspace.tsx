@@ -2,7 +2,7 @@ import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import { identity } from '../components/identity';
 import { en, type WorkspaceKey } from '../strings/en';
 
-export function Workspace({ w }: { w: Exclude<WorkspaceKey, 'home'> }) {
+export function Workspace({ w }: { w: Exclude<WorkspaceKey, 'home' | 'cascade'> }) {
   return (
     <>
       <WorkspaceHeader w={w} title={en.nav[w]} intro={en.workspaceIntro[w]} />

@@ -1,7 +1,7 @@
 /** The in-memory shape of one organisation's records. Holds stored records only, never computed values. */
 import type {
   Acknowledgement, Activity, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
-  Deficiency, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
+  Deficiency, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, ResourceEnvelope, StrategicPlan,
 } from '../../contract/caspa-data-contract';
 
@@ -13,6 +13,7 @@ export interface Store {
   positions: Position[];
   assignments: PositionAssignment[];
   plans: StrategicPlan[];
+  fourQEntries: FourQEntry[];
   goals: Goal[];
   objectives: Objective[];
   kpis: Kpi[];

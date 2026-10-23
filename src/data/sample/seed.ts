@@ -3,7 +3,7 @@
  * Fictional organisation and people. Every figure on every screen is derived from these records.
  */
 import type {
-  Activity, BudgetLine, ContractObjective, Deficiency, DraftMeta, Goal, Id, ISODate, ISODateTime, Kpi, Membership,
+  Activity, BudgetLine, ContractObjective, Deficiency, DraftMeta, FourQCell, FourQEntry, Goal, Id, ISODate, ISODateTime, Kpi, Membership,
   Objective, OrgUnit, Person, Position, PositionAssignment, SixPLevel, Stamp,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
@@ -70,8 +70,18 @@ export const DEV_ROLE_MEMBERSHIPS = {
 
 /* Strategy: the imported 2022–2026 plan runs FY2026; the 2027–2031 plan is in formation */
 const PLAN = id<'StrategicPlan'>('plan-2022');
+/** Sample 4Q entries (approved 18 October 2026). G1, G2 and G4 each record one reason; G3 has none, so its finding stays. */
+const fourQ = (goalN: number, cell: FourQCell, text: string): FourQEntry => ({
+  ...base, id: id(`q-g${goalN}-1`), planId: PLAN, cell, text, raisedByUnitIds: [id('u-org')], scope: 'organisation', mergedIntoId: null, evidence: null, draft: human,
+});
+const fourQEntries: FourQEntry[] = [
+  fourQ(1, { band: 'retraction', column: 'failures' }, 'Billed revenue has not covered operating and maintenance costs.'),
+  fourQ(2, { band: 'retraction', column: 'failure_factors' }, 'Ageing pumping equipment causes frequent supply interruptions.'),
+  fourQ(4, { band: 'repositioning', column: 'failure_factors' }, 'Section heads were promoted from technical roles without supervisory training.'),
+];
 const goal = (n: number, title: string, perspective: Goal['perspective'], owner: string): Goal => ({
-  ...base, id: id(`g${n}`), planId: PLAN, code: `G${n}`, title, perspective, ownerPositionId: pos(owner), themeIds: [], fourQEntryIds: [], draft: human,
+  ...base, id: id(`g${n}`), planId: PLAN, code: `G${n}`, title, perspective, ownerPositionId: pos(owner), themeIds: [],
+  fourQEntryIds: fourQEntries.filter((q) => q.id === `q-g${n}-1`).map((q) => q.id), draft: human,
 });
 const objective = (code: string, g: number, title: string, owner: string): Objective => ({
   ...base, id: id(`o${code}`), goalId: id(`g${g}`), code: `O${code}`, title, ownerPositionId: pos(owner), proposedByPositionId: null, fourQEntryIds: [], draft: human,
@@ -80,20 +90,20 @@ const kpi = (code: string, o: string, name: string, unit: string, direction: Kpi
   ...base, id: id(`k${code}`), objectiveId: id(`o${o}`), code: `K${code}`, name, unit, direction, aggregation: 'latest', baseline,
   baselineMeasureId: null, milestones: [], reportingFrequency: 'monthly', ownerPositionId: owner ? pos(owner) : null, draft: human,
 });
-const activity = (code: string, k: string, title: string, level: SixPLevel, owner: string, qty: Activity['quantityTarget'] = null): Activity => ({
+const activity = (code: string, k: string, title: string, level: SixPLevel, owner: string, evidence: string, qty: Activity['quantityTarget'] = null): Activity => ({
   ...base, id: id(`a${code}`), kpiId: id(`k${k}`), financialYear: FY, code: `A${code}`, title, decisionLevel: level, ownerPositionId: pos(owner),
-  reportingFrequency: 'monthly', evidence: '', quantityTarget: qty, dependsOn: [], status: 'in_progress', draft: human,
+  reportingFrequency: 'monthly', evidence, quantityTarget: qty, dependsOn: [], status: 'in_progress', draft: human,
 });
 
 const activities: Activity[] = [
-  activity('1.1.1.1', '1.1.1', 'Complete monthly meter-reading routes', 'procedures', 'co', { value: 2400, unit: 'readings' }),
-  activity('1.2.1.1', '1.2.1', 'Establish district metered areas', 'process', 'hoo'),
-  activity('1.2.1.2', '1.2.1', 'Revise meter management policy', 'policy', 'hoc'),
-  activity('1.2.1.3', '1.2.1', 'Replace faulty customer meters', 'process', 'cm', { value: 1800, unit: 'meters' }),
-  activity('1.2.1.4', '1.2.1', 'Introduce daily route briefing and check-in procedure', 'procedures', 'co'),
-  activity('2.1.1.1', '2.1.1', 'Rehabilitate the main pumping station', 'process', 'hoo'),
-  activity('3.1.1.1', '3.1.1', 'Build demonstration sanitation units in low-income areas', 'process', 'hoo'),
-  activity('4.1.1.1', '4.1.1', 'Run supervisory skills training for section heads', 'people', 'md'),
+  activity('1.1.1.1', '1.1.1', 'Complete monthly meter-reading routes', 'procedures', 'co', 'Signed route sheets and the billing system’s reading log', { value: 2400, unit: 'readings' }),
+  activity('1.2.1.1', '1.2.1', 'Establish district metered areas', 'process', 'hoo', 'Commissioning report for each district metered area'),
+  activity('1.2.1.2', '1.2.1', 'Revise meter management policy', 'policy', 'hoc', 'Board-approved revised policy'),
+  activity('1.2.1.3', '1.2.1', 'Replace faulty customer meters', 'process', 'cm', 'Meter replacement job cards matched to the customer register', { value: 1800, unit: 'meters' }),
+  activity('1.2.1.4', '1.2.1', 'Introduce daily route briefing and check-in procedure', 'procedures', 'co', 'Daily briefing attendance and check-in records'),
+  activity('2.1.1.1', '2.1.1', 'Rehabilitate the main pumping station', 'process', 'hoo', 'Contractor’s completion certificate and commissioning test results'),
+  activity('3.1.1.1', '3.1.1', 'Build demonstration sanitation units in low-income areas', 'process', 'hoo', 'Handover certificates for completed units'),
+  activity('4.1.1.1', '4.1.1', 'Run supervisory skills training for section heads', 'people', 'md', 'Attendance registers and completion certificates'),
 ];
 const act = (code: string) => {
   const a = activities.find((x) => x.code === `A${code}`);
@@ -143,6 +153,7 @@ export function createSeed(): Store {
       },
     },
     people, memberships, units, positions, assignments,
+    fourQEntries,
     plans: [
       {
         ...base, id: PLAN, title: 'Strategic Plan 2022–2026', startYear: 2022, endYear: 2026, entryDoor: 'imported', status: 'active',
