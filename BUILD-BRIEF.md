@@ -160,8 +160,9 @@ Every workspace header carries its place in the 7Cs: Strategy (Conception to Com
 4. **Role homes:** "Needs you" queue first (merged across roles, soonest first; it includes deadlines, decision-log actions, findings routed to the person's positions and gate approvals), then the role's status view. Executive (goal health), Supervisor (team, plus an empty reserved panel labelled "Reserved"), Employee (contract with line of sight). Finance, HR and Strategy office get a simple version of the same pattern.
 5. **Budget gate:** consolidated budget by goal; submit is blocked by the orphan line; link the line to an activity; finding clears and amounts move; acknowledge an advisory with a reason; submit passes and writes a gate record.
 6. **Six-point decision map** for O1.2.
-7. **Onboarding:** the two doors.
-8. **Phone layout:** at 390px the sidebar becomes a bottom bar limited to the role's items.
+7. **Organisation setup:** as specified in the *CASPA™ Organisation Setup Specification v0.2*: spreadsheet import, AI draft from an organogram and a manual editor, one review screen, confirmation by the organisation administrator.
+8. **Onboarding:** the two doors.
+9. **Phone layout:** at 390px the sidebar becomes a bottom bar limited to the role's items.
 
 Strategy formation screens are the **next** slice. They are specified in the approved *CASPA™ Strategy Formation Specification v1.0* as amended by section 13 and shown in the approved Strategy workspace prototype, `reference/caspa-strategy-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). That slice covers plan setup and both doors, the preparer-built formation calendar, the 4Q board and workshop mode, the department checklist and AI interview, vision and mission, consultation, the baseline and compliance registers, the plan composer with its checks and confirmation gate, the plan document, communication records and sessions with decision logs. Offline progress capture follows after it.
 
@@ -199,3 +200,15 @@ When sources disagree: (1) Elijah's confirmed decisions, the latest winning; (2)
 - **Sector-neutral code:** `scripts/check-sector.mjs` fails the build on sector, place or currency words outside sample data, tests and the contract.
 - **Money and years:** money is formatted with each currency's ISO 4217 minor units (none for UGX, RWF, XOF). A financial year is numbered by the calendar year it starts in: "FY2026" for January years, "FY2026/27" otherwise.
 - **Sample wording:** 4Q entries for G1, G2 and G4 and evidence for every activity, approved 18 October 2026.
+
+
+## 15. Decisions on organisation setup (23 October 2026)
+
+Recorded in full in the *CASPA™ Organisation Setup Specification v0.2*.
+
+- **Slice order:** organisation setup is slice 7; onboarding moves to 8 and the phone layout review to 9.
+- **Confirming the structure:** a recorded action by the organisation administrator, not a gate; the Executive is notified. No new gate code.
+- **Restructuring during the year:** "move first, then remove". A unit or position cannot be removed while it holds positions, budget lines or owned records. No contract change.
+- **Consultants:** a consultant may build and stage the structure on an administrator membership with an end date; confirmation comes from an administrator on the client's own staff, keeping the rule that facilitators never confirm, approve or sign.
+- **Template columns:** unit path, unit type, position title, reports to, holder's full name, holder's email, acting, assigned roles; plus an optional position reference for repeated titles in one unit. A blank holder means a vacant position.
+- **Invitation emails:** sent at pilot go-live, when sign-in exists, not at confirmation.

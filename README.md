@@ -23,8 +23,9 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 4. Role homes, with ratings (R1–R10) in the rules engine
 5. Budget gate
 6. Six-point decision map
-7. Onboarding: the two doors
-8. Phone layout review (responsive from slice 1)
+7. Organisation setup (Organisation Setup Specification v0.2)
+8. Onboarding: the two doors
+9. Phone layout review (responsive from slice 1)
 
 ## Sample organisations
 
