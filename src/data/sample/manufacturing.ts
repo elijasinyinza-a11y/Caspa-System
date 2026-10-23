@@ -24,7 +24,8 @@ export const createManufacturer = () =>
     people: [
       { key: 'ceo', name: 'James Kariuki', title: 'Chief Executive', unit: 'co', reportsTo: null },
       { key: 'fm', name: 'Wanjiru Mwangi', title: 'Finance Manager', unit: 'co', reportsTo: 'ceo', roles: ['finance'] },
-      { key: 'od', name: 'Samuel Njoroge', title: 'Operations Director', unit: 'ops', reportsTo: 'ceo' },
+      { key: 'od', name: 'Samuel Njoroge', title: 'Operations Director', unit: 'ops', reportsTo: 'ceo', roles: ['strategy_office'] },
+      { key: 'hrm', name: 'Faith Wairimu', title: 'Human Resources Manager', unit: 'co', reportsTo: 'ceo', roles: ['hr'] },
       { key: 'pm', name: 'Lucy Wambui', title: 'Plant Manager', unit: 'plant1', reportsTo: 'od' },
       { key: 'prm', name: 'Kevin Ochieng', title: 'Production Manager', unit: 'prod', reportsTo: 'pm' },
       { key: 'qm', name: 'Esther Chebet', title: 'Quality Manager', unit: 'quality', reportsTo: 'pm' },
@@ -32,7 +33,7 @@ export const createManufacturer = () =>
       { key: 'op', name: 'Brian Otieno', title: 'Machine Operator, Line 2', unit: 'line2', reportsTo: 'ls' },
       { key: 'qi', name: 'Mercy Achieng', title: 'Quality Inspector, Line 2', unit: 'line2', reportsTo: 'qm' }, // reports outside her unit
     ],
-    devRoles: { finance: 'fm', supervisor: 'ls', employee: 'op' },
+    devRoles: { finance: 'fm', supervisor: 'ls', employee: 'op', hr: 'hrm', strategy: 'od' },
     goals: [
       {
         code: 'G1', title: 'Reduce the cost of production', perspective: 'financial', owner: 'ceo',

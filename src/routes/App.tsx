@@ -44,7 +44,7 @@ export function App() {
 
   const page =
     route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}`} kind={route.node} id={route.id} />
-    : route.w === 'home' ? <Home />
+    : route.w === 'home' ? <Home key={`${org.orgId}:${role}`} />
     : route.w === 'cascade' ? <CascadeTree key={org.orgId} />
     : <Workspace w={route.w} />;
 

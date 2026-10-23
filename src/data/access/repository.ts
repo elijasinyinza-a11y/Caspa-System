@@ -7,11 +7,16 @@ import { acknowledgementState } from '../../rules/acknowledgement';
 import { dateInZone } from '../../selectors/format';
 import { computeFindings, RULES } from '../../rules/integrity';
 import { fixTarget, type FixTarget } from '../../selectors/integrity';
-import { activePlanTitle, fundingCoverage, type GoalCoverage } from '../../selectors/home';
+import {
+  activePlanTitle, financeSummary, goalHealth, homesFor, hrSummary, myContracts, team,
+  type FinanceSummary, type GoalHealth, type HomeKind, type HrSummary, type MyContract, type TeamMember,
+} from '../../selectors/home';
+import { needsYou, type NeedsYouItem } from '../../selectors/needs-you';
+import { expectedToDate } from '../../rules/kpi-progress';
 import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeView } from '../../selectors/node';
 import { workspacesFor } from '../../selectors/nav';
 import type { WorkspaceKey } from '../../strings/en';
-import { can, canAcknowledge } from './permissions';
+import { can, canAcknowledge, canSeeRating } from './permissions';
 import type { Store } from './store';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
 
@@ -39,11 +44,20 @@ export interface RepositoryOptions {
   onChange?: () => void;
 }
 
+/** Everything the role homes show, already restricted to this viewer. A view the viewer does not have is null. */
 export interface HomeView {
   financialYear: number;
   planTitle: string | null;
-  goalCount: number;
-  coverage: GoalCoverage[];
+  /** Share of the financial year elapsed at "now" (P10). */
+  expected: number;
+  homes: HomeKind[];
+  /** Merged across every role and relation the person holds, soonest first. */
+  needsYou: NeedsYouItem[];
+  goalHealth: GoalHealth[] | null;
+  finance: FinanceSummary | null;
+  hr: HrSummary | null;
+  team: TeamMember[] | null;
+  contracts: MyContract[] | null;
 }
 
 export interface Repository {
@@ -158,12 +172,29 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
       financialYearStartMonth: s.organisation.financialYearStartMonth,
       termLabels: s.organisation.termLabels,
     }),
-    home: () => ({
-      financialYear,
-      planTitle: activePlanTitle(s),
-      goalCount: s.goals.filter((g) => s.plans.some((p) => p.id === g.planId && p.status === 'active')).length,
-      coverage: fundingCoverage(s, financialYear),
-    }),
+    home: () => {
+      const homes = homesFor(viewer);
+      const has = (h: HomeKind) => homes.includes(h);
+      const ctx = { financialYear, now };
+      const access = { canView: (subject: { type: string; id: string }) => can(s, viewer, 'view', subject), canSeeRating: (cid: string) => canSeeRating(s, viewer, cid) };
+      const routedFindings = computeFindings(s, { financialYear })
+        .filter(concerned)
+        .map(describe)
+        .filter((f) => f.routedToMe)
+        .map((f) => ({ finding: f.finding, fix: f.fix, acknowledged: f.ack.state === 'acknowledged' }));
+      return {
+        financialYear,
+        planTitle: activePlanTitle(s),
+        expected: expectedToDate(financialYear, s.organisation.financialYearStartMonth, now),
+        homes,
+        needsYou: needsYou(s, { viewer, financialYear, now, routedFindings, ...access }),
+        goalHealth: has('executive') || has('strategy_office') || has('member') ? goalHealth(s, ctx) : null,
+        finance: has('finance') ? financeSummary(s, financialYear, access) : null,
+        hr: has('hr') ? hrSummary(s, ctx, access) : null,
+        team: has('supervisor') ? team(s, viewer, ctx, access) : null,
+        contracts: has('employee') ? myContracts(s, viewer, ctx, access, (at) => dateInZone(at, s.organisation.timeZone)) : null,
+      };
+    },
   };
 }
 

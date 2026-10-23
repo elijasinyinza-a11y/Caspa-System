@@ -1,8 +1,9 @@
 /** The in-memory shape of one organisation's records. Holds stored records only, never computed values. */
 import type {
   Acknowledgement, Activity, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
-  Deficiency, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
-  PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, ResourceEnvelope, StrategicPlan,
+  Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
+  PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review,
+  StrategicPlan, Workshop,
 } from '../../contract/caspa-data-contract';
 
 export interface Store {
@@ -30,6 +31,10 @@ export interface Store {
   contracts: PerformanceContract[];
   contractObjectives: ContractObjective[];
   progressUpdates: ProgressUpdate[];
+  reviews: Review[];
+  ratingSchemes: RatingScheme[];
+  workshops: Workshop[];
+  formationDeadlines: FormationDeadline[];
   acknowledgements: Acknowledgement[];
   gateEvents: GateEvent[];
 }

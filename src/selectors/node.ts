@@ -127,10 +127,10 @@ export interface Access {
 /* ───────── helpers ───────── */
 
 const byCode = <T extends { code: string }>(a: T, b: T) => a.code.localeCompare(b.code, 'en-GB', { numeric: true });
-const refGoal = (g: Goal): NodeRef => ({ kind: 'goal', id: g.id, code: g.code, title: g.title });
-const refObjective = (o: Objective): NodeRef => ({ kind: 'objective', id: o.id, code: o.code, title: o.title });
-const refKpi = (k: Kpi): NodeRef => ({ kind: 'kpi', id: k.id, code: k.code, title: k.name });
-const refActivity = (a: Activity): NodeRef => ({ kind: 'activity', id: a.id, code: a.code, title: a.title });
+export const refGoal = (g: Goal): NodeRef => ({ kind: 'goal', id: g.id, code: g.code, title: g.title });
+export const refObjective = (o: Objective): NodeRef => ({ kind: 'objective', id: o.id, code: o.code, title: o.title });
+export const refKpi = (k: Kpi): NodeRef => ({ kind: 'kpi', id: k.id, code: k.code, title: k.name });
+export const refActivity = (a: Activity): NodeRef => ({ kind: 'activity', id: a.id, code: a.code, title: a.title });
 
 const activePlanIds = (s: Store) => new Set(s.plans.filter((p) => p.status === 'active').map((p) => p.id));
 

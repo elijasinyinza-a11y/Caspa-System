@@ -2,9 +2,10 @@
  * Seed records for Sample Water Utility (Build Brief v1.1, section 7).
  * Fictional organisation and people. Every figure on every screen is derived from these records.
  */
-import type {
-  Activity, BudgetLine, ContractObjective, Deficiency, DraftMeta, FourQCell, FourQEntry, Goal, Id, ISODate, ISODateTime, Kpi, Membership,
-  Objective, OrgUnit, Person, Position, PositionAssignment, SixPLevel, Stamp,
+import {
+  RATING_PRESETS, type Activity, type BudgetLine, type ContractObjective, type Deficiency, type DraftMeta, type FourQCell, type FourQEntry,
+  type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
+  type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import type { Store } from '../access/store';
@@ -28,6 +29,9 @@ type P = { key: string; name: string; title: string; unit: string; reportsTo: st
 const PEOPLE: P[] = [
   { key: 'md', name: 'Chanda Mulenga', title: 'Managing Director', unit: 'u-org', reportsTo: null, roles: ['executive'] },
   { key: 'hof', name: 'Ruth Phiri', title: 'Head of Finance', unit: 'u-fin', reportsTo: 'md', roles: ['finance'] },
+  // Added for slice 4 (approved 23 October 2026), so the HR and Strategy office homes have a holder.
+  { key: 'hrm', name: 'Natasha Kabwe', title: 'Human Resources Manager', unit: 'u-org', reportsTo: 'md', roles: ['hr'] },
+  { key: 'spm', name: 'Bwalya Musonda', title: 'Strategy and Planning Manager', unit: 'u-org', reportsTo: 'md', roles: ['strategy_office'] },
   { key: 'hoo', name: 'Joseph Tembo', title: 'Head of Operations', unit: 'u-ops', reportsTo: 'md' },
   { key: 'hoc', name: 'Grace Zulu', title: 'Head of Commercial', unit: 'u-com', reportsTo: 'md' },
   { key: 'cm', name: 'Peter Mwansa', title: 'Commercial Manager', unit: 'u-com', reportsTo: 'hoc' },
@@ -63,7 +67,9 @@ const memberships: Membership[] = PEOPLE.map((p) => ({
 /** Membership behind each development role switch (Build Brief, screen 1). */
 export const DEV_ROLE_MEMBERSHIPS = {
   executive: id<'Membership'>('m-md'),
+  strategy: id<'Membership'>('m-spm'),
   finance: id<'Membership'>('m-hof'),
+  hr: id<'Membership'>('m-hrm'),
   supervisor: id<'Membership'>('m-co'),
   employee: id<'Membership'>('m-mrb'),
 } as const;
@@ -202,7 +208,12 @@ export function createSeed(): Store {
       deficiency(4, 'practices', 'Meter readings estimated instead of taken on some routes', 'Readers skip remote meters; weak route supervision', 'Billing disputes; losses hidden in estimates', ['1.2.1.4'], '3 months'),
       deficiency(5, 'people', 'Meter readers not trained to spot tampering', 'No training on illegal connections and meter tampering', 'Commercial losses go unreported', [], 'Not set'),
     ],
-    cycles: [{ ...base, id: id('cy-budget-2026'), kind: 'budget', financialYear: FY, status: 'open', gateDueDates: {} }],
+    // Gate due dates approved 23 October 2026. They feed "Needs you"; gates themselves never check dates.
+    cycles: [
+      { ...base, id: id('cy-budget-2026'), kind: 'budget', financialYear: FY, status: 'open', gateDueDates: { 'budget.submit_consolidated': d('2026-11-06'), 'budget.approve': d('2026-11-27') } },
+      { ...base, id: id('cy-contracts-2026'), kind: 'contracts', financialYear: FY, status: 'open', gateDueDates: { 'contract.issue': d('2026-01-31') } },
+      { ...base, id: id('cy-appraisal-2026'), kind: 'appraisal', financialYear: FY, status: 'open', gateDueDates: { 'review.complete': d('2027-01-15') } },
+    ],
     budgetVersions: [{ ...base, id: id('bv-2026-1'), cycleId: id('cy-budget-2026'), version: 1, status: 'draft', approval: null, boardApproval: null }],
     budgetLines: [
       line(1, '1.2.1.3', 'Customer meters', 1_200_000, 'u-com', 'capital', 'own_revenue'),
@@ -229,6 +240,18 @@ export function createSeed(): Store {
       verified: { at: dt('2026-07-03T09:00:00+02:00'), byMembershipId: id('m-co') },
       sync: { capturedOffline: false, capturedAt: dt('2026-07-01T16:00:00+02:00'), syncedAt: dt('2026-07-01T16:00:00+02:00') },
     })),
+    // One open mid-year review for the Zone B contract (approved 23 October 2026). Scores are computed, never stored here.
+    reviews: [{
+      ...base, id: id('rv-mrb-2026-mid'), contractId: id('pc-mrb-2026'), kind: 'mid_year', selfAssessment: null, supervisorAssessment: null,
+      status: 'open', adjustments: [], notAssessable: [], competencyRatings: [], returnedByReviewer: null, employeeAcknowledgement: null, finalResult: null,
+    }],
+    // R1: preset A with the safeguards at their defaults; locked while the appraisal round is open.
+    ratingSchemes: [{
+      ...base, id: id('rs-a'), preset: 'A', bands: RATING_PRESETS.A, competencySection: { enabled: false, weightPct: 0 },
+      floorRule: false, highAchievementFlagAt: 1.5, lockedByCycleId: id('cy-appraisal-2026'),
+    }],
+    workshops: [],
+    formationDeadlines: [],
     acknowledgements: [],
     gateEvents: [],
   };

@@ -2,7 +2,7 @@
  * Sample Community Health NGO — fictional test organisation (Build Brief, section 14).
  * Breaks the utility's assumptions: flat structure (one unit), July–June year, UGX (no minor units),
  * renamed terms, no scorecard perspectives, a milestone indicator, a sum indicator with no baseline,
- * personnel costs and an orphan cost line.
+ * personnel costs, an orphan cost line, and one person holding both the Finance and HR roles.
  */
 import { buildOrg } from './build';
 
@@ -25,14 +25,14 @@ export const createNgo = () =>
     perspectives: null,
     units: [{ id: 'office', parent: null, name: 'Sample Community Health NGO', type: 'Office' }],
     people: [
-      { key: 'cd', name: 'Florence Akello', title: 'Country Director', unit: 'office', reportsTo: null },
-      { key: 'fo', name: 'David Ssempala', title: 'Finance Officer', unit: 'office', reportsTo: 'cd', roles: ['finance'] },
+      { key: 'cd', name: 'Florence Akello', title: 'Country Director', unit: 'office', reportsTo: null, roles: ['strategy_office'] },
+      { key: 'fo', name: 'David Ssempala', title: 'Finance Officer', unit: 'office', reportsTo: 'cd', roles: ['finance', 'hr'] }, // one person, two roles: the merged queue
       { key: 'pc', name: 'Grace Namutebi', title: 'Programme Coordinator', unit: 'office', reportsTo: 'cd' },
       { key: 'chw1', name: 'Sarah Nakato', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
       { key: 'chw2', name: 'Peter Okello', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
       { key: 'chw3', name: 'Ruth Atim', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
     ],
-    devRoles: { finance: 'fo', supervisor: 'pc', employee: 'chw1' },
+    devRoles: { finance: 'fo', supervisor: 'pc', employee: 'chw1', hr: 'fo', strategy: 'cd' },
     goals: [
       {
         code: 'OC1', title: 'Improve maternal and child health in the programme districts', perspective: null, owner: 'cd',

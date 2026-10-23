@@ -43,3 +43,7 @@ export const formatDate = (d: ISODate): string => {
 /** The calendar date of an instant in the organisation's time zone, for display with formatDate. */
 export const dateInZone = (at: string, timeZone: string): ISODate =>
   new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at)) as ISODate;
+
+/** A rating score to two decimals, rounded half up for display only: 1.5 shows as 1.50. */
+export const formatScore = (score: number): string =>
+  new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(roundHalfUp(score, 2));

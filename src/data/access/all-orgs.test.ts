@@ -7,7 +7,8 @@ import { NODE_KINDS, NODE_TYPE, type NodeKind } from '../../selectors/node';
 import { formatFinancialYear, formatMoney } from '../../selectors/format';
 import { accountablePositionOfUnit } from '../../rules/structure';
 import { createSampleOrgs, DEV_ROLES } from '../sample/all';
-import { can } from './permissions';
+import { can, canSeeRating } from './permissions';
+import { sortQueue } from '../../selectors/needs-you';
 import { createMemoryRepository } from './repository';
 
 const NOW = '2026-10-18' as ISODate;
@@ -64,6 +65,27 @@ describe.each(orgs.map((o) => [o.store.organisation.name, o] as const))('%s', (_
       }
     }
     expect(JSON.stringify(repo.cascadeTree())).not.toMatch(/amountMinor/);
+  });
+
+  it.each(DEV_ROLES)('the %s role gets a home whose queue is sorted, reachable and restricted', (role) => {
+    const repo = createMemoryRepository(stores, org.orgId, org.devRoles[role], NOW);
+    const s = org.store;
+    const h = repo.home();
+    expect(h.homes.length).toBeGreaterThan(0);
+    expect(h.needsYou.map((i) => i.key)).toEqual(sortQueue(h.needsYou).map((i) => i.key));
+    expect(new Set(h.needsYou.map((i) => i.key)).size).toBe(h.needsYou.length);
+    for (const i of h.needsYou) {
+      if (i.link?.kind === 'node') expect(repo.node(i.link.node, i.link.id), i.key).not.toBeNull();
+      if (i.daysOverdue !== null) expect(i.due).not.toBeNull();
+    }
+    // Ratings only for those the Review row allows (B5); Finance, Executive and Strategy office never see them by role.
+    for (const m of h.team ?? []) if (m.rating) expect(canSeeRating(s, repo.viewer, m.contract!.id)).toBe(true);
+    for (const c of h.contracts ?? []) if (c.rating) expect(canSeeRating(s, repo.viewer, c.id)).toBe(true);
+    for (const x of h.hr?.scored ?? []) expect(canSeeRating(s, repo.viewer, x.contractId)).toBe(true);
+    if (!h.homes.includes('hr')) expect(h.hr).toBeNull();
+    if (!h.homes.includes('finance')) expect(h.finance).toBeNull();
+    // Finance amounts only when every line is visible.
+    if (h.finance?.total) expect(s.budgetLines.every((l) => can(s, repo.viewer, 'view', { type: 'BudgetLine', id: l.id }))).toBe(true);
   });
 
   it('formats its money and financial year by its own currency and year start', () => {

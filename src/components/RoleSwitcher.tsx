@@ -1,7 +1,6 @@
+import { DEV_ROLES as ROLES } from "../data/sample/all";
 import { en } from "../strings/en";
 import { useApp, type DevRole } from "./AppContext";
-
-const ROLES: DevRole[] = ["executive", "finance", "supervisor", "employee"];
 
 /** Development only: not part of the product. */
 export function RoleSwitcher() {
@@ -11,7 +10,7 @@ export function RoleSwitcher() {
       <div
         role="group"
         aria-label={en.devSwitcher.label}
-        className="hidden items-center gap-1 rounded-xl border border-dashed border-control p-1 lg:flex"
+        className="hidden items-center gap-1 rounded-xl border border-dashed border-control p-1 2xl:flex"
       >
         <span className="px-2 text-12 text-muted">
           {en.devSwitcher.viewingAs}
@@ -28,7 +27,7 @@ export function RoleSwitcher() {
           </button>
         ))}
       </div>
-      <div className="lg:hidden">
+      <div className="2xl:hidden">
         <label htmlFor="dev-role" className="sr-only">
           {en.devSwitcher.label}: {en.devSwitcher.viewingAs}
         </label>

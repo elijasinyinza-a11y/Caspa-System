@@ -7,6 +7,7 @@ import type {
   Activity, AssignedRole, BudgetLine, ContractObjective, DraftMeta, FourQCell, FourQEntry, Goal, Id, ISODate, ISODateTime,
   Kpi, Membership, Objective, OrgUnit, Perspective, PerspectiveKey, Position, SixPLevel, Stamp, SystemTerm, TermLabel,
 } from '../../contract/caspa-data-contract';
+import { RATING_PRESETS } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import type { Store } from '../access/store';
 
@@ -61,11 +62,11 @@ export interface OrgSpec {
   orphanLines?: LineSpec[];
   contracts: ContractSpec[];
   /** Who each development role switch views as. The executive is the shared person. */
-  devRoles: { finance: string; supervisor: string; employee: string };
+  devRoles: { finance: string; supervisor: string; employee: string; hr: string; strategy: string };
   planTitle: string; planYears: [number, number];
 }
 
-export interface BuiltOrg { store: Store; orgId: string; devRoles: Record<'executive' | 'finance' | 'supervisor' | 'employee', string> }
+export interface BuiltOrg { store: Store; orgId: string; devRoles: Record<'executive' | 'finance' | 'hr' | 'strategy' | 'supervisor' | 'employee', string> }
 
 export function buildOrg(spec: OrgSpec): BuiltOrg {
   const k = spec.key;
@@ -122,6 +123,12 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     cycles: [{ ...base, id: id(`cy-${k}-budget`), kind: 'budget', financialYear: spec.fy, status: 'open', gateDueDates: {} }],
     budgetVersions: [{ ...base, id: id(`bv-${k}-1`), cycleId: id(`cy-${k}-budget`), version: 1, status: 'draft', approval: null, boardApproval: null }],
     budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [], gateEvents: [],
+    reviews: [], workshops: [], formationDeadlines: [],
+    // R1: every organisation starts on preset A with the safeguards at their defaults.
+    ratingSchemes: [{
+      ...base, id: id(`rs-${k}`), preset: 'A', bands: RATING_PRESETS.A, competencySection: { enabled: false, weightPct: 0 },
+      floorRule: false, highAchievementFlagAt: 1.5, lockedByCycleId: null,
+    }],
   };
 
   let lineNo = 0;
@@ -208,6 +215,8 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
       finance: `m-${k}-${spec.devRoles.finance}`,
       supervisor: `m-${k}-${spec.devRoles.supervisor}`,
       employee: `m-${k}-${spec.devRoles.employee}`,
+      hr: `m-${k}-${spec.devRoles.hr}`,
+      strategy: `m-${k}-${spec.devRoles.strategy}`,
     },
   };
 }

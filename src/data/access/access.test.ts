@@ -53,7 +53,7 @@ describe('data access', () => {
   });
 
   it('computes funding coverage from records', () => {
-    const c = repo('employee').home().coverage.map((g) => [g.code, g.funded, g.total]);
+    const c = repo('executive').home().goalHealth!.map((g) => [g.ref.code, g.funded, g.activities]);
     expect(c).toEqual([['G1', 1, 5], ['G2', 1, 1], ['G3', 0, 1], ['G4', 1, 1]]);
   });
 });

@@ -16,7 +16,7 @@ const deptHead = (dir: number, dep: number) => `dh${dir}${dep}`;
 
 const people: PersonSpec[] = [
   { key: 'dg', name: 'Director General', title: 'Director General', unit: 'hq', reportsTo: null },
-  ...directorates.map((d) => ({ key: `dir${d}`, name: `Director ${d}`, title: `Director, Directorate ${d}`, unit: `d${d}`, reportsTo: 'dg', roles: d === 1 ? ['finance' as const] : [] })),
+  ...directorates.map((d) => ({ key: `dir${d}`, name: `Director ${d}`, title: `Director, Directorate ${d}`, unit: `d${d}`, reportsTo: 'dg', roles: d === 1 ? ['finance' as const] : d === 2 ? ['hr' as const] : d === 3 ? ['strategy_office' as const] : [] })),
   ...directorates.flatMap((d) => departments.map((p) => ({ key: deptHead(d, p), name: `Head ${d}.${p}`, title: `Head of Department ${d}.${p}, responsible for programme delivery and reporting`, unit: `d${d}p${p}`, reportsTo: `dir${d}` }))),
   { key: 'off1', name: 'Officer One', title: 'Programme Officer, Department 2.1, with a deliberately long position title for layout checks', unit: 'd2p1', reportsTo: 'dh21' },
 ];
@@ -69,7 +69,7 @@ export const createScale = () =>
       ...directorates.flatMap((d) => departments.map((p) => ({ id: `d${d}p${p}`, parent: `d${d}`, name: `Department ${d}.${p}`, type: 'Department' }))),
     ],
     people,
-    devRoles: { finance: 'dir1', supervisor: 'dh21', employee: 'off1' },
+    devRoles: { finance: 'dir1', supervisor: 'dh21', employee: 'off1', hr: 'dir2', strategy: 'dir3' },
     goals,
     contracts: [{
       person: 'off1', status: 'signed',

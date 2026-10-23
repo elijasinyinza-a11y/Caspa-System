@@ -14,6 +14,10 @@ const GOVERNED_BY: Record<string, string> = { ContractObjective: 'PerformanceCon
 
 function contractOf(s: Store, subject: Subject) {
   if (subject.type === 'PerformanceContract') return s.contracts.find((c) => c.id === subject.id);
+  if (subject.type === 'Review') {
+    const r = s.reviews.find((x) => x.id === subject.id);
+    return r && s.contracts.find((c) => c.id === r.contractId);
+  }
   const co = s.contractObjectives.find((x) => x.id === subject.id);
   return co && s.contracts.find((c) => c.id === co.contractId);
 }
@@ -84,4 +88,14 @@ export function canAcknowledge(s: Store, v: Viewer, f: Finding): boolean {
   return (PERMISSIONS.Acknowledgement?.draft ?? []).some((p) =>
     p === 'finding_recipient' ? f.routeToPositionIds.some((pid) => v.positionIds.includes(pid)) : holds(s, v, p, f.subject),
   );
+}
+
+/**
+ * Whether this viewer may see a contract's rating (scores, labels, rating flags). Ratings follow the Review row of
+ * the matrix (B5: employee, supervisor, next-level reviewer, HR) whether or not a review record exists yet.
+ * Executives, Finance and facilitators never see ratings through this.
+ */
+export function canSeeRating(s: Store, v: Viewer, contractId: string): boolean {
+  if (!s.contracts.some((c) => c.id === contractId)) return false;
+  return (PERMISSIONS.Review?.view ?? []).some((p) => holds(s, v, p, { type: 'PerformanceContract', id: contractId }));
 }

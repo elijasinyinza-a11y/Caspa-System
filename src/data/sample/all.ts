@@ -8,8 +8,8 @@ import { createNgo } from './ngo';
 import { createScale } from './scale';
 import { createSeed, DEV_ROLE_MEMBERSHIPS, ORG } from './seed';
 
-export type DevRole = 'executive' | 'finance' | 'supervisor' | 'employee';
-export const DEV_ROLES: DevRole[] = ['executive', 'finance', 'supervisor', 'employee'];
+export type DevRole = 'executive' | 'strategy' | 'finance' | 'hr' | 'supervisor' | 'employee';
+export const DEV_ROLES: DevRole[] = ['executive', 'strategy', 'finance', 'hr', 'supervisor', 'employee'];
 
 export interface SampleOrg {
   orgId: string;
