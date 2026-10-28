@@ -174,3 +174,51 @@ describe('cross-organisation specifics', () => {
     expect(repo(ngo!, 'employee').organisationsForPerson()).toHaveLength(1);
   });
 });
+
+/* Slice 5: the budget gate in every organisation (BUILD-BRIEF section 19). */
+describe.each(createSampleOrgs().map((o) => [o.store.organisation.name, o.orgId] as const))('budget gate: %s', (_name, orgId) => {
+  it.each(DEV_ROLES)('for the %s role, goal subtotals and the unlinked subtotal sum to the total whenever it is shown', (role) => {
+    const fresh = createSampleOrgs();
+    const org = fresh.find((o) => o.orgId === orgId)!;
+    const b = createMemoryRepository(fresh.map((o) => o.store), orgId, org.devRoles[role], NOW).budget().budget;
+    const parts = [...b.goals.map((g) => g.subtotal), b.unlinked.subtotal];
+    if (b.total) expect(parts.reduce((n, m) => n + (m?.amountMinor ?? NaN), 0)).toBe(b.total.amountMinor);
+    else expect(b.hiddenLines).toBeGreaterThan(0);
+    expect(b.goals.reduce((n, g) => n + g.lineCount, 0) + b.unlinked.lineCount).toBe(b.lineCount);
+    for (const g of b.goals) {
+      if (g.subtotal) expect(g.objectives.reduce((n, o) => n + (o.subtotal?.amountMinor ?? NaN), 0)).toBe(g.subtotal.amountMinor);
+    }
+  });
+
+  it('runs end to end: blocked, linked, submitted, approved by someone else, frozen', () => {
+    const fresh = createSampleOrgs();
+    const org = fresh.find((o) => o.orgId === orgId)!;
+    const clock = (() => { let t = 0; return () => new Date(Date.parse(`${NOW}T09:00:00Z`) + 1000 * t++).toISOString() as never; })();
+    const as = (role: (typeof DEV_ROLES)[number]) => createMemoryRepository(fresh.map((o) => o.store), orgId, org.devRoles[role], NOW, { clock });
+    const total = as('finance').budget().budget.total!.amountMinor;
+    expect(as('finance').submitBudget()).toMatchObject({ ok: true, outcome: 'blocked' });
+    for (const l of as('finance').budget().budget.unlinked.lines) {
+      const option = as('finance').budgetLinkOptions(l.id)[0]!;
+      expect(as('finance').linkBudgetLine(l.id, option.ref.id)).toEqual({ ok: true });
+    }
+    expect(as('finance').budget().budget.total!.amountMinor).toBe(total);
+    expect(as('finance').submitBudget()).toEqual({ ok: true, outcome: 'passed', blocking: 0 });
+    const board = org.store.organisation.settings.boardApprovalRequired.budget ? { resolutionRef: 'R-1', date: '2026-11-20' as ISODate } : null;
+    if (!board) expect(as('executive').approveBudget(null, '')).toMatchObject({ ok: true, outcome: 'passed' });
+    else expect(as('executive').approveBudget(board, '')).toMatchObject({ ok: true, outcome: 'passed' });
+    expect(org.store.budgetVersions[0]!.status).toBe('approved');
+    expect(org.store.budgetVersions[0]!.boardApproval).toEqual(board);
+    expect(org.store.gateEvents.map((g) => [g.gate, g.outcome])).toEqual([
+      ['budget.submit_consolidated', 'blocked'], ['budget.submit_consolidated', 'passed'], ['budget.approve', 'passed'],
+    ]);
+  });
+
+  it('every role whose positions hold a line can reach Plan, so the orphan-line finding always has a fix it can open', () => {
+    const fresh = createSampleOrgs();
+    const org = fresh.find((o) => o.orgId === orgId)!;
+    for (const role of DEV_ROLES) {
+      const repo = createMemoryRepository(fresh.map((o) => o.store), orgId, org.devRoles[role], NOW);
+      if (repo.viewer.isBudgetHolder) expect(repo.workspaces()).toContain('plan');
+    }
+  });
+});

@@ -70,6 +70,8 @@ export const createScale = () =>
     ],
     people,
     devRoles: { finance: 'dir1', supervisor: 'dh21', employee: 'off1', hr: 'dir2', strategy: 'dir3' },
+    // Slice 5 (approved 28 October 2026): one orphan line, so the budget gate is exercised here too.
+    orphanLines: [{ description: 'Conference venue hire for the directorate planning retreat, Directorate 2', amountMinor: 2_400_000, unit: 'd2', category: 'operating', source: 'own_revenue' }],
     goals,
     contracts: [{
       person: 'off1', status: 'signed',

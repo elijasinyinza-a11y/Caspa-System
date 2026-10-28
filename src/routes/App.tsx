@@ -8,6 +8,7 @@ import { createMemoryRepository, sampleClock } from '../data/access/repository';
 import { createSampleOrgs } from '../data/sample/all';
 import { SAMPLE_NOW } from '../data/sample/seed';
 import { en } from '../strings/en';
+import { Budget } from './Budget';
 import { CascadeTree } from './CascadeTree';
 import { Home } from './Home';
 import { NodePage } from './NodePage';
@@ -46,6 +47,7 @@ export function App() {
     route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}`} kind={route.node} id={route.id} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${role}`} />
     : route.w === 'cascade' ? <CascadeTree key={org.orgId} />
+    : route.w === 'plan' ? <Budget key={`${org.orgId}:${role}`} />
     : <Workspace w={route.w} />;
 
   return (

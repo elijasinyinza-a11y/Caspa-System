@@ -2,7 +2,11 @@
  * The only way screens read data. The in-memory implementation here is replaced by the real
  * backend later without changes to the screens. Permissions are enforced here, not in the UI.
  */
-import type { Acknowledgement, Finding, ISODate, ISODateTime } from '../../contract/caspa-data-contract';
+import type { Acknowledgement, AuditEntry, BoardApproval, Finding, GateCode, GateEvent, ISODate, ISODateTime } from '../../contract/caspa-data-contract';
+import { approveError, checkGate, gateEventsFor, gateRecord, returnError, submitError, submitterOf, type BudgetStepError } from '../../rules/gate';
+import { currentBudgetVersion } from '../../rules/structure';
+import { budgetView, linkOptions, type BudgetView, type LinkOption } from '../../selectors/budget';
+import { gateDueDate } from '../../selectors/needs-you';
 import { acknowledgementState } from '../../rules/acknowledgement';
 import { dateInZone } from '../../selectors/format';
 import { computeFindings, RULES } from '../../rules/integrity';
@@ -16,7 +20,7 @@ import { expectedToDate } from '../../rules/kpi-progress';
 import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeView } from '../../selectors/node';
 import { workspacesFor } from '../../selectors/nav';
 import type { WorkspaceKey } from '../../strings/en';
-import { can, canAcknowledge, canSeeRating } from './permissions';
+import { can, canAcknowledge, canSeeRating, canTakeBudgetStep } from './permissions';
 import type { Store } from './store';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
 
@@ -36,6 +40,47 @@ export interface FindingView {
 }
 
 export type AcknowledgeResult = { ok: true } | { ok: false; error: 'not_found' | 'blocking' | 'not_allowed' | 'reason_required' | 'already_acknowledged' };
+
+
+/** One step in the budget's history, from gate records and the audit trail. Counts only; no amounts. */
+export interface BudgetHistoryItem {
+  key: string;
+  kind: 'submitted' | 'submit_blocked' | 'approved' | 'approve_blocked' | 'returned';
+  by: string;
+  on: ISODate;
+  blocking: number;
+  advisory: { acknowledged: number; open: number };
+  reason: string | null;
+  board: BoardApproval | null;
+}
+
+/** The budget screen (Build Brief, screen 5), already restricted to this viewer. */
+export interface BudgetPage {
+  financialYear: number;
+  budget: BudgetView;
+  /** The gate the version faces next, checked now. Null once approved. */
+  next: {
+    gate: GateCode;
+    due: ISODate | null;
+    blocking: FindingView[];
+    /** Hard blocks on records this viewer may not see: counted, never described. */
+    hiddenBlocking: number;
+    advisory: FindingView[];
+  } | null;
+  can: { submit: boolean; approve: boolean; return: boolean };
+  /** Why this viewer cannot take the next step, when they hold a role that otherwise could. */
+  ownSubmission: boolean;
+  boardRequired: boolean;
+  submitted: { by: string; on: ISODate } | null;
+  approved: { by: string; on: ISODate; note: string | null; board: BoardApproval | null } | null;
+  /** The latest return, while the version is back in draft because of it. */
+  returned: { by: string; on: ISODate; reason: string } | null;
+  history: BudgetHistoryItem[];
+}
+
+export type LinkError = 'not_found' | 'not_allowed' | 'not_draft' | 'already_linked' | 'activity_not_found';
+export type BudgetActionError = BudgetStepError | 'no_version' | 'not_allowed';
+export type GateResult = { ok: true; outcome: GateEvent['outcome']; blocking: number } | { ok: false; error: BudgetActionError };
 
 export interface RepositoryOptions {
   /** Time source for stamps. The rules engine never reads a clock; the data-access layer stamps writes. */
@@ -80,6 +125,18 @@ export interface Repository {
   node(kind: NodeKind, id: string): NodeView | null;
   /** Display settings the screens need: currency, year start, perspective and term labels. */
   settings(): { baseCurrency: string; financialYearStartMonth: number; termLabels: Store['organisation']['termLabels'] };
+  /** The consolidated budget, its next gate and its history. */
+  budget(): BudgetPage;
+  /** Activities an orphan line may be linked to, the holder unit's own first. Empty if this viewer may not link it. */
+  budgetLinkOptions(lineId: string): LinkOption[];
+  /** Link an orphan line to an activity, while the version is a draft. */
+  linkBudgetLine(lineId: string, activityId: string): { ok: true } | { ok: false; error: LinkError };
+  /** Attempt the consolidated submission. A blocked attempt is recorded too. */
+  submitBudget(): GateResult;
+  /** Approve a submitted version: never by its submitter; with a board reference when the organisation requires one. */
+  approveBudget(board: BoardApproval | null, note: string): GateResult;
+  /** Send a submitted version back to draft, with a reason. */
+  returnBudget(reason: string): { ok: true } | { ok: false; error: BudgetActionError };
 }
 
 const OVERSIGHT_ROLES = ['executive', 'strategy_office'] as const;
@@ -150,6 +207,159 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     return { ok: true };
   };
 
+
+  /* ───────── Budget gate (slice 5) ───────── */
+
+  const audit = (action: string, entity: { type: string; id: string }, before: unknown, after: unknown) => {
+    const entry: AuditEntry = {
+      id: `au-${s.auditEntries.length + 1}` as AuditEntry['id'], orgId: s.organisation.id, at: clock(),
+      actorMembershipId: viewer.membershipId, action, entity, before, after,
+    };
+    s.auditEntries.push(entry);
+    return entry;
+  };
+  const on = (at: string) => dateInZone(at, s.organisation.timeZone);
+  const version = () => currentBudgetVersion(s, financialYear);
+  const nextGate = (status: string): GateCode | null => (status === 'draft' ? 'budget.submit_consolidated' : status === 'submitted' ? 'budget.approve' : null);
+
+  const attempt = (gate: GateCode): GateEvent => {
+    const v = version()!;
+    const check = checkGate(computeFindings(s, { financialYear }), gate);
+    const event: GateEvent = {
+      id: `ge-${s.gateEvents.length + 1}` as GateEvent['id'], orgId: s.organisation.id, gate,
+      subject: { type: 'BudgetVersion', id: v.id }, attempted: { at: clock(), byMembershipId: viewer.membershipId }, ...gateRecord(s, check),
+    };
+    s.gateEvents.push(event);
+    audit('gate.attempt', { type: 'BudgetVersion', id: v.id }, null, { gateEventId: event.id, gate, outcome: event.outcome });
+    return event;
+  };
+
+  const budgetPage = (): BudgetPage => {
+    const v = version();
+    const budget = budgetView(s, financialYear, (subject) => can(s, viewer, 'view', subject));
+    const empty: BudgetPage = {
+      financialYear, budget, next: null, can: { submit: false, approve: false, return: false }, ownSubmission: false,
+      boardRequired: s.organisation.settings.boardApprovalRequired.budget, submitted: null, approved: null, returned: null, history: [],
+    };
+    if (!v) return empty;
+    const gate = nextGate(v.status);
+    const findings = computeFindings(s, { financialYear });
+    const check = gate ? checkGate(findings, gate) : null;
+    const seen = (f: Finding) => can(s, viewer, 'view', f.subject);
+    const submitter = submitterOf(s, v.id);
+    const own = submitter === viewer.membershipId;
+    const events = gateEventsFor(s, v.id);
+    const returns = s.auditEntries.filter((a) => a.action === 'return' && a.entity.id === v.id);
+    const history: BudgetHistoryItem[] = [
+      ...events.map((g): BudgetHistoryItem & { at: string } => ({
+        key: g.id, at: g.attempted.at,
+        kind: g.gate === 'budget.approve' ? (g.outcome === 'passed' ? 'approved' : 'approve_blocked') : g.outcome === 'passed' ? 'submitted' : 'submit_blocked',
+        by: personOf(g.attempted.byMembershipId), on: on(g.attempted.at), blocking: g.blockingFindingKeys.length,
+        advisory: { acknowledged: g.advisoryAtGate.filter((x) => x.acknowledgementId).length, open: g.advisoryAtGate.filter((x) => !x.acknowledgementId).length },
+        reason: null, board: g.gate === 'budget.approve' && g.outcome === 'passed' ? v.boardApproval : null,
+      })),
+      ...returns.map((a): BudgetHistoryItem & { at: string } => ({
+        key: a.id, at: a.at, kind: 'returned', by: personOf(a.actorMembershipId), on: on(a.at), blocking: 0, advisory: { acknowledged: 0, open: 0 },
+        reason: (a.after as { reason?: string } | null)?.reason ?? null, board: null,
+      })),
+    ]
+      .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+      .map((item) => ({ key: item.key, kind: item.kind, by: item.by, on: item.on, blocking: item.blocking, advisory: item.advisory, reason: item.reason, board: item.board }));
+    const lastSubmit = events.filter((g) => g.gate === 'budget.submit_consolidated' && g.outcome === 'passed').pop();
+    const lastReturn = returns[returns.length - 1];
+    const returnedNow = v.status === 'draft' && lastReturn && (!lastSubmit || Date.parse(lastReturn.at) > Date.parse(lastSubmit.attempted.at));
+    return {
+      ...empty,
+      next: gate && check ? {
+        gate, due: gateDueDate(s, gate, financialYear),
+        blocking: check.blocking.filter(seen).map(describe), hiddenBlocking: check.blocking.filter((f) => !seen(f)).length,
+        advisory: check.advisory.filter(seen).map(describe),
+      } : null,
+      can: {
+        submit: v.status === 'draft' && canTakeBudgetStep(viewer, 'submit'),
+        approve: v.status === 'submitted' && canTakeBudgetStep(viewer, 'approve') && !own,
+        return: v.status === 'submitted' && canTakeBudgetStep(viewer, 'return') && !own,
+      },
+      ownSubmission: v.status === 'submitted' && own,
+      submitted: v.status !== 'draft' && lastSubmit ? { by: personOf(lastSubmit.attempted.byMembershipId), on: on(lastSubmit.attempted.at) } : null,
+      approved: (v.status === 'approved' || v.status === 'locked') && v.approval
+        ? { by: personOf(v.approval.byMembershipId), on: on(v.approval.at), note: v.approval.note ?? null, board: v.boardApproval }
+        : null,
+      returned: returnedNow ? { by: personOf(lastReturn.actorMembershipId), on: on(lastReturn.at), reason: (lastReturn.after as { reason: string }).reason } : null,
+      history,
+    };
+  };
+
+  const mayLink = (lineId: string): LinkError | null => {
+    const l = s.budgetLines.find((x) => x.id === lineId);
+    const v = version();
+    if (!l || !v || l.versionId !== v.id || !can(s, viewer, 'view', { type: 'BudgetLine', id: l.id })) return 'not_found';
+    if (!can(s, viewer, 'draft', { type: 'BudgetLine', id: l.id })) return 'not_allowed';
+    if (v.status !== 'draft') return 'not_draft';
+    if (l.activityId) return 'already_linked';
+    return null;
+  };
+
+  const linkBudgetLine = (lineId: string, activityId: string): { ok: true } | { ok: false; error: LinkError } => {
+    const err = mayLink(lineId);
+    if (err) return { ok: false, error: err };
+    if (!linkOptions(s, financialYear, lineId).some((o) => o.ref.id === activityId)) return { ok: false, error: 'activity_not_found' };
+    const l = s.budgetLines.find((x) => x.id === lineId)!;
+    const before = { activityId: l.activityId };
+    l.activityId = activityId as typeof l.activityId;
+    l.updated = { at: clock(), byMembershipId: viewer.membershipId };
+    audit('update', { type: 'BudgetLine', id: l.id }, before, { activityId: l.activityId });
+    options.onChange?.();
+    return { ok: true };
+  };
+
+  const submitBudget = (): GateResult => {
+    const v = version();
+    if (!v) return { ok: false, error: 'no_version' };
+    if (!canTakeBudgetStep(viewer, 'submit')) return { ok: false, error: 'not_allowed' };
+    const err = submitError(v);
+    if (err) return { ok: false, error: err };
+    const event = attempt('budget.submit_consolidated');
+    if (event.outcome === 'passed') {
+      v.status = 'submitted';
+      v.updated = { at: event.attempted.at, byMembershipId: viewer.membershipId };
+    }
+    options.onChange?.();
+    return { ok: true, outcome: event.outcome, blocking: event.blockingFindingKeys.length };
+  };
+
+  const approveBudget = (board: BoardApproval | null, note: string): GateResult => {
+    const v = version();
+    if (!v) return { ok: false, error: 'no_version' };
+    if (!canTakeBudgetStep(viewer, 'approve')) return { ok: false, error: 'not_allowed' };
+    const err = approveError(s, v, viewer.membershipId, board);
+    if (err) return { ok: false, error: err };
+    const event = attempt('budget.approve');
+    if (event.outcome === 'passed') {
+      const text = note.trim();
+      v.status = 'approved';
+      v.approval = { at: event.attempted.at, byMembershipId: viewer.membershipId, ...(text ? { note: text } : {}) };
+      v.boardApproval = s.organisation.settings.boardApprovalRequired.budget && board ? { resolutionRef: board.resolutionRef.trim(), date: board.date } : null;
+      v.updated = { at: event.attempted.at, byMembershipId: viewer.membershipId };
+    }
+    options.onChange?.();
+    return { ok: true, outcome: event.outcome, blocking: event.blockingFindingKeys.length };
+  };
+
+  const returnBudget = (reason: string): { ok: true } | { ok: false; error: BudgetActionError } => {
+    const v = version();
+    if (!v) return { ok: false, error: 'no_version' };
+    if (!canTakeBudgetStep(viewer, 'return')) return { ok: false, error: 'not_allowed' };
+    const err = returnError(s, v, viewer.membershipId, reason);
+    if (err) return { ok: false, error: err };
+    const stamp = { at: clock(), byMembershipId: viewer.membershipId };
+    v.status = 'draft';
+    v.updated = stamp;
+    audit('return', { type: 'BudgetVersion', id: v.id }, { status: 'submitted' }, { status: 'draft', reason: reason.trim() });
+    options.onChange?.();
+    return { ok: true };
+  };
+
   return {
     viewer,
     financialYear,
@@ -172,6 +382,12 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
       financialYearStartMonth: s.organisation.financialYearStartMonth,
       termLabels: s.organisation.termLabels,
     }),
+    budget: budgetPage,
+    budgetLinkOptions: (lineId) => (mayLink(lineId) ? [] : linkOptions(s, financialYear, lineId)),
+    linkBudgetLine,
+    submitBudget,
+    approveBudget,
+    returnBudget,
     home: () => {
       const homes = homesFor(viewer);
       const has = (h: HomeKind) => homes.includes(h);

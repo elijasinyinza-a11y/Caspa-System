@@ -1,5 +1,6 @@
 /** Who is looking: assigned roles plus authority derived from structure (decision B1). Pure. */
 import type { AssignedRole, Id, ISODate } from '../../contract/caspa-data-contract';
+import { budgetHolderPositions, linesOfVersion } from '../../rules/structure';
 import type { Store } from './store';
 
 export interface Viewer {
@@ -11,6 +12,8 @@ export interface Viewer {
   unitIds: Id<'OrgUnit'>[];
   isSupervisor: boolean;
   hasContract: boolean;
+  /** Holds at least one line of the year's current budget version (contract v1.2), so may work on it in Plan. */
+  isBudgetHolder: boolean;
 }
 
 export function resolveViewer(s: Store, membershipId: string, now: ISODate, financialYear: number): Viewer {
@@ -29,6 +32,7 @@ export function resolveViewer(s: Store, membershipId: string, now: ISODate, fina
     unitIds,
     isSupervisor: s.positions.some((p) => p.reportsToPositionId !== null && positionIds.includes(p.reportsToPositionId)),
     hasContract: s.contracts.some((c) => c.personId === m.personId && c.financialYear === financialYear),
+    isBudgetHolder: linesOfVersion(s, financialYear).some((l) => positionIds.some((p) => budgetHolderPositions(s, l).has(p))),
   };
 }
 

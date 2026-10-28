@@ -99,3 +99,14 @@ export function canSeeRating(s: Store, v: Viewer, contractId: string): boolean {
   if (!s.contracts.some((c) => c.id === contractId)) return false;
   return (PERMISSIONS.Review?.view ?? []).some((p) => holds(s, v, p, { type: 'PerformanceContract', id: contractId }));
 }
+
+/**
+ * Who may take each budget step (BUILD-BRIEF section 19). Finance submits the consolidated budget. Approving or
+ * returning it is open to the roles that approve budget lines in the matrix (Finance and Executive), never to the
+ * person who submitted it; that last check is made by the rules engine against the gate record.
+ */
+export function canTakeBudgetStep(v: Viewer, step: 'submit' | 'approve' | 'return'): boolean {
+  if (step === 'submit') return v.roles.includes('finance');
+  const approvers = (PERMISSIONS.BudgetLine?.approve ?? []) as Principal[];
+  return approvers.some((p) => (v.roles as Principal[]).includes(p));
+}

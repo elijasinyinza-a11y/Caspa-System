@@ -34,6 +34,8 @@ export const createManufacturer = () =>
       { key: 'qi', name: 'Mercy Achieng', title: 'Quality Inspector, Line 2', unit: 'line2', reportsTo: 'qm' }, // reports outside her unit
     ],
     devRoles: { finance: 'fm', supervisor: 'ls', employee: 'op', hr: 'hrm', strategy: 'od' },
+    // Slice 5 (approved 28 October 2026): one orphan line, so the budget gate is exercised here too.
+    orphanLines: [{ description: 'Forklift hire, Plant 1', amountMinor: 4_500_000, unit: 'plant1', category: 'operating', source: 'own_revenue' }],
     goals: [
       {
         code: 'G1', title: 'Reduce the cost of production', perspective: 'financial', owner: 'ceo',

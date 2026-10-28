@@ -28,6 +28,7 @@ export function FindingCard({
   here,
   onNavigate,
   short,
+  fixAction,
 }: {
   view: FindingView;
   /** The node page this card sits on, so it does not link to itself. */
@@ -35,6 +36,8 @@ export function FindingCard({
   onNavigate?: () => void;
   /** A short form of the message, used on the finding's own record page (Build Brief, section 18). */
   short?: string;
+  /** Used where the fix sits on the same screen (e.g. an orphan line on the budget page): replaces the fix link. */
+  fixAction?: { label: string; onClick: () => void };
 }) {
   const { repo } = useApp();
   const { finding, routedTo, routedToMe, fix, ack } = view;
@@ -153,10 +156,16 @@ export function FindingCard({
         </p>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        {showFix && (
-          <a href={fixHref} onClick={onNavigate} className={button}>
-            {fixLabel}
-          </a>
+        {fixAction ? (
+          <button type="button" onClick={fixAction.onClick} className={button}>
+            {fixAction.label}
+          </button>
+        ) : (
+          showFix && (
+            <a href={fixHref} onClick={onNavigate} className={button}>
+              {fixLabel}
+            </a>
+          )
         )}
         {view.canAcknowledge && !acknowledged && !form && (
           <button type="button" onClick={startAck} className={button}>
@@ -230,7 +239,7 @@ export function FindingCard({
           </div>
         </div>
       )}
-      {!fix && !here && (
+      {!fix && !here && !fixAction && (
         <p className="mt-2 text-12 text-muted">{en.integrity.noFixLink}</p>
       )}
       <div id={panelId} aria-live="polite">

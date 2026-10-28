@@ -254,6 +254,7 @@ export function createSeed(): Store {
     formationDeadlines: [],
     acknowledgements: [],
     gateEvents: [],
+    auditEntries: [],
   };
 }
 

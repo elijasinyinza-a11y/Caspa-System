@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 18 record decisions made since; the latest is dated 28 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 19 record decisions made since; the latest is dated 28 October 2026.
 
 ## 1. What you are building
 
@@ -241,3 +241,20 @@ Display only. The contract, rules and permissions are unchanged, and every figur
 - **Compact child rows:** each objective or KPI takes one row with code, one-line title, bar, percentage and status. Lists longer than six fold behind "Show all".
 - **Panel heights:** the four panels sit in two independent columns at their natural height; an empty panel shrinks to one line. On a phone they stack in reading order: Strategy, Cascade, Plan, Performance.
 - **Findings on the page:** advisory flags fold into one strip that can be opened. Hard blocks are never folded.
+
+
+## 19. Decisions on the budget gate (28 October 2026)
+
+No contract change. The store gains an `auditEntries` collection of the contract's existing `AuditEntry` record.
+
+- **Scope:** slice 5 covers the consolidated submission (`budget.submit_consolidated`), approval (`budget.approve`) and return. Unit submissions (`budget.submit_unit`) wait for organisation setup; `budget.lock` moves to the file-exchange slice, since exports come only from approved or locked versions.
+- **Consolidated view:** the Plan workspace shows the year's current version grouped by goal (subtotal, share of the total, funded activities), opening to objectives and lines, with a final "Not linked" group for lines with no activity. Every figure comes from `src/selectors/budget.ts`. A subtotal or total is shown only when the viewer can see every line it covers, so the parts always sum to the total.
+- **Linking an orphan:** "Link to activity" lists the year's activities with those owned within the line's holder unit (or a unit below it) first. It is deterministic, with no AI suggestion. Budget holders and Finance may link (the BudgetLine draft row); only while the version is a draft; an audit entry is written.
+- **Attempting a gate:** Submit stays available to Finance while the version is a draft. Every attempt writes a `GateEvent`, including blocked ones with their blocking finding keys. Hard blocks are never overridden.
+- **Advisories at a gate:** each gate shows a fixed list of advisory rules (`GATE_ADVISORIES` in `src/rules/gate.ts`); the budget gates show "Goal has no funded activity". Acknowledging stays optional. Submitting with unacknowledged flags asks for one confirmation, and `advisoryAtGate` records each flag with its acknowledgement, or null; a lapsed acknowledgement counts as none.
+- **After submission:** the version is read-only. Approval reaches the Executive and Finance, never the submitter (B7). The approver may approve or return; a return needs a reason, sends the version back to draft and is recorded as an audit entry, not a gate event.
+- **Board reference:** when `boardApprovalRequired.budget` is on, approval needs a resolution reference and date, stored as `BoardApproval`. Approved versions are frozen; changes are new versions.
+- **Test organisations:** one orphan line each in the packaging manufacturer and the scale organisation, so the gate runs in all four.
+- **Storage:** gate events, links and returns reset on reload in the review build (in-memory only), as acknowledgements do.
+- **Awaiting Elijah's confirmation:** anyone whose position holds a line in the current budget version gets the Plan workspace (`Viewer.isBudgetHolder`), so the orphan-line finding sent to them always has a fix they can open. Found by the cross-organisation tests; the contract already lets budget holders draft their lines.
+

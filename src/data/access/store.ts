@@ -1,6 +1,6 @@
 /** The in-memory shape of one organisation's records. Holds stored records only, never computed values. */
 import type {
-  Acknowledgement, Activity, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
+  Acknowledgement, Activity, AuditEntry, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review,
   StrategicPlan, Workshop,
@@ -37,4 +37,6 @@ export interface Store {
   formationDeadlines: FormationDeadline[];
   acknowledgements: Acknowledgement[];
   gateEvents: GateEvent[];
+  /** Who changed what (contract AuditEntry). Written by the data-access layer on every change it makes. */
+  auditEntries: AuditEntry[];
 }

@@ -122,7 +122,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     kpiTargets: [], kpiActuals: [], baselineMeasures: [], resourceEnvelopes: [], activities, activityProgress: [], deficiencies: [],
     cycles: [{ ...base, id: id(`cy-${k}-budget`), kind: 'budget', financialYear: spec.fy, status: 'open', gateDueDates: {} }],
     budgetVersions: [{ ...base, id: id(`bv-${k}-1`), cycleId: id(`cy-${k}-budget`), version: 1, status: 'draft', approval: null, boardApproval: null }],
-    budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [], gateEvents: [],
+    budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [], gateEvents: [], auditEntries: [],
     reviews: [], workshops: [], formationDeadlines: [],
     // R1: every organisation starts on preset A with the safeguards at their defaults.
     ratingSchemes: [{

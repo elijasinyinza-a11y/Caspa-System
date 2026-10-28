@@ -14,5 +14,6 @@ export function workspacesFor(v: Viewer): WorkspaceKey[] {
   if (v.roles.includes('compliance')) add('strategy');
   if (v.isSupervisor) add('cascade', 'performance');
   if (v.hasContract) add('performance');
+  if (v.isBudgetHolder) add('plan'); // slice 5: budget holders link and review their own lines
   return WORKSPACE_ORDER.filter((w) => set.has(w));
 }

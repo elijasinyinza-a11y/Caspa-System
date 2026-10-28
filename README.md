@@ -23,8 +23,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 3. Integrity drawer: explain, fix links, acknowledgements — done (v0.3.0)
 4. Role homes, "Needs you" queue, ratings (R1–R10) in the rules engine — done (v0.4.0);
    node-page display changes, BUILD-BRIEF section 18 — approved 28 October 2026 (v0.4.1)
-5. Budget gate — next
-6. Six-point decision map
+5. Budget gate: consolidated view, linking, submission, approval and return — done (v0.5.0)
+6. Six-point decision map — next
 7. Organisation setup (Organisation Setup Specification v0.2)
 8. Onboarding: the two doors
 9. Phone layout review (responsive from slice 1)
@@ -58,7 +58,19 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 - Titles appear once, panels sit at natural height in two columns, child rows are one line, and advisory
   flags fold into a strip. Hard blocks are never folded.
 
+## Budget gate notes (v0.5.0)
+
+- Approved 28 October 2026; recorded in BUILD-BRIEF section 19. No contract change.
+- Demo on Sample Water Utility: as Finance, Submit is blocked by "Vehicle hire, Zone C"; link it (for example
+  to A1.1.1.1) and ZMW 180,000 moves into G1 while the total stays ZMW 2,650,000. Under contract v1.3 the
+  Executive or Strategy office acknowledges the G3 flag (Finance cannot). Finance submits; the Executive
+  approves with a board resolution reference, or returns it with a reason.
+- Every attempt, blocked or passed, is in the gate record. Records reset on reload in the review build.
+
 ## Open items for Elijah
+
+- Confirm: budget holders get the Plan workspace (BUILD-BRIEF section 19, last point).
+- Whether CASPA™ or the ERP owns monthly or quarterly budget phasing; this decides the file-exchange slice.
 
 - The achievement rule for lower-is-better contract objectives (scored "not confirmed" for now).
 - Decision-log actions carry no completion field, so every action from a held session stays in
