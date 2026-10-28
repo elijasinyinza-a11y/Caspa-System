@@ -90,6 +90,21 @@ export interface PlanPanel {
   hiddenLines: number;
   /** Sum of lines, only when every line is visible, so no partial total is ever shown as the whole. */
   total: Money | null;
+  /**
+   * Goal and objective pages only (Build Brief, section 18): the lines grouped by the next level down,
+   * one group per child in code order. A subtotal is shown only when every line in its group is visible,
+   * so whenever `total` is shown the subtotals sum to it. Null on KPI and activity pages.
+   */
+  groups: PlanGroup[] | null;
+}
+
+export interface PlanGroup {
+  ref: NodeRef;
+  activities: number;
+  funded: number;
+  lines: PlanLine[];
+  hiddenLines: number;
+  subtotal: Money | null;
 }
 
 export interface PerformancePanel {
@@ -272,18 +287,40 @@ export function nodeView(s: Store, kind: NodeKind, id: string, ctx: ProgressCont
   const allLines = linesOfVersion(s, fy).filter((l) => l.activityId && actIds.has(l.activityId));
   const visibleLines = allLines.filter((l) => access.canView({ type: 'BudgetLine', id: l.id }));
   const actRef = (aid: string) => refActivity(tree.activities.find((a) => a.id === aid)!);
+  const toLine = (l: (typeof visibleLines)[number]): PlanLine => ({
+    id: l.id, description: l.description, amount: l.amount, costCategory: l.costCategory, fundingSource: l.fundingSource, activity: actRef(l.activityId!),
+  });
+  const sum = (ls: typeof allLines): Money => ({ amountMinor: ls.reduce((n, l) => n + l.amount.amountMinor, 0), currency: s.organisation.baseCurrency });
+  const childGroups: { ref: NodeRef; kpiIds: Set<string> }[] | null =
+    kind === 'goal'
+      ? tree.objectives.slice().sort(byCode).map((o) => ({ ref: refObjective(o), kpiIds: new Set(tree.kpis.filter((k) => k.objectiveId === o.id).map((k) => k.id)) }))
+      : kind === 'objective'
+        ? tree.kpis.slice().sort(byCode).map((k) => ({ ref: refKpi(k), kpiIds: new Set([k.id]) }))
+        : null;
+  const groups: PlanGroup[] | null = childGroups
+    ? childGroups.map(({ ref: r, kpiIds }) => {
+        const acts = tree.activities.filter((a) => kpiIds.has(a.kpiId));
+        const ids = new Set(acts.map((a) => a.id));
+        const all = allLines.filter((l) => ids.has(l.activityId!));
+        const vis = all.filter((l) => access.canView({ type: 'BudgetLine', id: l.id }));
+        return {
+          ref: r,
+          activities: acts.length,
+          funded: acts.filter((a) => funded.has(a.id)).length,
+          lines: vis.map(toLine),
+          hiddenLines: all.length - vis.length,
+          subtotal: all.length > 0 && vis.length === all.length ? sum(all) : null,
+        };
+      })
+    : null;
   const plan: PlanPanel = {
     activities: tree.activities.length,
     funded: tree.activities.filter((a) => funded.has(a.id)).length,
     activityFunding: tree.activities.map((a) => ({ ref: refActivity(a), funded: funded.has(a.id) })),
-    lines: visibleLines.map((l) => ({
-      id: l.id, description: l.description, amount: l.amount, costCategory: l.costCategory, fundingSource: l.fundingSource, activity: actRef(l.activityId!),
-    })),
+    lines: visibleLines.map(toLine),
     hiddenLines: allLines.length - visibleLines.length,
-    total:
-      allLines.length > 0 && visibleLines.length === allLines.length
-        ? { amountMinor: visibleLines.reduce((n, l) => n + l.amount.amountMinor, 0), currency: s.organisation.baseCurrency }
-        : null,
+    total: allLines.length > 0 && visibleLines.length === allLines.length ? sum(allLines) : null,
+    groups,
   };
 
   /* Performance: contract objectives drawn from the activities under this node. Never ratings. */

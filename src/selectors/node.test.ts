@@ -94,6 +94,27 @@ describe('cascade-node pages above the activity', () => {
     expect(n.cascade.children.map((o) => o.ref.code)).toEqual(['O1.1', 'O1.2']);
   });
 
+  it('G1 groups its budget lines by objective, and the subtotals sum to the total (section 18)', () => {
+    const g = as('executive').node('goal', 'g1')!.plan.groups!;
+    expect(g.map((x) => [x.ref.code, x.activities, x.funded, x.lines.length, x.subtotal && formatMoney(x.subtotal)])).toEqual([
+      ['O1.1', 1, 0, 0, null],
+      ['O1.2', 4, 1, 2, 'ZMW 1,500,000'],
+    ]);
+    // Those without access see funding status per group, never amounts.
+    const e = as('employee').node('goal', 'g1')!.plan.groups!;
+    expect(e.map((x) => [x.ref.code, x.funded, x.lines.length, x.hiddenLines, x.subtotal])).toEqual([
+      ['O1.1', 0, 0, 0, null],
+      ['O1.2', 1, 0, 2, null],
+    ]);
+  });
+
+  it('O1.2 groups by KPI; KPI and activity pages list lines without groups', () => {
+    const o = as('finance').node('objective', 'o1.2')!.plan.groups!;
+    expect(o.map((x) => [x.ref.code, x.subtotal && formatMoney(x.subtotal)])).toEqual([['K1.2.1', 'ZMW 1,500,000']]);
+    expect(as('finance').node('kpi', 'k1.2.1')!.plan.groups).toBeNull();
+    expect(as('finance').node('activity', A)!.plan.groups).toBeNull();
+  });
+
   it('G3 carries its own findings: no funded activity and no recorded why', () => {
     const n = as('executive').node('goal', 'g3')!;
     expect(n.plan).toMatchObject({ activities: 1, funded: 0, total: null });

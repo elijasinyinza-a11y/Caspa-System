@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 18 record decisions made since; the latest is dated 28 October 2026.
 
 ## 1. What you are building
 
@@ -219,3 +219,25 @@ Recorded in full in the *CASPA™ Organisation Setup Specification v0.2*.
 - **Contract v1.3, who may acknowledge:** an advisory flag may be acknowledged by those it is sent to, the Executive and the Strategy office. A new principal, `finding_recipient`, covers "those it is sent to"; the matrix gains one row, `Acknowledgement`. No field changes. Hard blocks are never acknowledged, and a person may act only on findings they are shown.
 - **Lapse:** an acknowledgement lapses when the finding's subject record is updated after it, compared by the existing `updated` stamps (`src/rules/acknowledgement.ts`). A lapsed flag is open again and can be acknowledged afresh; earlier acknowledgements are kept.
 - **Display:** acknowledged flags stay in the list, marked "Acknowledged" with who, when and the reason, and are counted apart from open flags in the pill, on Home and in the drawer filters.
+
+
+## 17. Decisions on role homes and ratings (23 October 2026)
+
+- **Seed additions:** two positions, Human Resources Manager and Strategy and Planning Manager. The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and Employee. In the test organisations, existing people take on the HR and Strategy office roles; in the NGO one person holds both Finance and HR, so its queue is merged across roles.
+- **Deadlines:** gate due dates are seeded for Sample Water Utility: consolidated budget submission 6 November 2026, budget approval 27 November 2026, contract issue 31 January 2026 (so the unissued Zone C contract is overdue), review completion 15 January 2027.
+- **"Needs you" sources:** decision-log actions stay an empty, labelled category until the Strategy formation slice; no workshop content is invented. Gate approvals appear from slice 5, when the budget is first submitted.
+- **Rating basis:** a mid-year review is measured against the full-year personal target, from verified progress only, and shown as provisional until the appraisal round closes. The sample holds the preset A rating scheme with default settings and one open mid-year review for the Zone B contract.
+- **Where ratings appear:** on the Employee home, the Supervisor's team view and the HR home, following the Review row of the permissions matrix (employee, supervisor, next-level reviewer, HR). The Executive, Finance and Strategy office do not see ratings through those roles.
+- **Open, awaiting Elijah:** the achievement rule for lower-is-better contract objectives (scored "not confirmed" until decided); how a decision-log action leaves "Needs you", since there is no completion field; finding messages still use system terms rather than the organisation's renamed labels.
+
+
+## 18. Decisions on node-page display (28 October 2026)
+
+Display only. The contract, rules and permissions are unchanged, and every figure is still computed.
+
+- **Titles once:** a node's title appears once, in a two-line heading with "Show full title". The lineage strip shows codes with short titles, keeping full titles in the link text for screen readers; goal pages have no strip. A finding shown on its own record's page uses a short form; the drawer keeps the full message.
+- **Summary first:** each panel opens with its computed summary, with the detail one click away ("Show all 4 objectives").
+- **Budget lines:** on goal and objective pages the Plan panel always groups budget lines by the next level down, each group showing its subtotal and expanding in place. There is no line-count threshold. KPI and activity pages list every line with the total. Group subtotals come from the node selector and always sum to the total.
+- **Compact child rows:** each objective or KPI takes one row with code, one-line title, bar, percentage and status. Lists longer than six fold behind "Show all".
+- **Panel heights:** the four panels sit in two independent columns at their natural height; an empty panel shrinks to one line. On a phone they stack in reading order: Strategy, Cascade, Plan, Performance.
+- **Findings on the page:** advisory flags fold into one strip that can be opened. Hard blocks are never folded.

@@ -27,11 +27,14 @@ export function FindingCard({
   view,
   here,
   onNavigate,
+  short,
 }: {
   view: FindingView;
   /** The node page this card sits on, so it does not link to itself. */
   here?: { node: NodeKind; id: string };
   onNavigate?: () => void;
+  /** A short form of the message, used on the finding's own record page (Build Brief, section 18). */
+  short?: string;
 }) {
   const { repo } = useApp();
   const { finding, routedTo, routedToMe, fix, ack } = view;
@@ -124,7 +127,7 @@ export function FindingCard({
           </span>
         )}
       </div>
-      <p className="mt-1 text-14 text-text">{finding.message}</p>
+      <p className="mt-1 text-14 text-text">{short ?? finding.message}</p>
       <p className="mt-2 text-12 text-muted">
         {block
           ? en.integrity.blocks(

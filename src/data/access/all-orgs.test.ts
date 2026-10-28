@@ -52,6 +52,22 @@ describe.each(orgs.map((o) => [o.store.organisation.name, o] as const))('%s', (_
           expect(n.plan.total.amountMinor).toBe(n.plan.lines.reduce((x, l) => x + l.amount.amountMinor, 0));
           expect(n.plan.total.currency).toBe(s.organisation.baseCurrency);
         }
+        // Plan groups (section 18): goal and objective pages only; they partition the lines, and the
+        // subtotals sum to the total whenever the total is shown.
+        if (kind === 'goal' || kind === 'objective') {
+          const g = n.plan.groups!;
+          expect(g).not.toBeNull();
+          expect(g.flatMap((x) => x.lines.map((l) => l.id)).sort()).toEqual(n.plan.lines.map((l) => l.id).sort());
+          expect(g.reduce((x, y) => x + y.hiddenLines, 0)).toBe(n.plan.hiddenLines);
+          expect(g.reduce((x, y) => x + y.activities, 0)).toBe(n.plan.activities);
+          for (const x of g) if (x.hiddenLines > 0) expect(x.subtotal).toBeNull();
+          if (n.plan.total) {
+            expect(g.reduce((x, y) => x + (y.subtotal?.amountMinor ?? 0), 0)).toBe(n.plan.total.amountMinor);
+            for (const x of g) if (x.lines.length > 0) expect(x.subtotal).not.toBeNull();
+          }
+        } else {
+          expect(n.plan.groups).toBeNull();
+        }
         // Performance: names only for contracts the viewer may see; never ratings.
         for (const o of n.performance.objectives) expect(can(s, viewer, 'view', { type: 'ContractObjective', id: o.id })).toBe(true);
         // Strategy: 4Q text only for those who may read it.

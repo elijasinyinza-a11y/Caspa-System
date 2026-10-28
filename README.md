@@ -1,7 +1,8 @@
 # CASPA™ frontend
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
-store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1) first.
+store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
+with decisions to 28 October 2026) first.
 
 ## Run
 
@@ -20,8 +21,9 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 1. Shell — done (v0.1.0)
 2. Universal cascade-node page, cascade tree, KPI progress (P1–P10), test organisations — done (v0.2.0)
 3. Integrity drawer: explain, fix links, acknowledgements — done (v0.3.0)
-4. Role homes, "Needs you" queue, ratings (R1–R10) in the rules engine — done (v0.4.0)
-5. Budget gate
+4. Role homes, "Needs you" queue, ratings (R1–R10) in the rules engine — done (v0.4.0);
+   node-page display changes, BUILD-BRIEF section 18 — approved 28 October 2026 (v0.4.1)
+5. Budget gate — next
 6. Six-point decision map
 7. Organisation setup (Organisation Setup Specification v0.2)
 8. Onboarding: the two doors
@@ -46,6 +48,19 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
   for the Zone B contract.
 - Ratings are measured against the full-year personal target from verified progress only, shown as
   provisional, and visible only through the Review row (employee, supervisor, next-level reviewer, HR).
-- Open items for Elijah: the achievement rule for lower-is-better contract objectives (scored as
-  "not confirmed" for now); decision-log actions carry no completion field, so every action from a held
-  session stays in "Needs you"; finding messages still use system terms rather than renamed labels.
+
+## Node-page display notes (v0.4.1)
+
+- Approved 28 October 2026; recorded in BUILD-BRIEF section 18. Display only: no change to the contract,
+  rules or permissions.
+- Goal and objective pages group budget lines by the next level down, always, with subtotals from the
+  node selector; KPI and activity pages list every line.
+- Titles appear once, panels sit at natural height in two columns, child rows are one line, and advisory
+  flags fold into a strip. Hard blocks are never folded.
+
+## Open items for Elijah
+
+- The achievement rule for lower-is-better contract objectives (scored "not confirmed" for now).
+- Decision-log actions carry no completion field, so every action from a held session stays in
+  "Needs you".
+- Finding messages still use system terms rather than the organisation's renamed labels.

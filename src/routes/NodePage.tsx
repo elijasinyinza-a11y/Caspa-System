@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
 import { identity } from '../components/identity';
 import { ProgressBar, StatusBadge } from '../components/Status';
@@ -7,7 +7,7 @@ import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import { isBlocking } from '../rules/integrity';
 import type { KpiProgress } from '../rules/kpi-progress';
 import { formatDate, formatMoney, formatNumber, formatPercent } from '../selectors/format';
-import type { NodeKind, NodeRef, NodeView } from '../selectors/node';
+import type { NodeKind, NodeRef, NodeView, PlanGroup, PlanLine } from '../selectors/node';
 import { en } from '../strings/en';
 import { nodeHref } from './router';
 
@@ -16,7 +16,21 @@ type Panel = 'strategy' | 'cascade' | 'plan' | 'performance';
 /** A KPI value with its unit: "47%", "4,000 hours per day". */
 const value = (v: number, unit: string) => (unit === '%' ? `${formatNumber(v)}%` : `${formatNumber(v)} ${unit}`);
 
-function PanelCard({ p, children }: { p: Panel; children: ReactNode }) {
+/** Lists longer than this fold behind "Show all" (Build Brief, section 18). */
+const FOLD_AT = 6;
+
+function PanelCard({ p, children, empty }: { p: Panel; children?: ReactNode; empty?: string }) {
+  if (empty) {
+    // An empty panel shrinks to one line.
+    return (
+      <section aria-labelledby={`panel-${p}`} className={`min-w-0 rounded-xl border border-t-4 border-border bg-white px-5 py-3 ${identity[p].edge}`}>
+        <h2 id={`panel-${p}`} className="flex flex-wrap items-baseline gap-x-2">
+          <span className={`text-16 font-bold ${identity[p].text}`}>{en.node[p].title}</span>
+          <span className="text-14 text-muted">{empty}</span>
+        </h2>
+      </section>
+    );
+  }
   return (
     <section aria-labelledby={`panel-${p}`} className={`min-w-0 rounded-xl border border-t-4 border-border bg-white p-5 ${identity[p].edge}`}>
       <h2 id={`panel-${p}`} className="flex flex-wrap items-baseline gap-x-2">
@@ -25,6 +39,25 @@ function PanelCard({ p, children }: { p: Panel; children: ReactNode }) {
       </h2>
       <div className="mt-4 space-y-4">{children}</div>
     </section>
+  );
+}
+
+const textButton = 'inline-flex min-h-11 items-center text-14 font-semibold text-navy underline underline-offset-4';
+
+/** Shows the first FOLD_AT items, with the rest one click away. */
+function Folded<T>({ items, label, render, className }: { items: T[]; label: string; render: (x: T) => ReactNode; className: string }) {
+  const [all, setAll] = useState(false);
+  const id = useId();
+  const shown = all || items.length <= FOLD_AT ? items : items.slice(0, FOLD_AT);
+  return (
+    <>
+      <ul id={id} className={className}>{shown.map(render)}</ul>
+      {items.length > FOLD_AT && (
+        <button type="button" aria-expanded={all} aria-controls={id} onClick={() => setAll(!all)} className={textButton}>
+          {all ? en.node.showFewer : en.node.showAll(items.length, label)}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -37,16 +70,18 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function NodeLink({ r }: { r: NodeRef }) {
+function NodeLink({ r, oneLine = false }: { r: NodeRef; oneLine?: boolean }) {
   return (
-    <a href={nodeHref(r.kind, r.id)} className="group inline-flex min-h-11 min-w-0 items-baseline gap-2 py-2 text-14 text-navy">
+    <a href={nodeHref(r.kind, r.id)} title={oneLine ? r.title : undefined} className="group inline-flex min-h-11 min-w-0 max-w-full items-baseline gap-2 py-2 text-14 text-navy">
       <span className="tabular shrink-0 font-semibold">{r.code}</span>
-      <span className="min-w-0 underline decoration-border underline-offset-4 group-hover:decoration-navy">{r.title}</span>
+      <span className={`min-w-0 underline decoration-border underline-offset-4 group-hover:decoration-navy ${oneLine ? 'truncate' : ''}`}>{r.title}</span>
     </a>
   );
 }
 
+/** Codes with short titles on one line; the full title stays in the text for screen readers and on hover. */
 function Lineage({ n }: { n: NodeView }) {
+  if (n.ref.kind === 'goal') return null; // nothing sits above a goal
   return (
     <nav aria-label={en.node.lineage} className="mb-6">
       <ol className="grid gap-2" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 150px), 1fr))` }}>
@@ -54,18 +89,18 @@ function Lineage({ n }: { n: NodeView }) {
           const current = i === n.lineage.length - 1;
           const body = (
             <>
-              <span className="text-12 text-muted">{r.label}</span>
-              <span className="tabular block text-14 font-bold text-navy">{r.code}</span>
-              <span className="mt-0.5 line-clamp-2 block text-13 text-text">{r.title}</span>
+              <span className="text-12 text-muted">{r.label} </span>
+              <span className="tabular text-14 font-bold text-navy">{r.code}</span>{' '}
+              <span className="text-13 text-text">{r.title}</span>
             </>
           );
-          const cls = 'block h-full rounded-lg border p-3';
+          const cls = 'block h-full min-h-11 truncate rounded-lg border px-3 py-2';
           return (
             <li key={r.id} className="min-w-0">
               {current ? (
-                <div aria-current="page" className={`${cls} border-2 border-cascade-mark bg-cascade-tint`}>{body}</div>
+                <div aria-current="page" title={r.title} className={`${cls} border-2 border-cascade-mark bg-cascade-tint`}>{body}</div>
               ) : (
-                <a href={nodeHref(r.kind, r.id)} className={`${cls} border-border bg-white hover:border-control`}>{body}</a>
+                <a href={nodeHref(r.kind, r.id)} title={r.title} className={`${cls} border-border bg-white hover:border-control`}>{body}</a>
               )}
             </li>
           );
@@ -75,19 +110,48 @@ function Lineage({ n }: { n: NodeView }) {
   );
 }
 
+/** Hard blocks always show in full; advisory flags fold into one strip that can be opened. */
 function Findings({ n }: { n: NodeView }) {
   const { repo } = useApp();
+  const [open, setOpen] = useState(false);
+  const listId = useId();
   if (n.findings.length === 0) return null;
-  const items = [...n.findings].sort((a, b) => Number(isBlocking(b)) - Number(isBlocking(a)));
+  const self = n.label.toLowerCase();
+  const card = (f: NodeView['findings'][number]) => {
+    const own = f.subject.type === NODE_TYPE_OF[n.ref.kind] && f.subject.id === n.ref.id;
+    const short = own ? en.node.findingHere[f.ruleId]?.(self) : undefined;
+    return <FindingCard key={f.key} view={repo.describeFinding(f)} here={{ node: n.ref.kind, id: n.ref.id }} short={short} />;
+  };
+  const blocks = n.findings.filter(isBlocking);
+  const flags = n.findings.filter((f) => !isBlocking(f));
+  const acknowledged = flags.filter((f) => repo.describeFinding(f).ack.state === 'acknowledged').length;
+  const openFlags = flags.length - acknowledged;
   return (
-    <section aria-labelledby="node-findings" className="mb-6">
-      <h2 id="node-findings" className="text-16 font-bold text-navy">{en.node.findingsTitle}</h2>
-      <ul className="mt-2 space-y-2">
-        {items.map((f) => <FindingCard key={f.key} view={repo.describeFinding(f)} here={{ node: n.ref.kind, id: n.ref.id }} />)}
-      </ul>
+    <section aria-labelledby="node-findings" className="mb-6 space-y-2">
+      <h2 id="node-findings" className="sr-only">{en.node.findingsTitle}</h2>
+      {blocks.length > 0 && <ul className="space-y-2">{blocks.map(card)}</ul>}
+      {flags.length > 0 && (
+        <div className={`rounded-lg border ${openFlags ? 'border-advisory-border bg-advisory-bg' : 'border-info-border bg-info-bg'}`}>
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={listId}
+            onClick={() => setOpen(!open)}
+            className="flex min-h-11 w-full flex-wrap items-center justify-between gap-x-3 px-4 py-2 text-left"
+          >
+            <span className={`text-14 font-semibold ${openFlags ? 'text-advisory-text' : 'text-info-text'}`}>
+              {openFlags ? en.node.advisoryStrip(openFlags, acknowledged) : en.node.acknowledgedStrip(acknowledged)}
+            </span>
+            <span className="text-14 font-semibold text-navy underline underline-offset-4">{open ? en.node.hide : en.node.show}</span>
+          </button>
+          {open && <ul id={listId} className="space-y-2 px-2 pb-2">{flags.map(card)}</ul>}
+        </div>
+      )}
     </section>
   );
 }
+
+const NODE_TYPE_OF: Record<NodeKind, string> = { goal: 'Goal', objective: 'Objective', kpi: 'Kpi', activity: 'Activity' };
 
 function KpiDetail({ p, unit }: { p: KpiProgress; unit: string }) {
   const note =
@@ -132,16 +196,19 @@ function StrategyPanel({ n }: { n: NodeView }) {
           s.reasons.entries.length === 0 ? (
             <p className="mt-1 text-14 text-muted">{en.node.noReasons}</p>
           ) : (
-            <ul className="mt-2 space-y-2">
-              {s.reasons.entries.map((e, i) => (
-                <li key={i} className="rounded-lg bg-strategy-tint p-3">
+            <Folded
+              items={s.reasons.entries.map((e, i) => ({ ...e, i }))}
+              label={en.node.reasonsLabel}
+              className="mt-2 space-y-2"
+              render={(e) => (
+                <li key={e.i} className="rounded-lg bg-strategy-tint p-3">
                   <p className="text-12 text-strategy-text">
                     {en.fourQ.cell(e.cell)}. {e.on === 'goal' ? en.node.reasonOnGoal(goalLabel) : en.node.reasonOnObjective(objectiveLabel)}
                   </p>
                   <p className="mt-1 text-14 text-text">{e.text}</p>
                 </li>
-              ))}
-            </ul>
+              )}
+            />
           )
         ) : (
           <p className="mt-1 text-14 text-muted">{en.node.reasonsHidden(s.reasons.count)}</p>
@@ -166,18 +233,22 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
             {c.children.length === 0 ? (
               <p className="mt-1 text-14 text-muted">{en.node.noChildren(labels[c.kind === 'goal' ? 'objective' : 'kpi'])}</p>
             ) : (
-              <ul className="mt-1 divide-y divide-border">
-                {c.children.map((ch) => {
-                  const share = 'clamped' in ch.progress ? ch.progress.clamped : ch.progress.progress;
-                  const trueShare = 'clamped' in ch.progress ? ch.progress.progress : ch.progress.progress;
+              <Folded
+                items={c.children as { ref: NodeRef; progress: { progress: number | null; status: KpiProgress['status']; clamped?: number | null } }[]}
+                label={labels[c.kind === 'goal' ? 'objective' : 'kpi']}
+                className="mt-1 divide-y divide-border"
+                render={(ch) => {
+                  const share = ch.progress.clamped !== undefined ? ch.progress.clamped : ch.progress.progress;
                   return (
-                    <li key={ch.ref.id} className="py-2">
-                      <NodeLink r={ch.ref} />
-                      <ProgressBar compact share={share} trueShare={trueShare} status={ch.progress.status} label={ch.ref.code} />
+                    <li key={ch.ref.id} className="flex flex-wrap items-center gap-x-3 sm:flex-nowrap">
+                      <div className="min-w-0 flex-1"><NodeLink r={ch.ref} oneLine /></div>
+                      <div className="w-full pb-2 sm:w-56 sm:shrink-0 sm:pb-0">
+                        <ProgressBar compact share={share} trueShare={ch.progress.progress} status={ch.progress.status} label={ch.ref.code} />
+                      </div>
                     </li>
                   );
-                })}
-              </ul>
+                }}
+              />
             )}
           </div>
         </>
@@ -195,16 +266,19 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
             {c.children.length === 0 ? (
               <p className="mt-1 text-14 text-muted">{en.node.noChildren(labels.activity)}</p>
             ) : (
-              <ul className="mt-1 divide-y divide-border">
-                {c.children.map((a) => (
-                  <li key={a.ref.id} className="flex flex-wrap items-center justify-between gap-x-3 py-1">
-                    <NodeLink r={a.ref} />
-                    <span className="text-13 text-muted">
+              <Folded
+                items={c.children}
+                label={labels.activity}
+                className="mt-1 divide-y divide-border"
+                render={(a) => (
+                  <li key={a.ref.id} className="flex flex-wrap items-center justify-between gap-x-3 sm:flex-nowrap">
+                    <div className="min-w-0 flex-1"><NodeLink r={a.ref} oneLine /></div>
+                    <span className="shrink-0 pb-2 text-13 text-muted sm:pb-0">
                       {a.level ? en.sixP[a.level] : en.noSixP}. {a.funded ? en.node.funded : en.node.notFunded}
                     </span>
                   </li>
-                ))}
-              </ul>
+                )}
+              />
             )}
           </div>
         </>
@@ -264,56 +338,105 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
   );
 }
 
-function PlanPanel({ n, labels, line }: { n: NodeView; labels: Record<NodeKind, string>; line: { singular: string; plural: string } }) {
+type Labels = Record<NodeKind, string>;
+type Term = { singular: string; plural: string };
+
+function LineTable({ lines, total, showActivity, caption, totalLabel = en.node.total }: { lines: PlanLine[]; total: PlanGroup['subtotal']; showActivity: boolean; caption: string; totalLabel?: string }) {
+  return (
+    <table className="w-full text-14">
+      <caption className="sr-only">{caption}</caption>
+      <tbody>
+        {lines.map((l) => (
+          <tr key={l.id} className="border-b border-border align-top">
+            <td className="py-2 pr-3">
+              <div className="text-text">{l.description}</div>
+              <div className="text-12 text-muted">
+                {showActivity && <>{l.activity.code}. </>}
+                {en.node.lineFrom(en.costCategory[l.costCategory as keyof typeof en.costCategory], en.fundingSource[l.fundingSource as keyof typeof en.fundingSource])}
+              </div>
+            </td>
+            <td className="tabular whitespace-nowrap py-2 text-right text-text">{formatMoney(l.amount)}</td>
+          </tr>
+        ))}
+      </tbody>
+      {total && (
+        <tfoot>
+          <tr>
+            <th scope="row" className="pt-2 text-left font-semibold text-navy">{totalLabel}</th>
+            <td className="tabular whitespace-nowrap pt-2 text-right font-bold text-navy">{formatMoney(total)}</td>
+          </tr>
+        </tfoot>
+      )}
+    </table>
+  );
+}
+
+/** One group on a goal or objective page: the child, its funding, its subtotal, and its lines in place. */
+function GroupRow({ g, labels, line }: { g: PlanGroup; labels: Labels; line: Term }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <li className="py-1">
+      <div className="flex items-center gap-x-3">
+        <div className="min-w-0 flex-1"><NodeLink r={g.ref} oneLine /></div>
+        <span className="tabular shrink-0 text-right text-14 font-semibold text-navy">
+          {g.subtotal ? formatMoney(g.subtotal) : g.hiddenLines > 0 ? <span className="text-13 font-normal text-muted">{en.node.groupHidden}</span> : '—'}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-x-3">
+        <span className="text-13 text-muted">
+          {g.activities === 0 ? en.node.groupNoActivities(labels.activity) : en.node.groupFunded(g.funded, g.activities)}
+        </span>
+        {g.lines.length > 0 && (
+          <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)} className={textButton}>
+            {open ? en.node.hideLines(line.plural) : en.node.showLines(g.lines.length, line.singular, line.plural)}
+          </button>
+        )}
+      </div>
+      {open && (
+        <div id={id} className="mb-2 rounded-lg bg-cream px-3">
+          <LineTable lines={g.lines} total={g.subtotal} showActivity caption={`${g.ref.code} ${line.plural}`} totalLabel={en.node.subtotal} />
+        </div>
+      )}
+    </li>
+  );
+}
+
+function PlanPanel({ n, labels, line }: { n: NodeView; labels: Labels; line: Term }) {
   const p = n.plan;
   const one = n.ref.kind === 'activity';
+  if (p.activities === 0) return <PanelCard p="plan" empty={en.node.noActivities(labels.activity)} />;
+  const childLabel = labels[n.ref.kind === 'goal' ? 'objective' : 'kpi'];
   return (
     <PanelCard p="plan">
-      {p.activities === 0 ? (
-        <p className="text-14 text-muted">{en.node.noActivities(labels.activity)}</p>
-      ) : one ? (
-        <p className="text-16 font-semibold text-navy">{p.funded ? en.node.funded : en.node.notFunded}</p>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <p className="text-16 font-semibold text-navy">
+          {one ? (p.funded ? en.node.funded : en.node.notFunded) : en.node.fundedOf(p.funded, p.activities, labels.activity)}
+        </p>
+        {p.groups && p.total && <p className="tabular text-18 font-bold text-navy">{formatMoney(p.total)}</p>}
+      </div>
+      {p.groups ? (
+        <div>
+          <h3 className="text-14 font-semibold text-navy">{en.node.groupedBy(childLabel)}</h3>
+          <Folded items={p.groups} label={childLabel} className="mt-1 divide-y divide-border" render={(g) => <GroupRow key={g.ref.id} g={g} labels={labels} line={line} />} />
+        </div>
       ) : (
-        <p className="text-16 font-semibold text-navy">{en.node.fundedOf(p.funded, p.activities, labels.activity)}</p>
-      )}
-      {p.lines.length > 0 && (
-        <table className="w-full text-14">
-          <caption className="sr-only">{line.plural}</caption>
-          <tbody>
-            {p.lines.map((l) => (
-              <tr key={l.id} className="border-b border-border align-top">
-                <td className="py-2 pr-3">
-                  <div className="text-text">{l.description}</div>
-                  <div className="text-12 text-muted">
-                    {!one && <>{l.activity.code}. </>}
-                    {en.node.lineFrom(en.costCategory[l.costCategory as keyof typeof en.costCategory], en.fundingSource[l.fundingSource as keyof typeof en.fundingSource])}
-                  </div>
-                </td>
-                <td className="tabular whitespace-nowrap py-2 text-right text-text">{formatMoney(l.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-          {p.total && (
-            <tfoot>
-              <tr>
-                <th scope="row" className="pt-2 text-left font-semibold text-navy">{en.node.total}</th>
-                <td className="tabular whitespace-nowrap pt-2 text-right font-bold text-navy">{formatMoney(p.total)}</td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
+        p.lines.length > 0 && <LineTable lines={p.lines} total={p.total} showActivity={!one} caption={line.plural} />
       )}
       {p.hiddenLines > 0 && p.lines.length > 0 && <p className="text-13 text-muted">{en.node.hiddenLines(p.hiddenLines, line.singular, line.plural)}</p>}
       {p.hiddenLines > 0 && p.lines.length === 0 && <p className="text-13 text-muted">{en.node.statusOnly}</p>}
-      {!one && p.lines.length === 0 && p.activityFunding.length > 0 && p.activityFunding.length <= 12 && (
-        <ul className="divide-y divide-border">
-          {p.activityFunding.map((a) => (
-            <li key={a.ref.id} className="flex flex-wrap items-center justify-between gap-x-3">
-              <NodeLink r={a.ref} />
-              <span className="text-13 text-muted">{a.funded ? en.node.funded : en.node.notFunded}</span>
+      {!one && !p.groups && p.lines.length === 0 && p.activityFunding.length > 0 && (
+        <Folded
+          items={p.activityFunding}
+          label={labels.activity}
+          className="divide-y divide-border"
+          render={(a) => (
+            <li key={a.ref.id} className="flex flex-wrap items-center justify-between gap-x-3 sm:flex-nowrap">
+              <div className="min-w-0 flex-1"><NodeLink r={a.ref} oneLine /></div>
+              <span className="shrink-0 text-13 text-muted">{a.funded ? en.node.funded : en.node.notFunded}</span>
             </li>
-          ))}
-        </ul>
+          )}
+        />
       )}
     </PanelCard>
   );
@@ -321,13 +444,15 @@ function PlanPanel({ n, labels, line }: { n: NodeView; labels: Record<NodeKind, 
 
 function PerformancePanel({ n, co }: { n: NodeView; co: { singular: string; plural: string } }) {
   const p = n.performance;
-  const none = p.objectives.length === 0 && p.hidden.count === 0;
+  if (p.objectives.length === 0 && p.hidden.count === 0) return <PanelCard p="performance" empty={en.node.noContracts} />;
   return (
     <PanelCard p="performance">
-      {none && <p className="text-14 text-muted">{en.node.noContracts}</p>}
       {p.objectives.length > 0 && (
-        <ul className="space-y-3">
-          {p.objectives.map((o) => (
+        <Folded
+          items={p.objectives}
+          label={co.plural}
+          className="space-y-3"
+          render={(o) => (
             <li key={o.id} className="rounded-lg border border-border p-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <span className="text-14 font-semibold text-navy">{o.person}</span>
@@ -340,8 +465,8 @@ function PerformancePanel({ n, co }: { n: NodeView; co: { singular: string; plur
                 <Field label={en.node.done}>{o.done === null ? en.node.notVerified : <span className="tabular">{formatNumber(o.done)}{o.target ? ` ${o.target.unit}` : ''}</span>}</Field>
               </dl>
             </li>
-          ))}
-        </ul>
+          )}
+        />
       )}
       {p.hidden.count > 0 && (
         <div>
@@ -374,14 +499,20 @@ export function NodePage({ kind, id }: { kind: NodeKind; id: string }) {
   const intro = n.owner ? en.node.owner(n.owner.position, n.owner.person, n.owner.acting) : en.node.noOwner;
   return (
     <>
-      <WorkspaceHeader w="cascade" title={`${n.ref.code} ${n.ref.title}`} intro={intro} />
+      <WorkspaceHeader w="cascade" title={`${n.ref.code} ${n.ref.title}`} intro={intro} clampTitle />
       <Lineage n={n} />
       <Findings n={n} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <StrategyPanel n={n} />
-        <CascadePanel n={n} labels={labels} kpiSingular={terms.kpi.singular} />
-        <PlanPanel n={n} labels={labels} line={terms.budgetLine} />
-        <PerformancePanel n={n} co={terms.contractObjective} />
+      {/* Two independent columns at natural height. The source order is the reading order, so on a
+          phone the panels stack as Strategy, Cascade, Plan, Performance (Build Brief, section 18). */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-4">
+          <StrategyPanel n={n} />
+          <CascadePanel n={n} labels={labels} kpiSingular={terms.kpi.singular} />
+        </div>
+        <div className="grid min-w-0 gap-4">
+          <PlanPanel n={n} labels={labels} line={terms.budgetLine} />
+          <PerformancePanel n={n} co={terms.contractObjective} />
+        </div>
       </div>
     </>
   );
