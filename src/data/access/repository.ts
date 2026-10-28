@@ -19,7 +19,8 @@ import { needsYou, type NeedsYouItem } from '../../selectors/needs-you';
 import { expectedToDate } from '../../rules/kpi-progress';
 import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeView } from '../../selectors/node';
 import { workspacesFor } from '../../selectors/nav';
-import type { WorkspaceKey } from '../../strings/en';
+import { en, type WorkspaceKey } from '../../strings/en';
+import { indexTree, type NodeChecks } from '../../selectors/cascade-view';
 import { can, canAcknowledge, canSeeRating, canTakeBudgetStep } from './permissions';
 import type { Store } from './store';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
@@ -121,6 +122,8 @@ export interface Repository {
   home(): HomeView;
   /** The cascade from goals to activities, with progress and funded status (never amounts). */
   cascadeTree(): CascadeTree;
+  /** The Cascade workspace: the tree plus the checks, own records and defaults it needs (Clarity Specification, section 8). */
+  cascadeView(): CascadeViewData;
   /** One cascade-node page, with every panel already restricted to what this viewer may see. Null if not found here. */
   node(kind: NodeKind, id: string): NodeView | null;
   /** Display settings the screens need: currency, year start, perspective and term labels. */
@@ -147,6 +150,23 @@ export const sampleClock = (now: ISODate): (() => ISODateTime) => {
   let tick = 0;
   return () => new Date(Date.parse(`${now}T09:00:00Z`) + 1000 * tick++).toISOString() as ISODateTime;
 };
+
+/** Everything the Cascade workspace shows, already limited to what this viewer may see. */
+export interface CascadeViewData {
+  tree: CascadeTree;
+  /** Checks on each record, by record id, counted as this viewer is shown them. */
+  checks: Record<string, NodeChecks>;
+  /** Budget lines not linked to any activity that this viewer is shown; they have no record in the tree. */
+  unlinkedLines: number;
+  /** Records that are this viewer's own work: owned by their positions, or the source of a commitment in their or their team's contracts. */
+  own: string[];
+  /** Positions that own at least one record, for the owner filter. */
+  owners: { positionId: string; title: string }[];
+  /** Starting view by role (section 8.1). The person can change each one. */
+  defaults: { scope: 'part' | 'whole'; attention: boolean; codes: boolean; signal: 'progress' | 'funding'; stopAboveKpi: boolean };
+  /** One verb-first next step from the checks sent to this viewer (principle C6), or null. */
+  nextStep: { text: string; fix: FixTarget } | null;
+}
 
 export function createMemoryRepository(stores: Store[], orgId: string, membershipId: string, now: ISODate, options: RepositoryOptions = {}): Repository {
   const clock = options.clock ?? sampleClock(now);
@@ -376,6 +396,67 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     describeFinding: describe,
     acknowledge,
     cascadeTree: () => cascadeTree(s, { financialYear, now }),
+    cascadeView: () => {
+      const tree = cascadeTree(s, { financialYear, now });
+      const index = indexTree(tree.goals);
+      const shown = computeFindings(s, { financialYear }).filter(concerned).map(describe);
+      const checks: Record<string, NodeChecks> = {};
+      let unlinkedLines = 0;
+      for (const f of shown) {
+        const target = fixTarget(s, f.finding);
+        if (target?.kind !== 'node') {
+          if (f.finding.ruleId === RULES.budgetLineNoActivity.id) unlinkedLines += 1;
+          continue;
+        }
+        const c = (checks[target.id] ??= { mustFix: 0, toCheck: 0, checked: 0 });
+        if (f.finding.blocksAt.length > 0) c.mustFix += 1;
+        else if (f.ack.state === 'acknowledged') c.checked += 1;
+        else c.toCheck += 1;
+      }
+      const mine = new Set(viewer.positionIds as string[]);
+      const contractIds = new Set(
+        s.contracts
+          .filter((c) => c.financialYear === financialYear)
+          .filter((c) => c.personId === viewer.personId || mine.has(s.positions.find((p) => p.id === c.positionId)?.reportsToPositionId ?? ''))
+          .map((c) => c.id as string),
+      );
+      const own = new Set<string>();
+      for (const x of index.values()) if (x.node.ownerPositionId && mine.has(x.node.ownerPositionId)) own.add(x.node.ref.id);
+      for (const co of s.contractObjectives) if (contractIds.has(co.contractId) && index.has(co.sourceActivityId)) own.add(co.sourceActivityId);
+      const ownerIds = [...new Set([...index.values()].map((x) => x.node.ownerPositionId).filter((p): p is string => !!p))];
+      const r = viewer.roles;
+      const oversight = r.includes('executive') || r.includes('strategy_office') || r.includes('finance') || r.includes('hr');
+      // The next step: what must be fixed first, then what is worth checking, among checks sent to this viewer.
+      const mineToAct = shown
+        .filter((f) => f.routedToMe || (r.includes('finance') && f.finding.ruleId === RULES.budgetLineNoActivity.id))
+        .filter((f) => f.fix && (f.finding.blocksAt.length > 0 || f.ack.state !== 'acknowledged'))
+        .sort((a, b) => Number(b.finding.blocksAt.length > 0) - Number(a.finding.blocksAt.length > 0));
+      const first = mineToAct[0];
+      let nextStep: CascadeViewData['nextStep'] = null;
+      if (first?.fix) {
+        const step = en.fixStep[first.finding.ruleId];
+        const subjectTitle =
+          first.finding.subject.type === 'BudgetLine'
+            ? s.budgetLines.find((l) => l.id === first.finding.subject.id)?.description ?? ''
+            : first.fix.kind === 'node' ? index.get(first.fix.id)?.node.ref.title ?? first.fix.code : '';
+        nextStep = { text: step ? step(subjectTitle) : first.finding.message, fix: first.fix };
+      }
+      return {
+        tree,
+        checks,
+        unlinkedLines,
+        own: [...own],
+        owners: ownerIds.map((positionId) => ({ positionId, title: title(positionId) })).sort((a, b) => a.title.localeCompare(b.title)),
+        defaults: {
+          scope: !oversight && own.size > 0 ? 'part' : 'whole',
+          attention: r.includes('strategy_office') || (!oversight && viewer.isSupervisor),
+          codes: r.includes('executive') || r.includes('strategy_office') || r.includes('finance'),
+          signal: r.includes('finance') && !r.includes('executive') && !r.includes('strategy_office') ? 'funding' : 'progress',
+          stopAboveKpi: !oversight && viewer.isSupervisor,
+        },
+        nextStep,
+      };
+    },
     node: (kind, id) => nodeView(s, kind, id, { financialYear, now }, { canView: (subject) => can(s, viewer, 'view', subject) }),
     settings: () => ({
       baseCurrency: s.organisation.baseCurrency,

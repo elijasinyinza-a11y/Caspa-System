@@ -21,7 +21,7 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
   it('Finance: submit the consolidated budget by 6 November, with the orphan line blocking it', () => {
     const items = repo('finance').home().needsYou;
     expect(items.map((i) => [i.title, i.due, i.detail])).toEqual([
-      ['Submit the consolidated budget', '2026-11-06', '1 hard block stops this step until fixed.'],
+      ['Submit the consolidated budget', '2026-11-06', '1 item must be fixed before this step.'],
     ]);
   });
 
@@ -43,7 +43,7 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
   it('linking the orphan line clears the blocker from the Finance item at once', () => {
     const s = createSeed();
     s.budgetLines.find((l) => l.id === 'bl-5')!.activityId = s.activities[0]!.id;
-    expect(repo('finance', s).home().needsYou[0]!.detail).toBe('No hard block stops this step now.');
+    expect(repo('finance', s).home().needsYou[0]!.detail).toBe('Nothing stops this step now.');
   });
 
   it('findings routed to a position appear in that person’s queue with the blocked step’s due date', () => {

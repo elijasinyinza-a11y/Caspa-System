@@ -215,11 +215,11 @@ function TeamView({ rows, terms }: { rows: TeamMember[]; terms: Terms }) {
 
 function Lineage({ refs, terms }: { refs: NodeRef[]; terms: Terms }) {
   return (
-    <ol className="flex flex-wrap items-center gap-x-2 gap-y-0 text-13" aria-label={en.node.lineage}>
+    <ol className="flex flex-wrap items-center gap-x-2 gap-y-0 text-13" aria-label={en.node.partOf}>
       {refs.map((r, i) => (
         <li key={r.id} className="flex items-center gap-2">
           {i > 0 && <span aria-hidden="true" className="text-muted">›</span>}
-          <a href={nodeHref(r.kind, r.id)} className="inline-flex min-h-11 items-center text-navy underline decoration-border underline-offset-4 hover:decoration-navy">
+          <a href={nodeHref(r.kind, r.id, 'performance')} className="inline-flex min-h-11 items-center text-navy underline decoration-border underline-offset-4 hover:decoration-navy">
             <span className="sr-only">{terms[r.kind].singular} </span>
             {r.code} {r.title}
           </a>

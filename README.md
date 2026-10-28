@@ -2,13 +2,13 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 28 October 2026) first.
+with decisions to 28 October 2026, including the clarity decisions in section 20) first.
 
 ## Run
 
     npm install
     npm run dev       # local development
-    npm run verify    # typecheck, lint, tests, name, colour and sector checks
+    npm run verify    # typecheck, lint, tests, name, colour, sector and plain-words checks
     npm run build     # dist/index.html: one self-contained file for review
 
 ## Continuing in a new chat
@@ -23,7 +23,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 3. Integrity drawer: explain, fix links, acknowledgements — done (v0.3.0)
 4. Role homes, "Needs you" queue, ratings (R1–R10) in the rules engine — done (v0.4.0);
    node-page display changes, BUILD-BRIEF section 18 — approved 28 October 2026 (v0.4.1)
-5. Budget gate: consolidated view, linking, submission, approval and return — done (v0.5.0)
+5. Budget gate: consolidated view, linking, submission, approval and return — done (v0.5.0);
+   clarity retrofit, BUILD-BRIEF section 20 — done (v0.5.1)
 6. Six-point decision map — next
 7. Organisation setup (Organisation Setup Specification v0.2)
 8. Onboarding: the two doors
@@ -57,6 +58,16 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
   node selector; KPI and activity pages list every line.
 - Titles appear once, panels sit at natural height in two columns, child rows are one line, and advisory
   flags fold into a strip. Hard blocks are never folded.
+
+## Clarity retrofit notes (v0.5.1)
+
+- Recorded in BUILD-BRIEF section 20. No contract change. 259 tests; `check-plain-words` added to `npm run verify`.
+- Try on Sample Water Utility: as Supervisor, Cascade opens on "Your part" with "Needs attention only" on; as
+  Finance, the next step is to link "Vehicle hire, Zone C"; open a record from Plan and "What it costs" opens
+  first; tap any 6P level, the 7Cs stage in a header, or "Must fix" / "Worth checking" for an explanation.
+- Employees have no Cascade workspace in the current role mapping, so "Your part" applies to supervisors here;
+  their record pages are reached from their contract on Home, where links open at "Who delivers it".
+- The 4Q column labels now follow Table 2 of the book (for example "Critical success factors").
 
 ## Budget gate notes (v0.5.0)
 

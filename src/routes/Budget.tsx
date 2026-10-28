@@ -25,7 +25,7 @@ const lineAnchor = (id: string) => `budget-line-${id}`;
 
 function CodeLink({ r }: { r: NodeRef }) {
   return (
-    <a href={nodeHref(r.kind, r.id)} title={r.title} className="group inline-flex min-h-11 min-w-0 max-w-full items-baseline gap-2 py-2 text-14 text-navy">
+    <a href={nodeHref(r.kind, r.id, 'plan')} title={r.title} className="group inline-flex min-h-11 min-w-0 max-w-full items-baseline gap-2 py-2 text-14 text-navy">
       <span className="tabular shrink-0 font-semibold">{r.code}</span>
       <span className="min-w-0 truncate underline decoration-border underline-offset-4 group-hover:decoration-navy">{r.title}</span>
     </a>
@@ -170,12 +170,13 @@ function Lines({ lines, caption }: { lines: BudgetLineRow[]; caption: string }) 
             <tr key={l.id} className="border-b border-border align-top last:border-b-0">
               <td className="py-2 pr-3">
                 <div className="text-text">{l.description}</div>
-                <div className="text-12 text-muted">
-                  {l.activity && (
-                    <a href={nodeHref('activity', l.activity.id)} title={l.activity.title} className="tabular font-semibold text-navy underline decoration-border underline-offset-4">{l.activity.code}</a>
-                  )}{' '}
-                  {lineMeta(l)}
-                </div>
+                {/* Every line says what it funds (Clarity Specification, section 10). */}
+                {l.activity && (
+                  <a href={nodeHref('activity', l.activity.id, 'plan')} className="inline-flex min-h-11 items-center text-13 text-navy underline decoration-border underline-offset-4 hover:decoration-navy">
+                    {en.budget.funds(l.activity.code, l.activity.title)}
+                  </a>
+                )}
+                <div className="text-12 text-muted">{lineMeta(l)}</div>
               </td>
               <td className="tabular whitespace-nowrap py-2 text-right text-text">{formatMoney(l.amount)}</td>
             </tr>

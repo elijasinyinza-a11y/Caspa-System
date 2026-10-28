@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from "react";
+import { Explain } from "./Explain";
 import { aiStub, type AiDraft } from "../ai";
 import type { FindingView } from "../data/access/repository";
 import type { AcknowledgeResult } from "../data/access/repository";
@@ -116,9 +117,13 @@ export function FindingCard({
   return (
     <li className={`rounded-lg p-4 ${tone}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`text-12 font-bold ${labelTone}`}>
-          {block ? en.integrity.hardBlock : en.integrity.advisoryFlag}
-        </span>
+        <Explain
+          term={block ? en.integrity.hardBlock : en.integrity.advisoryFlag}
+          label={en.explain.open(block ? en.integrity.hardBlock : en.integrity.advisoryFlag)}
+          triggerClass={`inline-flex min-h-11 items-center text-12 font-bold underline decoration-dotted underline-offset-4 ${labelTone}`}
+        >
+          {block ? en.integrity.explainTerm.blocking : en.integrity.explainTerm.advisory}
+        </Explain>
         {acknowledged && (
           <span className="rounded-full border border-info-border bg-white px-2 py-0.5 text-12 font-semibold text-info-text">
             {en.integrity.acknowledged}

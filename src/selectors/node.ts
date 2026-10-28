@@ -385,6 +385,8 @@ export interface TreeNode {
   progress: { share: number | null; status: RollUp['status'] } | null;
   level: SixPLevel | null; // activities only
   funded: boolean | null; // activities only; status, never amounts
+  /** The owning position, if any (positions, not people, own records: decision A2). */
+  ownerPositionId: string | null;
   children: TreeNode[];
 }
 
@@ -402,23 +404,23 @@ export function cascadeTree(s: Store, ctx: ProgressContext): CascadeTree {
     counts.goal += 1;
     const gp = goalProgress(s, g, ctx);
     return {
-      ref: refGoal(g), progress: { share: gp.progress, status: gp.status }, level: null, funded: null,
+      ref: refGoal(g), progress: { share: gp.progress, status: gp.status }, level: null, funded: null, ownerPositionId: g.ownerPositionId ?? null,
       children: s.objectives.filter((o) => o.goalId === g.id).sort(byCode).map((o): TreeNode => {
         counts.objective += 1;
         const op = objectiveProgress(s, o, ctx);
         return {
-          ref: refObjective(o), progress: { share: op.progress, status: op.status }, level: null, funded: null,
+          ref: refObjective(o), progress: { share: op.progress, status: op.status }, level: null, funded: null, ownerPositionId: o.ownerPositionId ?? null,
           children: s.kpis.filter((k) => k.objectiveId === o.id).sort(byCode).map((k): TreeNode => {
             counts.kpi += 1;
             const kp = kpiProgress(s, k, ctx);
             return {
-              ref: refKpi(k), progress: { share: kp.clamped, status: kp.status }, level: null, funded: null,
+              ref: refKpi(k), progress: { share: kp.clamped, status: kp.status }, level: null, funded: null, ownerPositionId: k.ownerPositionId ?? null,
               children: s.activities
                 .filter((a) => a.kpiId === k.id && a.financialYear === ctx.financialYear && a.status !== 'archived')
                 .sort(byCode)
                 .map((a): TreeNode => {
                   counts.activity += 1;
-                  return { ref: refActivity(a), progress: null, level: a.decisionLevel, funded: funded.has(a.id), children: [] };
+                  return { ref: refActivity(a), progress: null, level: a.decisionLevel, funded: funded.has(a.id), ownerPositionId: a.ownerPositionId ?? null, children: [] };
                 }),
             };
           }),

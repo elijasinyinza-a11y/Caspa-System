@@ -43,6 +43,8 @@ export function ProgressBar({
 }) {
   const shown = trueShare === undefined ? share : trueShare;
   const pct = shown === null ? null : formatPercent(shown);
+  // In a compact row with no reading yet, the status words alone say it; an empty bar adds nothing.
+  if (compact && pct === null) return <StatusBadge status={status} />;
   return (
     <div className="flex min-w-0 items-center gap-3">
       <div

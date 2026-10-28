@@ -44,9 +44,9 @@ export function App() {
   useEffect(() => { scroller.current?.scrollTo({ top: 0 }); }, [route]);
 
   const page =
-    route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}`} kind={route.node} id={route.id} />
+    route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${role}`} />
-    : route.w === 'cascade' ? <CascadeTree key={org.orgId} />
+    : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${role}`} />
     : route.w === 'plan' ? <Budget key={`${org.orgId}:${role}`} />
     : <Workspace w={route.w} />;
 
