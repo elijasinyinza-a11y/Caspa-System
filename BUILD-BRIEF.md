@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 21 record decisions made since; the latest is dated 28 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 22 record decisions made since; the latest is dated 29 October 2026.
 
 ## 1. What you are building
 
@@ -286,4 +286,17 @@ No contract change.
 - **Budget utilisation (file-exchange slice):** CASPA™ tracks how much of the budget has been used without owning phasing. Each budget line gets its spending to date, with an "as of" date and its source: imported from the organisation's financial system (preferred, so the financial system stays the book of record), or entered by Finance where there is no such system. Spent, remaining and share used are computed once per line and roll up through the cascade (activity, KPI, objective, goal), shown under "What it costs" to those who may see budget amounts; others still see only funded or not. Spending is never judged "ahead" or "behind" against the share of the year elapsed, because spending is uneven (capital purchases land in one month); the year elapsed may be shown as context only. Needs a contract revision: one new record for spending to date per budget line.
 - **Spending against results (proposal, needs Elijah's confirmation of the rule and its thresholds):** a "worth checking" rule, never one that must be fixed, comparing the share of an activity's or KPI's budget spent with its KPI progress, so money spent well ahead of results is raised early. It is specified with the file-exchange slice and built only once Elijah confirms the rule and thresholds.
 - **Usability test:** the first round runs before onboarding (slice 8), so it does not hold up slices 6 and 7. Elijah is recruiting participants now. The test kit (script, consent, tasks, observation sheet, scoring) is in the Clarity Specification document.
+
+## 22. Decisions on the decision map and headers (29 October 2026)
+
+Source: the CASPA™ Slice 6 Specification v0.2, decisions D6-1 to D6-5 confirmed as recommended by Elijah. No contract change.
+
+- **D6-1, the fix:** "No corrective activity yet" is fixed from the row by linking an existing activity of the same objective (those at the deficiency's level first, deterministic, no AI suggestion) or adding a new activity under one of the objective's KPIs. A new activity's 6P level starts at the deficiency's level and can be changed, because the solution may sit at another level. Links can be removed. Each change stamps the deficiency and writes an audit entry. Only those with `Deficiency` draft act; adding also needs `Activity` draft.
+- **D6-2, the page:** the map has its own page in Cascade, `#/map/<objectiveId>` (and `/<deficiencyId>` for a row), linked from the objective page, the activity page ("Corrects:"), the cascade tree and the check's fix link. The record page keeps its four sections.
+- **D6-3, headings:** column headings use the organisation's term labels ("Deficiency", "Corrective activity"; the NGO reads "Corrective intervention"). 6P names are never relabelled.
+- **D6-4, sample rows:** the NGO gets two rows on R1.1 and the scale organisation 14 on O2.1; the packaging manufacturer stays empty. Wording awaits Elijah's approval before the build.
+- **D6-5, without access:** people who may not see deficiencies see how many are recorded, never their text.
+- **Layout:** as Clarity Specification section 10: all six levels and scopes kept; levels with a deficiency in full; empty levels in one line ("Nothing recorded at: Principle, Procedure"), each name tappable; an unaddressed row is never folded. Over six rows at a level, "Show all".
+- **D6-6, changing an activity's 6P level:** "Change level" under "How it's done" on the activity page, for those with `Activity` draft (objective owner, activity owner, Strategy office, facilitator). A reason is required and kept in the audit entry's `after` value with the old and new level; the new level must differ, and a published activity is never set back to no level. The panel states what follows, computed: signed commitments that will be asked to review the change, and any "Solved at" note on the decision map. Level changes are listed on the activity page. Moving an activity to another KPI or objective is not part of slice 6.
+- **Workspace headers:** the 7Cs stage shows its name alone ("Coordination", "Conception to Communication"), without the "7Cs:" prefix. It still opens its explanation on tap. Applied in v0.5.3.
 

@@ -26,7 +26,10 @@ export const en = {
     plan: 'Plan',
     performance: 'Performance',
   } satisfies Record<WorkspaceKey, string> & { label: string },
-  /** Where each workspace sits in the 7Cs of leading strategy (Formation Specification v1.0; Build Brief v1.1). */
+  /**
+   * Where each workspace sits in the 7Cs of leading strategy (Formation Specification v1.0; Build Brief v1.1).
+   * Shown as the stage name alone, with no "7Cs:" prefix (Elijah, 29 October 2026); the explanation names the 7Cs.
+   */
   sevenC: {
     home: 'Controlling',
     strategy: 'Conception to Communication',
@@ -34,7 +37,6 @@ export const en = {
     plan: 'Coordination',
     performance: 'Controlling',
   } satisfies Record<WorkspaceKey, string>,
-  sevenCPrefix: '7Cs:',
   /** One plain purpose sentence per workspace (Clarity Specification, section 7). */
   workspaceIntro: {
     home: 'What needs you now, and how your part of the plan is going.',

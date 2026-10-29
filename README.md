@@ -25,8 +25,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    node-page display changes, BUILD-BRIEF section 18 — approved 28 October 2026 (v0.4.1)
 5. Budget gate: consolidated view, linking, submission, approval and return — done (v0.5.0);
    clarity retrofit, BUILD-BRIEF section 20 — done (v0.5.1)
-6. Six-point decision map — next. 4Q band-specific cell names applied (v0.5.2); the slice 6 specification
-   awaits Elijah's confirmation of decisions D6-1 to D6-5
+6. Six-point decision map — next. 4Q band-specific cell names applied (v0.5.2); specification decisions
+   D6-1 to D6-5 confirmed 29 October 2026 (BUILD-BRIEF section 22); sample wording and prototype awaiting approval
 7. Organisation setup (Organisation Setup Specification v0.2)
 8. Onboarding: the two doors
 9. Phone layout review (responsive from slice 1)
@@ -78,13 +78,19 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 - Try on Sample Water Utility: open G1; under "Why this matters" the reason reads "Retraction: Past failures".
 - 272 tests (13 new, in `src/strings/four-q.test.ts`). No contract change.
 
-## Slice 6 specification (awaiting confirmation)
+## Slice 6 specification (confirmed 29 October 2026)
 
-- The CASPA™ Slice 6 Specification (six-point decision map) is a doc in the Project's chats. It needs no
-  contract change. Decisions D6-1 to D6-5 await Elijah: how "No corrective activity yet" is fixed (recommended:
-  link an existing activity or add a new one), the map's own page in Cascade, column headings in the
-  organisation's terms, sample rows for the test organisations, and count-only for people without access.
-- After confirmation: a clickable prototype for approval, then the build.
+- The CASPA™ Slice 6 Specification v0.2 (six-point decision map) is a doc in the Project's chats; decisions in
+  BUILD-BRIEF section 22. No contract change.
+- Next: Elijah approves the sample deficiency wording for the NGO and scale organisation (specification section 18)
+  and the clickable prototype; then the build, as v0.6.0.
+- D6-6 (29 October 2026): an activity's 6P level can be changed from its record page, with a required reason kept
+  in the audit entry; signed commitments from it are asked to review the change.
+
+## Header change (v0.5.3)
+
+- Workspace headers show the 7Cs stage name alone ("Coordination"), without the "7Cs:" prefix. It still opens
+  its explanation on tap. 272 tests.
 
 ## Budget gate notes (v0.5.0)
 
@@ -97,7 +103,7 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
-- Slice 6 decisions D6-1 to D6-5 (see "Slice 6 specification" above).
+- Slice 6: approve the sample deficiency wording and the prototype (see "Slice 6 specification" above).
 - The Clarity Specification document is not in the Project files; adding it helps later sessions.
 
 - Budget holders and Plan, budget phasing and 4Q labels: decided 28 October 2026 (BUILD-BRIEF section 21).

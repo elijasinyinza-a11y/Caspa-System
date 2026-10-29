@@ -8,8 +8,8 @@ function SevenCStage({ stage }: { stage: string }) {
   const named = Object.keys(en.book.sevenCStage).filter((c) => stage.includes(c));
   return (
     <Explain
-      term={<span className="text-muted underline decoration-dotted underline-offset-4">{en.sevenCPrefix} {stage}</span>}
-      label={en.explain.open(`${en.sevenCPrefix} ${stage}`)}
+      term={<span className="text-muted underline decoration-dotted underline-offset-4">{stage}</span>}
+      label={en.explain.open(stage)}
       triggerClass="inline-flex min-h-11 items-center text-13"
     >
       <span className="block font-semibold">{en.explain.sevenCIntro(stage)}</span>
