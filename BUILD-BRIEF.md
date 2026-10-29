@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 19 record decisions made since; the latest is dated 28 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 21 record decisions made since; the latest is dated 28 October 2026.
 
 ## 1. What you are building
 
@@ -256,7 +256,7 @@ No contract change. The store gains an `auditEntries` collection of the contract
 - **Board reference:** when `boardApprovalRequired.budget` is on, approval needs a resolution reference and date, stored as `BoardApproval`. Approved versions are frozen; changes are new versions.
 - **Test organisations:** one orphan line each in the packaging manufacturer and the scale organisation, so the gate runs in all four.
 - **Storage:** gate events, links and returns reset on reload in the review build (in-memory only), as acknowledgements do.
-- **Awaiting Elijah's confirmation:** anyone whose position holds a line in the current budget version gets the Plan workspace (`Viewer.isBudgetHolder`), so the orphan-line finding sent to them always has a fix they can open. Found by the cross-organisation tests; the contract already lets budget holders draft their lines.
+- **Confirmed by Elijah on 28 October 2026 (section 21):** anyone whose position holds a line in the current budget version gets the Plan workspace (`Viewer.isBudgetHolder`), so the orphan-line finding sent to them always has a fix they can open. Found by the cross-organisation tests; the contract already lets budget holders draft their lines.
 
 ## 20. Clarity decisions (28 October 2026)
 
@@ -275,4 +275,15 @@ Source: Clarity Specification v0.1, decisions D1 to D6 made by Elijah on 28 Octo
 - **"Part of" breadcrumb (D6; amends section 18):** replaces the lineage strip. Each step is a link with its full title for screen readers. On a phone it shortens to "…" (a link one level up) and the current record; the full chain is listed in "Why this matters".
 - **Plan:** every budget line says what it funds ("Funds: A1.2.1.3 Replace faulty customer meters"), and records opened from Plan open at What it costs.
 - **Usability test (D5):** five people who have never seen CASPA™, at least two of them people who would use it in a pilot. Pass: each task completed unaided by at least 4 of 5. Time is recorded but is not a pass criterion in the first round. Runs before onboarding (slice 8) and again before the pilot.
+
+## 21. Further decisions (28 October 2026)
+
+No contract change.
+
+- **Budget holders and Plan:** confirmed. Anyone whose position holds a line in the current budget version gets the Plan workspace, limited to their own lines and to linking them to activities, so the check sent to them always has a fix they can open. Submitting and approving stay with Finance and the Executive.
+- **Budget phasing:** the organisation's financial system owns monthly or quarterly phasing. CASPA™ owns each line's annual amount and what it funds. The file-exchange slice exports approved (or locked) lines with their activity codes, and later imports actual spending by line. Simple phasing inside CASPA™ may be added later for organisations without a financial system.
+- **4Q labels:** each band uses the book's own cell names (Table 2). Retraction: Past successes, Critical success factors, Past failures, Critical failure factors. Repositioning: Present successes, Critical success factors, Present failures, Critical failure factors. Projection: Predicted future opportunities, Key strategic actions, Predicted future risks, Risk management strategies. Applied at the start of slice 6, in `en.fourQ`, by band and column: done in v0.5.2 (29 October 2026), with `en.fourQ.cellName` and tests for every cell.
+- **Budget utilisation (file-exchange slice):** CASPA™ tracks how much of the budget has been used without owning phasing. Each budget line gets its spending to date, with an "as of" date and its source: imported from the organisation's financial system (preferred, so the financial system stays the book of record), or entered by Finance where there is no such system. Spent, remaining and share used are computed once per line and roll up through the cascade (activity, KPI, objective, goal), shown under "What it costs" to those who may see budget amounts; others still see only funded or not. Spending is never judged "ahead" or "behind" against the share of the year elapsed, because spending is uneven (capital purchases land in one month); the year elapsed may be shown as context only. Needs a contract revision: one new record for spending to date per budget line.
+- **Spending against results (proposal, needs Elijah's confirmation of the rule and its thresholds):** a "worth checking" rule, never one that must be fixed, comparing the share of an activity's or KPI's budget spent with its KPI progress, so money spent well ahead of results is raised early. It is specified with the file-exchange slice and built only once Elijah confirms the rule and thresholds.
+- **Usability test:** the first round runs before onboarding (slice 8), so it does not hold up slices 6 and 7. Elijah is recruiting participants now. The test kit (script, consent, tasks, observation sheet, scoring) is in the Clarity Specification document.
 

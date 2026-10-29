@@ -213,14 +213,20 @@ export const en = {
   } satisfies Record<SixPLevel, string>,
   sixPLevel: '6P decision level',
   noSixP: 'No 6P decision level yet',
-  /** Table 2 of the book, as named in the data contract. */
+  /**
+   * Table 2 of the book. Each band uses the book's own cell names (BUILD-BRIEF section 21, 28 October 2026), so the
+   * same contract column reads "Past successes" under Retraction and "Present successes" under Repositioning.
+   */
   fourQ: {
     band: { retraction: 'Retraction', repositioning: 'Repositioning', projection: 'Projection' },
     column: {
-      successes: 'Successes', success_factors: 'Critical success factors', failures: 'Failures', failure_factors: 'Critical failure factors',
-      opportunities: 'Predicted future opportunities', key_strategic_actions: 'Key strategic actions', risks: 'Predicted future risks', risk_strategies: 'Risk management strategies',
-    },
-    cell: (c: FourQCell): string => `${en.fourQ.band[c.band]}: ${(en.fourQ.column as Record<string, string>)[c.column]}`,
+      retraction: { successes: 'Past successes', success_factors: 'Critical success factors', failures: 'Past failures', failure_factors: 'Critical failure factors' },
+      repositioning: { successes: 'Present successes', success_factors: 'Critical success factors', failures: 'Present failures', failure_factors: 'Critical failure factors' },
+      projection: { opportunities: 'Predicted future opportunities', key_strategic_actions: 'Key strategic actions', risks: 'Predicted future risks', risk_strategies: 'Risk management strategies' },
+    } satisfies { [B in FourQCell['band']]: Record<Extract<FourQCell, { band: B }>['column'], string> },
+    /** The cell's own name within its band, e.g. "Past failures". */
+    cellName: (c: FourQCell): string => (en.fourQ.column[c.band] as Record<string, string>)[c.column]!,
+    cell: (c: FourQCell): string => `${en.fourQ.band[c.band]}: ${en.fourQ.cellName(c)}`,
   },
   /**
    * Framework explanations shown on tap (Clarity Specification, section 5). Taken from Business Beyond the

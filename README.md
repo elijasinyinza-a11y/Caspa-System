@@ -25,7 +25,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    node-page display changes, BUILD-BRIEF section 18 — approved 28 October 2026 (v0.4.1)
 5. Budget gate: consolidated view, linking, submission, approval and return — done (v0.5.0);
    clarity retrofit, BUILD-BRIEF section 20 — done (v0.5.1)
-6. Six-point decision map — next
+6. Six-point decision map — next. 4Q band-specific cell names applied (v0.5.2); the slice 6 specification
+   awaits Elijah's confirmation of decisions D6-1 to D6-5
 7. Organisation setup (Organisation Setup Specification v0.2)
 8. Onboarding: the two doors
 9. Phone layout review (responsive from slice 1)
@@ -69,6 +70,22 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
   their record pages are reached from their contract on Home, where links open at "Who delivers it".
 - The 4Q column labels now follow Table 2 of the book (for example "Critical success factors").
 
+## 4Q cell names (v0.5.2)
+
+- BUILD-BRIEF section 21. Each 4Q band uses the book's own cell names from Table 2: Retraction reads "Past
+  successes" and "Past failures", Repositioning "Present successes" and "Present failures", Projection keeps its
+  four names. `en.fourQ.column` is keyed by band, then column, and typed against the contract's `FourQCell`.
+- Try on Sample Water Utility: open G1; under "Why this matters" the reason reads "Retraction: Past failures".
+- 272 tests (13 new, in `src/strings/four-q.test.ts`). No contract change.
+
+## Slice 6 specification (awaiting confirmation)
+
+- The CASPA™ Slice 6 Specification (six-point decision map) is a doc in the Project's chats. It needs no
+  contract change. Decisions D6-1 to D6-5 await Elijah: how "No corrective activity yet" is fixed (recommended:
+  link an existing activity or add a new one), the map's own page in Cascade, column headings in the
+  organisation's terms, sample rows for the test organisations, and count-only for people without access.
+- After confirmation: a clickable prototype for approval, then the build.
+
 ## Budget gate notes (v0.5.0)
 
 - Approved 28 October 2026; recorded in BUILD-BRIEF section 19. No contract change.
@@ -80,8 +97,12 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
-- Confirm: budget holders get the Plan workspace (BUILD-BRIEF section 19, last point).
-- Whether CASPA™ or the ERP owns monthly or quarterly budget phasing; this decides the file-exchange slice.
+- Slice 6 decisions D6-1 to D6-5 (see "Slice 6 specification" above).
+- The Clarity Specification document is not in the Project files; adding it helps later sessions.
+
+- Budget holders and Plan, budget phasing and 4Q labels: decided 28 October 2026 (BUILD-BRIEF section 21).
+- Usability test participants: being recruited; first round before slice 8.
+- File-exchange slice: budget utilisation is planned; the spending-against-results rule awaits confirmation of its thresholds (BUILD-BRIEF section 21).
 
 - The achievement rule for lower-is-better contract objectives (scored "not confirmed" for now).
 - Decision-log actions carry no completion field, so every action from a held session stays in

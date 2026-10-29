@@ -224,7 +224,7 @@ function StrategyPanel({ n }: { n: NodeView }) {
                     >
                       <BookLine line={en.book.fourQBand[e.cell.band]} />
                     </Explain>
-                    {': '}{(en.fourQ.column as Record<string, string>)[e.cell.column]}. {e.on === 'goal' ? en.node.reasonOnGoal(goalLabel) : en.node.reasonOnObjective(objectiveLabel)}
+                    {': '}{en.fourQ.cellName(e.cell)}. {e.on === 'goal' ? en.node.reasonOnGoal(goalLabel) : en.node.reasonOnObjective(objectiveLabel)}
                   </p>
                   <p className="mt-1 text-14 text-text">{e.text}</p>
                 </li>
