@@ -33,6 +33,11 @@ export const createNgo = () =>
       { key: 'chw3', name: 'Ruth Atim', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
     ],
     devRoles: { finance: 'fo', supervisor: 'pc', employee: 'chw1', hr: 'fo', strategy: 'cd' },
+    // Slice 6 (wording approved 29 October 2026): two decision-map rows on R1.1, one solved at another level, one with none.
+    deficiencies: [
+      { objective: 'R1.1', level: 'people', description: 'Many women do not return after their first antenatal visit', cause: 'Mothers are not reminded when their next visit is due', effects: 'Fewer women complete four visits', fix: ['IV1.1.1.1'], timeframe: '12 months' },
+      { objective: 'R1.1', level: 'practices', description: 'Visits are written up at the end of the month from memory', cause: 'Workers have no habit of recording at the household', effects: 'Visit counts cannot be relied on', fix: [], timeframe: 'Not set' },
+    ],
     goals: [
       {
         code: 'OC1', title: 'Improve maternal and child health in the programme districts', perspective: null, owner: 'cd',

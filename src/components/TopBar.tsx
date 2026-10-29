@@ -15,8 +15,10 @@ const short = (t: string, n = 24) => (t.length > n ? `${t.slice(0, n - 1).trimEn
 export function TopBar() {
   const { repo, route } = useApp();
   const [codes] = useShowCodes();
-  const n = route.kind === "node" ? repo.node(route.node, route.id) : null;
-  const chain = n ? n.lineage.slice(0, -1) : [];
+  const onMap = route.kind === "map";
+  const n = route.kind === "node" ? repo.node(route.node, route.id) : onMap ? repo.node("objective", route.objectiveId) : null;
+  // On a decision map the objective itself is the last link, and "Decision map" is the current step.
+  const chain = n ? (onMap ? n.lineage : n.lineage.slice(0, -1)) : [];
   const terms = repo.settings().termLabels;
   const label = (r: { code: string; title: string }) => (codes ? r.code : short(r.title));
   return (
@@ -68,9 +70,13 @@ export function TopBar() {
               ))}
               <li className="flex min-w-0 items-center gap-2">
                 <span aria-hidden="true" className="text-muted">›</span>
-                <span aria-current="page" aria-label={`${terms[n.ref.kind].singular}: ${n.ref.title}`} title={n.ref.title} className="truncate font-semibold text-navy">
-                  {label(n.ref)}
-                </span>
+                {onMap ? (
+                  <span aria-current="page" className="truncate font-semibold text-navy">{en.decisionMap.title}</span>
+                ) : (
+                  <span aria-current="page" aria-label={`${terms[n.ref.kind].singular}: ${n.ref.title}`} title={n.ref.title} className="truncate font-semibold text-navy">
+                    {label(n.ref)}
+                  </span>
+                )}
               </li>
             </>
           ) : (

@@ -1,5 +1,8 @@
 /** Pure lookups over the cascade. Links are by ID; objective and goal derive through the KPI. */
-import type { Activity, BudgetLine, BudgetVersion, Goal, Kpi, Objective } from '../contract/caspa-data-contract';
+import { SIX_P_SCOPE, type Activity, type BudgetLine, type BudgetVersion, type Goal, type Kpi, type Objective, type SixPLevel } from '../contract/caspa-data-contract';
+
+/** The six 6P levels in the book's order (Principle to Practices), taken from the contract's own scope table. */
+export const SIX_P_LEVELS = Object.keys(SIX_P_SCOPE) as SixPLevel[];
 import type { Store } from '../data/access/store';
 
 export const kpiOf = (s: Store, a: Activity): Kpi | undefined => s.kpis.find((k) => k.id === a.kpiId);

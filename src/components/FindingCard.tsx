@@ -7,7 +7,7 @@ import { isBlocking } from "../rules/integrity";
 import { formatDate } from "../selectors/format";
 import { useApp } from "./AppContext";
 import type { NodeKind } from "../selectors/node";
-import { hrefFor, nodeHref } from "../routes/router";
+import { fixHref } from "../routes/router";
 import { en } from "../strings/en";
 
 type Explain =
@@ -30,6 +30,7 @@ export function FindingCard({
   onNavigate,
   short,
   fixAction,
+  noFix,
 }: {
   view: FindingView;
   /** The node page this card sits on, so it does not link to itself. */
@@ -39,6 +40,8 @@ export function FindingCard({
   short?: string;
   /** Used where the fix sits on the same screen (e.g. an orphan line on the budget page): replaces the fix link. */
   fixAction?: { label: string; onClick: () => void };
+  /** The card sits on the screen where its fix is made, but this viewer may not make it: no fix link. */
+  noFix?: boolean;
 }) {
   const { repo } = useApp();
   const { finding, routedTo, routedToMe, fix, ack } = view;
@@ -96,6 +99,7 @@ export function FindingCard({
   };
 
   const showFix =
+    !noFix &&
     fix &&
     !(
       here &&
@@ -103,15 +107,13 @@ export function FindingCard({
       fix.node === here.node &&
       fix.id === here.id
     );
-  const fixHref = fix
-    ? fix.kind === "node"
-      ? nodeHref(fix.node, fix.id)
-      : hrefFor({ kind: "workspace", w: fix.w })
-    : "";
+  const fixLink = fix ? fixHref(fix) : "";
   const fixLabel = fix
     ? fix.kind === "node"
       ? en.integrity.fixNode(fix.code)
-      : en.integrity.fixWorkspace(en.nav[fix.w])
+      : fix.kind === "map"
+        ? en.integrity.fixMap(fix.code)
+        : en.integrity.fixWorkspace(en.nav[fix.w])
     : "";
 
   return (
@@ -167,7 +169,7 @@ export function FindingCard({
           </button>
         ) : (
           showFix && (
-            <a href={fixHref} onClick={onNavigate} className={button}>
+            <a href={fixLink} onClick={onNavigate} className={button}>
               {fixLabel}
             </a>
           )

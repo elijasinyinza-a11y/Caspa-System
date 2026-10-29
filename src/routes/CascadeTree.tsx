@@ -9,7 +9,7 @@ import {
 } from '../selectors/cascade-view';
 import type { NodeKind, TreeNode } from '../selectors/node';
 import { lc, en, type Terms } from '../strings/en';
-import { hrefFor, nodeHref } from './router';
+import { fixHref, mapHref, nodeHref } from './router';
 
 const chevron = (
   <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
@@ -27,6 +27,8 @@ interface RowCtx {
   funding: boolean;
   terms: Terms;
   showEverything: () => void;
+  /** Objectives with a decision map this viewer may see, and how many rows it holds. */
+  maps: Record<string, number>;
 }
 
 const activitiesUnder = (n: TreeNode): TreeNode[] => (n.ref.kind === 'activity' ? [n] : n.children.flatMap(activitiesUnder));
@@ -100,6 +102,11 @@ function Row({ n, depth, c }: { n: TreeNode; depth: number; c: RowCtx }) {
         </div>
         <div className="flex flex-wrap items-center gap-2 pb-1 pl-12 md:justify-end md:pb-0 md:pl-0">
           <Signal n={n} c={c} />
+          {n.ref.kind === 'objective' && c.maps[n.ref.id] ? (
+            <a href={mapHref(n.ref.id)} aria-label={en.decisionMap.treeLinkFor(n.ref.title)} className="inline-flex min-h-11 items-center text-13 font-semibold text-navy underline underline-offset-4">
+              {en.decisionMap.treeLink}
+            </a>
+          ) : null}
           {own.mustFix > 0 && (
             <span className="rounded-full border border-block-border bg-block-bg px-2 py-0.5 text-12 font-semibold text-block-text">{en.cascadeTree.mustFix}</span>
           )}
@@ -152,7 +159,7 @@ export function CascadeTree() {
     visible = visible ? new Set([...visible].filter((id) => byOwner.has(id))) : byOwner;
   }
   const c: RowCtx = {
-    open, toggle, visible, attention, checks: v.checks, codes, funding: v.defaults.signal === 'funding', terms,
+    open, toggle, visible, attention, checks: v.checks, codes, funding: v.defaults.signal === 'funding', terms, maps: v.maps,
     showEverything: () => setAttention(false),
   };
   const hits = findRecords(index, query, codes);
@@ -171,7 +178,7 @@ export function CascadeTree() {
           <>
             <span className="text-14 font-semibold text-text">{v.nextStep.text}</span>
             <a
-              href={fix.kind === 'node' ? nodeHref(fix.node, fix.id) : hrefFor({ kind: 'workspace', w: fix.w })}
+              href={fixHref(fix)}
               className="inline-flex min-h-11 items-center rounded-lg bg-navy px-4 text-14 font-semibold text-white"
             >
               {en.needsYou.open}

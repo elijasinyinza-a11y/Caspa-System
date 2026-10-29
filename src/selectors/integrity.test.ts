@@ -40,7 +40,7 @@ describe("fix links", () => {
     });
     expect(
       fixes["STRUCT-DEFICIENCY-UNADDRESSED:Deficiency:def-5"],
-    ).toMatchObject({ kind: "node", node: "objective", code: "O1.2" });
+    ).toEqual({ kind: "map", objectiveId: "o1.2", deficiencyId: "def-5", code: "O1.2" }); // D6-2: the map row
   });
 
   it("sends a changed contract objective to the activity that changed, and a 6P gap to the activity", () => {

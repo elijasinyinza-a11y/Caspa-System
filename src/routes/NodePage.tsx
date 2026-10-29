@@ -11,6 +11,7 @@ import { formatDate, formatMoney, formatNumber, formatPercent } from '../selecto
 import type { NodeKind, NodeRef, NodeView, PlanGroup, PlanLine } from '../selectors/node';
 import { en, type WorkspaceKey } from '../strings/en';
 import { nodeHref } from './router';
+import { ActivityLevel, MapSummary } from './DecisionMap';
 
 type Panel = 'strategy' | 'cascade' | 'plan' | 'performance';
 
@@ -286,6 +287,7 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
               />
             )}
           </div>
+          {c.kind === 'objective' && <MapSummary objectiveId={n.ref.id} />}
         </>
       ) : c.kind === 'kpi' ? (
         <>
@@ -335,6 +337,7 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
               <p className="text-16 font-semibold text-navy">{en.noSixP}</p>
             )}
           </div>
+          <ActivityLevel key={`${n.ref.id}:${c.level ?? ''}`} activityId={n.ref.id} title={n.ref.title} level={c.level} />
           <dl className="grid gap-3 sm:grid-cols-2">
             <Field label={en.node.evidence}>{c.evidence || '—'}</Field>
             <Field label={en.node.frequency}>{en.frequency[c.frequency]}</Field>

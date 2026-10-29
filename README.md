@@ -25,8 +25,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    node-page display changes, BUILD-BRIEF section 18 — approved 28 October 2026 (v0.4.1)
 5. Budget gate: consolidated view, linking, submission, approval and return — done (v0.5.0);
    clarity retrofit, BUILD-BRIEF section 20 — done (v0.5.1)
-6. Six-point decision map — next. 4Q band-specific cell names applied (v0.5.2); specification decisions
-   D6-1 to D6-5 confirmed 29 October 2026 (BUILD-BRIEF section 22); sample wording and prototype awaiting approval
+6. Six-point decision map, with changing an activity's 6P level — done (v0.6.0). 4Q band-specific cell names
+   (v0.5.2); header change (v0.5.3)
 7. Organisation setup (Organisation Setup Specification v0.2)
 8. Onboarding: the two doors
 9. Phone layout review (responsive from slice 1)
@@ -78,12 +78,29 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 - Try on Sample Water Utility: open G1; under "Why this matters" the reason reads "Retraction: Past failures".
 - 272 tests (13 new, in `src/strings/four-q.test.ts`). No contract change.
 
+## Decision map notes (v0.6.0)
+
+- BUILD-BRIEF section 22; CASPA™ Slice 6 Specification v0.2 (a doc in the Project's chats). No contract change.
+  370 tests (98 new): `src/rules/cascade-edit.test.ts`, `src/selectors/decision-map.test.ts`,
+  `src/data/access/decision-map.test.ts`.
+- Try on Sample Water Utility as Strategy office: open Cascade, open G1, and choose "Decision map" beside O1.2. On the
+  People row, "Add corrective activity" links an existing activity or adds a new one (A1.2.1.5); the check clears.
+  "Remove link" brings it back.
+- Open "Replace faulty customer meters" and choose "Change level" under "How it's done": pick People, give a reason.
+  The Meter Reader, Zone B commitment is sent for review, and the map shows "Solved at People".
+- The Executive sees the map and can mark the check as checked, but cannot change corrective work. Finance, HR,
+  supervisors and employees see only how many deficiencies are recorded. In the scale organisation the Supervisor
+  owns O2.1, so the owner's view can be tried there.
+- Code: `src/rules/cascade-edit.ts` (next activity code, link options, checks), `src/selectors/decision-map.ts`
+  (every figure on the map), repository writes with audit entries, `src/routes/DecisionMap.tsx`, route `#/map/<id>`.
+- Fixed: `createSeed()` now returns its own copy of every record. Before, all seed stores shared the activity
+  records, which only mattered once activities could be changed.
+
 ## Slice 6 specification (confirmed 29 October 2026)
 
 - The CASPA™ Slice 6 Specification v0.2 (six-point decision map) is a doc in the Project's chats; decisions in
   BUILD-BRIEF section 22. No contract change.
-- Next: Elijah approves the sample deficiency wording for the NGO and scale organisation (specification section 18)
-  and the clickable prototype; then the build, as v0.6.0.
+- Sample wording and the prototype approved 29 October 2026; built as v0.6.0.
 - D6-6 (29 October 2026): an activity's 6P level can be changed from its record page, with a required reason kept
   in the audit entry; signed commitments from it are asked to review the change.
 
@@ -103,7 +120,6 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
-- Slice 6: approve the sample deficiency wording and the prototype (see "Slice 6 specification" above).
 - The Clarity Specification document is not in the Project files; adding it helps later sessions.
 
 - Budget holders and Plan, budget phasing and 4Q labels: decided 28 October 2026 (BUILD-BRIEF section 21).

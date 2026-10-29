@@ -134,6 +134,11 @@ const signed = (a: Activity, title: string, value: number, unit: string, weightP
 });
 
 export function createSeed(): Store {
+  // A deep copy, so every store owns its records: slice 6 writes to activities, which are built once at module level.
+  return structuredClone(seedStore());
+}
+
+function seedStore(): Store {
   return {
     organisation: {
       id: ORG, name: 'Sample Water Utility', countryCode: 'ZM', timeZone: 'Africa/Lusaka', baseCurrency: 'ZMW', financialYearStartMonth: 1,

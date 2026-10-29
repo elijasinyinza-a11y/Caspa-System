@@ -10,6 +10,7 @@ import { SAMPLE_NOW } from '../data/sample/seed';
 import { en } from '../strings/en';
 import { Budget } from './Budget';
 import { CascadeTree } from './CascadeTree';
+import { DecisionMapPage } from './DecisionMap';
 import { Home } from './Home';
 import { NodePage } from './NodePage';
 import { useRoute } from './router';
@@ -45,6 +46,7 @@ export function App() {
 
   const page =
     route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
+    : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${role}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${role}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${role}`} />
     : route.w === 'plan' ? <Budget key={`${org.orgId}:${role}`} />

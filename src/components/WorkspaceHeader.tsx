@@ -4,7 +4,7 @@ import { Explain, usePref } from "./Explain";
 import { identity } from "./identity";
 
 /** The 7Cs stage a workspace sits in, explained on tap with the confirmed lines from the book. */
-function SevenCStage({ stage }: { stage: string }) {
+export function SevenCStage({ stage }: { stage: string }) {
   const named = Object.keys(en.book.sevenCStage).filter((c) => stage.includes(c));
   return (
     <Explain

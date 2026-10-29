@@ -10,7 +10,9 @@ import type { NodeKind } from "./node";
 export type FixTarget =
   | { kind: "node"; node: NodeKind; id: string; code: string }
   /** The record has no page of its own yet; the fix happens in a workspace (e.g. linking a budget line in Plan). */
-  | { kind: "workspace"; w: Exclude<WorkspaceKey, "home"> };
+  | { kind: "workspace"; w: Exclude<WorkspaceKey, "home"> }
+  /** A row on an objective's decision map (BUILD-BRIEF section 22, D6-2). `code` is the objective's. */
+  | { kind: "map"; objectiveId: string; deficiencyId: string; code: string };
 
 const node = (
   node: NodeKind,
@@ -53,12 +55,10 @@ export function fixTarget(s: Store, f: Finding): FixTarget | null {
         : { kind: "workspace", w: "plan" };
     }
     case "Deficiency": {
-      // Fixed by adding a corrective activity under the objective that holds the deficiency.
+      // Fixed on the objective's decision map, at the deficiency's own row (D6-2).
       const df = s.deficiencies.find((x) => x.id === id);
-      return node(
-        "objective",
-        s.objectives.find((o) => o.id === df?.objectiveId),
-      );
+      const o = s.objectives.find((x) => x.id === df?.objectiveId);
+      return df && o ? { kind: "map", objectiveId: o.id, deficiencyId: df.id, code: o.code } : null;
     }
     case "ContractObjective": {
       // Reviewed against the activity whose change raised it.

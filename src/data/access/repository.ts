@@ -5,6 +5,9 @@
 import type { Acknowledgement, AuditEntry, BoardApproval, Finding, GateCode, GateEvent, ISODate, ISODateTime } from '../../contract/caspa-data-contract';
 import { approveError, checkGate, gateEventsFor, gateRecord, returnError, submitError, submitterOf, type BudgetStepError } from '../../rules/gate';
 import { currentBudgetVersion } from '../../rules/structure';
+import type { Activity, Deficiency, SixPLevel } from '../../contract/caspa-data-contract';
+import { correctiveOptions, kpisForDeficiency, levelChangeError, newActivityError, nextActivityCode, type LevelChangeError, type NewActivityDraft, type NewActivityError } from '../../rules/cascade-edit';
+import { correctedBy, decisionMap, type DecisionMapView } from '../../selectors/decision-map';
 import { budgetView, linkOptions, type BudgetView, type LinkOption } from '../../selectors/budget';
 import { gateDueDate } from '../../selectors/needs-you';
 import { acknowledgementState } from '../../rules/acknowledgement';
@@ -17,7 +20,7 @@ import {
 } from '../../selectors/home';
 import { needsYou, type NeedsYouItem } from '../../selectors/needs-you';
 import { expectedToDate } from '../../rules/kpi-progress';
-import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeView } from '../../selectors/node';
+import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeRef, type NodeView } from '../../selectors/node';
 import { workspacesFor } from '../../selectors/nav';
 import { en, type WorkspaceKey } from '../../strings/en';
 import { indexTree, type NodeChecks } from '../../selectors/cascade-view';
@@ -78,6 +81,39 @@ export interface BudgetPage {
   returned: { by: string; on: ISODate; reason: string } | null;
   history: BudgetHistoryItem[];
 }
+
+/** An objective's decision map (BUILD-BRIEF section 22), already restricted to this viewer. */
+export interface MapPage {
+  map: DecisionMapView;
+  /** Whether this viewer may link or remove corrective activities (Deficiency draft) and add new ones (Activity draft too). */
+  can: { link: boolean; add: boolean };
+  /** The "No corrective activity yet" check for each unaddressed row this viewer is shown, by deficiency id. */
+  checks: Record<string, FindingView>;
+}
+
+/** What the "Add corrective activity" panel offers for one deficiency. */
+export interface CorrectiveForm {
+  deficiency: { id: string; description: string; level: SixPLevel; objectiveId: string };
+  /** Existing activities of the same objective, those at the deficiency's level first. */
+  options: { ref: NodeRef; level: SixPLevel | null; owner: string | null }[];
+  /** Null when this viewer may link but not add. */
+  add: { kpis: { ref: NodeRef; nextCode: string }[]; positions: { id: string; title: string }[] } | null;
+}
+
+/** "How it's done" additions on an activity page (D6-6, and "Corrects:" from D6-2). */
+export interface ActivityLevelView {
+  canChange: boolean;
+  /** Signed commitments drawn from this activity: each is asked to review a change. */
+  commitments: number;
+  /** Deficiencies it corrects, or null when this viewer may not see deficiencies. */
+  corrects: { id: string; objectiveId: string; description: string; level: SixPLevel }[] | null;
+  /** Level changes, newest first. */
+  history: { from: SixPLevel | null; to: SixPLevel; reason: string; by: string; on: ISODate }[];
+}
+
+export type CorrectiveError = 'not_found' | 'not_allowed' | 'already_linked' | 'not_linked' | 'activity_not_found';
+export type AddActivityError = 'not_found' | 'not_allowed' | NewActivityError;
+export type ChangeLevelError = 'not_found' | 'not_allowed' | LevelChangeError;
 
 export type LinkError = 'not_found' | 'not_allowed' | 'not_draft' | 'already_linked' | 'activity_not_found';
 export type BudgetActionError = BudgetStepError | 'no_version' | 'not_allowed';
@@ -140,6 +176,19 @@ export interface Repository {
   approveBudget(board: BoardApproval | null, note: string): GateResult;
   /** Send a submitted version back to draft, with a reason. */
   returnBudget(reason: string): { ok: true } | { ok: false; error: BudgetActionError };
+  /** An objective's decision map. Null if the objective is not found here. */
+  decisionMap(objectiveId: string): MapPage | null;
+  /** What may be linked or added for one deficiency. Null if this viewer may not change its corrective work. */
+  correctiveForm(deficiencyId: string): CorrectiveForm | null;
+  linkCorrective(deficiencyId: string, activityId: string): { ok: true } | { ok: false; error: CorrectiveError };
+  /** Remove a corrective link; the activity itself stays. */
+  unlinkCorrective(deficiencyId: string, activityId: string): { ok: true } | { ok: false; error: CorrectiveError };
+  /** Add a new activity under one of the objective's KPIs and link it as corrective work (D6-1). */
+  addCorrectiveActivity(deficiencyId: string, draft: NewActivityDraft): { ok: true; activityId: string; code: string } | { ok: false; error: AddActivityError };
+  /** Level, its history and "Corrects:" for an activity page. Null if not found. */
+  activityLevel(activityId: string): ActivityLevelView | null;
+  /** Change an activity's 6P level, with a reason kept in the audit entry (D6-6). */
+  changeActivityLevel(activityId: string, to: SixPLevel, reason: string): { ok: true } | { ok: false; error: ChangeLevelError };
 }
 
 const OVERSIGHT_ROLES = ['executive', 'strategy_office'] as const;
@@ -166,6 +215,8 @@ export interface CascadeViewData {
   defaults: { scope: 'part' | 'whole'; attention: boolean; codes: boolean; signal: 'progress' | 'funding'; stopAboveKpi: boolean };
   /** One verb-first next step from the checks sent to this viewer (principle C6), or null. */
   nextStep: { text: string; fix: FixTarget } | null;
+  /** Deficiencies recorded per objective, only for objectives whose decision map this viewer may see (D6-2). */
+  maps: Record<string, number>;
 }
 
 export function createMemoryRepository(stores: Store[], orgId: string, membershipId: string, now: ISODate, options: RepositoryOptions = {}): Repository {
@@ -185,7 +236,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
 
   const describe = (finding: Finding): FindingView => {
     const target = fixTarget(s, finding);
-    const reachable = target && (target.kind === 'node' || workspacesFor(viewer).includes(target.w));
+    const reachable = target && (target.kind !== 'workspace' || workspacesFor(viewer).includes(target.w));
     return {
       finding,
       routedTo: finding.routeToPositionIds.map(title),
@@ -380,6 +431,146 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     return { ok: true };
   };
 
+  /* ───────── Decision map (slice 6) ───────── */
+
+  const stampNow = () => ({ at: clock(), byMembershipId: viewer.membershipId });
+  const refOf = (a: Activity): NodeRef => ({ kind: 'activity', id: a.id, code: a.code, title: a.title });
+  const deficiencyFor = (id: string): Deficiency | null => {
+    const df = s.deficiencies.find((d) => d.id === id);
+    return df && can(s, viewer, 'view', { type: 'Deficiency', id: df.id }) ? df : null;
+  };
+  const mayLinkCorrective = (df: Deficiency) => can(s, viewer, 'draft', { type: 'Deficiency', id: df.id });
+  // A new activity has no record yet, so Activity draft is checked against its objective: the objective's owner,
+  // the Strategy office and a facilitator hold it there (the "owner" principal resolves to the same objective owner).
+  const mayAddUnder = (df: Deficiency) => mayLinkCorrective(df) && can(s, viewer, 'draft', { type: 'Activity', id: df.objectiveId });
+  const setCorrective = (df: Deficiency, next: Deficiency['correctiveActivityIds']) => {
+    const before = { correctiveActivityIds: [...df.correctiveActivityIds] };
+    df.correctiveActivityIds = next;
+    df.updated = stampNow();
+    audit('update', { type: 'Deficiency', id: df.id }, before, { correctiveActivityIds: [...next] });
+  };
+
+  const mapPage = (objectiveId: string): MapPage | null => {
+    const o = s.objectives.find((x) => x.id === objectiveId);
+    if (!o) return null;
+    // Deficiency view is checked against the objective, so an objective with no rows answers the same way: the
+    // objective_owner principal resolves to the objective's owner; the Executive, Strategy office and facilitator by role.
+    const canView = can(s, viewer, 'view', { type: 'Deficiency', id: o.id });
+    const map = decisionMap(s, o.id, { canView });
+    if (!map) return null;
+    const probe = s.deficiencies.find((d) => d.objectiveId === o.id);
+    const checks: Record<string, FindingView> = {};
+    if (map.visible) {
+      for (const f of computeFindings(s, { financialYear }).filter(concerned)) {
+        if (f.ruleId === RULES.deficiencyUnaddressed.id && s.deficiencies.some((d) => d.id === f.subject.id && d.objectiveId === o.id)) checks[f.subject.id] = describe(f);
+      }
+    }
+    return {
+      map,
+      can: { link: !!probe && map.visible && mayLinkCorrective(probe), add: !!probe && map.visible && mayAddUnder(probe) },
+      checks,
+    };
+  };
+  const correctiveForm = (deficiencyId: string): CorrectiveForm | null => {
+    const df = deficiencyFor(deficiencyId);
+    if (!df || !mayLinkCorrective(df)) return null;
+    const ownerTitle = (a: Activity) => (a.ownerPositionId ? title(a.ownerPositionId) : null);
+    return {
+      deficiency: { id: df.id, description: df.description, level: df.level, objectiveId: df.objectiveId },
+      options: correctiveOptions(s, df, financialYear).map((a) => ({ ref: refOf(a), level: a.decisionLevel, owner: ownerTitle(a) })),
+      add: mayAddUnder(df)
+        ? {
+            kpis: kpisForDeficiency(s, df).map((k) => ({ ref: { kind: 'kpi', id: k.id, code: k.code, title: k.name }, nextCode: nextActivityCode(s, k.id) })),
+            positions: s.positions.map((p) => ({ id: p.id, title: p.title })).sort((a, b) => a.title.localeCompare(b.title)),
+          }
+        : null,
+    };
+  };
+
+  const linkCorrective = (deficiencyId: string, activityId: string): { ok: true } | { ok: false; error: CorrectiveError } => {
+    const df = deficiencyFor(deficiencyId);
+    if (!df) return { ok: false, error: 'not_found' };
+    if (!mayLinkCorrective(df)) return { ok: false, error: 'not_allowed' };
+    if (df.correctiveActivityIds.includes(activityId as Activity['id'])) return { ok: false, error: 'already_linked' };
+    if (!correctiveOptions(s, df, financialYear).some((a) => a.id === activityId)) return { ok: false, error: 'activity_not_found' };
+    setCorrective(df, [...df.correctiveActivityIds, activityId as Activity['id']]);
+    options.onChange?.();
+    return { ok: true };
+  };
+
+  const unlinkCorrective = (deficiencyId: string, activityId: string): { ok: true } | { ok: false; error: CorrectiveError } => {
+    const df = deficiencyFor(deficiencyId);
+    if (!df) return { ok: false, error: 'not_found' };
+    if (!mayLinkCorrective(df)) return { ok: false, error: 'not_allowed' };
+    if (!df.correctiveActivityIds.includes(activityId as Activity['id'])) return { ok: false, error: 'not_linked' };
+    setCorrective(df, df.correctiveActivityIds.filter((x) => x !== activityId));
+    options.onChange?.();
+    return { ok: true };
+  };
+
+  const addCorrectiveActivity = (deficiencyId: string, d: NewActivityDraft): { ok: true; activityId: string; code: string } | { ok: false; error: AddActivityError } => {
+    const df = deficiencyFor(deficiencyId);
+    if (!df) return { ok: false, error: 'not_found' };
+    if (!mayAddUnder(df)) return { ok: false, error: 'not_allowed' };
+    const err = newActivityError(s, df, d);
+    if (err) return { ok: false, error: err };
+    const stamp = stampNow();
+    const code = nextActivityCode(s, d.kpiId);
+    const a: Activity = {
+      orgId: s.organisation.id, created: stamp, updated: stamp,
+      id: `act-new-${s.auditEntries.length + 1}` as Activity['id'], kpiId: d.kpiId as Activity['kpiId'], financialYear,
+      code, title: d.title.trim(), decisionLevel: d.level, ownerPositionId: d.ownerPositionId as Activity['ownerPositionId'],
+      reportingFrequency: d.frequency, evidence: d.evidence.trim(),
+      quantityTarget: d.quantity ? { value: d.quantity.value, unit: d.quantity.unit.trim() } : null,
+      dependsOn: [], status: 'planned', draft: { state: 'human', provenance: { kind: 'manual' }, decided: null },
+    };
+    s.activities.push(a);
+    audit('create', { type: 'Activity', id: a.id }, null, { code, kpiId: a.kpiId, decisionLevel: a.decisionLevel, forDeficiencyId: df.id });
+    setCorrective(df, [...df.correctiveActivityIds, a.id]);
+    options.onChange?.();
+    return { ok: true, activityId: a.id, code };
+  };
+
+  const activityLevel = (activityId: string): ActivityLevelView | null => {
+    const a = s.activities.find((x) => x.id === activityId);
+    if (!a) return null;
+    const corrected = correctedBy(s, a.id);
+    const seesAll = corrected.every((d) => can(s, viewer, 'view', { type: 'Deficiency', id: d.id }));
+    const signedIds = new Set(s.contracts.filter((c) => c.status === 'signed' || c.signedByEmployee).map((c) => c.id as string));
+    return {
+      canChange: a.status !== 'archived' && can(s, viewer, 'draft', { type: 'Activity', id: a.id }),
+      commitments: s.contractObjectives.filter((co) => co.sourceActivityId === a.id && co.snapshot && signedIds.has(co.contractId)).length,
+      corrects: corrected.length === 0 || seesAll ? corrected.map((d) => ({ id: d.id, objectiveId: d.objectiveId, description: d.description, level: d.level })) : null,
+      history: s.auditEntries
+        .filter((e) => e.entity.type === 'Activity' && e.entity.id === a.id && e.action === 'update' && (e.after as { decisionLevel?: unknown } | null)?.decisionLevel)
+        .map((e) => {
+          const after = e.after as { decisionLevel: SixPLevel; reason: string };
+          return { from: (e.before as { decisionLevel: SixPLevel | null }).decisionLevel, to: after.decisionLevel, reason: after.reason, by: title(viewerPosition(e.actorMembershipId)), on: on(e.at) };
+        })
+        .reverse(),
+    };
+  };
+  // Level changes name the position that made them, as the record anatomy names owners by position.
+  const viewerPosition = (membershipId: string): string => {
+    const m = s.memberships.find((x) => x.id === membershipId);
+    const pa = s.assignments.find((x) => x.personId === m?.personId);
+    return pa?.positionId ?? personOf(membershipId);
+  };
+
+  const changeActivityLevel = (activityId: string, to: SixPLevel, reason: string): { ok: true } | { ok: false; error: ChangeLevelError } => {
+    const a = s.activities.find((x) => x.id === activityId);
+    if (!a) return { ok: false, error: 'not_found' };
+    if (!can(s, viewer, 'draft', { type: 'Activity', id: a.id })) return { ok: false, error: 'not_allowed' };
+    const err = levelChangeError(a, to, reason);
+    if (err) return { ok: false, error: err };
+    const from = a.decisionLevel;
+    a.decisionLevel = to;
+    a.updated = stampNow();
+    audit('update', { type: 'Activity', id: a.id }, { decisionLevel: from }, { decisionLevel: to, reason: reason.trim() });
+    options.onChange?.();
+    return { ok: true };
+  };
+
   return {
     viewer,
     financialYear,
@@ -404,11 +595,13 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
       let unlinkedLines = 0;
       for (const f of shown) {
         const target = fixTarget(s, f.finding);
-        if (target?.kind !== 'node') {
+        // A decision-map row's check sits on its objective's row in the tree.
+        const onId = target?.kind === 'node' ? target.id : target?.kind === 'map' ? target.objectiveId : null;
+        if (!onId) {
           if (f.finding.ruleId === RULES.budgetLineNoActivity.id) unlinkedLines += 1;
           continue;
         }
-        const c = (checks[target.id] ??= { mustFix: 0, toCheck: 0, checked: 0 });
+        const c = (checks[onId] ??= { mustFix: 0, toCheck: 0, checked: 0 });
         if (f.finding.blocksAt.length > 0) c.mustFix += 1;
         else if (f.ack.state === 'acknowledged') c.checked += 1;
         else c.toCheck += 1;
@@ -438,7 +631,9 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
         const subjectTitle =
           first.finding.subject.type === 'BudgetLine'
             ? s.budgetLines.find((l) => l.id === first.finding.subject.id)?.description ?? ''
-            : first.fix.kind === 'node' ? index.get(first.fix.id)?.node.ref.title ?? first.fix.code : '';
+            : first.finding.subject.type === 'Deficiency'
+              ? s.deficiencies.find((d) => d.id === first.finding.subject.id)?.description ?? ''
+              : first.fix.kind === 'node' ? index.get(first.fix.id)?.node.ref.title ?? first.fix.code : '';
         nextStep = { text: step ? step(subjectTitle) : first.finding.message, fix: first.fix };
       }
       return {
@@ -455,6 +650,12 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
           stopAboveKpi: !oversight && viewer.isSupervisor,
         },
         nextStep,
+        maps: Object.fromEntries(
+          s.objectives
+            .filter((o) => can(s, viewer, 'view', { type: 'Deficiency', id: o.id }))
+            .map((o) => [o.id, s.deficiencies.filter((d) => d.objectiveId === o.id).length] as const)
+            .filter(([, n]) => n > 0),
+        ),
       };
     },
     node: (kind, id) => nodeView(s, kind, id, { financialYear, now }, { canView: (subject) => can(s, viewer, 'view', subject) }),
@@ -466,6 +667,13 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     budget: budgetPage,
     budgetLinkOptions: (lineId) => (mayLink(lineId) ? [] : linkOptions(s, financialYear, lineId)),
     linkBudgetLine,
+    decisionMap: mapPage,
+    correctiveForm,
+    linkCorrective,
+    unlinkCorrective,
+    addCorrectiveActivity,
+    activityLevel,
+    changeActivityLevel,
     submitBudget,
     approveBudget,
     returnBudget,

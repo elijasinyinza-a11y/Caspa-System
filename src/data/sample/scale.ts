@@ -4,7 +4,7 @@
  * the cascade tree and selector speed. RWF has no minor units.
  */
 import type { SixPLevel } from '../../contract/caspa-data-contract';
-import { buildOrg, DEFAULT_PERSPECTIVES, type GoalSpec, type PersonSpec } from './build';
+import { buildOrg, DEFAULT_PERSPECTIVES, type DeficiencySpec, type GoalSpec, type PersonSpec } from './build';
 
 const LEVELS: SixPLevel[] = ['principle', 'process', 'people', 'policy', 'procedures', 'practices'];
 const PERSPECTIVES = ['financial', 'customer', 'internal', 'innovation_learning'] as const;
@@ -56,6 +56,20 @@ const goals: GoalSpec[] = directorates.map((g) => ({
   })),
 }));
 
+const DEF_LEVELS: [SixPLevel, number][] = [['principle', 1], ['process', 8], ['people', 2], ['policy', 1], ['procedures', 1], ['practices', 1]];
+/** O2.1's activities at each level: A2.1.k.a sits at LEVELS[a - 1]. */
+const fixAt = (level: SixPLevel, n: number) => `A2.1.${(n % 3) + 1}.${LEVELS.indexOf(level) + 1}`;
+const SCALE_DEFICIENCIES: DeficiencySpec[] = DEF_LEVELS.flatMap(([level, count]) => Array.from({ length: count }, (_, i) => ({ level, i })))
+  .map(({ level, i }, n) => ({
+    objective: 'O2.1',
+    level,
+    description: `Deficiency 2.1.${n + 1}: outputs fall short of standard in programme area 1 ${LONG}`,
+    cause: `Probable cause recorded for deficiency 2.1.${n + 1} ${LONG}`,
+    effects: `Effects recorded for deficiency 2.1.${n + 1}`,
+    fix: (level === 'process' && i >= 6) || level === 'policy' ? [] : [fixAt(level, n)],
+    timeframe: '12 months',
+  }));
+
 export const createScale = () =>
   buildOrg({
     key: 'scale',
@@ -73,6 +87,9 @@ export const createScale = () =>
     // Slice 5 (approved 28 October 2026): one orphan line, so the budget gate is exercised here too.
     orphanLines: [{ description: 'Conference venue hire for the directorate planning retreat, Directorate 2', amountMinor: 2_400_000, unit: 'd2', category: 'operating', source: 'own_revenue' }],
     goals,
+    // Slice 6 (approved 29 October 2026): 14 generated rows on O2.1 across all six levels, 8 at Process. Three have no
+    // corrective activity, two of them the 7th and 8th Process rows, so folding never hides an unaddressed row.
+    deficiencies: SCALE_DEFICIENCIES,
     contracts: [{
       person: 'off1', status: 'signed',
       objectives: [

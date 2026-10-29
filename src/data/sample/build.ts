@@ -52,6 +52,9 @@ export interface ContractSpec {
   objectives: { activity: string; title: string; qty: { value: number; unit: string } | null; weight: number; done?: number }[];
 }
 
+/** A decision-map row (Table 4 of the book). `fix` lists corrective activities by code. */
+export interface DeficiencySpec { objective: string; level: SixPLevel; description: string; cause: string; effects: string; fix: string[]; timeframe: string }
+
 export interface OrgSpec {
   key: string; // short id prefix, unique per organisation
   name: string; countryCode: string; timeZone: string; currency: string; fyStartMonth: number; fy: number;
@@ -60,6 +63,7 @@ export interface OrgSpec {
   people: PersonSpec[];
   goals: GoalSpec[];
   orphanLines?: LineSpec[];
+  deficiencies?: DeficiencySpec[];
   contracts: ContractSpec[];
   /** Who each development role switch views as. The executive is the shared person. */
   devRoles: { finance: string; supervisor: string; employee: string; hr: string; strategy: string };
@@ -173,6 +177,20 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     }
   }
   (spec.orphanLines ?? []).forEach((l) => addLine(l, null));
+
+  (spec.deficiencies ?? []).forEach((df, i) => {
+    const o = objectives.find((x) => x.code === df.objective);
+    if (!o) throw new Error(`${spec.name}: deficiency names unknown objective ${df.objective}`);
+    store.deficiencies.push({
+      ...base, id: id(`def-${k}-${i + 1}`), objectiveId: o.id, level: df.level, description: df.description, probableCause: df.cause, effects: df.effects,
+      correctiveActivityIds: df.fix.map((code) => {
+        const a = activities.find((x) => x.code === code);
+        if (!a) throw new Error(`${spec.name}: deficiency names unknown activity ${code}`);
+        return a.id;
+      }),
+      timeframe: df.timeframe, draft: human,
+    });
+  });
 
   const signedAt = dt(`${spec.fy}-${String(spec.fyStartMonth).padStart(2, '0')}-20T10:00:00Z`);
   for (const c of spec.contracts) {
