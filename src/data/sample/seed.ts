@@ -8,6 +8,7 @@ import {
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
+import { seededConfirmation } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
 
 const id = <T extends string>(s: string) => s as Id<T>;
@@ -30,7 +31,8 @@ const PEOPLE: P[] = [
   { key: 'md', name: 'Chanda Mulenga', title: 'Managing Director', unit: 'u-org', reportsTo: null, roles: ['executive'] },
   { key: 'hof', name: 'Ruth Phiri', title: 'Head of Finance', unit: 'u-fin', reportsTo: 'md', roles: ['finance'] },
   // Added for slice 4 (approved 23 October 2026), so the HR and Strategy office homes have a holder.
-  { key: 'hrm', name: 'Natasha Kabwe', title: 'Human Resources Manager', unit: 'u-org', reportsTo: 'md', roles: ['hr'] },
+  // Organisation administrator added for slice 7 (prototype approved 29 October 2026).
+  { key: 'hrm', name: 'Natasha Kabwe', title: 'Human Resources Manager', unit: 'u-org', reportsTo: 'md', roles: ['hr', 'org_admin'] },
   { key: 'spm', name: 'Bwalya Musonda', title: 'Strategy and Planning Manager', unit: 'u-org', reportsTo: 'md', roles: ['strategy_office'] },
   { key: 'hoo', name: 'Joseph Tembo', title: 'Head of Operations', unit: 'u-ops', reportsTo: 'md' },
   { key: 'hoc', name: 'Grace Zulu', title: 'Head of Commercial', unit: 'u-com', reportsTo: 'md' },
@@ -72,6 +74,7 @@ export const DEV_ROLE_MEMBERSHIPS = {
   hr: id<'Membership'>('m-hrm'),
   supervisor: id<'Membership'>('m-co'),
   employee: id<'Membership'>('m-mrb'),
+  admin: id<'Membership'>('m-hrm'),
 } as const;
 
 /* Strategy: the imported 2022–2026 plan runs FY2026; the 2027–2031 plan is in formation */
@@ -259,7 +262,10 @@ function seedStore(): Store {
     formationDeadlines: [],
     acknowledgements: [],
     gateEvents: [],
-    auditEntries: [],
+    // The structure was confirmed by the organisation administrator on 15 January 2026 (D7-9).
+    auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length })],
+    sourceDocuments: [],
+    aiTasks: [],
   };
 }
 

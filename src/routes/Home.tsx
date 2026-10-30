@@ -290,6 +290,21 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** For the Executive: who confirmed the organisation's structure, and when (D7-9). Information, not a "Needs you" item. */
+function StructureNotice() {
+  const { repo, navigate } = useApp();
+  const c = repo.structureConfirmed();
+  return (
+    <section aria-labelledby="org-info" className={`${card} mt-6`}>
+      <h2 id="org-info" className="text-18 font-bold text-navy">{en.setup.home.title}</h2>
+      <p className="mt-1 text-14 text-text">
+        {c ? en.setup.home.confirmed(c.by, formatDate(c.on)) : en.setup.home.notYet}{' '}
+        <a href="#/organisation" onClick={(e) => { e.preventDefault(); navigate({ kind: 'org' }); }} className="inline-flex min-h-11 items-center font-semibold text-navy underline underline-offset-4">{en.setup.home.see}</a>
+      </p>
+    </section>
+  );
+}
+
 /* ───────── The home ───────── */
 
 /** Role homes (Build Brief, screen 4): "Needs you" first, then the role's status view. Every figure is computed. */
@@ -340,6 +355,7 @@ export function Home() {
       )}
       <NeedsYou items={h.needsYou} />
       {view}
+      {repo.viewer.roles.includes('executive') && <StructureNotice />}
     </>
   );
 }

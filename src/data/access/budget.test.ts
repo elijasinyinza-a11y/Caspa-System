@@ -49,7 +49,7 @@ describe('budget gate on Sample Water Utility', () => {
     expect(after.budget.goals.find((g) => g.ref.code === 'G1')!.subtotal?.amountMinor).toBe(zmw(1_680_000));
     expect(after.budget.total?.amountMinor).toBe(zmw(2_650_000));
     expect(after.next!.blocking).toHaveLength(0);
-    expect(util.store.auditEntries.map((a) => a.action)).toEqual(['update']);
+    expect(util.store.auditEntries.map((a) => a.action)).toEqual(['confirm', 'update']); // the seeded structure confirmation (D7-9), then the link
     expect(as('finance').linkBudgetLine('bl-5', target.ref.id)).toEqual({ ok: false, error: 'already_linked' });
   });
 

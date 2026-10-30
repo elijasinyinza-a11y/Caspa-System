@@ -5,7 +5,8 @@ import { WorkspaceIcon } from "./icons";
 /** Phone layout: the sidebar becomes a bottom bar limited to the person's own workspaces. */
 export function BottomBar() {
   const { repo, route, navigate } = useApp();
-  const items = repo.workspaces();
+  // As the approved setup prototype: up to four workspaces, then Organisation (to settle in the phone layout review).
+  const items = repo.workspaces().slice(0, 4);
   return (
     <nav
       aria-label={en.nav.label}
@@ -15,7 +16,7 @@ export function BottomBar() {
       <ul
         className="grid"
         style={{
-          gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${items.length + 1}, minmax(0, 1fr))`,
         }}
       >
         {items.map((w) => {
@@ -37,6 +38,17 @@ export function BottomBar() {
             </li>
           );
         })}
+        <li>
+          <a
+            href="#/organisation"
+            onClick={(e) => { e.preventDefault(); navigate({ kind: "org" }); }}
+            aria-current={route.kind === "org" ? "page" : undefined}
+            className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-12 ${route.kind === "org" ? "font-semibold text-navy" : "text-muted"}`}
+          >
+            <span aria-hidden="true" className="h-5 w-5 rounded border-2 border-current" />
+            {en.setup.nav}
+          </a>
+        </li>
       </ul>
     </nav>
   );

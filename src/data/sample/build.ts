@@ -9,6 +9,7 @@ import type {
 } from '../../contract/caspa-data-contract';
 import { RATING_PRESETS } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
+import { seededConfirmation } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
 
 const id = <T extends string>(s: string) => s as Id<T>;
@@ -70,7 +71,7 @@ export interface OrgSpec {
   planTitle: string; planYears: [number, number];
 }
 
-export interface BuiltOrg { store: Store; orgId: string; devRoles: Record<'executive' | 'finance' | 'hr' | 'strategy' | 'supervisor' | 'employee', string> }
+export interface BuiltOrg { store: Store; orgId: string; devRoles: Record<'executive' | 'finance' | 'hr' | 'strategy' | 'supervisor' | 'employee' | 'admin', string> }
 
 export function buildOrg(spec: OrgSpec): BuiltOrg {
   const k = spec.key;
@@ -98,7 +99,8 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     ...base, id: id(mid), personId, roles, startsOn: d('2024-01-01'), endsOn: null, status: 'active',
   });
   const memberships: Membership[] = [
-    ...spec.people.map((p) => membership(`m-${k}-${p.key}`, per(p.key), p.roles ?? [])),
+    // The HR person also administers the organisation, so each test organisation has an administrator on its own staff (D7-7).
+    ...spec.people.map((p) => membership(`m-${k}-${p.key}`, per(p.key), p.key === spec.devRoles.hr ? [...new Set([...(p.roles ?? []), 'org_admin' as const])] : p.roles ?? [])),
     membership(sharedMembership, id(SHARED_EXECUTIVE.personId), ['executive']),
   ];
 
@@ -126,7 +128,9 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     kpiTargets: [], kpiActuals: [], baselineMeasures: [], resourceEnvelopes: [], activities, activityProgress: [], deficiencies: [],
     cycles: [{ ...base, id: id(`cy-${k}-budget`), kind: 'budget', financialYear: spec.fy, status: 'open', gateDueDates: {} }],
     budgetVersions: [{ ...base, id: id(`bv-${k}-1`), cycleId: id(`cy-${k}-budget`), version: 1, status: 'draft', approval: null, boardApproval: null }],
-    budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [], gateEvents: [], auditEntries: [],
+    budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [], gateEvents: [],
+    auditEntries: [seededConfirmation(orgId, id(`m-${k}-${spec.devRoles.hr}`), stamp.at, { units: units.length, positions: positions.length, people: spec.people.length })],
+    sourceDocuments: [], aiTasks: [],
     reviews: [], workshops: [], formationDeadlines: [],
     // R1: every organisation starts on preset A with the safeguards at their defaults.
     ratingSchemes: [{
@@ -235,6 +239,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
       employee: `m-${k}-${spec.devRoles.employee}`,
       hr: `m-${k}-${spec.devRoles.hr}`,
       strategy: `m-${k}-${spec.devRoles.strategy}`,
+      admin: `m-${k}-${spec.devRoles.hr}`,
     },
   };
 }
