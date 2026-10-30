@@ -80,9 +80,17 @@ export function TopBar() {
               </li>
             </>
           ) : (
-            <li aria-current="page" className="font-semibold text-navy">
-              {en.nav[workspaceOf(route)]}
-            </li>
+            route.kind === "org" ? (
+              <>
+                <li className="font-semibold text-navy">{en.setup.nav}</li>
+                <li aria-hidden="true" className="text-muted">›</li>
+                <li aria-current="page" className="font-semibold text-navy">{repo.structureConfirmed() ? en.setup.crumbStructure : en.setup.crumbSetup}</li>
+              </>
+            ) : (
+              <li aria-current="page" className="font-semibold text-navy">
+                {en.nav[workspaceOf(route) ?? "home"]}
+              </li>
+            )
           )}
         </ol>
       </nav>

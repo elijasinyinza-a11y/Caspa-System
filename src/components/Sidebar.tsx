@@ -8,7 +8,11 @@ import { identity } from "./identity";
  * short pause; it stays open while pointed at and closes with Escape (WCAG 1.4.13). Screen readers hear the same
  * sentence as the link's description. The sidebar only appears on wider screens; phones use the bottom bar.
  */
-function NavItem({ w, active, go }: { w: WorkspaceKey; active: boolean; go: () => void }) {
+function NavItem({ w, active, go, href, label, intro, mark }: {
+  w?: WorkspaceKey; active: boolean; go: () => void;
+  /** For items that are not workspaces, such as Organisation. */
+  href?: string; label?: string; intro?: string; mark?: string;
+}) {
   const [open, setOpen] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   const tipId = useId();
@@ -30,7 +34,7 @@ function NavItem({ w, active, go }: { w: WorkspaceKey; active: boolean; go: () =
   return (
     <li className="relative" onMouseEnter={() => show(400)} onMouseLeave={hide}>
       <a
-        href={`#/${w}`}
+        href={href ?? `#/${w}`}
         onClick={(e) => { e.preventDefault(); hide(); go(); }}
         onFocus={() => show(0)}
         onBlur={hide}
@@ -38,8 +42,8 @@ function NavItem({ w, active, go }: { w: WorkspaceKey; active: boolean; go: () =
         aria-describedby={tipId}
         className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-14 ${active ? "bg-white/15 font-semibold" : "text-white/85 hover:bg-white/10"}`}
       >
-        <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-sm ${w === "home" ? "bg-white" : identity[w].mark}`} />
-        {en.nav[w]}
+        <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-sm ${mark ?? (w === "home" || !w ? "bg-white" : identity[w].mark)}`} />
+        {label ?? (w ? en.nav[w] : "")}
       </a>
       {/* Always in the page for screen readers; shown on screen only while open. */}
       <span
@@ -47,7 +51,7 @@ function NavItem({ w, active, go }: { w: WorkspaceKey; active: boolean; go: () =
         role="tooltip"
         className={`absolute left-full top-1/2 z-50 ml-3 w-64 -translate-y-1/2 rounded-lg bg-white p-3 text-13 text-text shadow-lg ring-1 ring-border ${open ? "block" : "sr-only"}`}
       >
-        {en.workspaceIntro[w]}
+        {intro ?? (w ? en.workspaceIntro[w] : "")}
       </span>
     </li>
   );
@@ -75,6 +79,11 @@ export function Sidebar() {
           {repo.workspaces().map((w) => (
             <NavItem key={w} w={w} active={workspaceOf(route) === w} go={() => navigate({ kind: "workspace", w })} />
           ))}
+        </ul>
+        {/* Organisation sits below the four workspaces, for every member (D7-13). It is not a 7Cs stage. */}
+        <div aria-hidden="true" className="my-3 border-t border-white/20" />
+        <ul>
+          <NavItem href="#/organisation" label={en.setup.nav} intro={en.setup.navPurpose} mark="border border-white/70" active={route.kind === "org"} go={() => navigate({ kind: "org" })} />
         </ul>
       </nav>
       {orgs.length > 1 && (

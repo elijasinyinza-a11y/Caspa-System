@@ -26,6 +26,8 @@ import { en, type WorkspaceKey } from '../../strings/en';
 import { indexTree, type NodeChecks } from '../../selectors/cascade-view';
 import { can, canAcknowledge, canSeeRating, canTakeBudgetStep } from './permissions';
 import type { Store } from './store';
+import { createOrganisationAccess, type OrganisationAccess } from './setup';
+import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
 
 export interface FindingView {
@@ -189,6 +191,10 @@ export interface Repository {
   activityLevel(activityId: string): ActivityLevelView | null;
   /** Change an activity's 6P level, with a reason kept in the audit entry (D6-6). */
   changeActivityLevel(activityId: string, to: SixPLevel, reason: string): { ok: true } | { ok: false; error: ChangeLevelError };
+  /** Organisation setup and structure (slice 7): the draft before confirmation, the records after it. */
+  structure: OrganisationAccess;
+  /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
+  structureConfirmed(): { by: string; on: ISODate } | null;
 }
 
 const OVERSIGHT_ROLES = ['executive', 'strategy_office'] as const;
@@ -574,6 +580,11 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   return {
     viewer,
     financialYear,
+    structure: createOrganisationAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
+    structureConfirmed: () => {
+      const e = structureConfirmation(s);
+      return e ? { by: personOf(e.actorMembershipId), on: on(e.at) } : null;
+    },
     organisation: () => ({ id: s.organisation.id, name: s.organisation.name }),
     organisationsForPerson: () =>
       stores

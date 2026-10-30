@@ -1,9 +1,9 @@
 /** The in-memory shape of one organisation's records. Holds stored records only, never computed values. */
 import type {
-  Acknowledgement, Activity, AuditEntry, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
+  Acknowledgement, Activity, AiTask, AuditEntry, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review,
-  StrategicPlan, Workshop,
+  SourceDocument, StrategicPlan, Workshop,
 } from '../../contract/caspa-data-contract';
 
 export interface Store {
@@ -39,4 +39,8 @@ export interface Store {
   gateEvents: GateEvent[];
   /** Who changed what (contract AuditEntry). Written by the data-access layer on every change it makes. */
   auditEntries: AuditEntry[];
+  /** Documents given to CASPA™, such as an organogram behind an AI draft (D7-8). */
+  sourceDocuments: SourceDocument[];
+  /** Every AI call, for audit (contract AiTask). */
+  aiTasks: AiTask[];
 }

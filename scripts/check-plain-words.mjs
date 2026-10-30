@@ -7,6 +7,8 @@ const FILE = 'src/strings/en.ts';
 const FORBIDDEN = [
   /\bnodes?\b/i, /\blineage\b/i, /\bhard blocks?\b/i, /\badvisory flags?\b/i, /\bgates?\b/i, /\borphan/i,
   /\bintegrity\b/i, /\bfindings?\b/i, /\backnowledge(d|ment)?\b/i, /\brules engine\b/i,
+  // Organisation setup (D7-1): plain words on screen, system terms in code and audit records.
+  /\bstaging\b/i, /\bmemberships?\b/i, /\baccountable positions?\b/i, /\bsubstantive\b/i,
 ];
 const PLACEHOLDER = /\[from the book\]/i;
 const pilot = process.env.CASPA_PILOT === '1';

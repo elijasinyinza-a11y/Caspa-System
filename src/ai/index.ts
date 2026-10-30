@@ -11,9 +11,52 @@ export interface AiDraft {
   text: string;
 }
 
+/** An organisation structure read from an organogram (D7-8). Every item is a draft until a person accepts or corrects it. */
+export interface StructureDraft {
+  label: "AI draft";
+  /** Page of the document each item was read from. */
+  page: number;
+  /** Units as [name, parent name or null, unit type]. */
+  units: [string, string | null, string][];
+  /** Positions as [title, unit name, title of the position it reports to or null, holder's name or ""]. */
+  positions: [string, string, string | null, string][];
+  /** Says plainly that the review build's stub returns the same draft for any file (D7-13). */
+  sameForAnyFile: true;
+}
+
 export interface AiService {
   explainFinding(finding: Finding): Promise<AiDraft>;
+  /** Read an organogram and draft units, positions and reporting lines. Language only: it never confirms anything. */
+  draftStructure(fileName: string): Promise<StructureDraft>;
 }
+
+/**
+ * The stub's fixed organogram draft, whatever file is given (rule 4). Fictional names. One reporting line is
+ * misread on purpose (the Accountant is drafted as reporting to the Chief Executive Officer), so a person has to
+ * check each item.
+ */
+export const SAMPLE_STRUCTURE_DRAFT: StructureDraft = {
+  label: "AI draft",
+  page: 1,
+  sameForAnyFile: true,
+  units: [
+    ["Head office", null, "Organisation"], ["Finance", "Head office", "Department"], ["Corporate Services", "Head office", "Department"],
+    ["Operations", "Head office", "Department"], ["Regions", "Operations", "Division"], ["North", "Regions", "Region"], ["South", "Regions", "Region"],
+  ],
+  positions: [
+    ["Chief Executive Officer", "Head office", null, "Mutale Banda"],
+    ["Finance Manager", "Finance", "Chief Executive Officer", "Grace Tembo"],
+    ["Accountant", "Finance", "Chief Executive Officer", "Peter Zulu"],
+    ["Corporate Services Manager", "Corporate Services", "Chief Executive Officer", "Ireen Sakala"],
+    ["IT Officer", "Corporate Services", "Corporate Services Manager", "Brian Mumba"],
+    ["Operations Manager", "Operations", "Chief Executive Officer", "Joseph Lungu"],
+    ["Regional Supervisor", "North", "Operations Manager", "Agnes Mwale"],
+    ["Regional Supervisor", "South", "Operations Manager", ""],
+    ["Field Officer", "North", "Regional Supervisor", "Kelvin Daka"],
+    ["Field Officer", "North", "Regional Supervisor", "Mary Chanda"],
+    ["Field Officer", "South", "Regional Supervisor", "Lweendo Hamoonga"],
+  ],
+};
 
 /** Fixed sample explanations, one per rule. Plain language only; no framework wording is invented here. */
 export const SAMPLE_EXPLANATIONS: Record<string, string> = {
@@ -49,5 +92,8 @@ export const aiStub: AiService = {
         SAMPLE_EXPLANATIONS[finding.ruleId] ??
         "A sample explanation is not available for this check yet.",
     };
+  },
+  async draftStructure() {
+    return structuredClone(SAMPLE_STRUCTURE_DRAFT);
   },
 };
