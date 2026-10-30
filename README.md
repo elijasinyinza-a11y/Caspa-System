@@ -2,7 +2,7 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 29 October 2026, including the clarity decisions in section 20 and organisation setup in section 23) first.
+with decisions to 28 October 2026, including the clarity decisions in section 20) first.
 
 ## Run
 
@@ -27,7 +27,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    clarity retrofit, BUILD-BRIEF section 20 — done (v0.5.1)
 6. Six-point decision map, with changing an activity's 6P level — done (v0.6.0). 4Q band-specific cell names
    (v0.5.2); header change (v0.5.3)
-7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — done (v0.7.0)
+7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — prototype approved 29 October 2026 (`reference/caspa-setup-prototype.html`); build next as v0.7.0
 8. Onboarding: the two doors
 9. Phone layout review (responsive from slice 1)
 
@@ -46,26 +46,6 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
-
-## Organisation setup notes (v0.7.0)
-
-- BUILD-BRIEF sections 23 and 24; Organisation Setup Specification v0.3 (a doc in the Project's chats). Contract v1.4
-  (D7-5, D7-6): three permission rows and an optional email, nothing else. 418 tests (48 new):
-  `src/rules/setup.test.ts` and `src/data/access/setup.test.ts`, including about 5,000 positions with time limits.
-- Code: `src/rules/setup.ts` (checks, who answers for each unit, edit guards, removal), `src/data/access/setup/`
-  (draft structure, spreadsheet import, a small .xlsx/.csv reader and writer, confirmation, data access),
-  `src/routes/organisation/`, route `#/organisation`. Sample New Organisation in `src/data/sample/new-org.ts`; the
-  5,000-position structure is `largeStructureRows()` in `src/data/sample/scale.ts`.
-- Try it: in the development preview pick Sample New Organisation (it opens on Organisation, as its administrator,
-  Ireen Sakala). Build the structure, choose "Use the sample file", fix row 13 and the shared email, then confirm on
-  "Review and confirm". Switch to Executive: Home shows "Structure confirmed by Ireen Sakala". "Use the sample
-  organogram" gives the AI draft: accept each item, merge Ireen with her twin and give someone the Executive role.
-  "Consultant" can build but not confirm.
-- On Sample Water Utility as Organisation administrator (Natasha Kabwe): remove Head of Operations (eleven records,
-  with who can reassign each), Meter Reader, Zone B (signed contract) or Commercial (positions, units and budget
-  lines); set the Managing Director's line manager to the Commercial Officer (refused as a loop). Changes are saved
-  at once and listed under "Changes". Everyone else sees the structure read-only, without emails.
-- The draft structure, like other changes in the review build, resets on reload.
 
 ## Slice 4 notes (v0.4.0)
 
@@ -144,10 +124,6 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 - Every attempt, blocked or passed, is in the gate record. Records reset on reload in the review build.
 
 ## Open items for Elijah
-
-- Slice 7 choices to confirm (BUILD-BRIEF section 24): the phone bottom bar, the "Consultant" development role, and
-  who answers for a unit whose top positions are linked only through someone outside it.
-- Vacancy risk view and handover list: specification to draft next (agreed 29 October 2026).
 
 - The Clarity Specification document is not in the Project files; adding it helps later sessions.
 

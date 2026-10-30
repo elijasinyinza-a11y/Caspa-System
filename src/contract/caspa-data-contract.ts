@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.4
+ * CASPA™ data contract — v1.3
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -47,13 +47,6 @@
  *     Executive and the Strategy office. An acknowledgement lapses when the
  *     finding's subject record is updated after it (compared by the existing
  *     updated stamp). Acknowledged flags stay listed and are counted apart.
- * v1.4 (29 October 2026, Organisation Setup Specification v0.3, D7-5 and D7-6):
- *     three permission rows and no new fields. Organisation, Person and
- *     PositionAssignment are viewed by all members and drafted by the
- *     organisation administrator; a person's email is shown to
- *     administrators only. Person.email becomes optional (null when not
- *     given): a holder with no email can't be invited yet, and the duplicate
- *     email check ignores blanks.
  * Friction signals are removed for now and may return only with a confirmed
  * source. Leadership assessments are described generically.
  */
@@ -175,7 +168,7 @@ export interface Organisation extends Audited {
 export interface Person {
   id: Id<'Person'>;
   fullName: string;
-  email: string | null; // v1.4: optional (D7-6); visible to administrators only (D7-5)
+  email: string;
 }
 
 /** Assigned roles. Supervisor, owner and employee are derived, never assigned. */
@@ -779,10 +772,6 @@ export const PERMISSIONS: PermissionMatrix = {
   OrgUnit: { view: ['all_members'], draft: ['org_admin'] },
   Position: { view: ['all_members'], draft: ['org_admin'] },
   Membership: { view: ['org_admin'], draft: ['org_admin'] },
-  // v1.4 (D7-5): the organisation's details, its people and who holds which position. Emails: administrators only.
-  Organisation: { view: ['all_members'], draft: ['org_admin'] },
-  Person: { view: ['all_members'], draft: ['org_admin'] },
-  PositionAssignment: { view: ['all_members'], draft: ['org_admin'] },
   // v1.3: advisory flags only; hard blocks are never acknowledged. Viewing also needs sight of the finding's subject.
   Acknowledgement: { view: ['all_members'], draft: ['finding_recipient', 'executive', 'strategy_office'] },
 };
