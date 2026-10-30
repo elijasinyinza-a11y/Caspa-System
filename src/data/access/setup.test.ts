@@ -84,6 +84,8 @@ describe('Sample New Organisation, before confirmation', () => {
     const view = exec.structure.page();
     expect(view.mode).toBe('structure');
     expect(view.structure.people.every((p) => p.email === null)).toBe(true); // emails: administrators only
+    expect(view.structure.people.every((p) => p.roles.length === 0)).toBe(true); // roles: administrators only
+    expect([view.endsOn, view.executives, view.staffAdmin]).toEqual([{}, [], null]);
     expect(view.checks.must).toEqual([]);
     // Supervisors and employees follow from the structure.
     expect(as(NEW, 'supervisor').viewer.isSupervisor).toBe(true);
@@ -296,5 +298,20 @@ describe('about 5,000 positions through the data-access layer (D7-14)', () => {
     t0 = performance.now();
     expect(after.savePosition(p.id, { title: 'Senior Officer', unitId: p.unitId, reportsToId: p.reportsToId, ref: null, holder: p.holder ? { personId: p.holder.personId, name: '', acting: false } : null })).toEqual({ ok: true });
     expect(performance.now() - t0).toBeLessThan(2000);
+  });
+});
+
+describe('what non-administrators receive (D7-5, Membership row)', () => {
+  it.each(['executive', 'strategy', 'finance', 'hr', 'supervisor', 'employee'] as const)('%s at Sample Water Utility gets no emails, roles or end dates', (role) => {
+    const { as } = fresh();
+    const r = as(SWU, role);
+    if (r.viewer.roles.includes('org_admin')) return; // the HR Manager also administers here
+    const page = r.structure.page();
+    expect(page.mode).toBe('structure');
+    expect(page.structure.people.some((p) => p.email !== null || p.roles.length > 0)).toBe(false);
+    expect(page.endsOn).toEqual({});
+    expect(page.checks).toEqual({ must: [], worth: [] });
+    expect(r.structure.removalBlockers('position', 'pos-hoo')).toEqual([]);
+    expect(page.structure.positions).toHaveLength(12); // the structure itself stays visible to all members
   });
 });

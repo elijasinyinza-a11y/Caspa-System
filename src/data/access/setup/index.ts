@@ -162,14 +162,15 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
     const d = drafts.get(s);
     const mode = entry ? 'structure' : isAdmin ? 'setup' : 'waiting';
     const raw = entry ? structureOfStore(s, now) : isAdmin ? draftOf(s).structure : { units: [], positions: [], people: [] };
-    const st: StructureInput = isAdmin ? raw : { ...raw, people: raw.people.map((p) => ({ ...p, email: null })) };
+    // Emails, assigned roles and access end dates live on Person and Membership: administrators only (D7-5; Membership row).
+    const st: StructureInput = isAdmin ? raw : { ...raw, people: raw.people.map((p) => ({ ...p, email: null, roles: [] })) };
     const ix = indexStructure(raw);
     const staff = raw.people.find((p) => p.roles.includes('org_admin') && holdsPosition(ix, p.id));
     const checkedRaw = entry ? {} : d?.checked ?? {};
     return {
       mode, isAdmin,
       canConfirm: isAdmin && !entry && holdsPosition(ix, viewer.personId),
-      staffAdmin: staff?.fullName ?? null,
+      staffAdmin: isAdmin ? staff?.fullName ?? null : null,
       confirmed: entry ? { by: nameOfMembership(entry.actorMembershipId), on: on(entry.at) } : null,
       details: entry || !d ? detailsOf(s.organisation) : d.details,
       locked: !!entry,
@@ -180,8 +181,8 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
       sheet: !entry && isAdmin ? d?.sheet ?? null : null,
       ai: !entry && isAdmin && d?.ai ? { fileName: d.ai.fileName, page: 1 } : null,
       aiEnabled: (entry || !d ? s.organisation.settings.aiEnabled : d.details.settings.aiEnabled),
-      executives: raw.people.filter((p) => p.roles.includes('executive')).map((p) => p.fullName),
-      endsOn: Object.fromEntries((entry ? s.memberships.map((m) => [m.personId, m.endsOn]) : (d?.structure.people ?? []).map((p) => [p.id, p.endsOn])) as [string, ISODate | null][]),
+      executives: isAdmin ? raw.people.filter((p) => p.roles.includes('executive')).map((p) => p.fullName) : [],
+      endsOn: !isAdmin ? {} : Object.fromEntries((entry ? s.memberships.map((m) => [m.personId, m.endsOn]) : (d?.structure.people ?? []).map((p) => [p.id, p.endsOn])) as [string, ISODate | null][]),
       changes: isAdmin ? changes() : [],
       financialYear: ctx.financialYear,
     };
@@ -270,6 +271,8 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
 
   /* ───── Actions ───── */
   const removalBlockers = (kind: 'unit' | 'position', id: string): RemovalBlocker[] => {
+    // Only administrators remove; the list names role holders, which only they may see.
+    if (!isAdmin) return [];
       if (!confirmed()) {
         const ix = indexStructure(draftOf(s).structure);
         if (kind === 'unit') {
