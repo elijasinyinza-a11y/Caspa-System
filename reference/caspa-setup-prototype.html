@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ organisation setup — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--blk-t:#B42318;--blk-b:#FEF3F2;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--info-b:#EDECEA;
+--s:#378ADD;--c:#7C5CBF;--p:#B85C38;--f:#C2417A;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.app{display:flex;height:100%}
+.side{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:4px;flex-shrink:0}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav a[aria-current=page]{background:rgba(255,255,255,.15)}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.sep{height:1px;background:rgba(255,255,255,.2);margin:10px 4px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:8px 20px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--muted);flex:1;min-width:160px}
+.crumb b{color:var(--navy)}
+.proto{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.proto label{font-size:12px;color:var(--muted)}
+select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white)}
+textarea{width:100%;min-height:72px}
+.scroll{flex:1;overflow-y:auto;padding:20px 24px 60px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:28px;color:var(--navy);margin:0 0 4px}
+h2{font-size:18px;color:var(--navy);margin:0 0 8px}
+h3{font-size:16px;color:var(--navy);margin:0 0 6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}.xs{font-size:12px}
+.purpose{font-size:16px;margin:0 0 6px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--navy);color:var(--white)}
+.btn.link{border:none;background:none;padding:0 4px;text-decoration:underline;min-height:44px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:16px 0;flex-wrap:wrap}
+.tabs button{min-height:44px;border:none;background:none;padding:0 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--navy);border-bottom-color:var(--navy)}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid var(--border);background:var(--info-b);color:var(--navy)}
+.chip.blk{color:var(--blk-t);background:var(--blk-b);border-color:var(--blk-t)}
+.chip.adv{color:var(--adv-t);background:var(--adv-b);border-color:var(--adv-r)}
+.chip.ok{color:var(--ok-t);background:var(--ok-b);border-color:var(--ok-r)}
+.chk{border-radius:10px;padding:12px;margin:8px 0;border:1px solid}
+.chk.blk{border:2px solid var(--blk-t);background:var(--blk-b)}
+.chk.adv{border-color:var(--adv-r);background:var(--adv-b)}
+.chk.done{border-color:var(--border);background:var(--white)}
+.chk .lbl{font-weight:700;font-size:13px}
+.chk.blk .lbl{color:var(--blk-t)}.chk.adv .lbl{color:var(--adv-t)}
+.banner{border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid var(--border);background:var(--info-b)}
+.banner.ok{background:var(--ok-b);border-color:var(--ok-r);color:var(--ok-t)}
+.tree{list-style:none;margin:0;padding:0}
+.tree .tree{padding-left:18px;border-left:1px solid var(--border);margin-left:8px}
+.unit{padding:10px 0 4px}
+.uname{font-weight:700;color:var(--navy)}
+.pos{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 10px;margin:4px 0;border:1px solid var(--border);border-radius:8px;background:var(--white)}
+.pos .t{font-weight:600}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+th{color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:13px;font-weight:600}
+.dlg{position:fixed;inset:0;background:rgba(13,27,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.dlg .card{max-width:560px;width:100%;max-height:90vh;overflow:auto}
+.ai{font-size:12px;font-weight:700;color:var(--navy);background:var(--info-b);border:1px dashed var(--control);border-radius:6px;padding:1px 6px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.help{border-left:3px solid var(--navy);padding:8px 12px;background:var(--white);margin:8px 0;border-radius:0 8px 8px 0}
+.bottom{display:none}
+@media (max-width:760px){
+ .side{display:none}
+ .bottom{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--navy);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+ .bottom a{flex:1;min-height:56px;display:flex;align-items:center;justify-content:center;color:var(--white);text-decoration:none;font-size:12px;font-weight:600}
+ .bottom a[aria-current=page]{background:rgba(255,255,255,.15)}
+ .grid2,.grid3{grid-template-columns:1fr}
+ .scroll{padding:16px 14px 90px}
+ h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* ============ Prototype data. Every count, check and "answers for" is computed below. ============ */
+const NOW = '29 October 2026';
+const ROLE_LABEL = {executive:'Executive',strategy_office:'Strategy office',finance:'Finance',hr:'HR',facilitator:'Facilitator',compliance:'Compliance',org_admin:'Organisation administrator'};
+const ROLE_KEYS = Object.keys(ROLE_LABEL);
+const fromLabel = (t)=>ROLE_KEYS.find(k=>ROLE_LABEL[k].toLowerCase()===t.trim().toLowerCase());
+const esc = (s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (n)=>n.toLocaleString('en-GB');
+const plural=(n,one,many)=>`${num(n)} ${n===1?one:many}`;
+let seq = 0; const nid = (p)=>`${p}-${++seq}`;
+const FOLD = 6;
+
+/* The small sample template file: one row per position (the nine approved columns). */
+const SHEET = [
+ ['Head office','Organisation','Chief Executive Officer','','Mutale Banda','m.banda@sample-new.example','no','Executive',''],
+ ['Head office › Finance','Department','Finance Manager','Chief Executive Officer','Grace Tembo','g.tembo@sample-new.example','no','Finance',''],
+ ['Head office › Finance','Department','Accountant','Finance Manager','Peter Zulu','p.zulu@sample-new.example','no','',''],
+ ['Head office › Finance','Department','Assistant Accountant','Accountant','','','','Finance',''],
+ ['Head office › Corporate Services','Department','Corporate Services Manager','Chief Executive Officer','Ireen Sakala','i.sakala@sample-new.example','no','HR; Organisation administrator',''],
+ ['Head office › Corporate Services','Department','IT Officer','Corporate Services Manager','Brian Mumba','m.chanda@sample-new.example','no','',''],
+ ['Head office › Operations','Department','Operations Manager','Chief Executive Officer','Joseph Lungu','j.lungu@sample-new.example','no','Strategy office',''],
+ ['Head office > Operations > Regions > North','Region','Regional Supervisor','Operations Manager','Agnes Mwale','a.mwale@sample-new.example','no','',''],
+ ['Head office > Operations > Regions > South','Region','Regional Supervisor','Operations Manager','','','','',''],
+ ['Head office / Operations / Regions / North','Region','Field Officer','Regional Supervisor','Kelvin Daka','','no','','FO-N1'],
+ ['Head office / Operations / Regions / North','Region','Field Officer','Regional Supervisor','Mary Chanda','m.chanda@sample-new.example','no','','FO-N2'],
+ ['Head office / Operations / Regions / South','Region','Field Officer','Supervisor','Lweendo Hamoonga','l.hamoonga@sample-new.example','yes','',''],
+];
+/* The large sample file (D7-14): about 5,000 positions, generated the same way every time. */
+function largeSheet(){
+  const F=['Mwila','Chola','Bupe','Mulenga','Natasha','Kabwe','Musonda','Chileshe','Lubinda','Mutinta','Inonge','Kondwani','Thandiwe','Chiza','Nalukui','Mapalo','Taonga','Luyando','Mwansa','Kunda'];
+  const L=['Banda','Phiri','Tembo','Zulu','Mwale','Daka','Lungu','Sakala','Mumba','Chanda','Ngoma','Mbewe','Simwanza','Hamoonga','Kasonde','Mutale','Siame','Nkhata','Chibwe','Lombe'];
+  const rows=[['Head office','Organisation','Chief Executive Officer','','Mutale Banda','m.banda@sample-new.example','no','Executive','HO-001']];
+  rows.push(['Head office › Corporate Services','Department','Head of Department','Chief Executive Officer','Ireen Sakala','i.sakala@sample-new.example','no','HR; Organisation administrator','CS-001']);
+  let n=0; const person=()=>{n++;const f=F[n%20],l=L[Math.floor(n/20)%20];return [`${f} ${l}`,`${f}.${l}.${n}@sample-new.example`.toLowerCase()];};
+  const field=['Operations','Customer Services','Engineering'], office=['Finance','Planning','Procurement','Information Technology','Internal Audit','Legal','Corporate Services'];
+  for(const d of [...field,...office]){
+    if(d!=='Corporate Services'){const [nm,em]=person();rows.push([`Head office › ${d}`,'Department','Head of Department','Chief Executive Officer',nm,em,'no',d==='Finance'?'Finance':d==='Planning'?'Strategy office':'',`${d.slice(0,3).toUpperCase()}-001`]);}
+    const subs=field.includes(d)?Array.from({length:20},(_,i)=>[`District ${i+1}`,'District']):[['Section A','Section'],['Section B','Section'],['Section C','Section']];
+    for(const [sname,stype] of subs){
+      const path=`Head office › ${d} › ${sname}`; const [sn,se]=person();
+      rows.push([path,stype,'Supervisor','Head of Department',sn,se,'no','','']);
+      for(let k=0;k<60;k++){
+        const [nm,em]=person(); const vac=n%11===0; const noMail=n%7===0;
+        const to=(n%160===5)?'Team Leader':'Supervisor';
+        rows.push([path,stype,field.includes(d)?'Field Officer':'Officer',to,vac?'':nm,vac||noMail?'':em,'no',vac&&n%37===0?'Finance':'','']);
+      }
+    }
+  }
+  for(let i=1;i<=3;i++){const [nm,em]=person();rows.push([`Head office › Planning › Projects › Project ${i}`,'Project','Project Officer','Head of Department',nm,em,'no','','']);}
+  // Three pairs of people given the same email by mistake.
+  const filled=rows.filter(r=>r[5]&&r[4]); for(const i of [400,1800,3200]){filled[i+1][5]=filled[i][5];}
+  return rows;
+}
+const COLS = ['Unit path','Unit type','Position title','Reports to','Holder\u2019s full name','Holder\u2019s email','Acting','Assigned roles','Position reference'];
+
+/* The AI stub's fixed draft, whatever file is given (rule 4). One reporting line is misread on purpose. */
+const AI_DRAFT = {
+ units:[['Head office',null,'Organisation'],['Finance','Head office','Department'],['Corporate Services','Head office','Department'],['Operations','Head office','Department'],['Regions','Operations','Division'],['North','Regions','Region'],['South','Regions','Region']],
+ positions:[['Chief Executive Officer','Head office',null,'Mutale Banda'],['Finance Manager','Finance','Chief Executive Officer','Grace Tembo'],['Accountant','Finance','Chief Executive Officer','Peter Zulu'],['Corporate Services Manager','Corporate Services','Chief Executive Officer','Ireen Sakala'],['IT Officer','Corporate Services','Corporate Services Manager','Brian Mumba'],['Operations Manager','Operations','Chief Executive Officer','Joseph Lungu'],['Regional Supervisor','North','Operations Manager','Agnes Mwale'],['Regional Supervisor','South','Operations Manager',''],['Field Officer','North','Regional Supervisor','Kelvin Daka'],['Field Officer','North','Regional Supervisor','Mary Chanda'],['Field Officer','South','Regional Supervisor','Lweendo Hamoonga']]
+};
+
+function emptyDraft(){
+  return {units:[],positions:[],people:[
+    {id:'per-cn',name:'Chipo Ngoma',email:'c.ngoma@sample-advisers.example',roles:['org_admin'],endsOn:'2026-12-31',note:'Consultant'},
+    {id:'per-is',name:'Ireen Sakala',email:'i.sakala@sample-new.example',roles:['org_admin'],endsOn:null},
+  ]};
+}
+
+/* Sample Water Utility: confirmed structure and the records that matter for removal (seed facts). */
+const SWU = {
+ units:[{id:'u-org',name:'Sample Water Utility',type:'Organisation',parentId:null},{id:'u-fin',name:'Finance',type:'Department',parentId:'u-org'},{id:'u-ops',name:'Operations',type:'Department',parentId:'u-org'},{id:'u-com',name:'Commercial',type:'Department',parentId:'u-org'},{id:'u-za',name:'Zone A',type:'Zone',parentId:'u-com'},{id:'u-zb',name:'Zone B',type:'Zone',parentId:'u-com'},{id:'u-zc',name:'Zone C',type:'Zone',parentId:'u-com'}],
+ positions:[
+  ['md','Managing Director','u-org',null],['hof','Head of Finance','u-fin','md'],['hrm','Human Resources Manager','u-org','md'],['spm','Strategy and Planning Manager','u-org','md'],
+  ['hoo','Head of Operations','u-ops','md'],['hoc','Head of Commercial','u-com','md'],['cm','Commercial Manager','u-com','hoc'],['co','Commercial Officer','u-com','cm'],
+  ['mra','Meter Reader, Zone A','u-za','co'],['mrb','Meter Reader, Zone B','u-zb','co'],['mrc','Meter Reader, Zone C','u-zc','co'],['bc','Billing Clerk','u-com','co']
+ ].map(([k,t,u,r])=>({id:'pos-'+k,title:t,unitId:u,reportsTo:r?'pos-'+r:null,holder:{personId:'p-'+k,acting:false}})),
+ people:{md:['Chanda Mulenga',['executive']],hof:['Ruth Phiri',['finance']],hrm:['Natasha Kabwe',['hr','org_admin']],spm:['Bwalya Musonda',['strategy_office']],hoo:['Joseph Tembo',[]],hoc:['Grace Zulu',[]],cm:['Peter Mwansa',[]],co:['Esther Banda',[]],mra:['Moses Lungu',[]],mrb:['Mary Chileshe',[]],mrc:['Daniel Sakala',[]],bc:['Agnes Mumba',[]]},
+ goals:[['G1','Improve financial sustainability','hof'],['G2','Provide reliable water supply','hoo'],['G3','Expand access to sanitation','hoo'],['G4','Strengthen institutional capacity','md']],
+ objectives:[['O1.1','Increase collection efficiency','hoc'],['O1.2','Reduce non-revenue water','hoo'],['O2.1','Extend daily hours of supply','hoo'],['O3.1','Increase household sanitation coverage','hoo'],['O4.1','Build supervisory skills across sections','md']],
+ kpis:[['K1.2.1','Non-revenue water','hoo'],['K2.1.1','Average hours of supply per day','hoo'],['K3.1.1','Households with improved sanitation','hoo'],['K4.1.1','Section heads trained in supervision','md']],
+ activities:[['A1.1.1.1','Complete monthly meter-reading routes','co','O1.1'],['A1.2.1.1','Establish district metered areas','hoo','O1.2'],['A1.2.1.2','Revise meter management policy','hoc','O1.2'],['A1.2.1.3','Replace faulty customer meters','cm','O1.2'],['A1.2.1.4','Introduce daily route briefing and check-in procedure','co','O1.2'],['A2.1.1.1','Rehabilitate the main pumping station','hoo','O2.1'],['A3.1.1.1','Build demonstration sanitation units in low-income areas','hoo','O3.1'],['A4.1.1.1','Run supervisory skills training for section heads','md','O4.1']],
+ lines:[['Customer meters','u-com'],['Meter installation','u-com'],['Pumping station rehabilitation works','u-ops'],['Supervisory skills training','u-org'],['Vehicle hire, Zone C','u-com']],
+ signedContracts:{'pos-mrb':'FY2026 performance contract, signed 2 February 2026'},
+ confirmed:{by:'Natasha Kabwe',at:'15 January 2026'}
+};
+const swuPeople = ()=>Object.entries(SWU.people).map(([k,[n,r]])=>({id:'p-'+k,name:n,email:k+'@sample-water.example',roles:r,endsOn:null}));
+
+/* ============ State ============ */
+const S = {
+  org:'new', role:'admin', route:'org', step:'details',
+  draft: emptyDraft(), rowProblems:[], sheetSummary:null,
+  checked:{}, confirmed:null, audit:[], dlg:null, whatOpen:false, firstNote:true, budgetStatus:'draft',
+  swu: {units:structuredClone(SWU.units),positions:structuredClone(SWU.positions),people:swuPeople()},
+  details:{name:'Sample New Organisation',fyStart:1},
+  settings:{boardPlan:true,boardBudget:true,onTrack:90,atRisk:70,minGroup:5,overdue:7,ai:true,
+    terms:{goal:'Goal',objective:'Objective',kpi:'KPI',activity:'Activity',deficiency:'Deficiency',budgetLine:'Budget line',contractObjective:'Contract objective'}},
+  open:new Set(), showAll:new Set(), find:'', onlyFlagged:false, peopleFind:'', groupOpen:new Set(), groupFilter:{}, flash:null,
+  note:null,
+};
+const ACTOR = ()=>({admin:S.org==='new'?'Ireen Sakala':'Natasha Kabwe',consultant:'Chipo Ngoma',executive:S.org==='new'?'Mutale Banda':'Chanda Mulenga',employee:S.org==='new'?'Kelvin Daka':'Mary Chileshe'})[S.role];
+const isAdmin = ()=>S.role==='admin'||(S.role==='consultant'&&S.org==='new');
+const structure = ()=> S.org==='swu' ? S.swu : S.draft;
+const confirmedNow = ()=> S.org==='swu' || !!S.confirmed;
+
+/* ============ Rules (pure; look-ups by ID, D7-14) ============ */
+const dirty=(st)=>{if(st)delete st.__ix;};
+function IX(st){
+  if(st.__ix) return st.__ix;
+  const group=(arr,key)=>{const m=new Map();for(const x of arr){const k=key(x);if(k==null)continue;(m.get(k)||m.set(k,[]).get(k)).push(x);}return m;};
+  const ix={units:new Map(st.units.map(u=>[u.id,u])),positions:new Map(st.positions.map(p=>[p.id,p])),people:new Map(st.people.map(p=>[p.id,p])),
+    kids:group(st.units,u=>u.parentId),posByUnit:group(st.positions,p=>p.unitId),posByHolder:group(st.positions,p=>p.holder?p.holder.personId:null),
+    titleCount:group(st.positions,p=>p.title),answers:new Map(),counts:new Map()};
+  Object.defineProperty(st,'__ix',{value:ix,enumerable:false,configurable:true});
+  return ix;
+}
+const unitById=(st,id)=>IX(st).units.get(id);
+const posById=(st,id)=>IX(st).positions.get(id);
+const personById=(st,id)=>IX(st).people.get(id);
+const kidsOf=(st,id)=>IX(st).kids.get(id)||[];
+const posOf=(st,id)=>IX(st).posByUnit.get(id)||[];
+const unitPath=(st,u)=>{const out=[];let x=u,guard=0;while(x&&guard++<50){out.unshift(x.name);x=unitById(st,x.parentId);}return out.join(' › ');};
+const chainUp=(st,p)=>{const out=[];const seen=new Set([p.id]);let x=p.reportsTo&&posById(st,p.reportsTo);while(x){if(seen.has(x.id))return {out,loop:true};seen.add(x.id);out.push(x);x=x.reportsTo&&posById(st,x.reportsTo);}return {out,loop:false};};
+/* Contract v1.2: the single position in the unit all others report up to; else the lowest common manager of its top positions; a unit with no positions uses its parent's. */
+function answersFor(st,unit,depth=0){
+  if(!unit||depth>50) return null;
+  const memo=IX(st).answers; if(memo.has(unit.id)) return memo.get(unit.id);
+  const inUnit=posOf(st,unit.id); let r=null;
+  if(!inUnit.length){const parent=unitById(st,unit.parentId);const pr=answersFor(st,parent,depth+1);r=pr&&{...pr,inherited:true,fromUnit:pr.fromUnit||parent};}
+  else{const ids=new Set(inUnit.map(p=>p.id));const tops=inUnit.filter(p=>!p.reportsTo||!ids.has(p.reportsTo));
+    if(tops.length===1) r={pos:tops[0],inherited:false};
+    else{const chains=tops.map(t=>[t,...chainUp(st,t).out]);const sets=chains.map(c=>new Set(c.map(x=>x.id)));const common=chains[0].find(c=>sets.every(s=>s.has(c.id)));r=common?{pos:common,inherited:false}:null;}}
+  memo.set(unit.id,r); return r;
+}
+/* Counts per unit, including the units below it (D7-14). */
+function countsOf(st,u,depth=0){
+  const memo=IX(st).counts; if(memo.has(u.id)) return memo.get(u.id);
+  const c={positions:0,vacant:0,people:new Set()};
+  for(const p of posOf(st,u.id)){c.positions++;if(!p.holder)c.vacant++;else c.people.add(p.holder.personId);}
+  if(depth<50) for(const k of kidsOf(st,u.id)){const kc=countsOf(st,k,depth+1);c.positions+=kc.positions;c.vacant+=kc.vacant;kc.people.forEach(x=>c.people.add(x));}
+  memo.set(u.id,c); return c;
+}
+const holderName=(st,p)=>p.holder?personById(st,p.holder.personId)?.name:null;
+const posLabel=(st,p)=>{if(!p)return '—';const u=unitById(st,p.unitId);const dup=(IX(st).titleCount.get(p.title)||[]).length>1;return esc(p.title)+(dup&&u?`, ${esc(u.name)}`:'');};
+
+/* Setup checks, grouped by kind (D7-2, D7-14). Each item names the unit it concerns, for the tree filter. */
+function setupChecks(st){
+  const groups=[]; const add=(level,kind,title,items,extra={})=>{if(items.length)groups.push({level,kind,title,items,...extra});};
+  const pend=[...st.units,...st.positions].filter(x=>x.draft==='ai_draft');
+  add('must','ai-pending','AI draft items not yet accepted or corrected',pend.length?[{text:`${plural(pend.length,'AI draft item has','AI draft items have')} not been accepted or corrected yet.`,fix:{kind:'tab',to:'build'},fixLabel:'Review the AI draft'}]:[]);
+  const loops=[],seenLoop=new Set(),noUnit=[];
+  for(const p of st.positions){
+    if(!unitById(st,p.unitId)) noUnit.push({text:`${esc(p.title)} is in a unit that doesn\u2019t exist.`,fix:{kind:'edit',id:p.id}});
+    if(seenLoop.has(p.id)) continue; const c=chainUp(st,p);
+    if(c.loop){const ids=[p.id,...c.out.map(x=>x.id)];ids.forEach(i=>seenLoop.add(i));loops.push({text:`${esc(p.title)} reports, through ${c.out.map(x=>esc(x.title)).join(', ')}, back to itself.`,fix:{kind:'edit',id:p.id},unitId:p.unitId});}
+  }
+  add('must','loop','Reporting loops',loops); add('must','pos-unit','Positions in a unit that doesn\u2019t exist',noUnit);
+  add('must','unit-parent','Units under a unit that doesn\u2019t exist',st.units.filter(u=>u.parentId&&!unitById(st,u.parentId)).map(u=>({text:`${esc(u.name)} sits under a unit that doesn\u2019t exist.`,fix:{kind:'unit',id:u.id},unitId:u.id})));
+  const tops=st.units.filter(u=>!u.parentId);
+  add('must','tops','More than one top unit',tops.length>1?[{text:`There are ${tops.length} top units (${tops.map(u=>esc(u.name)).join(', ')}). An organisation has one.`,fix:{kind:'tab',to:'build'},fixLabel:'Open the editor'}]:[]);
+  const byEmail=new Map();for(const pe of st.people){const e=(pe.email||'').trim().toLowerCase();if(e)(byEmail.get(e)||byEmail.set(e,[]).get(e)).push(pe);}
+  const unitOfPerson=(id)=>(IX(st).posByHolder.get(id)||[])[0]?.unitId;
+  add('must','email','The same email for two people',[...byEmail].filter(([,l])=>l.length>1).map(([e,l])=>({text:`${l.map(x=>esc(x.name)).join(' and ')} have the same email, ${esc(e)}.`,fix:{kind:'email',ids:l.map(x=>x.id)},unitId:unitOfPerson(l[0].id),find:l.map(x=>x.name).join(' ')})));
+  add('must','no-exec','Nobody holds the Executive role',st.people.some(pe=>pe.roles.includes('executive'))?[]:[{text:'Nobody holds the Executive role. Strategic choices need a person to confirm them.',fix:{kind:'access'},fixLabel:'Open People and access'}]);
+  const holds=(id)=>IX(st).posByHolder.has(id);
+  if(!st.people.some(pe=>pe.roles.includes('org_admin')&&holds(pe.id))){
+    const admins=st.people.filter(pe=>pe.roles.includes('org_admin'));
+    const twin=admins.map(a=>({a,h:st.people.find(x=>x.id!==a.id&&holds(x.id)&&x.name.trim().toLowerCase()===a.name.trim().toLowerCase())})).find(x=>x.h);
+    add('must','no-staff-admin','No administrator holds a position here',[{text:'No administrator holds a position here. Confirming needs an administrator on the organisation\u2019s own staff.',fix:twin?{kind:'merge',keep:twin.a.id,drop:twin.h.id}:{kind:'access'},fixLabel:twin?`Make ${esc(twin.a.name)} the holder named ${esc(twin.h.name)}`:'Open People and access'}]);
+  }
+  const noManager=st.positions.filter(p=>!p.reportsTo);
+  add('worth','no-manager','Positions with no line manager',noManager.length>1?noManager.map(p=>({text:`${esc(p.title)}, ${esc(unitById(st,p.unitId)?.name)}`,unitId:p.unitId,fix:{kind:'edit',id:p.id},find:p.title})):[],{why:'Only one position should have no line manager. Lines held by the top unit would have no one answering for them below the Executive.'});
+  add('worth','empty-unit','Units with no positions',st.units.filter(u=>!posOf(st,u.id).length).map(u=>{const a=answersFor(st,u);return {text:`${esc(u.name)}: ${a?`${esc(a.pos.title)}${a.fromUnit?' ('+esc(a.fromUnit.name)+')':''} answers for it.`:'nobody answers for it yet.'}`,unitId:u.id,find:u.name};}));
+  add('worth','no-type','Units with no unit type',st.units.filter(u=>!u.type).map(u=>({text:`${esc(u.name)} appears only inside other units\u2019 paths.`,fix:{kind:'unit',id:u.id},fixLabel:'Give it a type',unitId:u.id,find:u.name})));
+  const two=[];for(const [pid,ps] of IX(st).posByHolder){const subs=ps.filter(p=>!p.holder.acting);if(subs.length>1){const pe=personById(st,pid);two.push({text:`${esc(pe.name)}: ${subs.map(p=>esc(p.title)).join(', ')}`,unitId:subs[0].unitId,find:pe.name});}}
+  add('worth','two-subs','People holding two permanent positions',two,{why:'Allowed, but often a data error.'});
+  add('worth','no-email','Holders with no email',st.people.filter(pe=>holds(pe.id)&&!(pe.email||'').trim()).map(pe=>{const p=IX(st).posByHolder.get(pe.id)[0];return {text:`${esc(pe.name)}, ${esc(p.title)}, ${esc(unitById(st,p.unitId)?.name)}`,unitId:p.unitId,find:pe.name,person:pe.id};}),{why:'They can\u2019t be invited yet.'});
+  return {must:groups.filter(g=>g.level==='must'),worth:groups.filter(g=>g.level==='worth')};
+}
+const mustCount=(c)=>c.must.reduce((n,g)=>n+g.items.length,0);
+const vacantCount=(st)=>st.positions.filter(p=>!p.holder).length;
+function flaggedUnits(st,checks){
+  const set=new Set(); for(const g of [...checks.must,...checks.worth]) for(const it of g.items){let u=it.unitId&&unitById(st,it.unitId),guard=0;while(u&&guard++<50){set.add(u.id);u=unitById(st,u.parentId);}}
+  return set;
+}
+
+/* What must move before a unit or position is removed (D7-3, D7-4). */
+function removalBlockers(kind,id){
+  const st=structure(); const out=[];
+  if(kind==='unit'){
+    const u=unitById(st,id);
+    kidsOf(st,id).forEach(x=>out.push({what:`Unit: ${esc(x.name)}`,who:'Move or remove it first (you can do this).'}));
+    posOf(st,id).forEach(p=>out.push({what:`Position: ${esc(p.title)}`,who:'Move it to another unit first (you can do this).'}));
+    if(S.org==='swu'){
+      const lines=SWU.lines.filter(l=>l[1]===id);
+      if(lines.length){
+        if(S.budgetStatus==='draft') lines.forEach(l=>out.push({what:`Budget line: ${esc(l[0])}`,who:'The FY2026 budget is a draft, so Finance or the line\u2019s budget holders can move it to another unit.'}));
+        else out.push({what:`${plural(lines.length,'budget line','budget lines')} in the FY2026 budget`,who:`The budget is ${S.budgetStatus} and read-only, so ${esc(u.name)} can\u2019t be removed until a budget revision exists. You can still rename the unit and move its positions.`,hard:true});
+      }
+    }
+  } else {
+    const p=posById(st,id);
+    st.positions.filter(x=>x.reportsTo===id).forEach(x=>out.push({what:`Reports to it: ${esc(x.title)}`,who:'Change their line manager first (you can do this).'}));
+    if(S.org==='swu'){
+      const k=id.replace('pos-',''); const so='Strategy and Planning Manager (Strategy office)';
+      SWU.goals.filter(g=>g[2]===k).forEach(g=>out.push({what:`Goal ${g[0]}: ${esc(g[1])}`,who:so,link:true}));
+      SWU.objectives.filter(o=>o[2]===k).forEach(o=>out.push({what:`Objective ${o[0]}: ${esc(o[1])}`,who:so,link:true}));
+      SWU.kpis.filter(x=>x[2]===k).forEach(x=>out.push({what:`KPI ${x[0]}: ${esc(x[1])}`,who:so,link:true}));
+      SWU.activities.filter(a=>a[2]===k).forEach(a=>{const ob=SWU.objectives.find(o=>o[0]===a[3]);const obOwner=ob&&ob[2]!==k?posById(st,'pos-'+ob[2]).title+` (owns ${ob[0]})`:null;out.push({what:`Activity ${a[0]}: ${esc(a[1])}`,who:[obOwner,so].filter(Boolean).map(esc).join(' or '),link:true});});
+      if(SWU.signedContracts[id]) out.push({what:esc(SWU.signedContracts[id]),who:`A position with a signed contract this year can\u2019t be removed. If ${esc(holderName(st,p))} leaves, end the assignment and the position stays vacant.`,hard:true});
+    }
+  }
+  return out;
+}
+
+/* ============ Spreadsheet import (D7-12), indexed so 5,000 rows stay quick ============ */
+function importSheet(rows){
+  const st=emptyDraft(); const problems=[]; const unitKey=new Map(); const byEmailName=new Map(st.people.map(p=>[p.email.toLowerCase()+'|'+p.name,p]));
+  const segs=(path)=>path.split(/\s*[›>\/]\s*/).filter(Boolean);
+  const ensureUnit=(parts,type)=>{let parent=null;parts.forEach((name,i)=>{const key=parts.slice(0,i+1).join('|');let u=unitKey.get(key);if(!u){u={id:nid('u'),name,type:i===parts.length-1?type:'',parentId:parent?parent.id:null,draft:'human'};unitKey.set(key,u);st.units.push(u);}else if(i===parts.length-1&&!u.type)u.type=type;parent=u;});return parent;};
+  const ps=[];
+  rows.forEach((r,i)=>{
+    const n=i+2; const [path,type,title,,name,email,acting,roles,ref]=r;
+    const u=ensureUnit(segs(path),type);
+    const p={id:nid('pos'),unitId:u.id,title,ref,reportsTo:null,holder:null,draft:'human',row:n};
+    const roleList=roles?roles.split(';').map(fromLabel).filter(Boolean):[];
+    if(name){
+      const key=(email||'').toLowerCase()+'|'+name; let pe=email&&byEmailName.get(key);
+      if(!pe){pe={id:nid('per'),name,email,roles:[],endsOn:null};st.people.push(pe);if(email)byEmailName.set(key,pe);}
+      roleList.forEach(k=>{if(!pe.roles.includes(k))pe.roles.push(k);});
+      p.holder={personId:pe.id,acting:acting==='yes'};
+    } else if(roleList.length) problems.push({row:n,pos:p.id,kind:'vacant-roles',text:`Row ${n}: roles (${roleList.map(k=>ROLE_LABEL[k]).join(', ')}) on a vacant row.`,roles:roleList});
+    st.positions.push(p); ps.push(p);
+  });
+  // "Reports to": a reference, else the title in the same unit, then each parent unit, then anywhere if unique.
+  const byRef=new Map(),byUnitTitle=new Map(),byTitle=new Map();
+  for(const p of ps){if(p.ref)byRef.set(p.ref,p);const k=p.unitId+'|'+p.title;(byUnitTitle.get(k)||byUnitTitle.set(k,[]).get(k)).push(p);(byTitle.get(p.title)||byTitle.set(p.title,[]).get(p.title)).push(p);}
+  const units=new Map(st.units.map(u=>[u.id,u]));
+  rows.forEach((r,i)=>{
+    const to=r[3]; if(!to) return; const p=ps[i]; let hit=byRef.get(to)||null;
+    if(!hit){let u=units.get(p.unitId);while(u&&!hit){const c=(byUnitTitle.get(u.id+'|'+to)||[]).filter(x=>x.id!==p.id);if(c.length===1)hit=c[0];else if(c.length>1)break;u=units.get(u.parentId);}}
+    if(!hit){const c=(byTitle.get(to)||[]).filter(x=>x.id!==p.id);if(c.length===1)hit=c[0];}
+    if(hit) p.reportsTo=hit.id; else problems.push({row:i+2,pos:p.id,kind:'reports',text:`Row ${i+2}: \u201c${esc(to)}\u201d doesn\u2019t match any position.`});
+  });
+  S.draft=st; S.rowProblems=problems; S.checked={}; S.open=new Set(st.units.filter(u=>!u.parentId).map(u=>u.id)); S.showAll=new Set(); S.find=''; S.onlyFlagged=false;
+  S.sheetSummary={rows:rows.length,units:st.units.length,positions:st.positions.length,people:st.people.filter(pe=>st.positions.some(p=>p.holder&&p.holder.personId===pe.id)).length};
+  S.audit.push(`Spreadsheet imported: ${num(rows.length)} rows, by ${ACTOR()}`);
+}
+function importAi(){
+  const st=emptyDraft(); const byName={};
+  AI_DRAFT.units.forEach(([n,parent,type])=>{const u={id:nid('u'),name:n,type,parentId:parent?byName[parent].id:null,draft:'ai_draft',page:1};byName[n]=u;st.units.push(u);});
+  const posByTitle={};
+  AI_DRAFT.positions.forEach(([t,unit,to,holder])=>{
+    const p={id:nid('pos'),unitId:byName[unit].id,title:t,ref:'',reportsTo:null,holder:null,draft:'ai_draft',page:1,_to:to};
+    if(holder){const pe={id:nid('per'),name:holder,email:'',roles:[],endsOn:null};st.people.push(pe);p.holder={personId:pe.id,acting:false};}
+    st.positions.push(p);(posByTitle[t]=posByTitle[t]||[]).push(p);
+  });
+  st.positions.forEach(p=>{if(!p._to)return;const c=posByTitle[p._to];p.reportsTo=(c.find(x=>x.unitId===p.unitId&&x.id!==p.id)||c[0]).id;delete p._to;});
+  S.draft=st;S.rowProblems=[];S.checked={};S.sheetSummary=null;S.open=new Set(st.units.map(u=>u.id));S.showAll=new Set();S.find='';
+  S.audit.push(`AI draft made from a sample organogram (page 1), requested by ${ACTOR()}`);
+}
+
+/* ============ Rendering ============ */
+const app=document.getElementById('root');
+function render(){
+  dirty(S.draft); dirty(S.swu);
+  const navItems=[['home','Home',null],['s','Strategy','--s'],['c','Cascade','--c'],['p','Plan','--p'],['f','Performance','--f']];
+  const visible=S.role==='employee'?navItems.filter(n=>['home','f'].includes(n[0])):navItems;
+  const active=document.activeElement&&document.activeElement.id; const caret=document.activeElement&&document.activeElement.selectionStart;
+  app.innerHTML=`<div class="app">
+   <nav class="side" aria-label="Main">
+    <div class="brand">CASPA™</div>
+    <div class="nav">${visible.map(([k,l,c])=>`<a href="#" data-act="nav" data-to="${k}" ${S.route===k?'aria-current="page"':''}><span class="mark" style="${c?`background:var(${c})`:''}"></span>${l}</a>`).join('')}
+    <div class="sep"></div>
+    <a href="#" data-act="nav" data-to="org" ${S.route==='org'?'aria-current="page"':''} aria-describedby="org-purpose"><span class="mark"></span>Organisation</a>
+    <span id="org-purpose" hidden>Your organisation\u2019s units, positions and the people who hold them.</span></div>
+   </nav>
+   <div class="main">
+    <header class="top">
+      <div class="crumb">${S.route==='org'?'<b>Organisation</b>'+(confirmedNow()?' › Structure':' › Set up'):S.route==='home'?'<b>Home</b>':'<b>'+esc({s:'Strategy',c:'Cascade',p:'Plan',f:'Performance'}[S.route])+'</b>'}</div>
+      <div class="proto">
+        <label for="org-sel">Organisation</label>
+        <select id="org-sel" data-act="org"><option value="new" ${S.org==='new'?'selected':''}>Sample New Organisation</option><option value="swu" ${S.org==='swu'?'selected':''}>Sample Water Utility</option></select>
+        <label for="role-sel">Prototype role</label>
+        <select id="role-sel" data-act="role">${[['admin','Organisation administrator'],['consultant','Consultant (administrator, no position)'],['executive','Executive'],['employee','Employee']].filter(([k])=>!(k==='consultant'&&S.org==='swu')).map(([k,l])=>`<option value="${k}" ${S.role===k?'selected':''}>${l}</option>`).join('')}</select>
+      </div>
+    </header>
+    <main class="scroll" id="main"><div class="wrap">${S.note?`<div class="banner ok" role="status">${S.note}</div>`:''}${page()}</div></main>
+   </div>
+   <nav class="bottom" aria-label="Main">${[...visible.slice(0,4),['org','Organisation']].map(([k,l])=>`<a href="#" data-act="nav" data-to="${k}" ${S.route===k?'aria-current="page"':''}>${l}</a>`).join('')}</nav>
+  </div>${S.dlg?dialog():''}`;
+  if(active){const el=document.getElementById(active);if(el&&el.tagName==='INPUT'){el.focus();try{el.setSelectionRange(caret,caret);}catch(e){}}}
+  if(S.flash){const el=document.getElementById(S.flash);if(el){el.scrollIntoView({block:'center'});el.focus();}S.flash=null;}
+}
+function page(){
+  if(S.route==='home') return homePage();
+  if(S.route!=='org') return `<h1>${esc({s:'Strategy',c:'Cascade',p:'Plan',f:'Performance'}[S.route])}</h1><p class="muted">Not part of this prototype. Use Organisation or Home.</p>`;
+  return orgHeader()+(confirmedNow()?structurePage():(isAdmin()?setupPage():waitingPage()));
+}
+function orgHeader(){
+  return `<h1>Organisation</h1>
+  <p class="purpose">Your organisation\u2019s units, positions and the people who hold them, so every piece of work can be traced to the person who answers for it.</p>
+  <button class="btn link" data-act="what" aria-expanded="${S.whatOpen}">What is this page?</button>
+  ${S.whatOpen?`<div class="help small"><p><b>What it shows:</b> the units (departments, regions, offices), the positions in each, who reports to whom, and who holds each position.</p><p><b>How it connects:</b> goals, KPIs, activities and contracts belong to positions, not people. Who answers for each unit, and who holds its budget, is worked out from this structure, never typed in.</p><p><b>What people usually do:</b> administrators build the structure once, confirm it, and keep it up to date when people join, leave or move. Everyone else looks people up.</p></div>`:''}
+  ${S.firstNote&&isAdmin()&&!confirmedNow()?`<div class="banner small row" style="justify-content:space-between"><span>New here? Start with the details, then build the structure any way you like. Nothing is saved until you confirm it.</span><button class="btn" data-act="dismiss">Got it</button></div>`:''}`;
+}
+function waitingPage(){return `<div class="card" style="margin-top:16px"><h2>The structure is being set up</h2><p class="muted">It will appear here once an administrator confirms it.</p></div>`;}
+
+/* ---------- Set up (before confirmation) ---------- */
+function setupPage(){
+  const st=S.draft; const checks=setupChecks(st);
+  const toCheck=checks.worth.filter(g=>!S.checked[g.kind]).length;
+  const tab=(k,l)=>`<button role="tab" aria-selected="${S.step===k}" data-act="step" data-to="${k}">${l}</button>`;
+  return `<div class="banner small"><b>Draft structure (not yet saved).</b> ${plural(st.units.length,'unit','units')} · ${plural(st.positions.length,'position','positions')} (${num(vacantCount(st))} vacant) · ${plural(st.people.length,'person','people')}. ${rowProblemsOpen()?`<span class="chip adv">${plural(rowProblemsOpen(),'spreadsheet row needs','spreadsheet rows need')} attention</span>`:''}</div>
+  <div class="tabs" role="tablist">${tab('details','1. Details and settings')}${tab('build','2. Build the structure')}${tab('review',`3. Review and confirm · ${num(mustCount(checks))} must fix · ${toCheck} to check`)}</div>
+  ${S.step==='details'?detailsTab():S.step==='build'?buildTab(checks):reviewTab(checks)}`;
+}
+const rowProblemsOpen=()=>S.rowProblems.filter(p=>!p.done).length;
+
+function detailsTab(){
+  const d=S.details, s=S.settings, lock=!!S.confirmed;
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `<div class="grid2"><section class="card"><h2>Organisation details</h2>
+   <div class="field"><label for="d-name">Name</label><input id="d-name" type="text" value="${esc(d.name)}" data-act="detail" data-k="name"></div>
+   <div class="grid3"><div class="field"><label for="d-c">Country</label><select id="d-c"><option>Zambia</option></select></div>
+   <div class="field"><label for="d-tz">Time zone</label><select id="d-tz"><option>Africa/Lusaka</option></select></div>
+   <div class="field"><label for="d-cur">Currency</label><select id="d-cur" ${lock?'disabled':''}><option>ZMW, Zambian kwacha</option><option>UGX, Ugandan shilling</option><option>KES, Kenyan shilling</option></select></div></div>
+   <div class="field"><label for="d-fy">Financial year starts in</label><select id="d-fy" data-act="detail" data-k="fyStart">${months.map((m,i)=>`<option value="${i+1}" ${d.fyStart===i+1?'selected':''}>${m}</option>`).join('')}</select>
+   <span class="xs muted">The year is labelled ${d.fyStart===1?'FY2026':'FY2026/27'}. Currency and the year\u2019s start month can\u2019t change after the structure is confirmed, because amounts and year labels depend on them.</span></div>
+  </section>
+  <section class="card"><h2>Settings</h2><p class="small muted">Each setting starts at its default. You can change these later.</p>
+   <div class="tw"><table><tbody>
+    <tr><th scope="row">Board approval needed for</th><td><label><input type="checkbox" ${s.boardPlan?'checked':''}> Strategic plan</label><br><label><input type="checkbox" ${s.boardBudget?'checked':''}> Budget</label></td></tr>
+    <tr><th scope="row">KPI status</th><td>On track at ${s.onTrack}% of expected progress; at risk at ${s.atRisk}%</td></tr>
+    <tr><th scope="row">Scorecard perspectives</th><td>Used: Customer, Internal, Innovation and learning, Financial</td></tr>
+    <tr><th scope="row">Reviews</th><td>Mid-year and annual</td></tr>
+    <tr><th scope="row">Overdue reminder</th><td>${s.overdue} days after a deadline</td></tr>
+    <tr><th scope="row">Consultation group size</th><td>Smallest group shown on its own: ${s.minGroup} people</td></tr>
+    <tr><th scope="row">AI assistance</th><td><label><input type="checkbox" data-act="ai-toggle" ${s.ai?'checked':''}> On</label> <span class="xs muted">Off hides the organogram route.</span></td></tr>
+    <tr><th scope="row">Rating scheme</th><td class="muted">Set by HR (starts at preset A)</td></tr>
+   </tbody></table></div>
+   <h3 style="margin-top:12px">Your words for</h3>
+   <div class="tw"><table><tbody>${Object.entries(s.terms).map(([k,v])=>`<tr><th scope="row">${esc(v)}</th><td><input type="text" aria-label="Your word for ${esc(v)}" value="${esc(v)}"></td></tr>`).join('')}</tbody></table></div>
+   <p class="xs muted">The 6P levels and the 7Cs keep the book\u2019s names and can\u2019t be renamed.</p>
+  </section></div>
+  <div class="row" style="margin-top:16px"><button class="btn primary" data-act="step" data-to="build">Next: build the structure</button></div>`;
+}
+
+function buildTab(checks){
+  const ai=S.settings.ai;
+  return `<div class="grid3">
+   <section class="card"><h3>From a spreadsheet</h3><p class="small muted">Best for larger organisations with an establishment list. One row per position. Use your own post numbers as the position reference if you have them.</p>
+    <div class="row"><button class="btn" data-act="template">Download the template (.xlsx)</button></div>
+    <div class="row" style="margin-top:8px"><label class="btn" for="f-sheet" style="display:inline-flex;align-items:center">Choose a file (.xlsx or .csv)</label><input id="f-sheet" type="file" accept=".xlsx,.csv" hidden data-act="sheet-file"></div>
+    <div class="row"><button class="btn link" data-act="sheet" data-size="small">Use the sample file (12 rows)</button><button class="btn link" data-act="sheet" data-size="large">Use the large sample file (about 5,000 rows)</button></div></section>
+   ${ai?`<section class="card"><h3>From an organogram <span class="ai">AI draft</span></h3><p class="small muted">Give a PDF, image or Word file. The AI drafts units, positions and reporting lines; you accept or correct each one. For large organisations the spreadsheet is usually quicker, because an organogram rarely shows every post.</p>
+    <div class="row"><label class="btn" for="f-org" style="display:inline-flex;align-items:center">Choose a file</label><input id="f-org" type="file" hidden data-act="ai-file"><button class="btn link" data-act="ai">Use the sample organogram</button></div>
+    <p class="xs muted">In this review build, any file gives the same sample draft.</p></section>`:`<section class="card"><h3>From an organogram</h3><p class="small muted">AI assistance is off for this organisation.</p></section>`}
+   <section class="card"><h3>Type it in</h3><p class="small muted">Best for small organisations, and for corrections after either route. The editor is below.</p>
+    <div class="row"><button class="btn" data-act="add-unit" data-parent="">Add the top unit</button></div></section>
+  </div>
+  ${S.sheetSummary?`<div class="banner small">Spreadsheet read: ${num(S.sheetSummary.rows)} rows. Added ${num(S.sheetSummary.units)} units, ${num(S.sheetSummary.positions)} positions and ${num(S.sheetSummary.people)} holders to the draft structure.</div>`:''}
+  ${S.rowProblems.length?rowProblemsCard():''}
+  ${editorCard(checks)}
+  <div class="row" style="margin-top:16px"><button class="btn primary" data-act="step" data-to="review">Next: review and confirm</button></div>`;
+}
+
+/* Spreadsheet problems counted by kind; a few fixed on screen, many downloaded and fixed in the file (D7-14). */
+function rowProblemsCard(){
+  const st=S.draft; const kinds=[['reports','\u201cReports to\u201d doesn\u2019t match a position'],['vacant-roles','Roles on a vacant row']];
+  return `<section class="card" style="margin-top:16px"><h2>Spreadsheet rows that need attention</h2>
+   ${kinds.map(([k,title])=>{const all=S.rowProblems.filter(p=>p.kind===k);if(!all.length)return '';const open=all.filter(p=>!p.done);const many=open.length>FOLD;
+    return `<h3 style="margin-top:12px">${title} · ${plural(open.length,'row','rows')}${all.length-open.length?` <span class="chip ok">${all.length-open.length} fixed</span>`:''}</h3>
+    ${many?`<div class="banner small">Showing ${FOLD} of ${num(open.length)}. <button class="btn" data-act="download" data-what="${num(open.length)} problem rows, each with its reason">Download the ${num(open.length)} rows</button> then fix them in your spreadsheet and import it again. Importing replaces only the draft structure.</div>`:''}
+    ${open.slice(0,FOLD).map(p=>{const pos=posById(st,p.pos);const opts=(posOf(st,pos.unitId).filter(x=>x.id!==pos.id).concat(posOf(st,unitById(st,pos.unitId)?.parentId))).slice(0,8);
+     return `<div class="chk adv"><div class="lbl">Needs attention</div><p style="margin:4px 0">${p.text} ${esc(pos.title)}, ${esc(unitById(st,pos.unitId)?.name)}.</p>
+     ${p.kind==='reports'?`<div class="row"><label for="rp-${p.pos}" class="small">Reports to</label><select id="rp-${p.pos}">${opts.map(o=>`<option value="${o.id}">${posLabel(st,o)}${holderName(st,o)?' — '+esc(holderName(st,o)):' — vacant'}</option>`).join('')}</select><button class="btn" data-act="fix-reports" data-pos="${p.pos}">Use this</button></div>`
+      :`<div class="row"><button class="btn" data-act="fix-vacant-drop" data-pos="${p.pos}">Leave it vacant, drop the roles</button><button class="btn" data-act="edit" data-id="${p.pos}">Add a holder</button></div>`}</div>`;}).join('')}`;}).join('')}
+  </section>`;
+}
+
+function editorCard(checks){
+  const st=S.draft;
+  return `<div class="grid2" style="margin-top:16px"><section class="card"><h2>Draft structure</h2>${st.units.length?treeControls(st,checks,true):'<p class="muted">Empty. Use one of the three ways in above.</p>'}</section>
+   <section class="card" id="access"><h2>People and access</h2><p class="small muted">People with an assigned role. Supervisors, owners and budget holders follow from the structure.</p>${accessList(st,true)}
+   <div class="row" style="margin-top:8px"><button class="btn" data-act="add-person">Add a person with no position</button></div></section></div>`;
+}
+
+/* ---------- The tree: one level at a time, counts, "Show all", Find and a filter (D7-14) ---------- */
+function treeControls(st,checks,editable){
+  const flagged=flaggedUnits(st,checks);
+  const roots=st.units.filter(u=>!u.parentId||!unitById(st,u.parentId));
+  const q=S.find.trim().toLowerCase();
+  let body;
+  if(q.length>=2){
+    const hits=[];
+    for(const u of st.units) if(u.name.toLowerCase().includes(q)) hits.push({kind:'unit',u});
+    for(const p of st.positions){const h=holderName(st,p);if(p.title.toLowerCase().includes(q)||(h&&h.toLowerCase().includes(q)))hits.push({kind:'pos',p,u:unitById(st,p.unitId)});}
+    body=`<p class="small muted" role="status">${plural(hits.length,'match','matches')}${hits.length>30?'. Showing the first 30; type more to narrow it.':''}</p>
+     <ul class="tree">${hits.slice(0,30).map(h=>`<li class="pos"><div><div class="t">${h.kind==='unit'?esc(h.u.name)+' <span class="muted small">'+esc(h.u.type||'Unit')+'</span>':esc(h.p.title)+(holderName(st,h.p)?' · '+esc(holderName(st,h.p)):' · vacant')}</div><div class="xs muted">${esc(unitPath(st,h.u))}</div></div><button class="btn" data-act="reveal" data-unit="${h.u.id}" data-pos="${h.kind==='pos'?h.p.id:''}">Show in the structure</button></li>`).join('')}</ul>`;
+  } else body=`<ul class="tree">${roots.filter(u=>!S.onlyFlagged||flagged.has(u.id)).map(u=>unitTree(st,u,editable,flagged)).join('')}</ul>`;
+  return `<div class="row" style="margin-bottom:8px"><label class="sr-only" for="find">Find</label><input id="find" type="text" placeholder="Find a unit, title or name" value="${esc(S.find)}" data-act="find" style="flex:1;min-width:200px">
+   <label class="small" style="display:flex;align-items:center;gap:6px;min-height:44px"><input type="checkbox" data-act="only-flagged" ${S.onlyFlagged?'checked':''}> Only units with something to fix or check</label></div>${body}`;
+}
+function unitTree(st,u,editable,flagged,depth=0){
+  if(depth>20) return '';
+  const open=S.open.has(u.id);
+  const kids=kidsOf(st,u.id).filter(k=>!S.onlyFlagged||flagged.has(k.id));
+  const ps=posOf(st,u.id);
+  const a=answersFor(st,u); const c=countsOf(st,u);
+  const admin=editable||(isAdmin()&&confirmedNow());
+  const showAllPos=S.showAll.has('p:'+u.id), showAllKids=S.showAll.has('u:'+u.id);
+  return `<li class="unit"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="align-items:flex-start;flex-wrap:nowrap">
+    <button class="btn" style="min-width:44px;padding:0" id="t-${u.id}" data-act="toggle" data-id="${u.id}" aria-expanded="${open}" aria-label="${open?'Close':'Open'} ${esc(u.name)}">${open?'−':'+'}</button>
+    <div><span class="uname">${esc(u.name)}</span> <span class="muted small">${u.type?esc(u.type):'Type not given'}</span> ${u.draft==='ai_draft'?`<span class="ai">AI draft · page ${u.page}</span>`:''} ${flagged.has(u.id)&&!open?'<span class="chip adv">Something to check</span>':''}
+    <div class="xs muted">${plural(c.positions,'position','positions')} · ${num(c.vacant)} vacant · ${plural(c.people.size,'person','people')}</div>
+    <div class="xs muted">Answers for this unit: ${a?`${esc(a.pos.title)}${holderName(st,a.pos)?' ('+esc(holderName(st,a.pos))+')':' (vacant)'}${a.inherited?`, from ${esc(a.fromUnit.name)}`:''}`:'not yet worked out'}</div></div></div>
+    ${admin&&open?`<div class="row">${u.draft==='ai_draft'?`<button class="btn" data-act="accept" data-id="${u.id}">Accept</button>`:''}<button class="btn" data-act="unit" data-id="${u.id}">Edit</button><button class="btn" data-act="add-pos" data-unit="${u.id}">Add position</button><button class="btn" data-act="add-unit" data-parent="${u.id}">Add unit</button><button class="btn" data-act="remove" data-kind="unit" data-id="${u.id}">Remove</button></div>`:''}</div>
+    ${open?`${(showAllPos?ps:ps.slice(0,FOLD)).map(p=>posRow(st,p,admin)).join('')}
+      ${ps.length>FOLD&&!showAllPos?`<button class="btn link small" data-act="show-all" data-key="p:${u.id}">Show all ${num(ps.length)} positions</button>`:''}
+      ${kids.length?`<ul class="tree">${(showAllKids?kids:kids.slice(0,FOLD)).map(k=>unitTree(st,k,editable,flagged,depth+1)).join('')}</ul>${kids.length>FOLD&&!showAllKids?`<button class="btn link small" data-act="show-all" data-key="u:${u.id}">Show all ${kids.length} units</button>`:''}`:''}`:''}</li>`;
+}
+function posRow(st,p,admin){
+  const h=p.holder&&personById(st,p.holder.personId);
+  const to=p.reportsTo&&posById(st,p.reportsTo);
+  return `<div class="pos" id="p-${p.id}" tabindex="-1"><div><div class="t">${esc(p.title)} ${p.ref?`<span class="xs muted">${esc(p.ref)}</span>`:''} ${p.draft==='ai_draft'?`<span class="ai">AI draft · page ${p.page}</span>`:''}</div>
+   <div class="small">${h?`Holder: ${esc(h.name)}${p.holder.acting?' <span class="chip">Acting</span>':''}${isAdmin()?`<span class="muted"> · ${h.email?esc(h.email):'no email'}</span>`:''}`:'<span class="chip">Vacant</span>'}</div>
+   <div class="xs muted">Reports to: ${to?posLabel(st,to)+(holderName(st,to)?' ('+esc(holderName(st,to))+')':' (vacant)'):'nobody'}</div></div>
+   ${admin?`<div class="row">${p.draft==='ai_draft'?`<button class="btn" data-act="accept" data-id="${p.id}">Accept</button><button class="btn" data-act="edit" data-id="${p.id}">Correct</button>`:`<button class="btn" data-act="edit" data-id="${p.id}">Edit</button>`}<button class="btn" data-act="remove" data-kind="pos" data-id="${p.id}">Remove</button></div>`:''}</div>`;
+}
+
+/* People and access: those with an assigned role, plus a search for anyone else (D7-14). */
+function accessList(st,editable){
+  const q=S.peopleFind.trim().toLowerCase();
+  const withRoles=st.people.filter(pe=>pe.roles.length);
+  const found=q.length>=2?st.people.filter(pe=>!pe.roles.length&&(pe.name.toLowerCase().includes(q)||(pe.email||'').toLowerCase().includes(q))).slice(0,10):[];
+  const holds=(pe)=>IX(st).posByHolder.get(pe.id)||[];
+  const row=(pe)=>`<tr><td><b>${esc(pe.name)}</b>${pe.note?` <span class="xs muted">${esc(pe.note)}</span>`:''}<br>${editable?`<input type="email" id="em-a-${pe.id}" aria-label="Email for ${esc(pe.name)}" value="${esc(pe.email)}" placeholder="No email" data-act="email" data-id="${pe.id}">`:`<span class="xs muted">${esc(pe.email)||'no email'}</span>`}${pe.endsOn?`<br><span class="xs muted">Access ends ${esc(fmtDate(pe.endsOn))}</span>`:''}</td>
+   <td class="small">${holds(pe).map(p=>esc(p.title)).join(', ')||'<span class="muted">None</span>'}</td>
+   <td class="small">${editable?ROLE_KEYS.map(k=>`<label style="display:block;min-height:28px"><input type="checkbox" data-act="role-cb" data-id="${pe.id}" data-k="${k}" ${pe.roles.includes(k)?'checked':''}> ${ROLE_LABEL[k]}</label>`).join(''):pe.roles.map(k=>ROLE_LABEL[k]).join(', ')}</td></tr>`;
+  return `<p class="small muted">${plural(withRoles.length,'person has','people have')} an assigned role, out of ${plural(st.people.length,'person','people')}.</p>
+  <div class="tw"><table><thead><tr><th>Person</th><th>Position</th><th>Roles</th></tr></thead><tbody>${withRoles.map(row).join('')}</tbody></table></div>
+  ${editable?`<div class="field" style="margin-top:12px"><label for="pf">Find someone else to give a role or an email</label><input id="pf" type="text" placeholder="Name or email" value="${esc(S.peopleFind)}" data-act="people-find"></div>
+  ${q.length>=2?(found.length?`<div class="tw"><table><tbody>${found.map(row).join('')}</tbody></table></div>`:'<p class="small muted">Nobody else matches.</p>'):''}`:''}`;
+}
+const fmtDate=(iso)=>{const [y,m,d]=iso.split('-').map(Number);return `${d} ${['January','February','March','April','May','June','July','August','September','October','November','December'][m-1]} ${y}`;};
+
+function reviewTab(checks){
+  const st=S.draft;
+  const canConfirm=S.role==='admin'; const must=mustCount(checks);
+  const staff=st.people.find(pe=>pe.roles.includes('org_admin')&&IX(st).posByHolder.has(pe.id));
+  const checkedGroups=checks.worth.filter(g=>S.checked[g.kind]).length;
+  return `<div class="grid2"><section class="card"><h2>What will be saved</h2>
+    <p class="small muted">${plural(st.units.length,'unit','units')} · ${plural(st.positions.length,'position','positions')}, ${num(vacantCount(st))} vacant · ${plural(st.people.length,'person','people')}. Beside each unit is who answers for it, which is also who holds its budget lines.</p>
+    ${st.units.length?treeControls(st,checks,false):'<p class="muted">Nothing yet.</p>'}
+    <h3 style="margin-top:16px">People and access</h3>${accessList(st,false)}</section>
+   <section><div class="card"><h2>Checks</h2>
+    ${must?`<p class="small"><span class="chip blk">${num(must)} must fix</span> before the structure can be confirmed.</p>`:'<p class="small"><span class="chip ok">Nothing to fix</span></p>'}
+    ${checks.must.map(g=>mustGroup(g)).join('')}
+    ${checks.worth.length?`<p class="small" style="margin-top:12px"><span class="chip adv">${checks.worth.length-checkedGroups} worth checking</span> ${checkedGroups?`<span class="chip">${checkedGroups} checked</span>`:''}</p>`:''}
+    ${checks.worth.map(g=>worthGroup(g)).join('')}
+   </div>
+   <div class="card" style="margin-top:16px"><h2>Confirm the structure</h2>
+    ${canConfirm?`<p class="small">Confirming saves the structure as the organisation\u2019s records. The Executive is told. You can keep changing it afterwards; every change is recorded.</p>`
+     :`<p class="small">You can build the draft structure, but confirming needs an administrator on the organisation\u2019s own staff${staff?`: ${esc(staff.name)}`:''}.</p>`}
+    <button class="btn primary" data-act="confirm" ${!canConfirm||must?'disabled':''}>Confirm the structure</button>
+    ${canConfirm&&must?`<p class="xs muted">Fix the ${plural(must,'item','items')} above first.</p>`:''}
+   </div></section></div>`;
+}
+/* Must fix: listed one by one, folding after six per kind, never hidden. */
+function mustGroup(g){
+  const all=S.showAll.has('m:'+g.kind); const items=all?g.items:g.items.slice(0,FOLD);
+  return `<div class="chk blk"><div class="lbl">Must fix before confirming the structure${g.items.length>1?` · ${g.title} · ${num(g.items.length)}`:''}</div>
+   ${items.map(m=>`<div style="margin:6px 0"><p style="margin:4px 0">${m.text}</p>${fixControl(m)}</div>`).join('')}
+   ${g.items.length>FOLD&&!all?`<button class="btn link small" data-act="show-all" data-key="m:${g.kind}">Show all ${num(g.items.length)}</button>`:''}</div>`;
+}
+/* Worth checking: one row per kind with its count, opening to a filterable list; one reason marks the group (D7-14). */
+function worthGroup(g){
+  const c=S.checked[g.kind]; const open=S.groupOpen.has(g.kind); const f=(S.groupFilter[g.kind]||'').toLowerCase();
+  const list=f?g.items.filter(i=>i.text.toLowerCase().includes(f)):g.items;
+  const single=g.items.length===1;
+  return `<div class="chk ${c?'done':'adv'}"><div class="lbl">${c?'Checked':'Worth checking'}</div>
+   <p style="margin:4px 0">${single?g.items[0].text:`<b>${g.title}: ${num(g.items.length)}</b>`}${g.why?' '+g.why:''}</p>
+   ${c?`<p class="small muted" style="margin:0">Checked by ${esc(c.by)}, ${NOW}: \u201c${esc(c.reason)}\u201d</p>`:''}
+   <div class="row">${!single?`<button class="btn" data-act="group-open" data-kind="${g.kind}" aria-expanded="${open}">${open?'Hide the list':'Show the list'}</button>`:''}
+    ${!single&&g.items.length>FOLD?`<button class="btn" data-act="download" data-what="${esc(g.title.toLowerCase())}, ${num(g.items.length)} rows">Download</button>`:''}
+    ${single&&g.items[0].fix?fixControl(g.items[0]):''}${!c?`<button class="btn" data-act="mark" data-kind="${g.kind}">Mark as checked</button>`:''}</div>
+   ${open?`<div class="field" style="margin-top:8px"><label for="gf-${g.kind}" class="small">Filter</label><input id="gf-${g.kind}" type="text" value="${esc(S.groupFilter[g.kind]||'')}" data-act="group-filter" data-kind="${g.kind}"></div>
+    <p class="xs muted">${f?`${plural(list.length,'match','matches')}. `:''}${list.length>30?'Showing the first 30.':''}</p>
+    <ul class="small" style="padding-left:18px">${list.slice(0,30).map(i=>`<li style="margin:4px 0">${i.text} ${i.unitId?`<button class="btn link" data-act="reveal" data-unit="${i.unitId}" data-find="">Show</button>`:''}</li>`).join('')}</ul>`:''}
+  </div>`;
+}
+function fixControl(m){
+  if(!m.fix) return '';
+  const f=m.fix;
+  if(f.kind==='email') return `<div class="row">${f.ids.map(id=>{const pe=personById(S.draft,id);return `<label class="small" for="em-${id}">${esc(pe.name)}</label><input id="em-${id}" type="email" value="${esc(pe.email)}" data-act="email" data-id="${id}">`;}).join('')}</div>`;
+  if(f.kind==='edit') return `<button class="btn" data-act="edit" data-id="${f.id}">Fix</button>`;
+  if(f.kind==='unit') return `<button class="btn" data-act="unit" data-id="${f.id}">${m.fixLabel||'Fix'}</button>`;
+  if(f.kind==='merge') return `<button class="btn" data-act="merge" data-keep="${f.keep}" data-drop="${f.drop}">${m.fixLabel}</button>`;
+  if(f.kind==='access') return `<button class="btn" data-act="goto-access">${m.fixLabel||'Fix'}</button>`;
+  if(f.kind==='tab') return `<button class="btn" data-act="step" data-to="${f.to}">${m.fixLabel||'Fix'}</button>`;
+  return '';
+}
+
+/* ---------- Structure (after confirmation) ---------- */
+function structurePage(){
+  const st=structure(); const checks=setupChecks(st);
+  const conf=S.org==='swu'?SWU.confirmed:S.confirmed;
+  return `<div class="banner ok small">Structure confirmed by ${esc(conf.by)} on ${esc(conf.at)}.${isAdmin()?' Changes are saved straight away and recorded.':''}</div>
+  ${isAdmin()&&checks.worth.length?`<details class="card" style="margin-bottom:12px"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer"><span class="chip adv">${checks.worth.length} worth checking</span>&nbsp;on this structure</summary>${checks.worth.map(g=>worthGroup(g)).join('')}</details>`:''}
+  <div class="grid2"><section class="card"><h2>Structure</h2><p class="small muted">${plural(st.units.length,'unit','units')} · ${plural(st.positions.length,'position','positions')}, ${num(vacantCount(st))} vacant</p>${treeControls(st,checks,false)}</section>
+  <section>${isAdmin()?`<div class="card"><h2>People and access</h2>${accessList(st,false)}</div>`:''}
+  ${isAdmin()&&S.audit.length?`<div class="card" style="margin-top:16px"><h2>Changes</h2><ul class="small">${S.audit.slice(-12).reverse().map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
+  ${S.org==='swu'&&isAdmin()?`<div class="card" style="margin-top:16px"><h3>Try removing</h3><p class="small muted">Open a unit first. Head of Operations (owns work), Meter Reader, Zone B (signed contract), Zone C (holds a position) or Commercial (holds budget lines).</p>
+    <div class="field"><label for="bs">FY2026 budget, for this prototype</label><select id="bs" data-act="budget-status"><option value="draft" ${S.budgetStatus==='draft'?'selected':''}>Draft</option><option value="submitted" ${S.budgetStatus==='submitted'?'selected':''}>Submitted</option><option value="approved" ${S.budgetStatus==='approved'?'selected':''}>Approved</option></select></div></div>`:''}
+  </section></div>`;
+}
+function homePage(){
+  const conf=S.org==='swu'?SWU.confirmed:S.confirmed;
+  return `<h1>Home</h1><p class="purpose">What needs you first, then how things stand.</p>
+   <section class="card" style="margin-top:12px"><h2>Needs you</h2><p class="muted small">Not part of this prototype.</p></section>
+   ${S.role==='executive'?`<section class="card" style="margin-top:12px"><h2>For your information</h2>${conf?`<p>Structure confirmed by ${esc(conf.by)} on ${esc(conf.at)}. <button class="btn link" data-act="nav" data-to="org">See the structure</button></p>`:'<p class="muted">The structure hasn\u2019t been confirmed yet.</p>'}</section>`:''}`;
+}
+
+/* ---------- Dialogs ---------- */
+function pickerResults(st,p,q){
+  q=q.trim().toLowerCase(); const unit=unitById(st,p.unitId); const parent=unit&&unitById(st,unit.parentId);
+  let all;
+  if(q.length<2) all=[...posOf(st,p.unitId),...(parent?posOf(st,parent.id):[])].filter(x=>x.id!==p.id);
+  else{const near=new Set([p.unitId,parent?.id]);all=st.positions.filter(x=>x.id!==p.id&&(x.title.toLowerCase().includes(q)||(holderName(st,x)||'').toLowerCase().includes(q))).sort((a,b)=>(near.has(b.unitId)?1:0)-(near.has(a.unitId)?1:0));}
+  const list=all.slice(0,8);
+  return `<p class="xs muted" style="margin:4px 0">${q.length<2?'Suggested: this unit and the one above it.':plural(all.length,'match','matches')+(all.length>8?'. Showing the first 8; type more to narrow it.':'')}</p>${list.map(x=>`<button class="btn" style="display:block;width:100%;text-align:left;margin:4px 0;font-weight:500" data-act="pick-reports" data-id="${x.id}" aria-pressed="${S.dlg.reportsTo===x.id}">${posLabel(st,x)} <span class="muted small">· ${holderName(st,x)?esc(holderName(st,x)):'vacant'} · ${esc(unitPath(st,unitById(st,x.unitId)))}</span></button>`).join('')}`;
+}
+function dialog(){
+  const d=S.dlg; const st=structure();
+  if(d.kind==='mark'){const g=[...setupChecks(S.draft).worth,...setupChecks(structure()).worth].find(x=>x.kind===d.k);return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">Mark as checked</h2><p class="small">${g.items.length>1?`${g.title}: ${num(g.items.length)}. One reason covers them all.`:g.items[0].text}</p>
+   <div class="field"><label for="reason">Why is this fine? (kept with the confirmation)</label><textarea id="reason"></textarea></div>
+   <div class="row"><button class="btn primary" data-act="mark-save" data-kind="${esc(d.k)}">Mark as checked</button><button class="btn" data-act="close">Cancel</button></div></div></div>`;}
+  if(d.kind==='confirm'){const c=setupChecks(S.draft);const unchecked=c.worth.filter(g=>!S.checked[g.kind]).length;
+   return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">Confirm the structure?</h2>
+   <p>${plural(S.draft.units.length,'unit','units')}, ${plural(S.draft.positions.length,'position','positions')} (${num(vacantCount(S.draft))} vacant) and ${plural(S.draft.people.length,'person','people')} become the organisation\u2019s records.</p>
+   ${unchecked?`<p class="small"><span class="chip adv">${unchecked} worth checking</span> not marked as checked. They\u2019ll be recorded as not checked.</p>`:''}
+   <p class="small muted">Currency and the year\u2019s start month lock. Mutale Banda (Executive) is told.</p>
+   <div class="row"><button class="btn primary" data-act="confirm-save">Confirm</button><button class="btn" data-act="close">Cancel</button></div></div></div>`;}
+  if(d.kind==='edit'){const p=posById(st,d.id);const to=d.reportsTo&&posById(st,d.reportsTo);
+   return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">${p.draft==='ai_draft'?'Correct':'Edit'}: ${esc(p.title)}</h2>
+   ${d.error?`<div class="chk blk"><div class="lbl">Can\u2019t save</div><p style="margin:4px 0">${d.error}</p></div>`:''}
+   <div class="field"><label for="e-t">Position title</label><input id="e-t" type="text" value="${esc(d.title)}" data-act="dlg-field" data-k="title"></div>
+   <div class="field"><label for="e-u">Unit</label><select id="e-u" data-act="dlg-field" data-k="unitId">${st.units.slice(0,400).map(u=>`<option value="${u.id}" ${u.id===d.unitId?'selected':''}>${esc(unitPath(st,u))}</option>`).join('')}</select></div>
+   <div class="field"><span style="font-size:13px;font-weight:600">Reports to</span><p class="small" style="margin:2px 0">Now: <b>${to?posLabel(st,to)+(holderName(st,to)?' ('+esc(holderName(st,to))+')':' (vacant)'):'nobody'}</b> ${to?'<button class="btn link small" data-act="pick-reports" data-id="">Set to nobody</button>':''}</p>
+    <label for="e-rq" class="sr-only">Find the line manager</label><input id="e-rq" type="text" placeholder="Type a title or name to find" value="${esc(d.q||'')}" data-act="picker">
+    <div id="picker">${pickerResults(st,p,d.q||'')}</div></div>
+   <div class="field"><label for="e-h">Holder\u2019s full name (blank means vacant)</label><input id="e-h" type="text" value="${esc(d.holder)}" data-act="dlg-field" data-k="holder"></div>
+   <div class="field"><label><input id="e-a" type="checkbox" data-act="dlg-field" data-k="acting" ${d.acting?'checked':''}> Acting</label></div>
+   <div class="row"><button class="btn primary" data-act="edit-save" data-id="${p.id}">Save</button><button class="btn" data-act="close">Cancel</button></div></div></div>`;}
+  if(d.kind==='unit'){const u=unitById(st,d.id);
+   return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">Edit unit</h2>
+   <div class="field"><label for="u-n">Name</label><input id="u-n" type="text" value="${esc(u.name)}"></div>
+   <div class="field"><label for="u-t">Unit type (your own word, such as Department or Region)</label><input id="u-t" type="text" value="${esc(u.type)}"></div>
+   <div class="field"><label for="u-p">Sits under</label><select id="u-p"><option value="">Nothing (top unit)</option>${st.units.filter(x=>x.id!==u.id).slice(0,400).map(x=>`<option value="${x.id}" ${x.id===u.parentId?'selected':''}>${esc(unitPath(st,x))}</option>`).join('')}</select></div>
+   <div class="row"><button class="btn primary" data-act="unit-save" data-id="${u.id}">Save</button><button class="btn" data-act="close">Cancel</button></div></div></div>`;}
+  if(d.kind==='remove'){const item=d.k==='unit'?unitById(st,d.id):posById(st,d.id);const name=d.k==='unit'?item.name:item.title;const b=removalBlockers(d.k,d.id);
+   return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">Remove ${esc(name)}?</h2>
+   ${b.length?`<p>${esc(name)} can\u2019t be removed yet. Move these first:</p><div class="tw"><table><thead><tr><th>What</th><th>Who can move it</th></tr></thead><tbody>${b.slice(0,30).map(x=>`<tr><td>${x.hard?'<span class="chip blk">Must fix</span> ':''}${x.what}</td><td>${x.who}${x.link?` <a href="#" class="small">Open</a>`:''}</td></tr>`).join('')}</tbody></table></div>${b.length>30?`<p class="small muted">And ${num(b.length-30)} more.</p>`:''}
+    <div class="row" style="margin-top:12px"><button class="btn" data-act="close">Close</button></div>`
+   :`<p>${confirmedNow()?'This is saved straight away and recorded.':'It comes out of the draft structure.'}</p><div class="row"><button class="btn primary" data-act="remove-save">Remove</button><button class="btn" data-act="close">Cancel</button></div>`}</div></div>`;}
+  if(d.kind==='template') return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">The template</h2><p class="small">One row per position. Columns:</p><ol class="small">${COLS.map((c,i)=>`<li>${c}${i===8?' (optional: needed only where two positions in one unit share a title; your own post numbers work well)':''}</li>`).join('')}</ol>
+   <p class="small muted">In the build this downloads an .xlsx file with these columns, a short instructions sheet and the role names to choose from.</p><div class="row"><button class="btn" data-act="close">Close</button></div></div></div>`;
+  if(d.kind==='download') return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">Download</h2><p>In the build this downloads a spreadsheet of the ${esc(d.what)}.</p><div class="row"><button class="btn" data-act="close">Close</button></div></div></div>`;
+  if(d.kind==='replace') return `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">Replace the draft structure?</h2><p>The draft structure already has entries. ${d.route==='ai'?'An AI draft':'Importing'} replaces them. Nothing confirmed is affected.</p>
+   <div class="row"><button class="btn primary" data-act="replace-go" data-route="${d.route}" data-size="${d.size||'small'}">Replace</button><button class="btn" data-act="close">Cancel</button></div></div></div>`;
+  return '';
+}
+
+/* ============ Events ============ */
+function revealUnit(st,unitId,posId){let u=unitById(st,unitId),g=0;while(u&&g++<50){S.open.add(u.id);u=unitById(st,u.parentId);}if(posId){S.showAll.add('p:'+unitId);S.flash='p-'+posId;}else S.flash='t-'+unitId;S.find='';S.onlyFlagged=false;}
+function runImport(route,size){if(route==='ai')importAi();else importSheet(size==='large'?largeSheet():SHEET);}
+document.addEventListener('click',(e)=>{
+  const t=e.target.closest('[data-act]'); if(!t||t.tagName==='SELECT'||t.type==='checkbox'||t.tagName==='INPUT') return;
+  if(t.tagName==='A'||t.tagName==='BUTTON') e.preventDefault();
+  const a=t.dataset.act; const st=structure(); dirty(st); S.note=null;
+  switch(a){
+   case 'nav': S.route=t.dataset.to; S.dlg=null; break;
+   case 'what': S.whatOpen=!S.whatOpen; break;
+   case 'dismiss': S.firstNote=false; break;
+   case 'step': S.step=t.dataset.to; break;
+   case 'template': S.dlg={kind:'template'}; break;
+   case 'download': S.dlg={kind:'download',what:t.dataset.what}; break;
+   case 'sheet': case 'ai': if(S.draft.units.length){S.dlg={kind:'replace',route:a,size:t.dataset.size};break;} runImport(a,t.dataset.size); break;
+   case 'replace-go': runImport(t.dataset.route,t.dataset.size); S.dlg=null; break;
+   case 'toggle': S.open.has(t.dataset.id)?S.open.delete(t.dataset.id):S.open.add(t.dataset.id); S.flash='t-'+t.dataset.id; break;
+   case 'show-all': S.showAll.add(t.dataset.key); break;
+   case 'reveal': revealUnit(st,t.dataset.unit,t.dataset.pos); break;
+   case 'group-open': S.groupOpen.has(t.dataset.kind)?S.groupOpen.delete(t.dataset.kind):S.groupOpen.add(t.dataset.kind); break;
+   case 'fix-reports':{const sel=document.getElementById('rp-'+t.dataset.pos);const p=posById(S.draft,t.dataset.pos);p.reportsTo=sel.value;const pr=S.rowProblems.find(x=>x.pos===p.id&&x.kind==='reports');pr.done=true;break;}
+   case 'fix-vacant-drop':{const pr=S.rowProblems.find(x=>x.pos===t.dataset.pos&&x.kind==='vacant-roles');pr.done=true;break;}
+   case 'accept':{const x=posById(st,t.dataset.id)||unitById(st,t.dataset.id);x.draft='accepted';break;}
+   case 'edit':{const p=posById(st,t.dataset.id);S.dlg={kind:'edit',id:p.id,title:p.title,unitId:p.unitId,reportsTo:p.reportsTo,holder:holderName(st,p)||'',acting:!!(p.holder&&p.holder.acting),q:''};break;}
+   case 'pick-reports': S.dlg.reportsTo=t.dataset.id||null; S.dlg.error=null; break;
+   case 'unit': S.dlg={kind:'unit',id:t.dataset.id}; break;
+   case 'close': S.dlg=null; break;
+   case 'edit-save':{
+     const d=S.dlg; const p=posById(st,t.dataset.id); const to=d.reportsTo||null;
+     let x=to&&posById(st,to),guard=0,loop=false;while(x&&guard++<500){if(x.id===p.id){loop=true;break;}x=x.reportsTo&&posById(st,x.reportsTo);}
+     if(loop){d.error=`${esc(p.title)} would report to itself through ${esc(posById(st,to).title)}. Choose another line manager.`;break;}
+     const before=p.reportsTo; p.title=(d.title||'').trim()||p.title; p.unitId=d.unitId; p.reportsTo=to;
+     const hn=(d.holder||'').trim();
+     if(!hn) p.holder=null; else {let pe=holderName(st,p)===hn?personById(st,p.holder.personId):st.people.find(q=>q.name===hn);if(!pe){pe={id:nid('per'),name:hn,email:'',roles:[],endsOn:null};st.people.push(pe);}p.holder={personId:pe.id,acting:d.acting};}
+     if(p.draft==='ai_draft') p.draft='accepted';
+     const pr=S.rowProblems.find(r=>r.pos===p.id&&!r.done); if(pr&&pr.kind==='vacant-roles'&&p.holder){const pe=personById(st,p.holder.personId);pr.roles.forEach(k=>{if(!pe.roles.includes(k))pe.roles.push(k);});pr.done=true;}
+     if(confirmedNow()){S.audit.push(`${p.title}: changed by ${ACTOR()}, ${NOW}${before!==to?' (line manager changed)':''}`);S.note='Saved and recorded.';}
+     S.dlg=null; break;}
+   case 'unit-save':{const u=unitById(st,t.dataset.id);u.name=document.getElementById('u-n').value.trim()||u.name;u.type=document.getElementById('u-t').value.trim();const np=document.getElementById('u-p').value||null;
+     let x=np&&unitById(st,np),loop=false,g=0;while(x&&g++<100){if(x.id===u.id){loop=true;break;}x=unitById(st,x.parentId);} if(!loop)u.parentId=np; if(u.draft==='ai_draft')u.draft='accepted'; if(confirmedNow())S.audit.push(`${u.name}: changed by ${ACTOR()}, ${NOW}`); S.dlg=null; break;}
+   case 'add-unit':{const u={id:nid('u'),name:'New unit',type:'',parentId:t.dataset.parent||null,draft:'human'};st.units.push(u);if(u.parentId)S.open.add(u.parentId);S.dlg={kind:'unit',id:u.id};break;}
+   case 'add-pos':{dirty(st);const p={id:nid('pos'),unitId:t.dataset.unit,title:'New position',ref:'',reportsTo:(answersFor(st,unitById(st,t.dataset.unit))||{}).pos?.id||null,holder:null,draft:'human'};st.positions.push(p);dirty(st);S.dlg={kind:'edit',id:p.id,title:p.title,unitId:p.unitId,reportsTo:p.reportsTo,holder:'',acting:false,q:''};break;}
+   case 'add-person': st.people.push({id:nid('per'),name:'New person',email:'',roles:[],endsOn:null}); break;
+   case 'remove': S.dlg={kind:'remove',k:t.dataset.kind,id:t.dataset.id}; break;
+   case 'remove-save':{const d=S.dlg;if(d.k==='unit'){const u=unitById(st,d.id);st.units=st.units.filter(x=>x.id!==d.id);if(confirmedNow())S.audit.push(`Unit ${u.name} removed by ${ACTOR()}, ${NOW}`);}else{const p=posById(st,d.id);st.positions=st.positions.filter(x=>x.id!==d.id);if(confirmedNow())S.audit.push(`Position ${p.title} removed by ${ACTOR()}, ${NOW}`);}
+     S.dlg=null; if(confirmedNow())S.note='Removed and recorded.'; break;}
+   case 'mark': S.dlg={kind:'mark',k:t.dataset.kind}; break;
+   case 'mark-save':{const r=document.getElementById('reason').value.trim();if(!r){document.getElementById('reason').focus();return;}S.checked[t.dataset.kind]={reason:r,by:ACTOR()};S.dlg=null;break;}
+   case 'merge':{const keep=personById(S.draft,t.dataset.keep),drop=personById(S.draft,t.dataset.drop);S.draft.positions.forEach(p=>{if(p.holder&&p.holder.personId===drop.id)p.holder.personId=keep.id;});keep.roles=[...new Set([...keep.roles,...drop.roles])];S.draft.people=S.draft.people.filter(x=>x.id!==drop.id);break;}
+   case 'goto-access': S.step='build'; S.flash='pf'; break;
+   case 'confirm': S.dlg={kind:'confirm'}; break;
+   case 'confirm-save':{const c=setupChecks(S.draft);S.confirmed={by:ACTOR(),at:NOW,checked:c.worth.map(g=>({kind:g.kind,count:g.items.length,reason:S.checked[g.kind]?.reason??null}))};
+     S.audit.push(`Structure confirmed by ${ACTOR()}, ${NOW}; ${c.worth.length} worth-checking kinds recorded (${c.worth.filter(g=>S.checked[g.kind]).length} checked)`);S.dlg=null;S.note='Structure confirmed. Mutale Banda (Executive) has been told.';break;}
+  }
+  render();
+});
+document.addEventListener('change',(e)=>{
+  const t=e.target; const a=t.dataset.act; if(!a||['find','picker','people-find','group-filter'].includes(a)) return; S.note=null; dirty(structure());
+  if(a==='org'){S.org=t.value;S.route='org';S.dlg=null;S.find='';S.open=new Set(structure().units.filter(u=>!u.parentId).map(u=>u.id));if(S.org==='swu'&&S.role==='consultant')S.role='admin';}
+  else if(a==='role'){S.role=t.value;}
+  else if(a==='detail'){S.details[t.dataset.k]=t.dataset.k==='fyStart'?Number(t.value):t.value;}
+  else if(a==='ai-toggle'){S.settings.ai=t.checked;}
+  else if(a==='only-flagged'){S.onlyFlagged=t.checked;S.find='';}
+  else if(a==='email'){personById(structure(),t.dataset.id).email=t.value.trim();}
+  else if(a==='role-cb'){const pe=personById(S.draft,t.dataset.id);pe.roles=t.checked?[...new Set([...pe.roles,t.dataset.k])]:pe.roles.filter(k=>k!==t.dataset.k);}
+  else if(a==='budget-status'){S.budgetStatus=t.value;}
+  else if(a==='dlg-field'){S.dlg[t.dataset.k]=t.type==='checkbox'?t.checked:t.value;return;}
+  else if(a==='sheet-file'){if(S.draft.units.length){S.dlg={kind:'replace',route:'sheet',size:'small'};}else importSheet(SHEET);}
+  else if(a==='ai-file'){if(S.draft.units.length){S.dlg={kind:'replace',route:'ai'};}else importAi();}
+  render();
+});
+/* Typing in Find, the picker, the people search or a group filter updates as you type. */
+document.addEventListener('input',(e)=>{
+  const t=e.target; const a=t.dataset.act;
+  if(a==='find'){S.find=t.value;render();}
+  else if(a==='people-find'){S.peopleFind=t.value;render();}
+  else if(a==='group-filter'){S.groupFilter[t.dataset.kind]=t.value;render();}
+  else if(a==='picker'){S.dlg.q=t.value;const st=structure();document.getElementById('picker').innerHTML=pickerResults(st,posById(st,S.dlg.id),t.value);}
+  else if(a==='dlg-field'&&t.type!=='checkbox'&&S.dlg){S.dlg[t.dataset.k]=t.value;}
+});
+document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&S.dlg){S.dlg=null;render();}});
+S.open=new Set();
+render();
+</script>
+</body>
+</html>

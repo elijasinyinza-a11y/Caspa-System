@@ -27,9 +27,14 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    clarity retrofit, BUILD-BRIEF section 20 — done (v0.5.1)
 6. Six-point decision map, with changing an activity's 6P level — done (v0.6.0). 4Q band-specific cell names
    (v0.5.2); header change (v0.5.3)
-7. Organisation setup (Organisation Setup Specification v0.2)
+7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — prototype approved 29 October 2026 (`reference/caspa-setup-prototype.html`); build next as v0.7.0
 8. Onboarding: the two doors
 9. Phone layout review (responsive from slice 1)
+
+Agreed 29 October 2026: once slice 7 is built, draft a specification for a short slice after onboarding covering the
+vacancy risk view (vacant and acting positions ranked by the records, budget lines and supervised contracts they hold)
+and the handover list when a holder changes. Both are selectors over existing records; any stored handover note needs a
+contract revision.
 
 ## Sample organisations
 
