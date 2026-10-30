@@ -47,6 +47,13 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
+## Permission fix (v0.7.1)
+
+- The Organisation page no longer sends assigned roles, access end dates, the Executive's name for the "is told"
+  message or the removal lists to anyone but administrators; emails were already limited. The screens were
+  unchanged; this closes the gap in the data-access layer (rule 5; the Membership row of the matrix).
+  424 tests (6 new).
+
 ## Organisation setup notes (v0.7.0)
 
 - BUILD-BRIEF sections 23 and 24; Organisation Setup Specification v0.3 (a doc in the Project's chats). Contract v1.4
@@ -145,6 +152,8 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
+- Who sees which parts of the structure: Elijah wants it limited (30 October 2026); options to decide, then
+  contract v1.5.
 - Slice 7 choices to confirm (BUILD-BRIEF section 24): the phone bottom bar, the "Consultant" development role, and
   who answers for a unit whose top positions are linked only through someone outside it.
 - Vacancy risk view and handover list: specification to draft next (agreed 29 October 2026).
