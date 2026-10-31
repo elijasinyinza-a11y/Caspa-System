@@ -47,6 +47,15 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
+## Who sees the structure (v0.7.2)
+
+- BUILD-BRIEF section 25; contract v1.5. Each organisation sets who sees its structure (Organisation › Details and
+  settings › "Who sees the organisation structure"). Default: everyone sees all of it. Every member always sees
+  their own line. 440 tests (16 new).
+- Try it on Sample Water Utility as Organisation administrator: untick Finance, choose "Their own line only" and
+  save; then view as Employee (Mary Chileshe sees 3 units and 5 positions) or Finance (Ruth Phiri sees her unit and
+  the Managing Director). The Executive, Strategy office and HR still see everything.
+
 ## Permission fix (v0.7.1)
 
 - The Organisation page no longer sends assigned roles, access end dates, the Executive's name for the "is told"
@@ -152,8 +161,6 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
-- Who sees which parts of the structure: Elijah wants it limited (30 October 2026); options to decide, then
-  contract v1.5.
 - Slice 7 choices to confirm (BUILD-BRIEF section 24): the phone bottom bar, the "Consultant" development role, and
   who answers for a unit whose top positions are linked only through someone outside it.
 - Vacancy risk view and handover list: specification to draft next (agreed 29 October 2026).

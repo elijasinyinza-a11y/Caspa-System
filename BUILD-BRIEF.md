@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 24 record decisions made since; the latest is dated 30 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 25 record decisions made since; the latest is dated 30 October 2026.
 
 ## 1. What you are building
 
@@ -330,3 +330,14 @@ Built to section 23 and the approved setup prototype. Contract v1.4 adds only th
 - **Development preview:** an organisation picker for all five sample organisations, and roles found from the records where the sample names none, so Sample New Organisation gains an Executive, supervisor and employee once confirmed. A "Consultant" role appears where one exists (administrator access with an end date and no position).
 - **Phone bar:** as the prototype, up to four workspaces plus Organisation; this hides Performance from the Executive on a phone. To settle in the phone layout review (slice 9).
 - **Who answers for a unit:** the setup screens use the same derivation as budget holders (`accountablePositionOfUnit`). Where a unit has several top positions and one manages another only through someone outside the unit, that rule looks for a common manager above both; the prototype took the top position itself. Unchanged pending Elijah's view.
+
+## 25. Who sees the organisation structure (30 October 2026)
+
+Decided by Elijah on 30 October 2026; contract v1.5. It replaces the "view all members" part of D7-5 for the structure as a whole. Built as v0.7.2, after v0.7.1 stopped sending assigned roles, access end dates and removal lists to anyone but administrators.
+
+- **A setting each organisation sets for itself:** "Who sees the organisation structure", under Details and settings, changed by the administrator and recorded. Part one ticks the roles that see the whole structure; the administrator always does. Part two sets what everyone else sees: the whole structure; the units they answer for and everything below, plus their own line; or their own line only.
+- **Default:** every role ticked and "the whole structure", so organisations see what they saw before.
+- **The floor:** every member always sees their own line: the units of the positions they hold, everyone in those units, and every position above theirs, up to the top, with its unit. Units on the way to the top are kept so the tree can be followed.
+- **Contract v1.5:** one setting, `Organisation.settings.structureView`; one principal, `structure_viewer`; one matrix row, `OrganisationStructure` (the tree, its counts and Find). The Organisation, OrgUnit, Position, Person and PositionAssignment rows are unchanged, because the organisation's name and labels, and who owns a record, stay visible wherever the record is. This narrows what was proposed in chat (changing the three record rows), since those rows also carry owner names on record pages.
+- **What a limited view shows:** Find searches only that part; who answers for each unit shown is worked out on the whole structure, so it is always correct; the tree opens fully, since the part is short. Emails, roles and access dates stay with administrators.
+- **Code:** `src/rules/structure-view.ts` (pure), enforced in `repo.structure.page()` and in the permission check. Tests cover every level on Sample Water Utility, the default in all four organisations, record pages, the recorded change, and 200 people in the 5,000-position structure within a time limit.
