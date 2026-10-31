@@ -29,7 +29,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    (v0.5.2); header change (v0.5.3)
 7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — done (v0.7.0)
 8. Onboarding: the two doors (Onboarding Specification v0.1; decisions O1 to O9, BUILD-BRIEF section 28) — done (v0.8.0)
-9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — prototype approved 30 October 2026 (`reference/caspa-vacancy-prototype.html`); build after slice 8 as v0.9.0
+9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (responsive from slice 1)
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -44,6 +44,23 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Vacancies and handover notes (v0.9.0)
+
+- BUILD-BRIEF section 26; Vacancy and Handover Specification v0.1. No contract change. 465 tests (12 new,
+  `src/data/access/vacancy.test.ts`).
+- Seed (H2): the Head of Commercial post at Sample Water Utility is vacant from 1 September 2026, and the NGO's
+  Programme Coordinator is acting from 1 August 2026. Tests that assumed the Head of Commercial was held now use a
+  date before the vacancy or expect it.
+- Try it on Sample Water Utility: as Executive, Home's "For your information" counts the vacancy; open Organisation ›
+  Vacant and acting positions and "What it holds". As Organisation administrator, edit the Commercial Officer and clear
+  the holder: the dialog says what the vacant post keeps; the Commercial Officer then lists first, because two
+  contracts have no supervisor (H1). Open a handover list; as HR, "Write a handover note" gives an AI draft that is
+  not stored (H7). Employees get no vacancy tab and can open only their own post's list.
+- Code: `src/selectors/vacancy.ts` (what a position holds, H1 order), `repo.structure.vacancies()`, `handover()`,
+  `holdingsPreview()`, `handoverNote()`, `src/routes/organisation/Vacancies.tsx`, routes `#/organisation/vacancies`
+  and `#/organisation/handover/<positionId>`. H4 "managers" means a position that answers for a unit and that others
+  report to, so a one-person unit's holder gets no vacancy view.
 
 ## Onboarding notes (v0.8.0)
 
