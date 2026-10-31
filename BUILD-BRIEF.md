@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 25 record decisions made since; the latest is dated 30 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 26 record decisions made since; the latest is dated 30 October 2026.
 
 ## 1. What you are building
 
@@ -162,7 +162,8 @@ Every workspace header carries its place in the 7Cs: Strategy (Conception to Com
 6. **Six-point decision map** for O1.2.
 7. **Organisation setup:** as specified in the *CASPA™ Organisation Setup Specification v0.3* (section 23): spreadsheet import, AI draft from an organogram and a manual editor, one review screen, confirmation by the organisation administrator.
 8. **Onboarding:** the two doors.
-9. **Phone layout:** at 390px the sidebar becomes a bottom bar limited to the role's items.
+9. **Vacancies and handover:** as section 26.
+10. **Phone layout:** at 390px the sidebar becomes a bottom bar limited to the role's items.
 
 Strategy formation screens are the **next** slice. They are specified in the approved *CASPA™ Strategy Formation Specification v1.0* as amended by section 13 and shown in the approved Strategy workspace prototype, `reference/caspa-strategy-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). That slice covers plan setup and both doors, the preparer-built formation calendar, the 4Q board and workshop mode, the department checklist and AI interview, vision and mission, consultation, the baseline and compliance registers, the plan composer with its checks and confirmation gate, the plan document, communication records and sessions with decision logs. Offline progress capture follows after it.
 
@@ -341,3 +342,19 @@ Decided by Elijah on 30 October 2026; contract v1.5. It replaces the "view all m
 - **Contract v1.5:** one setting, `Organisation.settings.structureView`; one principal, `structure_viewer`; one matrix row, `OrganisationStructure` (the tree, its counts and Find). The Organisation, OrgUnit, Position, Person and PositionAssignment rows are unchanged, because the organisation's name and labels, and who owns a record, stay visible wherever the record is. This narrows what was proposed in chat (changing the three record rows), since those rows also carry owner names on record pages.
 - **What a limited view shows:** Find searches only that part; who answers for each unit shown is worked out on the whole structure, so it is always correct; the tree opens fully, since the part is short. Emails, roles and access dates stay with administrators.
 - **Code:** `src/rules/structure-view.ts` (pure), enforced in `repo.structure.page()` and in the permission check. Tests cover every level on Sample Water Utility, the default in all four organisations, record pages, the recorded change, and 200 people in the 5,000-position structure within a time limit.
+
+## 26. Decisions on vacancies and handover (30 October 2026)
+
+Source: the *CASPA™ Vacancy and Handover Specification v0.1* (a doc in the Project's chats); decisions H1 to H9 accepted as recommended by Elijah. No contract change.
+
+- **H1, order:** the vacancy view lists vacant posts first, then acting ones, in a fixed order of what stops soonest: positions supervising contracts that need a supervisor's action, then those holding budget lines, then those owning records with must-fix checks, then other owned records; ties by count, then title. No risk score. Every column can be sorted by the person.
+- **H2, sample data:** Head of Commercial at Sample Water Utility is vacant from 1 September 2026; the NGO gains one acting post. Existing tests that assume the Head of Commercial is held are updated with it.
+- **H3:** positions whose holder leaves soon are not listed in this slice.
+- **H4, who sees the vacancy view:** the Executive, HR, the Strategy office and the administrator, plus managers for the units they answer for; always within the person's part of the structure (section 25).
+- **H5, who opens a handover list:** the administrator, the outgoing holder, their supervisor and HR.
+- **H6:** a leaving holder's signed contract is listed only; HR handles it in the appraisal slice.
+- **H7:** the AI handover note is shown, copied or printed, never stored.
+- **H8:** a vacancy that stops contracts is an information line on the Executive and HR homes, not a "Needs you" item.
+- **H9:** this is slice 9, after onboarding; the phone layout review becomes slice 10.
+- **Shared list:** both features read one computed list per position, "What this position holds" (owned records, direct budget lines, units it answers for, direct reports, supervised contracts, corrective work, open checks, dated items), plus, for a handover, the roles leaving with the person and work waiting on the outgoing supervisor. Budget lines list direct holders only.
+- **Prototype approved** by Elijah on 30 October 2026: `reference/caspa-vacancy-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). Its holdings were computed by the v0.7.2 rules from the sample store with H2 applied. Build as v0.9.0, after onboarding (slice 8).

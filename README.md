@@ -29,12 +29,10 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
    (v0.5.2); header change (v0.5.3)
 7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — done (v0.7.0)
 8. Onboarding: the two doors
-9. Phone layout review (responsive from slice 1)
+9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — prototype approved 30 October 2026 (`reference/caspa-vacancy-prototype.html`); build after slice 8 as v0.9.0
+10. Phone layout review (responsive from slice 1)
 
-Agreed 29 October 2026: once slice 7 is built, draft a specification for a short slice after onboarding covering the
-vacancy risk view (vacant and acting positions ranked by the records, budget lines and supervised contracts they hold)
-and the handover list when a holder changes. Both are selectors over existing records; any stored handover note needs a
-contract revision.
+Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
 ## Sample organisations
 
@@ -163,7 +161,6 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 - Slice 7 choices to confirm (BUILD-BRIEF section 24): the phone bottom bar, the "Consultant" development role, and
   who answers for a unit whose top positions are linked only through someone outside it.
-- Vacancy risk view and handover list: specification to draft next (agreed 29 October 2026).
 
 - The Clarity Specification document is not in the Project files; adding it helps later sessions.
 
