@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: vacancies and handover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--blk-t:#B42318;--blk-b:#FEF3F2;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--info-b:#EDECEA;
+--s:#378ADD;--c:#7C5CBF;--p:#B85C38;--f:#C2417A;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.app{display:flex;height:100%}
+.side{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:4px;flex-shrink:0}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav a[aria-current=page]{background:rgba(255,255,255,.15)}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.sep{height:1px;background:rgba(255,255,255,.2);margin:10px 4px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:8px 20px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--muted);flex:1;min-width:160px}
+.crumb b{color:var(--navy)}
+.proto{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.proto label{font-size:12px;color:var(--muted)}
+select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white)}
+textarea{width:100%;min-height:72px}
+.scroll{flex:1;overflow-y:auto;padding:20px 24px 60px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:28px;color:var(--navy);margin:0 0 4px}
+h2{font-size:18px;color:var(--navy);margin:0 0 8px}
+h3{font-size:16px;color:var(--navy);margin:0 0 6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}.xs{font-size:12px}
+.purpose{font-size:16px;margin:0 0 6px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--navy);color:var(--white)}
+.btn.link{border:none;background:none;padding:0 4px;text-decoration:underline;min-height:44px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:16px 0;flex-wrap:wrap}
+.tabs button{min-height:44px;border:none;background:none;padding:0 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--navy);border-bottom-color:var(--navy)}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid var(--border);background:var(--info-b);color:var(--navy)}
+.chip.blk{color:var(--blk-t);background:var(--blk-b);border-color:var(--blk-t)}
+.chip.adv{color:var(--adv-t);background:var(--adv-b);border-color:var(--adv-r)}
+.chip.ok{color:var(--ok-t);background:var(--ok-b);border-color:var(--ok-r)}
+.chk{border-radius:10px;padding:12px;margin:8px 0;border:1px solid}
+.chk.blk{border:2px solid var(--blk-t);background:var(--blk-b)}
+.chk.adv{border-color:var(--adv-r);background:var(--adv-b)}
+.chk.done{border-color:var(--border);background:var(--white)}
+.chk .lbl{font-weight:700;font-size:13px}
+.chk.blk .lbl{color:var(--blk-t)}.chk.adv .lbl{color:var(--adv-t)}
+.banner{border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid var(--border);background:var(--info-b)}
+.banner.ok{background:var(--ok-b);border-color:var(--ok-r);color:var(--ok-t)}
+.tree{list-style:none;margin:0;padding:0}
+.tree .tree{padding-left:18px;border-left:1px solid var(--border);margin-left:8px}
+.unit{padding:10px 0 4px}
+.uname{font-weight:700;color:var(--navy)}
+.pos{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 10px;margin:4px 0;border:1px solid var(--border);border-radius:8px;background:var(--white)}
+.pos .t{font-weight:600}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+th{color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:13px;font-weight:600}
+.dlg{position:fixed;inset:0;background:rgba(13,27,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.dlg .card{max-width:560px;width:100%;max-height:90vh;overflow:auto}
+.ai{font-size:12px;font-weight:700;color:var(--navy);background:var(--info-b);border:1px dashed var(--control);border-radius:6px;padding:1px 6px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.help{border-left:3px solid var(--navy);padding:8px 12px;background:var(--white);margin:8px 0;border-radius:0 8px 8px 0}
+.bottom{display:none}
+@media (max-width:760px){
+ .side{display:none}
+ .bottom{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--navy);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+ .bottom a{flex:1;min-height:56px;display:flex;align-items:center;justify-content:center;color:var(--white);text-decoration:none;font-size:12px;font-weight:600}
+ .bottom a[aria-current=page]{background:rgba(255,255,255,.15)}
+ .grid2,.grid3{grid-template-columns:1fr}
+ .scroll{padding:16px 14px 90px}
+ h1{font-size:22px}
+}
+.vrow{border:1px solid var(--border);border-radius:10px;background:var(--white);margin:8px 0}
+.vrow>.head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:12px;flex-wrap:wrap}
+.counts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.counts span{font-size:12px;border:1px solid var(--border);border-radius:6px;padding:2px 6px;background:var(--cream)}
+.stops{margin:6px 0 0;font-size:14px}
+.detail{border-top:1px solid var(--border);padding:12px}
+.hold h3{margin-top:14px}
+.hold ul{margin:4px 0 0;padding-left:18px}
+@media print{.side,.top,.bottom,.noprint{display:none!important}.scroll{overflow:visible}}
+</style>
+</head><body>
+<div class="app">
+ <nav class="side" aria-label="Main"><div class="brand">CASPA™</div><div class="nav" id="nav"></div></nav>
+ <div class="main">
+  <header class="top">
+   <div class="crumb" id="crumb"></div>
+   <div class="proto" role="group" aria-label="Prototype controls">
+    <label for="role">Viewing as</label>
+    <select id="role">
+     <option value="executive">Executive (Chanda Mulenga)</option>
+     <option value="hr">HR and administrator (Natasha Kabwe)</option>
+     <option value="strategy">Strategy office (Bwalya Musonda)</option>
+     <option value="finance">Finance (Ruth Phiri)</option>
+     <option value="supervisor">Supervisor (Esther Banda)</option>
+     <option value="employee">Employee (Mary Chileshe)</option>
+    </select>
+    <button class="btn" id="reset">Reset</button>
+   </div>
+  </header>
+  <main class="scroll" id="main" tabindex="-1"><div class="wrap" id="view"></div></main>
+ </div>
+</div>
+<nav class="bottom" id="bottom" aria-label="Main"></nav>
+<div id="dlg"></div>
+<div id="live" class="sr-only" aria-live="polite"></div>
+<script>
+/* Prototype for the CASPA™ Vacancy and Handover Specification (decisions H1 to H9, 30 October 2026).
+   Behaviour to match, not code to copy. Every holding below was computed from the v0.7.2 sample store by the
+   real rules (with H2 applied: the Head of Commercial post vacant from 1 September 2026); this page only
+   renders it and lets a holder change be tried. */
+const D = {
+ "org": "Sample Water Utility",
+ "now": "2026-10-18",
+ "fy": 2026,
+ "units": [
+  {
+   "id": "u-org",
+   "name": "Sample Water Utility",
+   "type": "Organisation",
+   "parent": null
+  },
+  {
+   "id": "u-fin",
+   "name": "Finance",
+   "type": "Department",
+   "parent": "u-org"
+  },
+  {
+   "id": "u-ops",
+   "name": "Operations",
+   "type": "Department",
+   "parent": "u-org"
+  },
+  {
+   "id": "u-com",
+   "name": "Commercial",
+   "type": "Department",
+   "parent": "u-org"
+  },
+  {
+   "id": "u-zone-a",
+   "name": "Zone A",
+   "type": "Zone",
+   "parent": "u-com"
+  },
+  {
+   "id": "u-zone-b",
+   "name": "Zone B",
+   "type": "Zone",
+   "parent": "u-com"
+  },
+  {
+   "id": "u-zone-c",
+   "name": "Zone C",
+   "type": "Zone",
+   "parent": "u-com"
+  }
+ ],
+ "positions": [
+  {
+   "id": "pos-md",
+   "title": "Managing Director",
+   "unit": "Sample Water Utility",
+   "unitId": "u-org",
+   "reportsTo": null,
+   "managers": [],
+   "owned": [
+    {
+     "kind": "Goal",
+     "code": "G4",
+     "title": "Strengthen institutional capacity",
+     "mustFix": false
+    },
+    {
+     "kind": "Objective",
+     "code": "O4.1",
+     "title": "Build supervisory skills across sections",
+     "mustFix": false
+    },
+    {
+     "kind": "KPI",
+     "code": "K4.1.1",
+     "title": "Section heads trained in supervision",
+     "mustFix": false
+    },
+    {
+     "kind": "Activity",
+     "code": "A4.1.1.1",
+     "title": "Run supervisory skills training for section heads",
+     "mustFix": false
+    }
+   ],
+   "lines": [
+    {
+     "desc": "Supervisory skills training",
+     "amount": 120000,
+     "funds": "A4.1.1.1 Run supervisory skills training for section heads"
+    }
+   ],
+   "answersFor": [
+    "Sample Water Utility"
+   ],
+   "reports": [
+    "pos-hof",
+    "pos-hrm",
+    "pos-spm",
+    "pos-hoo",
+    "pos-hoc"
+   ],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-hof",
+   "title": "Head of Finance",
+   "unit": "Finance",
+   "unitId": "u-fin",
+   "reportsTo": "pos-md",
+   "managers": [
+    "pos-md"
+   ],
+   "owned": [
+    {
+     "kind": "Goal",
+     "code": "G1",
+     "title": "Improve financial sustainability",
+     "mustFix": false
+    }
+   ],
+   "lines": [],
+   "answersFor": [
+    "Finance"
+   ],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-hrm",
+   "title": "Human Resources Manager",
+   "unit": "Sample Water Utility",
+   "unitId": "u-org",
+   "reportsTo": "pos-md",
+   "managers": [
+    "pos-md"
+   ],
+   "owned": [],
+   "lines": [],
+   "answersFor": [],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-spm",
+   "title": "Strategy and Planning Manager",
+   "unit": "Sample Water Utility",
+   "unitId": "u-org",
+   "reportsTo": "pos-md",
+   "managers": [
+    "pos-md"
+   ],
+   "owned": [],
+   "lines": [],
+   "answersFor": [],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-hoo",
+   "title": "Head of Operations",
+   "unit": "Operations",
+   "unitId": "u-ops",
+   "reportsTo": "pos-md",
+   "managers": [
+    "pos-md"
+   ],
+   "owned": [
+    {
+     "kind": "Goal",
+     "code": "G2",
+     "title": "Provide reliable water supply",
+     "mustFix": false
+    },
+    {
+     "kind": "Goal",
+     "code": "G3",
+     "title": "Expand access to sanitation",
+     "mustFix": false
+    },
+    {
+     "kind": "Objective",
+     "code": "O1.2",
+     "title": "Reduce non-revenue water",
+     "mustFix": false
+    },
+    {
+     "kind": "Objective",
+     "code": "O2.1",
+     "title": "Extend daily hours of supply",
+     "mustFix": false
+    },
+    {
+     "kind": "Objective",
+     "code": "O3.1",
+     "title": "Increase household sanitation coverage",
+     "mustFix": false
+    },
+    {
+     "kind": "KPI",
+     "code": "K1.2.1",
+     "title": "Non-revenue water",
+     "mustFix": false
+    },
+    {
+     "kind": "KPI",
+     "code": "K2.1.1",
+     "title": "Average hours of supply per day",
+     "mustFix": false
+    },
+    {
+     "kind": "KPI",
+     "code": "K3.1.1",
+     "title": "Households with improved sanitation",
+     "mustFix": false
+    },
+    {
+     "kind": "Activity",
+     "code": "A1.2.1.1",
+     "title": "Establish district metered areas",
+     "mustFix": false
+    },
+    {
+     "kind": "Activity",
+     "code": "A2.1.1.1",
+     "title": "Rehabilitate the main pumping station",
+     "mustFix": false
+    },
+    {
+     "kind": "Activity",
+     "code": "A3.1.1.1",
+     "title": "Build demonstration sanitation units in low-income areas",
+     "mustFix": false
+    }
+   ],
+   "lines": [
+    {
+     "desc": "Pumping station rehabilitation works",
+     "amount": 850000,
+     "funds": "A2.1.1.1 Rehabilitate the main pumping station"
+    }
+   ],
+   "answersFor": [
+    "Operations"
+   ],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 5,
+    "unaddressed": 1
+   },
+   "checks": [
+    {
+     "must": false,
+     "text": "Goal G3 “Expand access to sanitation” has no funded activity."
+    },
+    {
+     "must": false,
+     "text": "Goal G3 “Expand access to sanitation” has no recorded reason (4Q), so why it was chosen is not on record."
+    },
+    {
+     "must": false,
+     "text": "Deficiency “Meter readers not trained to spot tampering” has no corrective activity."
+    }
+   ],
+   "ownContract": null
+  },
+  {
+   "id": "pos-hoc",
+   "title": "Head of Commercial",
+   "unit": "Commercial",
+   "unitId": "u-com",
+   "reportsTo": "pos-md",
+   "managers": [
+    "pos-md"
+   ],
+   "owned": [
+    {
+     "kind": "Objective",
+     "code": "O1.1",
+     "title": "Increase collection efficiency",
+     "mustFix": false
+    },
+    {
+     "kind": "Activity",
+     "code": "A1.2.1.2",
+     "title": "Revise meter management policy",
+     "mustFix": false
+    }
+   ],
+   "lines": [
+    {
+     "desc": "Customer meters",
+     "amount": 1200000,
+     "funds": "A1.2.1.3 Replace faulty customer meters"
+    },
+    {
+     "desc": "Meter installation",
+     "amount": 300000,
+     "funds": "A1.2.1.3 Replace faulty customer meters"
+    },
+    {
+     "desc": "Vehicle hire, Zone C",
+     "amount": 180000,
+     "funds": null
+    }
+   ],
+   "answersFor": [
+    "Commercial"
+   ],
+   "reports": [
+    "pos-cm"
+   ],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [
+    {
+     "must": true,
+     "text": "Budget line “Vehicle hire, Zone C” is not linked to any activity."
+    },
+    {
+     "must": false,
+     "text": "KPI K1.1.1 “Collection efficiency” has no owner."
+    }
+   ],
+   "ownContract": null
+  },
+  {
+   "id": "pos-cm",
+   "title": "Commercial Manager",
+   "unit": "Commercial",
+   "unitId": "u-com",
+   "reportsTo": "pos-hoc",
+   "managers": [
+    "pos-hoc",
+    "pos-md"
+   ],
+   "owned": [
+    {
+     "kind": "Activity",
+     "code": "A1.2.1.3",
+     "title": "Replace faulty customer meters",
+     "mustFix": false
+    }
+   ],
+   "lines": [
+    {
+     "desc": "Customer meters",
+     "amount": 1200000,
+     "funds": "A1.2.1.3 Replace faulty customer meters"
+    },
+    {
+     "desc": "Meter installation",
+     "amount": 300000,
+     "funds": "A1.2.1.3 Replace faulty customer meters"
+    }
+   ],
+   "answersFor": [],
+   "reports": [
+    "pos-co"
+   ],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-co",
+   "title": "Commercial Officer",
+   "unit": "Commercial",
+   "unitId": "u-com",
+   "reportsTo": "pos-cm",
+   "managers": [
+    "pos-cm",
+    "pos-hoc",
+    "pos-md"
+   ],
+   "owned": [
+    {
+     "kind": "Activity",
+     "code": "A1.1.1.1",
+     "title": "Complete monthly meter-reading routes",
+     "mustFix": false
+    },
+    {
+     "kind": "Activity",
+     "code": "A1.2.1.4",
+     "title": "Introduce daily route briefing and check-in procedure",
+     "mustFix": false
+    }
+   ],
+   "lines": [],
+   "answersFor": [],
+   "reports": [
+    "pos-mra",
+    "pos-mrb",
+    "pos-mrc",
+    "pos-bc"
+   ],
+   "contracts": [
+    {
+     "position": "Meter Reader, Zone B",
+     "person": "Mary Chileshe",
+     "status": "signed",
+     "openReview": true,
+     "unverified": 0,
+     "issueDue": null,
+     "reviewDue": "2027-01-15"
+    },
+    {
+     "position": "Meter Reader, Zone C",
+     "person": "Daniel Sakala",
+     "status": "draft",
+     "openReview": false,
+     "unverified": 0,
+     "issueDue": "2026-01-31",
+     "reviewDue": "2027-01-15"
+    }
+   ],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-mra",
+   "title": "Meter Reader, Zone A",
+   "unit": "Zone A",
+   "unitId": "u-zone-a",
+   "reportsTo": "pos-co",
+   "managers": [
+    "pos-co",
+    "pos-cm",
+    "pos-hoc",
+    "pos-md"
+   ],
+   "owned": [],
+   "lines": [],
+   "answersFor": [
+    "Zone A"
+   ],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  },
+  {
+   "id": "pos-mrb",
+   "title": "Meter Reader, Zone B",
+   "unit": "Zone B",
+   "unitId": "u-zone-b",
+   "reportsTo": "pos-co",
+   "managers": [
+    "pos-co",
+    "pos-cm",
+    "pos-hoc",
+    "pos-md"
+   ],
+   "owned": [],
+   "lines": [],
+   "answersFor": [
+    "Zone B"
+   ],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": {
+    "status": "signed"
+   }
+  },
+  {
+   "id": "pos-mrc",
+   "title": "Meter Reader, Zone C",
+   "unit": "Zone C",
+   "unitId": "u-zone-c",
+   "reportsTo": "pos-co",
+   "managers": [
+    "pos-co",
+    "pos-cm",
+    "pos-hoc",
+    "pos-md"
+   ],
+   "owned": [],
+   "lines": [],
+   "answersFor": [
+    "Zone C"
+   ],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": {
+    "status": "draft"
+   }
+  },
+  {
+   "id": "pos-bc",
+   "title": "Billing Clerk",
+   "unit": "Commercial",
+   "unitId": "u-com",
+   "reportsTo": "pos-co",
+   "managers": [
+    "pos-co",
+    "pos-cm",
+    "pos-hoc",
+    "pos-md"
+   ],
+   "owned": [],
+   "lines": [],
+   "answersFor": [],
+   "reports": [],
+   "contracts": [],
+   "corrective": {
+    "deficiencies": 0,
+    "unaddressed": 0
+   },
+   "checks": [],
+   "ownContract": null
+  }
+ ],
+ "holders": {
+  "pos-md": {
+   "person": "p-md",
+   "name": "Chanda Mulenga",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-hof": {
+   "person": "p-hof",
+   "name": "Ruth Phiri",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-hrm": {
+   "person": "p-hrm",
+   "name": "Natasha Kabwe",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-spm": {
+   "person": "p-spm",
+   "name": "Bwalya Musonda",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-hoo": {
+   "person": "p-hoo",
+   "name": "Joseph Tembo",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-cm": {
+   "person": "p-cm",
+   "name": "Peter Mwansa",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-co": {
+   "person": "p-co",
+   "name": "Esther Banda",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-mra": {
+   "person": "p-mra",
+   "name": "Moses Lungu",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-mrb": {
+   "person": "p-mrb",
+   "name": "Mary Chileshe",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-mrc": {
+   "person": "p-mrc",
+   "name": "Daniel Sakala",
+   "acting": false,
+   "since": "2024-01-01"
+  },
+  "pos-bc": {
+   "person": "p-bc",
+   "name": "Agnes Mumba",
+   "acting": false,
+   "since": "2024-01-01"
+  }
+ },
+ "lastEnded": {
+  "pos-hoc": "2026-08-31"
+ },
+ "roles": {
+  "p-md": [
+   "executive"
+  ],
+  "p-hof": [
+   "finance"
+  ],
+  "p-hrm": [
+   "hr",
+   "org_admin"
+  ],
+  "p-spm": [
+   "strategy_office"
+  ],
+  "p-hoo": [],
+  "p-hoc": [],
+  "p-cm": [],
+  "p-co": [],
+  "p-mra": [],
+  "p-mrb": [],
+  "p-mrc": [],
+  "p-bc": []
+ },
+ "people": [
+  {
+   "id": "p-md",
+   "name": "Chanda Mulenga"
+  },
+  {
+   "id": "p-hof",
+   "name": "Ruth Phiri"
+  },
+  {
+   "id": "p-hrm",
+   "name": "Natasha Kabwe"
+  },
+  {
+   "id": "p-spm",
+   "name": "Bwalya Musonda"
+  },
+  {
+   "id": "p-hoo",
+   "name": "Joseph Tembo"
+  },
+  {
+   "id": "p-hoc",
+   "name": "Grace Zulu"
+  },
+  {
+   "id": "p-cm",
+   "name": "Peter Mwansa"
+  },
+  {
+   "id": "p-co",
+   "name": "Esther Banda"
+  },
+  {
+   "id": "p-mra",
+   "name": "Moses Lungu"
+  },
+  {
+   "id": "p-mrb",
+   "name": "Mary Chileshe"
+  },
+  {
+   "id": "p-mrc",
+   "name": "Daniel Sakala"
+  },
+  {
+   "id": "p-bc",
+   "name": "Agnes Mumba"
+  }
+ ]
+};
+const P = Object.fromEntries(D.positions.map(p => [p.id, p]));
+const ROLE = {
+  executive: { person: 'p-md', roles: ['executive'] }, hr: { person: 'p-hrm', roles: ['hr', 'org_admin'] },
+  strategy: { person: 'p-spm', roles: ['strategy_office'] }, finance: { person: 'p-hof', roles: ['finance'] },
+  supervisor: { person: 'p-co', roles: [] }, employee: { person: 'p-mrb', roles: [] },
+};
+const fresh = () => ({ role: 'executive', view: 'home', holders: JSON.parse(JSON.stringify(D.holders)), lastEnded: { ...D.lastEnded }, open: new Set(), find: '', note: null, ai: null });
+let S = fresh();
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const n = (x) => x.toLocaleString('en-GB');
+const date = (iso) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayAfter = (iso) => new Date(Date.parse(iso + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10);
+const plural = (k, one, many) => `${n(k)} ${k === 1 ? one : many}`;
+const me = () => ROLE[S.role];
+const myPositions = () => Object.entries(S.holders).filter(([, h]) => h.person === me().person).map(([p]) => p);
+const has = (r) => me().roles.includes(r);
+const oversight = () => has('executive') || has('hr') || has('strategy_office') || has('org_admin');
+
+/* H4: who sees the vacancy view, and which positions. Managers see the units they answer for, and below. */
+function unitsBelow(unitName) {
+  const top = D.units.find(u => u.name === unitName); if (!top) return [];
+  const out = [top.id]; for (let i = 0; i < out.length; i++) D.units.filter(u => u.parent === out[i]).forEach(u => out.push(u.id)); return out;
+}
+function vacancyScope() {
+  if (oversight()) return 'all';
+  const units = myPositions().flatMap(p => P[p].answersFor.flatMap(unitsBelow));
+  return units.length ? new Set(units) : null;
+}
+/* H5: who may open a handover list. */
+function canHandover(pid) {
+  if (has('org_admin') || has('hr')) return true;
+  const mine = myPositions();
+  return mine.includes(pid) || mine.includes(P[pid].reportsTo);
+}
+/* Section 6: amounts for the Executive, Finance and the line's budget holders; contract names for HR and the supervisor. */
+const seesAmounts = (pid) => has('executive') || has('finance') || myPositions().some(m => m === pid || P[pid].managers.includes(m));
+const seesContractNames = (pid) => has('hr') || myPositions().includes(pid);
+const seesCheckText = () => has('executive') || has('strategy_office') || has('org_admin');
+
+const state = (pid) => { const h = S.holders[pid]; return !h ? 'vacant' : h.acting ? 'acting' : 'held'; };
+function needsSupervisor(p) { return p.contracts.filter(c => c.openReview || c.status === 'draft' || c.unverified > 0); }
+/* H1: what stops soonest first. Contracts that need a supervisor, then budget lines, then must-fix records, then other records. */
+function rank(p) {
+  const recs = p.owned.length;
+  return [needsSupervisor(p).length ? 0 : 1, p.lines.length ? 0 : 1, p.owned.some(o => o.mustFix) || p.checks.some(c => c.must) ? 0 : 1, -(recs + p.lines.length + p.contracts.length), p.title];
+}
+const cmp = (a, b) => { for (let i = 0; i < a.length; i++) { if (a[i] < b[i]) return -1; if (a[i] > b[i]) return 1; } return 0; };
+function stops(p) {
+  const out = [];
+  const ns = needsSupervisor(p);
+  if (ns.length) {
+    const parts = [];
+    if (ns.some(c => c.openReview)) parts.push('reviews can’t be completed');
+    if (ns.some(c => c.status === 'draft')) parts.push('contracts can’t be issued');
+    if (ns.some(c => c.unverified)) parts.push('progress can’t be verified');
+    out.push(`${plural(ns.length, 'contract has', 'contracts have')} no supervisor: ${parts.join(' and ')}.`);
+  }
+  if (p.lines.length) out.push(`${plural(p.lines.length, 'budget line has', 'budget lines have')} no holder in post; Finance and the managers above can still act.`);
+  if (p.owned.length) out.push(`${plural(p.owned.length, 'record has', 'records have')} no owner in post.`);
+  if (p.checks.length) out.push(`${plural(p.checks.length, 'check is', 'checks are')} sent to an empty post.`);
+  return out.length ? out.join(' ') : 'Nothing stops: the position owns nothing and supervises no contracts.';
+}
+
+function listed() {
+  const scope = vacancyScope(); if (!scope) return null;
+  return D.positions.filter(p => state(p.id) !== 'held' && (scope === 'all' || scope.has(p.unitId)))
+    .sort((a, b) => (state(a.id) === state(b.id) ? cmp(rank(a), rank(b)) : state(a.id) === 'vacant' ? -1 : 1));
+}
+
+/* ───── Rendering ───── */
+function nav() {
+  const items = [['home', 'Home'], ['org', 'Organisation']];
+  const cur = S.view === 'home' ? 'home' : 'org';
+  $('#nav').innerHTML = items.map(([k, l]) => `<a href="#" data-go="${k}" ${cur === k ? 'aria-current="page"' : ''}><span class="mark"></span>${l}</a>`).join('');
+  $('#bottom').innerHTML = items.map(([k, l]) => `<a href="#" data-go="${k}" ${cur === k ? 'aria-current="page"' : ''}>${l}</a>`).join('');
+  const crumbs = { home: 'Home', org: 'Organisation › Structure', vac: 'Organisation › Vacant and acting positions' };
+  $('#crumb').innerHTML = `${esc(D.org)} › <b>${S.view.startsWith('handover:') ? 'Organisation › Handover list' : crumbs[S.view]}</b>`;
+}
+function render() {
+  nav();
+  const v = S.view;
+  $('#view').innerHTML = v === 'home' ? home() : v.startsWith('handover:') ? handover(v.slice(9)) : org(v);
+  if (S.note) { $('#live').textContent = S.note; }
+}
+function home() {
+  const who = ROLE[S.role];
+  const l = listed();
+  let info = '';
+  /* H8: an information line on the Executive and HR homes, not a "Needs you" item. */
+  if ((has('executive') || has('hr')) && l) {
+    const vacant = l.filter(p => state(p.id) === 'vacant'), acting = l.filter(p => state(p.id) === 'acting');
+    const sup = vacant.filter(p => needsSupervisor(p).length).length;
+    info = `<section class="card" style="margin-top:16px"><h2>For your information</h2><p>${plural(vacant.length, 'vacant position', 'vacant positions')}${acting.length ? ` and ${plural(acting.length, 'acting post', 'acting posts')}` : ''}; ${sup ? plural(sup, 'supervises contracts', 'supervise contracts') : 'none supervises contracts'}. <button class="btn link" data-go="vac">See vacant and acting positions</button></p></section>`;
+  }
+  return `<h1>Home</h1><p class="purpose">In the product this is the role's home with "Needs you" first. This prototype shows only the new line.</p>
+   <div class="banner">Prototype: the rest of Home is unchanged.</div>${info || '<p class="muted">Nothing new on this home in this slice.</p>'}`;
+}
+function tabs(v) {
+  const showVac = listed() !== null;
+  const t = [['org', 'Structure']].concat(showVac ? [['vac', 'Vacant and acting positions']] : []);
+  return `<div class="tabs" role="tablist">${t.map(([k, l]) => `<button role="tab" aria-selected="${v === k}" data-go="${k}">${l}</button>`).join('')}</div>`;
+}
+function org(v) {
+  return `<h1>Organisation</h1><p class="purpose">Your organisation’s units, positions and the people who hold them, so every piece of work can be traced to the person who answers for it.</p>${tabs(v)}${v === 'vac' && listed() ? vacancies() : structure()}`;
+}
+function holderText(pid) {
+  const h = S.holders[pid];
+  if (!h) return `<span class="chip">Vacant</span> <span class="xs muted">${S.lastEnded[pid] ? 'since ' + date(dayAfter(S.lastEnded[pid])) : 'Never held'}</span>`;
+  return `Holder: ${esc(h.name)}${h.acting ? ' <span class="chip">Acting</span>' : ''}`;
+}
+function structure() {
+  const admin = has('org_admin');
+  const rows = (unitId, depth) => {
+    const u = D.units.find(x => x.id === unitId);
+    const ps = D.positions.filter(p => p.unitId === unitId);
+    const kids = D.units.filter(x => x.parent === unitId);
+    return `<li class="unit"><div class="uname">${esc(u.name)} <span class="muted small">${esc(u.type)}</span></div>
+     ${ps.map(p => `<div class="pos"><div><div class="t">${esc(p.title)}</div><div class="small">${holderText(p.id)}</div></div>
+       <div class="row">${admin ? `<button class="btn" data-edit="${p.id}">Edit</button>` : ''}${canHandover(p.id) ? `<button class="btn link" data-go="handover:${p.id}">Handover list</button>` : ''}</div></div>`).join('')}
+     ${kids.length ? `<ul class="tree">${kids.map(k => rows(k.id, depth + 1)).join('')}</ul>` : ''}</li>`;
+  };
+  const top = D.units.find(u => !u.parent);
+  return `${S.note ? `<div class="banner ok" role="status">${esc(S.note)}</div>` : ''}<section class="card"><h2>Structure</h2>
+   <p class="small muted">${admin ? 'Try it: choose Edit on the Commercial Officer and clear the holder, or make someone acting.' : 'In the product this is the v0.7.2 tree. Here: each position with its holder and, where you may open it, its handover list.'}</p>
+   <ul class="tree">${rows(top.id, 0)}</ul></section>`;
+}
+function counts(p) {
+  const c = [];
+  if (p.contracts.length) c.push(plural(p.contracts.length, 'supervised contract', 'supervised contracts'));
+  if (p.lines.length) c.push(plural(p.lines.length, 'budget line', 'budget lines'));
+  if (p.owned.length) c.push(plural(p.owned.length, 'owned record', 'owned records'));
+  if (p.reports.length) c.push(plural(p.reports.length, 'direct report', 'direct reports'));
+  if (p.answersFor.length) c.push(`Answers for ${p.answersFor.join(', ')}`);
+  if (p.checks.length) c.push(plural(p.checks.length, 'check', 'checks'));
+  return c.map(x => `<span>${esc(x)}</span>`).join('');
+}
+function vacancies() {
+  const all = listed();
+  const q = S.find.trim().toLowerCase();
+  const l = q ? all.filter(p => (p.title + ' ' + p.unit + ' ' + (S.holders[p.id]?.name ?? '')).toLowerCase().includes(q)) : all;
+  const scope = vacancyScope();
+  const intro = scope === 'all' ? 'Every vacant and acting position, what it holds and what stops while it is unfilled. Vacant first; within each, what stops soonest first.'
+    : 'Vacant and acting positions in the units you answer for, and below.';
+  const row = (p) => {
+    const st = state(p.id), h = S.holders[p.id], open = S.open.has(p.id);
+    return `<div class="vrow"><div class="head"><div style="min-width:0;flex:1">
+      <div class="t" style="font-weight:700;color:var(--navy)">${esc(p.title)}</div>
+      <div class="xs muted">${esc(p.unit)}</div>
+      <div class="small">${st === 'vacant' ? `<span class="chip">Vacant</span> ${S.lastEnded[p.id] ? 'since ' + date(dayAfter(S.lastEnded[p.id])) : 'Never held'}` : `<span class="chip">Acting</span> ${esc(h.name)}, since ${date(h.since)}`}</div>
+      <div class="counts">${counts(p)}</div>
+      <p class="stops"><b>What stops:</b> ${esc(st === 'acting' ? 'Nothing stops: an acting holder has the position’s authority. Listed because the arrangement is temporary.' : stops(p))}</p></div>
+      <div class="row noprint"><button class="btn" aria-expanded="${open}" data-open="${p.id}">${open ? 'Hide what it holds' : 'What it holds'}</button>
+      ${canHandover(p.id) ? `<button class="btn link" data-go="handover:${p.id}">Handover list</button>` : ''}
+      ${has('org_admin') ? `<button class="btn link" data-edit="${p.id}">Fill or appoint acting</button>` : ''}</div></div>
+      ${open ? `<div class="detail hold">${holdings(p)}</div>` : ''}</div>`;
+  };
+  return `${S.note ? `<div class="banner ok" role="status">${esc(S.note)}</div>` : ''}<p class="small">${intro}</p>
+   <div class="row noprint"><label class="sr-only" for="vfind">Find</label><input id="vfind" type="text" placeholder="Find a title, unit or name" value="${esc(S.find)}" style="flex:1;min-width:200px">
+    <button class="btn" data-download="1">Download every row</button></div>
+   <p class="small muted" role="status">${plural(l.length, 'position', 'positions')}${q ? ' match' : ''}.</p>
+   ${l.length ? l.slice(0, 30).map(row).join('') : '<p class="muted">No vacant or acting positions' + (scope === 'all' ? '.' : ' in the units you answer for.') + '</p>'}`;
+}
+function holdings(p) {
+  const amounts = seesAmounts(p.id), names = seesContractNames(p.id);
+  const sec = (title, body) => `<h3>${title}</h3>${body}`;
+  const none = '<p class="small muted">None.</p>';
+  return [
+    sec('Owned records', p.owned.length ? `<ul>${p.owned.map(o => `<li>${o.kind} ${esc(o.code)}: ${esc(o.title)}${o.mustFix ? ' <span class="chip blk">Must fix</span>' : ''}</li>`).join('')}</ul>` : none),
+    sec('Budget lines', p.lines.length ? `<ul>${p.lines.map(l => `<li>${esc(l.desc)}: ${amounts ? 'ZMW ' + n(l.amount) : 'funded'}. ${l.funds ? 'Funds: ' + esc(l.funds) : '<span class="chip blk">Must fix</span> Not linked to any activity'}</li>`).join('')}</ul><p class="xs muted">Direct budget holder only. The managers above can still act on these lines.</p>` : none),
+    sec('Units it answers for', p.answersFor.length ? `<p class="small">${esc(p.answersFor.join(', '))}</p>` : none),
+    sec('Direct reports', p.reports.length ? `<ul>${p.reports.map(r => `<li>${esc(P[r].title)} (${S.holders[r] ? esc(S.holders[r].name) : 'vacant'})</li>`).join('')}</ul>` : none),
+    sec('Supervised contracts', p.contracts.length ? (names
+      ? `<ul>${p.contracts.map(c => `<li>${esc(c.position)}, ${esc(c.person)}: ${c.status}${c.openReview ? '; mid-year review open, due ' + date(c.reviewDue) : ''}${c.issueDue ? '; issue was due ' + date(c.issueDue) : ''}</li>`).join('')}</ul>`
+      : `<p class="small">${plural(p.contracts.length, 'contract', 'contracts')}: ${p.contracts.filter(c => c.status === 'signed').length} signed, ${p.contracts.filter(c => c.status !== 'signed').length} not yet signed. Names are shown to the employee, their supervisor and HR.</p>`) : none),
+    sec('Corrective work', p.corrective.deficiencies ? `<p class="small">${plural(p.corrective.deficiencies, 'deficiency', 'deficiencies')} on objectives it owns; ${n(p.corrective.unaddressed)} with no corrective activity yet.</p>` : none),
+    sec('Open checks', p.checks.length ? (seesCheckText() ? `<ul>${p.checks.map(c => `<li><span class="chip ${c.must ? 'blk' : 'adv'}">${c.must ? 'Must fix' : 'Worth checking'}</span> ${esc(c.text)}</li>`).join('')}</ul>` : `<p class="small">${p.checks.filter(c => c.must).length} must fix, ${p.checks.filter(c => !c.must).length} worth checking.</p>`) : none),
+  ].join('');
+}
+function handover(pid) {
+  const p = P[pid];
+  if (!canHandover(pid)) return `<h1>Handover list</h1><p>You can’t open this handover list.</p>`;
+  const h = S.holders[pid];
+  const roles = h ? (D.roles[h.person] || []).filter(r => r !== 'org_admin' || true) : [];
+  const roleNames = { executive: 'Executive', strategy_office: 'Strategy office', finance: 'Finance', hr: 'HR', facilitator: 'Facilitator', compliance: 'Compliance', org_admin: 'Organisation administrator' };
+  const waiting = p.contracts.filter(c => c.openReview || c.status === 'draft' || c.unverified);
+  const note = S.ai === pid ? `<div class="card" style="margin-top:12px"><p><span class="ai">AI draft</span> <span class="xs muted">Restates the list above. Not stored; copy or print it.</span></p>
+     <p>${esc(h ? h.name : 'The previous holder')} hands over the ${esc(p.title)} post. It owns ${plural(p.owned.length, 'record', 'records')}${p.owned.length ? ': ' + esc(p.owned.map(o => o.code).join(', ')) : ''}, and ${p.lines.length ? 'is the direct holder of ' + plural(p.lines.length, 'budget line', 'budget lines') : 'holds no budget lines'}. ${p.contracts.length ? `It supervises ${plural(p.contracts.length, 'contract', 'contracts')}; ${waiting.length ? n(waiting.length) + ' need the supervisor’s action first' : 'none is waiting'}.` : 'It supervises no contracts.'} ${p.checks.length ? plural(p.checks.length, 'check is', 'checks are') + ' sent to this post.' : ''}</p>
+     <p class="xs muted">In this prototype the AI stub writes this from the list by a fixed template.</p></div>` : '';
+  return `<p class="noprint"><button class="btn link" data-go="${S.prev || 'org'}">Back</button></p>
+   <h1>Handover list: ${esc(p.title)}</h1>
+   ${S.note ? `<div class="banner ok" role="status">${esc(S.note)}</div>` : ''}<p class="purpose">${esc(p.unit)}. ${h ? `Held by ${esc(h.name)}${h.acting ? ' (acting)' : ''}.` : `Vacant ${S.lastEnded[pid] ? 'since ' + date(dayAfter(S.lastEnded[pid])) : '(never held)'}.`} Computed now, from the records; nothing here is stored.</p>
+   <div class="row noprint"><button class="btn" onclick="window.print()">Print</button><button class="btn" data-download="1">Download as a spreadsheet</button>
+   ${h ? '<button class="btn" data-ai="' + pid + '">Write a handover note <span class="ai">AI draft</span></button>' : ''}</div>
+   ${note}
+   <div class="grid2" style="margin-top:16px">
+    <section class="card hold"><h2>What this position holds</h2>${holdings(p)}</section>
+    <div>
+     <section class="card hold"><h2>What leaves with the person</h2>
+      ${h ? `<h3>Roles</h3>${roles.length ? `<ul>${roles.map(r => `<li>${roleNames[r]}</li>`).join('')}</ul><p class="xs muted">Roles belong to the person, not the position. The administrator decides whether the new holder takes them.</p>` : '<p class="small muted">None.</p>'}
+      <h3>Their own contract for this post</h3><p class="small">${p.ownContract ? p.ownContract.status + '. HR handles it in the appraisal slice (H6).' : 'None this year.'}</p>` : '<p class="small muted">Nobody holds the post.</p>'}</section>
+     <section class="card hold" style="margin-top:16px"><h2>Waiting on the supervisor</h2>
+      ${waiting.length ? `<ul>${waiting.map(c => `<li>${esc(c.position)}${seesContractNames(pid) ? ', ' + esc(c.person) : ''}: ${c.openReview ? 'mid-year review to complete' : c.status === 'draft' ? 'contract to issue' : 'progress to verify'}</li>`).join('')}</ul>` : '<p class="small muted">Nothing.</p>'}</section>
+    </div></div>`;
+}
+
+/* The holder-change dialog: "What passes to the new holder" / "What the vacant position keeps" (as D6-6). */
+function editDialog(pid) {
+  const p = P[pid], h = S.holders[pid];
+  $('#dlg').innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card">
+   <h2 id="dt">Edit: ${esc(p.title)}</h2>
+   <div class="field"><label for="hn">Holder’s full name (blank means vacant)</label><input id="hn" type="text" value="${h ? esc(h.name) : ''}"></div>
+   <label class="row small"><input id="ha" type="checkbox" ${h?.acting ? 'checked' : ''} style="width:20px;height:20px"> Acting</label>
+   <div class="banner" id="passes"></div>
+   <div class="row"><button class="btn primary" id="save">Save</button><button class="btn" id="cancel">Cancel</button></div></div></div>`;
+  const upd = () => {
+    const name = $('#hn').value.trim();
+    const p2 = P[pid];
+    const what = [p2.owned.length && plural(p2.owned.length, 'owned record', 'owned records'), p2.lines.length && plural(p2.lines.length, 'budget line', 'budget lines'), p2.contracts.length && plural(p2.contracts.length, 'supervised contract', 'supervised contracts'), p2.reports.length && plural(p2.reports.length, 'direct report', 'direct reports')].filter(Boolean);
+    const list = what.length ? what.join(', ') : 'nothing';
+    $('#passes').innerHTML = name && name !== h?.name ? `<b>What passes to the new holder:</b> ${esc(list)}. ${h ? esc(h.name) + '’s roles stay with them unless you change them.' : ''}`
+      : !name ? `<b>What the vacant position keeps:</b> ${esc(list)}. ${needsSupervisor(p2).length ? 'While it is vacant, ' + stops(p2).split('.')[0].toLowerCase() + '.' : ''}` : `<b>No change of holder.</b>`;
+  };
+  upd(); $('#hn').oninput = upd; $('#hn').focus();
+  $('#cancel').onclick = () => { $('#dlg').innerHTML = ''; };
+  $('#save').onclick = () => {
+    const name = $('#hn').value.trim(), acting = $('#ha').checked;
+    if (!name) { if (h) S.lastEnded[pid] = new Date(Date.parse(D.now + 'T00:00:00Z') - 864e5).toISOString().slice(0, 10); delete S.holders[pid]; S.note = `${p.title} is vacant from today. The change is recorded.`; }
+    else { S.holders[pid] = { person: h && h.name === name ? h.person : 'p-new', name, acting, since: D.now }; S.note = `${p.title}: ${name}${acting ? ' (acting)' : ''} from today. The change is recorded.`; }
+    $('#dlg').innerHTML = ''; render();
+  };
+  $('#dlg').onkeydown = (e) => { if (e.key === 'Escape') $('#dlg').innerHTML = ''; };
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-go],[data-open],[data-edit],[data-ai],[data-download]'); if (!t) return;
+  e.preventDefault();
+  if (t.dataset.go) { S.note = null; if (t.dataset.go.startsWith('handover:')) S.prev = S.view; S.view = t.dataset.go; S.ai = null; render(); $('#main').focus(); }
+  if (t.dataset.open) { S.open.has(t.dataset.open) ? S.open.delete(t.dataset.open) : S.open.add(t.dataset.open); render(); }
+  if (t.dataset.edit) editDialog(t.dataset.edit);
+  if (t.dataset.ai) { S.ai = t.dataset.ai; render(); }
+  if (t.dataset.download) { S.note = 'In the product this downloads a spreadsheet.'; render(); }
+});
+document.addEventListener('input', (e) => { if (e.target.id === 'vfind') { S.find = e.target.value; const pos = e.target.selectionStart; render(); const f = $('#vfind'); f.focus(); f.setSelectionRange(pos, pos); } });
+$('#role').onchange = (e) => { S.role = e.target.value; S.note = null; if (S.view === 'vac' && !listed()) S.view = 'org'; render(); };
+$('#reset').onclick = () => { S = fresh(); $('#role').value = 'executive'; render(); };
+render();
+</script></body></html>
