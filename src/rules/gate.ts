@@ -8,13 +8,15 @@
 import type { BoardApproval, BudgetVersion, Finding, GateCode, GateEvent, Id } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { acknowledgementState } from './acknowledgement';
-import { blockersAt, isBlocking, RULES } from './integrity';
+import { blockersAt, RULES } from './integrity';
 
 /** The advisory rules each gate shows. Every other advisory flag stays in the integrity drawer. */
 export const GATE_ADVISORIES: Partial<Record<GateCode, readonly string[]>> = {
   'budget.submit_unit': [RULES.goalNoFundedActivity.id],
   'budget.submit_consolidated': [RULES.goalNoFundedActivity.id],
   'budget.approve': [RULES.goalNoFundedActivity.id],
+  // Onboarding (section 28): what is worth checking when the Executive confirms a plan.
+  'plan.confirm': [RULES.objectiveNoKpi.id, RULES.kpiNoOwner.id, RULES.kpiBaselineNotValidated.id, RULES.goalNoWhy.id, RULES.goalNoFundedActivity.id],
 };
 
 export interface GateCheck {
@@ -27,7 +29,8 @@ export interface GateCheck {
 export function checkGate(findings: Finding[], gate: GateCode): GateCheck {
   const blocking = blockersAt(findings, gate);
   const rules = GATE_ADVISORIES[gate] ?? [];
-  const advisory = findings.filter((f) => !isBlocking(f) && rules.includes(f.ruleId));
+  // Advisory at this gate: a rule that blocks elsewhere (an unvalidated baseline blocks cascade.publish) is still advisory here.
+  const advisory = findings.filter((f) => !f.blocksAt.includes(gate) && rules.includes(f.ruleId));
   return { gate, blocking, advisory, passes: blocking.length === 0 };
 }
 

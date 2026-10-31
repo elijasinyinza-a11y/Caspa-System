@@ -38,7 +38,7 @@ export function createNewOrganisation(): { orgId: string; store: Store; devRoles
       ...base, id: id('rs-new'), preset: 'A', bands: RATING_PRESETS.A, competencySection: { enabled: false, weightPct: 0 },
       floorRule: false, highAchievementFlagAt: 1.5, lockedByCycleId: null,
     }],
-    workshops: [], formationDeadlines: [], acknowledgements: [], gateEvents: [], auditEntries: [], sourceDocuments: [], aiTasks: [],
+    workshops: [], formationDeadlines: [], acknowledgements: [], gateEvents: [], auditEntries: [], sourceDocuments: [], aiTasks: [], visionStatements: [],
   };
   return { orgId: NEW_ORG, store, devRoles: { admin: 'm-new-is', consultant: 'm-new-cn' } };
 }

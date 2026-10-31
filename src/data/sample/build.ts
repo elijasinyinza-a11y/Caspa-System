@@ -9,7 +9,7 @@ import type {
 } from '../../contract/caspa-data-contract';
 import { RATING_PRESETS } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
-import { seededConfirmation } from '../access/setup/confirmation';
+import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 
@@ -129,9 +129,10 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     kpiTargets: [], kpiActuals: [], baselineMeasures: [], resourceEnvelopes: [], activities, activityProgress: [], deficiencies: [],
     cycles: [{ ...base, id: id(`cy-${k}-budget`), kind: 'budget', financialYear: spec.fy, status: 'open', gateDueDates: {} }],
     budgetVersions: [{ ...base, id: id(`bv-${k}-1`), cycleId: id(`cy-${k}-budget`), version: 1, status: 'draft', approval: null, boardApproval: null }],
-    budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [], gateEvents: [],
+    budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [],
+    gateEvents: [seededPublication(orgId, planId, id(`m-${k}-${spec.devRoles.strategy}`), stamp.at)],
     auditEntries: [seededConfirmation(orgId, id(`m-${k}-${spec.devRoles.hr}`), stamp.at, { units: units.length, positions: positions.length, people: spec.people.length })],
-    sourceDocuments: [], aiTasks: [],
+    sourceDocuments: [], aiTasks: [], visionStatements: [],
     reviews: [], workshops: [], formationDeadlines: [],
     // R1: every organisation starts on preset A with the safeguards at their defaults.
     ratingSchemes: [{

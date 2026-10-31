@@ -9,6 +9,7 @@ import { formatDate, formatFinancialYear, formatMoney, formatNumber, formatPerce
 import type { NodeRef } from '../selectors/node';
 import { en } from '../strings/en';
 import { nodeHref } from './router';
+import { FirstQuestion, GettingStarted, openPlanSetup } from './Strategy';
 
 type Terms = ReturnType<ReturnType<typeof useApp>['repo']['settings']>['termLabels'];
 
@@ -290,6 +291,20 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** Onboarding on Home (section 28): the first question while there is no plan, and "Getting started" until the cascade is published. */
+function Onboarding() {
+  const { repo, navigate } = useApp();
+  const page = repo.onboarding.page();
+  return (
+    <>
+      {!page.plan && page.structureConfirmed && (page.canSetUp || page.isExecutive || page.steps.length > 0) && (
+        <div className="mt-6"><FirstQuestion page={page} onImport={() => { openPlanSetup(); navigate({ kind: 'workspace', w: 'strategy' }); }} /></div>
+      )}
+      <GettingStarted />
+    </>
+  );
+}
+
 /** For the Executive: who confirmed the organisation's structure, and when (D7-9). Information, not a "Needs you" item. */
 function StructureNotice() {
   const { repo, navigate } = useApp();
@@ -354,6 +369,7 @@ export function Home() {
         </div>
       )}
       <NeedsYou items={h.needsYou} />
+      <Onboarding />
       {view}
       {repo.viewer.roles.includes('executive') && <StructureNotice />}
     </>

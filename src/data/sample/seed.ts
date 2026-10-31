@@ -8,7 +8,7 @@ import {
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
-import { seededConfirmation } from '../access/setup/confirmation';
+import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 
@@ -262,11 +262,12 @@ function seedStore(): Store {
     workshops: [],
     formationDeadlines: [],
     acknowledgements: [],
-    gateEvents: [],
+    // The imported plan's cascade was published when the plan was brought in (section 28).
+    gateEvents: [seededPublication(orgId, PLAN, id('m-spm'), dt('2026-01-20T09:00:00+02:00'))],
     // The structure was confirmed by the organisation administrator on 15 January 2026 (D7-9).
     auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length })],
     sourceDocuments: [],
-    aiTasks: [],
+    aiTasks: [], visionStatements: [],
   };
 }
 

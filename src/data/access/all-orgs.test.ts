@@ -209,6 +209,7 @@ describe.each(createSampleOrgs().map((o) => [o.store.organisation.name, o.orgId]
     expect(org.store.budgetVersions[0]!.status).toBe('approved');
     expect(org.store.budgetVersions[0]!.boardApproval).toEqual(board);
     expect(org.store.gateEvents.map((g) => [g.gate, g.outcome])).toEqual([
+      ['cascade.publish', 'passed'], // seeded: the plan's cascade was published when it was brought in (section 28)
       ['budget.submit_consolidated', 'blocked'], ['budget.submit_consolidated', 'passed'], ['budget.approve', 'passed'],
     ]);
   });

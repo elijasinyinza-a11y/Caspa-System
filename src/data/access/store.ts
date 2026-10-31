@@ -3,7 +3,7 @@ import type {
   Acknowledgement, Activity, AiTask, AuditEntry, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review,
-  SourceDocument, StrategicPlan, Workshop,
+  SourceDocument, StrategicPlan, VisionStatement, Workshop,
 } from '../../contract/caspa-data-contract';
 
 export interface Store {
@@ -43,4 +43,6 @@ export interface Store {
   sourceDocuments: SourceDocument[];
   /** Every AI call, for audit (contract AiTask). */
   aiTasks: AiTask[];
+  /** Vision and mission (contract VisionStatement); for an imported plan, typed by the Executive (O9). */
+  visionStatements: VisionStatement[];
 }

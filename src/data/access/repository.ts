@@ -27,6 +27,7 @@ import { indexTree, type NodeChecks } from '../../selectors/cascade-view';
 import { can, canAcknowledge, canSeeRating, canTakeBudgetStep } from './permissions';
 import type { Store } from './store';
 import { createOrganisationAccess, type OrganisationAccess } from './setup';
+import { createOnboardingAccess, type OnboardingAccess } from './onboarding';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
 
@@ -193,6 +194,8 @@ export interface Repository {
   changeActivityLevel(activityId: string, to: SixPLevel, reason: string): { ok: true } | { ok: false; error: ChangeLevelError };
   /** Organisation setup and structure (slice 7): the draft before confirmation, the records after it. */
   structure: OrganisationAccess;
+  /** Onboarding (slice 8): the first question, plan setup, the import door, confirmation and publication. */
+  onboarding: OnboardingAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
   structureConfirmed(): { by: string; on: ISODate } | null;
 }
@@ -581,6 +584,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     viewer,
     financialYear,
     structure: createOrganisationAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
+    onboarding: createOnboardingAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);
       return e ? { by: personOf(e.actorMembershipId), on: on(e.at) } : null;

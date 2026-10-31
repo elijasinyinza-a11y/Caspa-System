@@ -45,7 +45,9 @@ export function computeFindings(s: Store, ctx: CheckContext): Finding[] {
   const objectives = s.objectives.filter((o) => goalIds.has(o.goalId));
   const objectiveIds = new Set(objectives.map((o) => o.id));
   const kpis = s.kpis.filter((k) => objectiveIds.has(k.objectiveId));
-  const activities = s.activities.filter((a) => a.financialYear === fy && a.status !== 'archived');
+  // Only the active plan's activities: a draft plan being brought in (onboarding) is checked separately, before confirmation.
+  const kpiIds = new Set(kpis.map((k) => k.id));
+  const activities = s.activities.filter((a) => a.financialYear === fy && a.status !== 'archived' && kpiIds.has(a.kpiId));
 
   for (const l of linesOfVersion(s, fy)) {
     if (!l.activityId) push('budgetLineNoActivity', { type: 'BudgetLine', id: l.id }, en.findings.budgetLineNoActivity(terms, l.description), [accountablePositionOfUnit(s, l.holderUnitId)]);

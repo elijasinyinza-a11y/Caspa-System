@@ -32,8 +32,9 @@ describe('budget gate on Sample Water Utility', () => {
     const r = as('finance').submitBudget();
     expect(r).toEqual({ ok: true, outcome: 'blocked', blocking: 1 });
     expect(util.store.budgetVersions[0]!.status).toBe('draft');
-    expect(util.store.gateEvents).toHaveLength(1);
-    expect(util.store.gateEvents[0]!.blockingFindingKeys).toEqual(['STRUCT-BUDGETLINE-NO-ACTIVITY:BudgetLine:bl-5']);
+    const budgetEvents = util.store.gateEvents.filter((g) => g.gate.startsWith('budget.')); // the seeded cascade.publish comes first
+    expect(budgetEvents).toHaveLength(1);
+    expect(budgetEvents[0]!.blockingFindingKeys).toEqual(['STRUCT-BUDGETLINE-NO-ACTIVITY:BudgetLine:bl-5']);
     expect(as('finance').budget().history.map((h) => h.kind)).toEqual(['submit_blocked']);
   });
 

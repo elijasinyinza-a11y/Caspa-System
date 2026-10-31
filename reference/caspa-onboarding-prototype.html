@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--blk-t:#B42318;--blk-b:#FEF3F2;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--info-b:#EDECEA;
+--s:#378ADD;--c:#7C5CBF;--p:#B85C38;--f:#C2417A;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.app{display:flex;height:100%}
+.side{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:4px;flex-shrink:0}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav a[aria-current=page]{background:rgba(255,255,255,.15)}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.sep{height:1px;background:rgba(255,255,255,.2);margin:10px 4px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:8px 20px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--muted);flex:1;min-width:160px}
+.crumb b{color:var(--navy)}
+.proto{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.proto label{font-size:12px;color:var(--muted)}
+select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white)}
+textarea{width:100%;min-height:72px}
+.scroll{flex:1;overflow-y:auto;padding:20px 24px 60px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:28px;color:var(--navy);margin:0 0 4px}
+h2{font-size:18px;color:var(--navy);margin:0 0 8px}
+h3{font-size:16px;color:var(--navy);margin:0 0 6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}.xs{font-size:12px}
+.purpose{font-size:16px;margin:0 0 6px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--navy);color:var(--white)}
+.btn.link{border:none;background:none;padding:0 4px;text-decoration:underline;min-height:44px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:16px 0;flex-wrap:wrap}
+.tabs button{min-height:44px;border:none;background:none;padding:0 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--navy);border-bottom-color:var(--navy)}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid var(--border);background:var(--info-b);color:var(--navy)}
+.chip.blk{color:var(--blk-t);background:var(--blk-b);border-color:var(--blk-t)}
+.chip.adv{color:var(--adv-t);background:var(--adv-b);border-color:var(--adv-r)}
+.chip.ok{color:var(--ok-t);background:var(--ok-b);border-color:var(--ok-r)}
+.chk{border-radius:10px;padding:12px;margin:8px 0;border:1px solid}
+.chk.blk{border:2px solid var(--blk-t);background:var(--blk-b)}
+.chk.adv{border-color:var(--adv-r);background:var(--adv-b)}
+.chk.done{border-color:var(--border);background:var(--white)}
+.chk .lbl{font-weight:700;font-size:13px}
+.chk.blk .lbl{color:var(--blk-t)}.chk.adv .lbl{color:var(--adv-t)}
+.banner{border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid var(--border);background:var(--info-b)}
+.banner.ok{background:var(--ok-b);border-color:var(--ok-r);color:var(--ok-t)}
+.tree{list-style:none;margin:0;padding:0}
+.tree .tree{padding-left:18px;border-left:1px solid var(--border);margin-left:8px}
+.unit{padding:10px 0 4px}
+.uname{font-weight:700;color:var(--navy)}
+.pos{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 10px;margin:4px 0;border:1px solid var(--border);border-radius:8px;background:var(--white)}
+.pos .t{font-weight:600}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+th{color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:13px;font-weight:600}
+.dlg{position:fixed;inset:0;background:rgba(13,27,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.dlg .card{max-width:560px;width:100%;max-height:90vh;overflow:auto}
+.ai{font-size:12px;font-weight:700;color:var(--navy);background:var(--info-b);border:1px dashed var(--control);border-radius:6px;padding:1px 6px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.help{border-left:3px solid var(--navy);padding:8px 12px;background:var(--white);margin:8px 0;border-radius:0 8px 8px 0}
+.bottom{display:none}
+@media (max-width:760px){
+ .side{display:none}
+ .bottom{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--navy);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+ .bottom a{flex:1;min-height:56px;display:flex;align-items:center;justify-content:center;color:var(--white);text-decoration:none;font-size:12px;font-weight:600}
+ .bottom a[aria-current=page]{background:rgba(255,255,255,.15)}
+ .grid2,.grid3{grid-template-columns:1fr}
+ .scroll{padding:16px 14px 90px}
+ h1{font-size:22px}
+}
+.door{display:flex;flex-direction:column;gap:8px;text-align:left;background:var(--white);border:1px solid var(--border);border-top:4px solid var(--s);border-radius:12px;padding:20px;cursor:pointer;min-height:180px;font:inherit;color:inherit}
+.door:hover{border-color:var(--navy);border-top-color:var(--s)}
+.door[disabled]{cursor:not-allowed;border-top-color:var(--border);opacity:.75}
+.door .h{font-size:22px;font-weight:700;color:var(--navy)}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+.steps .st{min-width:92px}
+.node{border:1px solid var(--border);border-radius:8px;background:var(--white);margin:6px 0;padding:8px 10px}
+.node .row{justify-content:space-between}
+.kids{margin-left:18px;border-left:1px solid var(--border);padding-left:10px}
+.code{color:var(--muted);font-size:12px;margin-left:6px}
+.ws{font-size:12px;color:var(--muted)}
+.ws b{color:#1A5A9E}
+</style>
+</head><body>
+<div class="app">
+ <nav class="side" aria-label="Main"><div class="brand">CASPA™</div><div class="nav" id="nav"></div></nav>
+ <div class="main">
+  <header class="top">
+   <div class="crumb" id="crumb"></div>
+   <div class="proto" role="group" aria-label="Prototype controls">
+    <label for="role">Viewing as</label>
+    <select id="role">
+     <option value="strategy">Strategy office (Joseph Lungu)</option>
+     <option value="executive">Executive (Mutale Banda)</option>
+     <option value="admin">Administrator (Ireen Sakala)</option>
+     <option value="finance">Finance (Grace Tembo)</option>
+     <option value="employee">Employee (Kelvin Daka)</option>
+    </select>
+    <button class="btn" id="reset">Start again</button>
+   </div>
+  </header>
+  <main class="scroll" id="main" tabindex="-1"><div class="wrap" id="view"></div></main>
+ </div>
+</div>
+<nav class="bottom" id="bottom" aria-label="Main"></nav>
+<div id="dlg"></div>
+<div id="live" class="sr-only" aria-live="polite"></div>
+<script>
+/* Prototype for the CASPA™ Onboarding Specification v0.1 (decisions O1 to O9, 31 October 2026).
+   Behaviour to match, not code to copy. Sample New Organisation, with the structure confirmed from the v0.7.2
+   sample template. The sample plan below is fictional wording for approval (O7). Every count, check and state on
+   screen is computed from the records in this page; none is typed. */
+
+/* ───── The confirmed structure (from the sample template) ───── */
+const UNITS = [['u1', 'Head office', null], ['u2', 'Finance', 'u1'], ['u3', 'Corporate Services', 'u1'], ['u4', 'Operations', 'u1'], ['u5', 'Regions', 'u4'], ['u6', 'North', 'u5'], ['u7', 'South', 'u5']];
+const POS = [
+  ['ceo', 'Chief Executive Officer', 'u1', 'Mutale Banda'], ['fm', 'Finance Manager', 'u2', 'Grace Tembo'], ['acc', 'Accountant', 'u2', 'Peter Zulu'],
+  ['aa', 'Assistant Accountant', 'u2', null], ['csm', 'Corporate Services Manager', 'u3', 'Ireen Sakala'], ['it', 'IT Officer', 'u3', 'Brian Mumba'],
+  ['om', 'Operations Manager', 'u4', 'Joseph Lungu'], ['rsn', 'Regional Supervisor', 'u6', 'Agnes Mwale'], ['rss', 'Regional Supervisor', 'u7', null],
+  ['fo1', 'Field Officer', 'u6', 'Kelvin Daka'], ['fo2', 'Field Officer', 'u6', 'Mary Chanda'], ['fo3', 'Field Officer', 'u7', 'Lweendo Hamoonga'],
+].map(([id, title, unit, holder]) => ({ id, title, unit, holder }));
+const unitName = (u) => UNITS.find(x => x[0] === u)[1];
+const posLabel = (p) => POS.filter(x => x.title === p.title).length > 1 ? `${p.title}, ${unitName(p.unit)}` : p.title;
+const ROLE = { strategy: { who: 'Joseph Lungu', pos: 'om', roles: ['strategy_office'] }, executive: { who: 'Mutale Banda', pos: 'ceo', roles: ['executive'] },
+  admin: { who: 'Ireen Sakala', pos: 'csm', roles: ['hr', 'org_admin'] }, finance: { who: 'Grace Tembo', pos: 'fm', roles: ['finance'] }, employee: { who: 'Kelvin Daka', pos: 'fo1', roles: [] } };
+const LEVELS = { principle: 'Principle', process: 'Process', people: 'People', policy: 'Policy', procedures: 'Procedure', practices: 'Practices' };
+
+/* ───── The sample plan (O7: fictional wording for approval). Owners as written in the plan; matched to positions on import. ─────
+   [kind, code, title, part of, owner as written, extra] */
+const SAMPLE = [
+  ['goal', 'G1', 'Improve service to customers', null, 'Chief Executive Officer', { perspective: 'Customer', page: 4 }],
+  ['objective', 'O1.1', 'Respond to customer requests faster', 'G1', 'Operations Manager', { page: 5 }],
+  ['kpi', 'K1.1.1', 'Requests resolved within 5 working days', 'O1.1', 'Operations Manager', { unit: '%', direction: 'higher', aggregation: 'latest', baseline: 62, asOf: '2025-12-31', target: 80, page: 5 }],
+  ['kpi', 'K1.1.2', 'Customer satisfaction score (out of 5)', 'O1.1', 'Operations Manager', { unit: 'out of 5', direction: 'higher', aggregation: 'average', baseline: 3.4, asOf: '2025-12-31', target: 4.0, page: 5 }],
+  ['activity', 'A1.1.1.1', 'Introduce a request tracking log in both regions', 'K1.1.1', 'Regional Supervisor, North', { level: 'procedures', qty: [2, 'regions'], page: 6 }],
+  ['activity', 'A1.1.1.2', 'Train field officers in request handling', 'K1.1.1', 'Head of Customer Care', { level: 'people', qty: [3, 'officers'], page: 6 }],
+  ['objective', 'O1.2', 'Extend regular service to the South region', 'G1', 'Operations Manager', { page: 7 }],
+  ['kpi', 'K1.2.1', 'Field visits completed in the South region', 'O1.2', 'Regional Supervisor, South', { unit: 'visits', direction: 'higher', aggregation: 'sum', baseline: 120, asOf: '2025-12-31', target: 300, page: 7 }],
+  ['activity', 'A1.2.1.1', 'Fill the Regional Supervisor post, South', 'K1.2.1', 'Corporate Services Manager', { level: 'people', qty: [1, 'post'], page: 7 }],
+  ['activity', 'A1.2.1.2', 'Agree a monthly visit schedule for the South region', 'K1.2.1', 'Operations Manager', { level: null, qty: [12, 'schedules'], page: 7 }],
+  ['goal', 'G2', 'Strengthen financial management', null, 'Finance Manager', { perspective: 'Financial', page: 8 }],
+  ['objective', 'O2.1', 'Close the monthly accounts on time', 'G2', 'Finance Manager', { page: 8 }],
+  ['kpi', 'K2.1.1', 'Months closed within 10 working days', 'O2.1', 'Accountant', { unit: 'months', direction: 'higher', aggregation: 'sum', baseline: 7, asOf: '2025-12-31', target: 12, page: 8 }],
+  ['activity', 'A2.1.1.1', 'Adopt a month-end closing checklist', 'K2.1.1', 'Accountant', { level: 'procedures', qty: [1, 'checklist'], page: 8 }],
+  ['objective', 'O2.2', 'Reduce overdue amounts owed to the organisation', 'G2', 'Finance Manager', { page: 9 }],
+  ['kpi', 'K2.2.1', 'Amounts owed for more than 90 days', 'O2.2', 'Finance Manager', { unit: '%', direction: 'lower', aggregation: 'latest', baseline: 31, asOf: '2025-12-31', target: 20, page: 9 }],
+  ['activity', 'A2.2.1.1', 'Revise the debt recovery procedure', 'K2.2.1', 'Finance Manager', { level: 'procedures', qty: [1, 'procedure'], page: 9 }],
+  ['goal', 'G3', 'Build a capable organisation', null, 'Corporate Services Manager', { perspective: 'Innovation and learning', page: 10 }],
+  ['objective', 'O3.1', 'Bring core systems up to date', 'G3', 'Corporate Services Manager', { page: 10 }],
+  ['kpi', 'K3.1.1', 'Staff using the shared records system', 'O3.1', 'IT Officer', { unit: '%', direction: 'higher', aggregation: 'latest', baseline: null, asOf: null, target: 90, page: 10 }],
+  ['activity', 'A3.1.1.1', 'Move all units onto the shared records system', 'K3.1.1', 'IT Officer', { level: 'process', qty: [6, 'units'], page: 11 }],
+  ['activity', 'A3.1.1.2', 'Run refresher training on the records system', 'K3.1.1', 'IT Officer', { level: 'people', qty: [40, 'staff'], page: 11 }],
+];
+/* Owners as written → a position: by title, then "title, unit" where titles repeat. Unmatched → a row to fix (never a guess). */
+function matchOwner(text) {
+  const exact = POS.filter(p => posLabel(p) === text || (p.title === text && POS.filter(x => x.title === text).length === 1));
+  return exact.length === 1 ? exact[0].id : null;
+}
+
+const fresh = () => ({ role: 'strategy', view: 'home', plan: null, items: [], vision: '', mission: '', validated: new Set(), problems: [], note: null, route: null, sent: false, confirmed: null, published: false });
+let S = fresh();
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const plural = (k, one, many) => `${k.toLocaleString('en-GB')} ${k === 1 ? one : many}`;
+const me = () => ROLE[S.role];
+const has = (r) => me().roles.includes(r);
+const isStrategy = () => has('strategy_office');
+const isExec = () => has('executive');
+const seesStart = () => isStrategy() || isExec() || has('org_admin');
+const NOW_FY = 2026;
+
+/* ───── Bringing the plan in ───── */
+function bringIn(route) {
+  S.route = route;
+  S.items = SAMPLE.map(([kind, code, title, parent, ownerText, x]) => ({
+    kind, code, title, parent, ownerText, owner: matchOwner(ownerText), ...x,
+    state: route === 'document' ? 'ai_draft' : 'human',
+  }));
+  // The AI reads levels it can see in the document; it left one blank. Spreadsheet and typing carry what was written.
+  S.problems = S.items.filter(i => !i.owner).map(i => ({ code: i.code, ownerText: i.ownerText, done: false }));
+  S.note = route === 'document'
+    ? 'AI draft made from sample-strategic-plan.pdf. Accept or correct each item before the plan can be confirmed.'
+    : 'Spreadsheet read: 22 rows. Added 3 goals, 5 objectives, 6 KPIs and 8 activities.';
+  render();
+}
+const kids = (code) => S.items.filter(i => i.parent === code);
+const count = (k) => S.items.filter(i => i.kind === k).length;
+
+/* ───── Checks (computed every render, from the records) ───── */
+function checks() {
+  const must = [], worth = [];
+  if (!S.plan?.first || !S.plan?.last) must.push({ t: 'Set the plan’s period.' });
+  if (!count('goal')) must.push({ t: 'Add at least one goal.' });
+  const pending = S.items.filter(i => i.state === 'ai_draft').length;
+  if (pending) must.push({ t: `${plural(pending, 'AI draft item has', 'AI draft items have')} not been accepted or corrected yet.`, fix: 'review' });
+  const kpis = S.items.filter(i => i.kind === 'kpi');
+  for (const o of S.items.filter(i => i.kind === 'objective')) if (!kids(o.code).length) worth.push({ t: `${o.code} has no KPI.` });
+  for (const k of kpis) if (!k.owner) worth.push({ t: `${k.code} has no owner.` });
+  const unval = kpis.filter(k => k.baseline !== null && !S.validated.has(k.code));
+  if (unval.length) worth.push({ t: `${plural(unval.length, 'KPI uses', 'KPIs use')} a baseline nobody has validated yet. It must be validated before the cascade is published.`, fix: 'validate' });
+  const noBase = kpis.filter(k => k.baseline === null);
+  if (noBase.length) worth.push({ t: `${noBase.map(k => k.code).join(', ')} has no baseline; progress starts from zero.` });
+  const goals = S.items.filter(i => i.kind === 'goal');
+  if (goals.length) worth.push({ t: `${plural(goals.length, 'goal has', 'goals have')} no recorded “why” yet (the 4Q record sheet comes later).` });
+  if (goals.length) worth.push({ t: `${plural(goals.length, 'goal has', 'goals have')} no funded activity yet. Budget lines come after the cascade is published.` });
+  if (!S.vision.trim() || !S.mission.trim()) worth.push({ t: 'No vision or mission recorded. Only the Executive can enter them.' });
+  // cascade.publish keeps its existing hard blocks.
+  const publish = [];
+  for (const a of S.items.filter(i => i.kind === 'activity')) if (!a.level) publish.push({ t: `${a.code} has no 6P level.`, code: a.code });
+  if (unval.length) publish.push({ t: `${plural(unval.length, 'baseline is', 'baselines are')} not validated.`, fix: 'validate' });
+  return { must, worth, publish };
+}
+
+/* ───── Getting started (computed from the records) ───── */
+function steps() {
+  const c = checks();
+  return [
+    ['Structure confirmed', 'done', 'By Ireen Sakala on 18 October 2026.'],
+    ['Strategy office assigned', 'done', 'Joseph Lungu, Operations Manager.'],
+    ['Plan set up', S.plan ? 'done' : 'next', S.plan ? `${S.plan.title}, ${S.plan.label}.` : 'The Strategy office answers “Do you have a current strategic plan?”'],
+    ['Plan brought in and checked', !S.plan ? 'later' : S.items.length && !c.must.length ? 'done' : 'next', S.items.length ? `${plural(count('goal'), 'goal', 'goals')}, ${plural(count('objective'), 'objective', 'objectives')}, ${plural(count('kpi'), 'KPI', 'KPIs')}, ${plural(count('activity'), 'activity', 'activities')}. ${c.must.length ? plural(c.must.length, 'thing', 'things') + ' to fix first.' : 'Nothing to fix.'}` : 'Bring the existing plan in.'],
+    ['Plan confirmed', S.confirmed ? 'done' : S.sent ? 'next' : 'later', S.confirmed ? `By Mutale Banda; board resolution ${S.confirmed.ref}.` : S.sent ? 'Waiting for the Executive.' : 'The Executive confirms it.'],
+    ['Cascade published', S.published ? 'done' : S.confirmed ? 'next' : 'later', S.published ? 'Cascade, Plan and Performance now work on this plan.' : 'The Strategy office publishes it.'],
+    ['Why each goal matters', 'later', 'The 4Q record sheet, when the Strategy workspace offers it. It never blocks the cascade.'],
+  ];
+}
+
+/* ───── Rendering ───── */
+const NAV = [['home', 'Home'], ['strategy', 'Strategy'], ['org', 'Organisation']];
+function nav() {
+  $('#nav').innerHTML = NAV.map(([k, l]) => `<a href="#" data-go="${k}" ${S.view === k ? 'aria-current="page"' : ''}><span class="mark"></span>${l}</a>`).join('');
+  $('#bottom').innerHTML = NAV.map(([k, l]) => `<a href="#" data-go="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${l}</a>`).join('');
+  $('#crumb').innerHTML = `Sample New Organisation › <b>${NAV.find(n => n[0] === S.view)[1]}</b>`;
+}
+function render() { nav(); $('#view').innerHTML = S.view === 'home' ? home() : S.view === 'strategy' ? strategy() : org(); }
+const banner = () => S.note ? `<div class="banner ok" role="status">${esc(S.note)}</div>` : '';
+
+function question() {
+  const can = isStrategy();
+  return `<section class="card"><h2>Do you have a current strategic plan?</h2>
+   <p class="small muted">${can ? 'Choose how your plan comes into CASPA™. Both lead to the same cascade.' : 'Joseph Lungu (Strategy office) answers this and sets up the plan. The Executive confirms it.'}</p>
+   <div class="grid2" style="margin-top:12px">
+    <button class="door" data-act="import" ${can ? '' : 'disabled'}><span class="h">Bring your existing plan</span><span>From your plan document, a spreadsheet, or by typing. People accept everything the AI drafts.</span></button>
+    <button class="door" disabled aria-describedby="later"><span class="h">Form a new strategy</span><span>The 4Q board, vision and mission, consultation and composition.</span><span class="chip" id="later">Coming later</span></button>
+   </div></section>`;
+}
+function home() {
+  if (!seesStart()) return `<h1>Home</h1>${S.published ? '<p>Your organisation’s plan is published. Your work appears here as it is assigned.</p>' : '<div class="banner">Your organisation’s plan is being prepared.</div>'}`;
+  const needs = isExec() && S.sent && !S.confirmed
+    ? `<section class="card"><h2>Needs you (1)</h2><div class="row" style="justify-content:space-between"><span><b>Confirm the plan:</b> ${esc(S.plan.title)}. Sent by Joseph Lungu.</span><button class="btn primary" data-go="strategy">Open the plan</button></div></section>` : '';
+  const gs = S.published ? `<div class="banner ok">Getting started is complete. The cascade is published.</div>` : `<section class="card" style="margin-top:16px"><h2>Getting started</h2><ol class="steps">${steps().map(([t, st, d]) => `<li><span class="st"><span class="chip ${st === 'done' ? 'ok' : st === 'next' ? 'adv' : ''}">${st === 'done' ? 'Done' : st === 'next' ? 'Next' : 'Later'}</span></span><span><b>${t}</b><br><span class="small muted">${esc(d)}</span></span></li>`).join('')}</ol></section>`;
+  return `<h1>Home</h1>${banner()}${needs}${!S.plan && seesStart() ? question() : ''}${gs}`;
+}
+function strategy() {
+  const head = `<p class="ws"><b>Strategy</b> · Conception to Communication</p><h1>Strategy</h1><p class="purpose">Why the organisation does what it does: its plan, goals and the reasons behind them.</p>`;
+  if (!S.plan) return head + banner() + (seesStart() ? (isStrategy() && S.setup ? setupForm() : question()) : '<div class="banner">Your organisation’s plan is being prepared.</div>');
+  return head + banner() + planPage();
+}
+function setupForm() {
+  const opts = (sel) => [2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map(y => `<option ${y === sel ? 'selected' : ''}>FY${y}</option>`).join('');
+  return `<section class="card"><h2>Plan setup</h2><p class="small muted">Bring your existing plan. The year runs January to December, so years read FY2026.</p>
+   <div class="field"><label for="pt">Plan title</label><input id="pt" type="text" value="Strategic Plan 2025–2029"></div>
+   <div class="grid2"><div class="field"><label for="pf">First financial year</label><select id="pf">${opts(2025)}</select></div><div class="field"><label for="pl">Last financial year</label><select id="pl">${opts(2029)}</select></div></div>
+   <div class="field"><label for="po">Process owner</label><select id="po">${POS.map(p => `<option value="${p.id}" ${p.id === 'om' ? 'selected' : ''}>${esc(posLabel(p))} (${esc(p.holder ?? 'vacant')})</option>`).join('')}</select></div>
+   <p class="small">Board approval: needed for the plan (Organisation settings). The Executive gives the resolution when confirming.</p>
+   <div class="row"><button class="btn primary" data-act="setup-save">Save and bring the plan in</button><button class="btn" data-act="setup-cancel">Cancel</button></div></section>`;
+}
+function ownerCell(i) {
+  if (i.owner) { const p = POS.find(x => x.id === i.owner); return `${esc(posLabel(p))} <span class="muted">(${esc(p.holder ?? 'vacant')})</span>`; }
+  return `<span class="chip adv">Owner not matched</span> <span class="muted">“${esc(i.ownerText)}”</span>`;
+}
+function itemRow(i) {
+  const ai = i.state === 'ai_draft', edit = isStrategy() && !S.confirmed;
+  const kpiLine = i.kind === 'kpi' ? `<div class="xs muted">Baseline ${i.baseline ?? 'not given'}${i.unit === '%' ? '%' : ''}${i.asOf ? ' (31 December 2025)' : ''}${i.baseline !== null ? (S.validated.has(i.code) ? ' · validated' : ' · not validated') : ''} · FY2026 target ${i.target}${i.unit === '%' ? '%' : ' ' + esc(i.unit)} · ${i.direction === 'lower' ? 'lower is better' : 'higher is better'}</div>` : '';
+  const actLine = i.kind === 'activity' ? `<div class="xs muted">6P level: ${i.level ? LEVELS[i.level] : '<span class="chip blk">Not set</span>'} · ${i.qty[0]} ${esc(i.qty[1])} in FY2026</div>` : '';
+  const label = { goal: 'Goal', objective: 'Objective', kpi: 'KPI', activity: 'Activity' }[i.kind];
+  return `<div class="node"><div class="row"><div style="min-width:0;flex:1"><span class="xs muted">${label}</span> <b>${esc(i.title)}</b><span class="code">${esc(i.code)}</span>
+     ${ai ? ` <span class="ai">AI draft · page ${i.page}</span>` : ''}${i.perspective ? ` <span class="xs muted">· ${esc(i.perspective)}</span>` : ''}
+     <div class="small">Owner: ${ownerCell(i)}</div>${kpiLine}${actLine}</div>
+     <div class="row">${edit && ai ? `<button class="btn" data-accept="${i.code}">Accept</button>` : ''}${edit ? `<button class="btn" data-correct="${i.code}">${ai ? 'Correct' : 'Edit'}</button>` : ''}
+     ${isStrategy() && i.kind === 'kpi' && i.baseline !== null && !S.validated.has(i.code) && i.state !== 'ai_draft' ? `<button class="btn link" data-validate="${i.code}">Validate baseline</button>` : ''}</div></div>
+     ${kids(i.code).length ? `<div class="kids">${kids(i.code).map(itemRow).join('')}</div>` : ''}</div>`;
+}
+function planPage() {
+  const p = S.plan, c = checks();
+  const status = S.published ? '<span class="chip ok">Active · cascade published</span>' : S.confirmed ? '<span class="chip ok">Active · confirmed</span>' : S.sent ? '<span class="chip">Draft · with the Executive</span>' : '<span class="chip">Draft</span>';
+  const routes = !S.items.length && isStrategy() ? `<div class="grid3" style="margin-top:12px">
+     <section class="card"><h3>From your plan document</h3><p class="small muted">A PDF or Word file. The AI drafts goals, objectives, KPIs and activities, each with its page; you accept or correct each one. It never drafts the vision or mission.</p><button class="btn link" data-route="document">Use the sample plan document</button><p class="xs muted">In this prototype any file gives the same sample draft.</p></section>
+     <section class="card"><h3>From a spreadsheet</h3><p class="small muted">One row per goal, objective, KPI or activity. Best for large plans.</p><button class="btn" data-act="template">Download the template (.xlsx)</button><button class="btn link" data-route="sheet">Use the sample spreadsheet</button></section>
+     <section class="card"><h3>Type it in</h3><p class="small muted">For small plans, and for corrections after either route.</p><button class="btn" data-act="type">Add the first goal</button></section></div>` : '';
+  const probs = S.problems.filter(x => !x.done);
+  const rowsCard = probs.length && isStrategy() ? `<section class="card" style="margin-top:16px"><h2>Rows that need attention · ${probs.length}</h2>${probs.map(x => {
+      const it = S.items.find(i => i.code === x.code);
+      return `<div class="chk adv"><div class="lbl">Owner not matched</div><p>${esc(it.code)} ${esc(it.title)}: “${esc(x.ownerText)}” matches no position. Choose who owns it.</p>
+       <div class="row"><label class="sr-only" for="ow-${x.code}">Owner</label><select id="ow-${x.code}">${POS.map(p => `<option value="${p.id}" ${p.id === 'om' ? 'selected' : ''}>${esc(posLabel(p))} (${esc(p.holder ?? 'vacant')})</option>`).join('')}</select><button class="btn" data-owner="${x.code}">Use this</button></div></div>`;
+    }).join('')}</section>` : '';
+  const vm = `<section class="card" style="margin-top:16px"><h2>Vision and mission</h2>
+    ${isExec() && !S.confirmed ? `<p class="xs muted">As written in your existing plan. Only the Executive enters these; the AI never drafts them.</p>
+      <div class="field"><label for="vv">Vision</label><textarea id="vv">${esc(S.vision)}</textarea></div><div class="field"><label for="mm">Mission</label><textarea id="mm">${esc(S.mission)}</textarea></div><button class="btn" data-act="vm-save">Save</button>`
+      : `<p><b>Vision:</b> ${esc(S.vision) || '<span class="muted">Not recorded. Only the Executive can enter it.</span>'}</p><p><b>Mission:</b> ${esc(S.mission) || '<span class="muted">Not recorded.</span>'}</p>`}</section>`;
+  const checkCard = `<section class="card"><h2>Checks</h2>
+    ${!S.confirmed ? (c.must.length ? c.must.map(m => `<div class="chk blk"><div class="lbl">Must fix before the plan is confirmed</div>${esc(m.t)}</div>`).join('') : '<p><span class="chip ok">Nothing to fix</span> before the plan is confirmed.</p>') : ''}
+    ${S.confirmed && !S.published ? (c.publish.length ? c.publish.map(m => `<div class="chk blk"><div class="lbl">Must fix before the cascade is published</div>${esc(m.t)}${m.code && isStrategy() ? ` <button class="btn link" data-correct="${m.code}">Set the level</button>` : ''}${m.fix === 'validate' && isStrategy() ? ` <button class="btn link" data-act="validate-all">Validate the baselines</button>` : ''}</div>`).join('') : '<p><span class="chip ok">Nothing to fix</span> before the cascade is published.</p>') : ''}
+    ${c.worth.map(w => `<div class="chk adv"><div class="lbl">Worth checking</div>${esc(w.t)}</div>`).join('')}</section>`;
+  const action = !S.confirmed
+    ? (isStrategy() ? `<section class="card" style="margin-top:16px"><h2>Send for confirmation</h2><p class="small">${S.sent ? 'Sent to Mutale Banda (Executive). You can keep correcting it until it is confirmed.' : 'The Executive confirms the plan. You prepared it, so you cannot confirm it.'}</p><button class="btn primary" data-act="send" ${c.must.length || S.sent || !S.items.length ? 'disabled' : ''}>Send to the Executive</button>${c.must.length ? `<p class="xs muted">Fix the ${plural(c.must.length, 'item', 'items')} above first.</p>` : ''}</section>`
+      : isExec() ? `<section class="card" style="margin-top:16px"><h2>Confirm the plan</h2>${S.sent ? `<p class="small">Board approval is needed for the plan.</p><div class="grid2"><div class="field"><label for="br">Board resolution reference</label><input id="br" type="text" value="BR/2026/14"></div><div class="field"><label for="bd">Date</label><input id="bd" type="date" value="2026-10-28"></div></div><p class="small">${plural(c.worth.length, 'thing is', 'things are')} worth checking; they stay visible after confirmation.</p><button class="btn primary" data-act="confirm">Confirm the plan</button>` : '<p class="small muted">The Strategy office has not sent it yet.</p>'}</section>` : '')
+    : (!S.published && isStrategy() ? `<section class="card" style="margin-top:16px"><h2>Publish the cascade</h2><p class="small">Confirmed by Mutale Banda. Publishing makes the cascade live in Cascade, Plan and Performance.</p><button class="btn primary" data-act="publish" ${c.publish.length ? 'disabled' : ''}>Publish the cascade</button></section>` : '');
+  return `<section class="card"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">${esc(p.title)}</h2><p class="small muted" style="margin:4px 0 0">${p.label} · brought in from an existing plan · process owner: Operations Manager (Joseph Lungu)</p></div>${status}</div>${routes}</section>
+   ${rowsCard}
+   ${S.items.length ? `<div class="grid2" style="margin-top:16px"><section class="card"><h2>The plan</h2><p class="small muted">${plural(count('goal'), 'goal', 'goals')} · ${plural(count('objective'), 'objective', 'objectives')} · ${plural(count('kpi'), 'KPI', 'KPIs')} · ${plural(count('activity'), 'activity', 'activities')}. Goals and objectives for the whole period; KPI targets and activities for FY2026.</p>${S.items.filter(i => i.kind === 'goal').map(itemRow).join('')}</section><div>${checkCard}${action}</div></div>` : ''}
+   ${vm}`;
+}
+function org() { return `<h1>Organisation</h1><div class="banner ok">Structure confirmed by Ireen Sakala on 18 October 2026.</div><p class="small muted">In the product this is the v0.7.2 structure page. This prototype is about the plan.</p>`; }
+
+/* ───── Correct dialog ───── */
+function correct(code) {
+  const i = S.items.find(x => x.code === code);
+  $('#dlg').innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="card"><h2 id="dt">${i.state === 'ai_draft' ? 'Correct' : 'Edit'}: ${esc(i.code)}</h2>
+   <div class="field"><label for="ct">Title</label><input id="ct" type="text" value="${esc(i.title)}"></div>
+   <div class="field"><label for="co">Owner</label><select id="co"><option value="">No owner yet</option>${POS.map(p => `<option value="${p.id}" ${p.id === i.owner ? 'selected' : ''}>${esc(posLabel(p))} (${esc(p.holder ?? 'vacant')})</option>`).join('')}</select></div>
+   ${i.kind === 'activity' ? `<div class="field"><label for="cl">6P level</label><select id="cl"><option value="">Not set</option>${Object.entries(LEVELS).map(([k, l]) => `<option value="${k}" ${k === i.level ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
+   ${i.kind === 'kpi' ? `<div class="grid2"><div class="field"><label for="cb">Baseline</label><input id="cb" type="number" value="${i.baseline ?? ''}"></div><div class="field"><label for="cg">FY2026 target</label><input id="cg" type="number" value="${i.target}"></div></div>` : ''}
+   <div class="row"><button class="btn primary" id="cs">Save</button><button class="btn" id="cx">Cancel</button></div></div></div>`;
+  $('#ct').focus();
+  $('#cx').onclick = () => { $('#dlg').innerHTML = ''; };
+  $('#dlg').onkeydown = (e) => { if (e.key === 'Escape') $('#dlg').innerHTML = ''; };
+  $('#cs').onclick = () => {
+    i.title = $('#ct').value.trim() || i.title; i.owner = $('#co').value || null;
+    if (i.kind === 'activity') i.level = $('#cl').value || null;
+    if (i.kind === 'kpi') { const b = $('#cb').value; i.baseline = b === '' ? null : Number(b); i.target = Number($('#cg').value); S.validated.delete(i.code); }
+    if (i.state === 'ai_draft') i.state = 'accepted';
+    const pr = S.problems.find(x => x.code === code); if (pr && i.owner) pr.done = true;
+    $('#dlg').innerHTML = ''; S.note = null; render();
+  };
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-go],[data-act],[data-route],[data-accept],[data-correct],[data-validate],[data-owner]'); if (!t) return;
+  e.preventDefault();
+  const d = t.dataset;
+  if (d.go) { S.view = d.go; S.note = null; render(); $('#main').focus(); return; }
+  if (d.route) return bringIn(d.route);
+  if (d.accept) { S.items.find(i => i.code === d.accept).state = 'accepted'; S.note = null; return render(); }
+  if (d.correct) return correct(d.correct);
+  if (d.validate) { S.validated.add(d.validate); S.note = null; return render(); }
+  if (d.owner) { const i = S.items.find(x => x.code === d.owner); i.owner = document.getElementById('ow-' + d.owner).value; S.problems.find(x => x.code === d.owner).done = true; return render(); }
+  switch (d.act) {
+    case 'import': S.view = 'strategy'; S.setup = true; S.note = null; return render();
+    case 'setup-cancel': S.setup = false; return render();
+    case 'setup-save': {
+      const f = Number($('#pf').value.slice(2)), l = Number($('#pl').value.slice(2));
+      if (l < f) { S.note = 'The last year can’t come before the first.'; return render(); }
+      S.plan = { title: $('#pt').value.trim() || 'Strategic plan', first: f, last: l, label: `FY${f} to FY${l}`, door: 'imported' };
+      S.setup = false; S.note = 'Plan set up. Now bring its content in.'; return render();
+    }
+    case 'template': S.note = 'In the product this downloads the template, with an instructions sheet.'; return render();
+    case 'type': S.note = 'In the product this opens the editor: add a goal, then objectives, KPIs and activities under it.'; return render();
+    case 'vm-save': S.vision = $('#vv').value; S.mission = $('#mm').value; S.note = 'Saved. They are confirmed with the plan.'; return render();
+    case 'validate-all': S.items.filter(i => i.kind === 'kpi' && i.baseline !== null).forEach(k => S.validated.add(k.code)); S.note = 'Baselines validated by Joseph Lungu. Recorded.'; return render();
+    case 'send': S.sent = true; S.note = 'Sent to Mutale Banda. It is in their “Needs you”.'; return render();
+    case 'confirm': {
+      const ref = $('#br').value.trim(); if (!ref) { S.note = 'Give the board resolution reference.'; return render(); }
+      S.confirmed = { ref, on: $('#bd').value }; S.note = 'Plan confirmed and active: its period includes FY2026 and no other plan is active. The Strategy office can now publish the cascade.'; return render();
+    }
+    case 'publish': S.published = true; S.note = 'Cascade published. Cascade, Plan and Performance now work on this plan.'; return render();
+  }
+});
+$('#role').onchange = (e) => { S.role = e.target.value; S.note = null; render(); };
+$('#reset').onclick = () => { S = fresh(); $('#role').value = 'strategy'; render(); };
+render();
+</script></body></html>

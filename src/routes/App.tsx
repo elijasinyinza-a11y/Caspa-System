@@ -8,6 +8,7 @@ import { createMemoryRepository, sampleClock } from '../data/access/repository';
 import { ALL_DEV_ROLES } from '../data/sample/all';
 import { createReviewOrgs, devMembership } from '../data/sample/review';
 import { OrganisationPage } from './organisation/OrganisationPage';
+import { Strategy } from './Strategy';
 import { SAMPLE_NOW } from '../data/sample/seed';
 import { en } from '../strings/en';
 import { Budget } from './Budget';
@@ -60,6 +61,7 @@ export function App() {
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />
     : route.w === 'plan' ? <Budget key={`${org.orgId}:${viewing}`} />
+    : route.w === 'strategy' ? <Strategy key={`${org.orgId}:${viewing}`} />
     : <Workspace w={route.w} />;
 
   return (

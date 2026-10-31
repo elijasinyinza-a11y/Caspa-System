@@ -2,7 +2,7 @@
  * The structure's confirmation (D7-9): an AuditEntry with action "confirm" on the Organisation. It records who
  * confirmed, when, what was saved and every "worth checking" kind with its reason, or null when not marked as checked.
  */
-import type { AuditEntry, Id, ISODateTime } from '../../../contract/caspa-data-contract';
+import type { AuditEntry, GateEvent, Id, ISODateTime } from '../../../contract/caspa-data-contract';
 import type { WorthKind } from '../../../rules/setup';
 import type { Store } from '../store';
 
@@ -27,3 +27,12 @@ export const seededConfirmation = (
 /** The first confirmation of the organisation's structure, or null if it has not been confirmed. */
 export const structureConfirmation = (s: Store): AuditEntry | null =>
   s.auditEntries.find((a) => a.action === CONFIRM_ACTION && a.entity.type === 'Organisation' && a.entity.id === s.organisation.id) ?? null;
+
+/**
+ * A past publication of an organisation's cascade (onboarding, section 28), for the sample organisations seeded as
+ * already running. They never see "Getting started".
+ */
+export const seededPublication = (orgId: Id<'Organisation'>, planId: string, byMembershipId: Id<'Membership'>, at: ISODateTime): GateEvent => ({
+  id: `ge-published-${orgId}` as Id<'GateEvent'>, orgId, gate: 'cascade.publish', subject: { type: 'StrategicPlan', id: planId },
+  attempted: { at, byMembershipId }, outcome: 'passed', blockingFindingKeys: [], advisoryAtGate: [],
+});

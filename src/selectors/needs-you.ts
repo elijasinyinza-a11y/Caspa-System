@@ -8,6 +8,7 @@ import type { Store } from '../data/access/store';
 import type { Viewer } from '../data/access/viewer';
 import { blockersAt, computeFindings } from '../rules/integrity';
 import { rateContract } from '../rules/rating';
+import { sentBy } from '../rules/onboarding';
 import { currentBudgetVersion } from '../rules/structure';
 import { en } from '../strings/en';
 import type { FixTarget } from './integrity';
@@ -102,6 +103,19 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
           key: `approve:budget:${version.id}`, kind: 'approval', title: en.needsYou.approveBudget,
           detail: submitted ? en.needsYou.submittedBy(personName(submitted.attempted.byMembershipId)) : null, due: approveDue, severity: null,
           as: v.roles.includes('executive') ? 'executive' : 'finance', link: plan,
+        });
+      }
+    }
+  }
+
+  /* Onboarding (section 28): a plan sent by the Strategy office waits for the Executive's confirmation. */
+  if (v.roles.includes('executive')) {
+    for (const p of s.plans.filter((x) => x.status === 'draft')) {
+      const sender = sentBy(s, p);
+      if (sender && sender !== v.membershipId) {
+        add({
+          key: `approve:plan:${p.id}`, kind: 'approval', title: en.needsYou.confirmPlan(p.title), detail: en.needsYou.submittedBy(personName(sender)),
+          due: null, severity: null, as: 'executive', link: { kind: 'workspace', w: 'strategy' },
         });
       }
     }

@@ -24,11 +24,64 @@ export interface StructureDraft {
   sameForAnyFile: true;
 }
 
+/** One item of a strategic plan read from its document (onboarding, O3). Owners as written; people match them. */
+export interface PlanDraftItem {
+  kind: "goal" | "objective" | "kpi" | "activity";
+  code: string;
+  title: string;
+  /** The code of the item it sits under; null for a goal. */
+  partOf: string | null;
+  /** The owner as the document names it, matched to a position by people and rules, never by the AI. */
+  owner: string;
+  page: number;
+  perspective?: "customer" | "internal" | "innovation_learning" | "financial";
+  kpi?: { unit: string; direction: "higher_is_better" | "lower_is_better"; aggregation: "latest" | "sum" | "average"; baseline: number | null; baselineAsOf: string | null; target: number };
+  activity?: { level: "principle" | "process" | "people" | "policy" | "procedures" | "practices" | null; quantity: number; quantityUnit: string };
+}
+export interface PlanDraft {
+  label: "AI draft";
+  items: PlanDraftItem[];
+  /** Says plainly that the review build's stub returns the same draft for any file. The AI never drafts vision or mission (F1). */
+  sameForAnyFile: true;
+}
+
 export interface AiService {
   explainFinding(finding: Finding): Promise<AiDraft>;
   /** Read an organogram and draft units, positions and reporting lines. Language only: it never confirms anything. */
   draftStructure(fileName: string): Promise<StructureDraft>;
+  /** Read a strategic plan document and draft its goals, objectives, KPIs and activities. Language only. */
+  draftPlan(fileName: string): Promise<PlanDraft>;
 }
+
+/** The stub's fixed plan draft, approved with the onboarding prototype on 31 October 2026 (O7). Fictional. */
+export const SAMPLE_PLAN_DRAFT: PlanDraft = {
+  label: "AI draft",
+  sameForAnyFile: true,
+  items: [
+    { kind: "goal", code: "G1", title: "Improve service to customers", partOf: null, owner: "Chief Executive Officer", page: 4, perspective: "customer" },
+    { kind: "objective", code: "O1.1", title: "Respond to customer requests faster", partOf: "G1", owner: "Operations Manager", page: 5 },
+    { kind: "kpi", code: "K1.1.1", title: "Requests resolved within 5 working days", partOf: "O1.1", owner: "Operations Manager", page: 5, kpi: { unit: "%", direction: "higher_is_better", aggregation: "latest", baseline: 62, baselineAsOf: "2025-12-31", target: 80 } },
+    { kind: "kpi", code: "K1.1.2", title: "Customer satisfaction score (out of 5)", partOf: "O1.1", owner: "Operations Manager", page: 5, kpi: { unit: "out of 5", direction: "higher_is_better", aggregation: "average", baseline: 3.4, baselineAsOf: "2025-12-31", target: 4 } },
+    { kind: "activity", code: "A1.1.1.1", title: "Introduce a request tracking log in both regions", partOf: "K1.1.1", owner: "Regional Supervisor, North", page: 6, activity: { level: "procedures", quantity: 2, quantityUnit: "regions" } },
+    { kind: "activity", code: "A1.1.1.2", title: "Train field officers in request handling", partOf: "K1.1.1", owner: "Head of Customer Care", page: 6, activity: { level: "people", quantity: 3, quantityUnit: "officers" } },
+    { kind: "objective", code: "O1.2", title: "Extend regular service to the South region", partOf: "G1", owner: "Operations Manager", page: 7 },
+    { kind: "kpi", code: "K1.2.1", title: "Field visits completed in the South region", partOf: "O1.2", owner: "Regional Supervisor, South", page: 7, kpi: { unit: "visits", direction: "higher_is_better", aggregation: "sum", baseline: 120, baselineAsOf: "2025-12-31", target: 300 } },
+    { kind: "activity", code: "A1.2.1.1", title: "Fill the Regional Supervisor post, South", partOf: "K1.2.1", owner: "Corporate Services Manager", page: 7, activity: { level: "people", quantity: 1, quantityUnit: "post" } },
+    { kind: "activity", code: "A1.2.1.2", title: "Agree a monthly visit schedule for the South region", partOf: "K1.2.1", owner: "Operations Manager", page: 7, activity: { level: null, quantity: 12, quantityUnit: "schedules" } },
+    { kind: "goal", code: "G2", title: "Strengthen financial management", partOf: null, owner: "Finance Manager", page: 8, perspective: "financial" },
+    { kind: "objective", code: "O2.1", title: "Close the monthly accounts on time", partOf: "G2", owner: "Finance Manager", page: 8 },
+    { kind: "kpi", code: "K2.1.1", title: "Months closed within 10 working days", partOf: "O2.1", owner: "Accountant", page: 8, kpi: { unit: "months", direction: "higher_is_better", aggregation: "sum", baseline: 7, baselineAsOf: "2025-12-31", target: 12 } },
+    { kind: "activity", code: "A2.1.1.1", title: "Adopt a month-end closing checklist", partOf: "K2.1.1", owner: "Accountant", page: 8, activity: { level: "procedures", quantity: 1, quantityUnit: "checklist" } },
+    { kind: "objective", code: "O2.2", title: "Reduce overdue amounts owed to the organisation", partOf: "G2", owner: "Finance Manager", page: 9 },
+    { kind: "kpi", code: "K2.2.1", title: "Amounts owed for more than 90 days", partOf: "O2.2", owner: "Finance Manager", page: 9, kpi: { unit: "%", direction: "lower_is_better", aggregation: "latest", baseline: 31, baselineAsOf: "2025-12-31", target: 20 } },
+    { kind: "activity", code: "A2.2.1.1", title: "Revise the debt recovery procedure", partOf: "K2.2.1", owner: "Finance Manager", page: 9, activity: { level: "procedures", quantity: 1, quantityUnit: "procedure" } },
+    { kind: "goal", code: "G3", title: "Build a capable organisation", partOf: null, owner: "Corporate Services Manager", page: 10, perspective: "innovation_learning" },
+    { kind: "objective", code: "O3.1", title: "Bring core systems up to date", partOf: "G3", owner: "Corporate Services Manager", page: 10 },
+    { kind: "kpi", code: "K3.1.1", title: "Staff using the shared records system", partOf: "O3.1", owner: "IT Officer", page: 10, kpi: { unit: "%", direction: "higher_is_better", aggregation: "latest", baseline: null, baselineAsOf: null, target: 90 } },
+    { kind: "activity", code: "A3.1.1.1", title: "Move all units onto the shared records system", partOf: "K3.1.1", owner: "IT Officer", page: 11, activity: { level: "process", quantity: 6, quantityUnit: "units" } },
+    { kind: "activity", code: "A3.1.1.2", title: "Run refresher training on the records system", partOf: "K3.1.1", owner: "IT Officer", page: 11, activity: { level: "people", quantity: 40, quantityUnit: "staff" } },
+  ],
+};
 
 /**
  * The stub's fixed organogram draft, whatever file is given (rule 4). Fictional names. One reporting line is
@@ -95,5 +148,8 @@ export const aiStub: AiService = {
   },
   async draftStructure() {
     return structuredClone(SAMPLE_STRUCTURE_DRAFT);
+  },
+  async draftPlan() {
+    return structuredClone(SAMPLE_PLAN_DRAFT);
   },
 };
