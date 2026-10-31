@@ -30,7 +30,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — done (v0.7.0)
 8. Onboarding: the two doors (Onboarding Specification v0.1; decisions O1 to O9, BUILD-BRIEF section 28) — done (v0.8.0)
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
-10. Phone layout review (responsive from slice 1)
+10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -44,6 +44,14 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Phone layout notes (v0.10.0)
+
+- BUILD-BRIEF section 29 (option A). The bottom bar holds every workspace the role has; Organisation is in the top bar
+  on phones. Every screen was checked at 390px for seven roles: nothing is wider than the screen outside a deliberate
+  sideways-scrolling table, and every control is at least 44px.
+- Try it: open the review build at 390px wide (or a phone). As Executive, the bottom bar shows Home, Strategy,
+  Cascade, Plan and Performance; Organisation is the button beside the checks pill.
 
 ## Vacancies and handover notes (v0.9.0)
 

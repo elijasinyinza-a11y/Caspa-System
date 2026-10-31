@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 28 record decisions made since; the latest is dated 31 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 29 record decisions made since; the latest is dated 31 October 2026.
 
 ## 1. What you are building
 
@@ -385,3 +385,12 @@ Source: the *CASPA™ Onboarding Specification v0.1* (a doc in the Project's cha
 - **O9:** an imported vision and mission are typed by a person and confirmed with the plan, not at `vision.confirm`. Under the matrix only the Executive drafts a `VisionStatement`, so the Executive types them; the AI never drafts them (F1).
 - **"Getting started":** on the Executive, Strategy office and administrator homes, each first-run step with its state computed from the records, until the cascade is published. Information only; confirming the plan reaches the Executive's "Needs you" as a gate approval.
 - **Prototype approved** by Elijah on 31 October 2026, with its sample plan wording (O7): `reference/caspa-onboarding-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). "Send to the Executive" is recorded as an audit entry on the plan and reaches the Executive's "Needs you" as a gate approval; confirming and publishing write gate events. The four existing sample organisations are seeded with a passed `cascade.publish`, so they never see "Getting started". Build as v0.8.0.
+
+## 29. Phone layout review, slice 10 (31 October 2026)
+
+Decided by Elijah on 31 October 2026: option A. Built as v0.10.0. No contract change.
+
+- **Bottom bar:** every workspace the role has (at most five), so none is hidden on a phone. Organisation moves to the top bar on phones, as a 44px button labelled "Organisation" for screen readers; the Executive and HR also reach it from Home's "For your information".
+- **Review method:** every screen opened at 390px for seven roles (Executive, Strategy office, Finance, HR, Supervisor, Employee, Organisation administrator), checking for anything wider than the screen outside a deliberate sideways-scrolling table, and for controls smaller than 44px.
+- **Fixed:** two-column layouts on Organisation, Strategy and the handover list let their columns shrink (a wide table had pushed the structure card past the screen); a hidden budget subtotal's sentence wraps instead of running off the Plan screen; rows with buttons (structure tree, vacancy list, the plan being brought in) give their text the full line before the buttons wrap; links on the decision map and the activity page's "Corrects" line, and the role checkboxes in People and access, are now 44px targets; the development role switcher is narrower on phones.
+- **Known and left:** with the development switcher in the top bar, a record page's breadcrumb on a phone shortens the current title to its first letters. Pilot builds have no development switcher, which frees the space.
