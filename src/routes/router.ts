@@ -15,11 +15,14 @@ export type Route =
   | { kind: 'node'; node: NodeKind; id: string; from?: WorkspaceKey }
   /** An objective's decision map, #/map/<objectiveId>, optionally at one row: #/map/<objectiveId>/<deficiencyId> (D6-2). */
   | { kind: 'map'; objectiveId: string; deficiencyId?: string }
-  /** The organisation's structure and its setup, #/organisation (slice 7, D7-13). */
-  | { kind: 'org' };
+  /**
+   * The organisation's structure and its setup, #/organisation (slice 7, D7-13); its vacant and acting positions,
+   * #/organisation/vacancies, and a position's handover list, #/organisation/handover/<positionId> (slice 9).
+   */
+  | { kind: 'org'; tab?: 'vacancies'; handover?: string };
 
 export const hrefFor = (r: Route): string =>
-  r.kind === 'org' ? '#/organisation'
+  r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? '#/organisation/vacancies' : '#/organisation')
   : r.kind === 'workspace' ? `#/${r.w}`
   : r.kind === 'map' ? `#/map/${encodeURIComponent(r.objectiveId)}${r.deficiencyId ? `/${encodeURIComponent(r.deficiencyId)}` : ''}`
   : `#/node/${r.node}/${encodeURIComponent(r.id)}${r.from ? `~${r.from}` : ''}`;
@@ -39,7 +42,10 @@ export const parseRoute = (hash: string): Route => {
   if (parts[0] === 'map' && parts[1]) {
     return { kind: 'map', objectiveId: decodeURIComponent(parts[1]), deficiencyId: parts[2] ? decodeURIComponent(parts[2]) : undefined };
   }
-  if (parts[0] === 'organisation') return { kind: 'org' };
+  if (parts[0] === 'organisation') {
+    if (parts[1] === 'handover' && parts[2]) return { kind: 'org', handover: decodeURIComponent(parts[2]) };
+    return parts[1] === 'vacancies' ? { kind: 'org', tab: 'vacancies' } : { kind: 'org' };
+  }
   const w = parts[0] as WorkspaceKey;
   return { kind: 'workspace', w: WORKSPACE_ORDER.includes(w) ? w : 'home' };
 };

@@ -5,7 +5,8 @@ import { createSeed } from '../data/sample/seed';
 import type { Store } from '../data/access/store';
 import { accountablePositionOfUnit, budgetHolderPositions } from './structure';
 
-const NOW = '2026-10-18' as ISODate;
+// Mid-August 2026, while the Head of Commercial post was held (it is vacant from 1 September 2026, H2).
+const NOW = '2026-08-15' as ISODate;
 const sees = (s: Store, personKey: string, lineId: string) => can(s, resolveViewer(s, `m-${personKey}`, NOW, 2026), 'view', { type: 'BudgetLine', id: lineId });
 const holders = (s: Store, lineId: string) => [...budgetHolderPositions(s, s.budgetLines.find((l) => l.id === lineId)!)].sort();
 

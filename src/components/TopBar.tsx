@@ -84,7 +84,7 @@ export function TopBar() {
               <>
                 <li className="font-semibold text-navy">{en.setup.nav}</li>
                 <li aria-hidden="true" className="text-muted">›</li>
-                <li aria-current="page" className="font-semibold text-navy">{repo.structureConfirmed() ? en.setup.crumbStructure : en.setup.crumbSetup}</li>
+                <li aria-current="page" className="font-semibold text-navy">{route.handover ? en.vacancy.handover : route.tab ? en.vacancy.tab : repo.structureConfirmed() ? en.setup.crumbStructure : en.setup.crumbSetup}</li>
               </>
             ) : (
               <li aria-current="page" className="font-semibold text-navy">

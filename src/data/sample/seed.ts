@@ -61,7 +61,9 @@ const positions: Position[] = PEOPLE.map((p) => ({
   ...base, id: pos(p.key), unitId: id<'OrgUnit'>(p.unit), title: p.title, reportsToPositionId: p.reportsTo ? pos(p.reportsTo) : null,
 }));
 const assignments: PositionAssignment[] = PEOPLE.map((p) => ({
-  ...base, id: id(`pa-${p.key}`), positionId: pos(p.key), personId: per(p.key), kind: 'substantive', from: d('2024-01-01'), to: null,
+  ...base, id: id(`pa-${p.key}`), positionId: pos(p.key), personId: per(p.key), kind: 'substantive', from: d('2024-01-01'),
+  // H2 (BUILD-BRIEF section 26, 30 October 2026): the Head of Commercial post is vacant from 1 September 2026.
+  to: p.key === 'hoc' ? d('2026-08-31') : null,
 }));
 const memberships: Membership[] = PEOPLE.map((p) => ({
   ...base, id: id(`m-${p.key}`), personId: per(p.key), roles: p.roles ?? [], startsOn: d('2024-01-01'), endsOn: null, status: 'active',

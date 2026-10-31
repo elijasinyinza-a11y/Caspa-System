@@ -18,6 +18,7 @@ import type { AssignedRole, SystemTerm } from '../../contract/caspa-data-contrac
 import { ChecksPanel, type FixActions } from './Checks';
 import { ConfirmDialog, MarkDialog, PositionDialog, RemoveDialog, ReplaceDialog, UnitDialog } from './Dialogs';
 import { StructureTree, type TreeActions } from './StructureTree';
+import { VacancyList } from './Vacancies';
 import { btn, card, CheckBox, Chip, download, downloadTemplate, FOLD, input, label, link, plural, primary } from './ui';
 
 const S = en.setup;
@@ -31,7 +32,7 @@ type Modal =
   | { kind: 'replace'; ai: boolean; run: () => void }
   | null;
 
-export function OrganisationPage() {
+export function OrganisationPage({ tab }: { tab?: 'vacancies' }) {
   const { repo } = useApp();
   const access = repo.structure;
   const page = access.page();
@@ -96,7 +97,13 @@ export function OrganisationPage() {
           onAddTop={() => setModal({ kind: 'unit', id: null, parentId: null })}
           onConfirm={() => setModal({ kind: 'confirm' })} onRevealPosition={show} />
       )}
-      {page.mode === 'structure' && <Structure page={page} access={access} tree={tree} fix={fix} reveal={reveal} />}
+      {page.mode === 'structure' && (
+        <StructureTabs tab={tab}>
+          {tab === 'vacancies'
+            ? <VacancyList onFill={(id) => setModal({ kind: 'position', id, unitId: '' })} />
+            : <Structure page={page} access={access} tree={tree} fix={fix} reveal={reveal} />}
+        </StructureTabs>
+      )}
 
       {modal?.kind === 'position' && <PositionDialog access={access} page={page} id={modal.id} unitId={modal.unitId} onClose={close} onSaved={done} />}
       {modal?.kind === 'unit' && <UnitDialog access={access} page={page} id={modal.id} parentId={modal.parentId} onClose={close} onSaved={done} />}
@@ -537,6 +544,26 @@ function DetailsForm({ page, access }: { page: Page; access: OrganisationAccess 
 }
 
 /* ───────── After confirmation ───────── */
+
+/** Structure, and Vacant and acting positions for those who get that view (slice 9, H4). */
+function StructureTabs({ tab, children }: { tab?: 'vacancies'; children: ReactNode }) {
+  const { repo, navigate } = useApp();
+  if (!repo.structure.vacancies()) return <>{children}</>;
+  const tabs: [string, string, 'vacancies' | undefined][] = [['structure', en.vacancy.tabStructure, undefined], ['vacancies', en.vacancy.tab, 'vacancies']];
+  return (
+    <>
+      <div role="tablist" aria-label={en.setup.title} className="mb-4 flex flex-wrap gap-2">
+        {tabs.map(([k, l, t]) => (
+          <button key={k} role="tab" type="button" aria-selected={tab === t} onClick={() => navigate({ kind: 'org', tab: t })}
+            className={`min-h-11 rounded-lg px-4 text-14 font-semibold ${tab === t ? 'bg-navy text-white' : 'border border-control bg-white text-navy hover:border-navy'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel">{children}</div>
+    </>
+  );
+}
 
 function Structure({ page, access, tree, fix, reveal }: {
   page: Page; access: OrganisationAccess; tree: TreeActions; fix: FixActions; reveal: { unitId: string; positionId?: string; n: number } | null;

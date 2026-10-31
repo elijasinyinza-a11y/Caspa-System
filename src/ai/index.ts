@@ -3,6 +3,7 @@
  * The AI handles language only: it never decides, scores, confirms or clears anything. The rules engine
  * alone decides whether a finding exists; an explanation never changes that.
  */
+import { en } from "../strings/en";
 import type { Finding } from "../contract/caspa-data-contract";
 import { RULES } from "../rules/integrity";
 
@@ -51,7 +52,12 @@ export interface AiService {
   draftStructure(fileName: string): Promise<StructureDraft>;
   /** Read a strategic plan document and draft its goals, objectives, KPIs and activities. Language only. */
   draftPlan(fileName: string): Promise<PlanDraft>;
+  /** Turn a handover list into a readable note (H7). It restates the list only: no judgement, nothing decided. */
+  draftHandoverNote(list: HandoverFacts): Promise<AiDraft>;
 }
+
+/** The facts a handover note may restate, already limited to what the reader may see. */
+export interface HandoverFacts { title: string; holder: string | null; owned: string[]; lines: number; contracts: number; waiting: number; checks: number }
 
 /** The stub's fixed plan draft, approved with the onboarding prototype on 31 October 2026 (O7). Fictional. */
 export const SAMPLE_PLAN_DRAFT: PlanDraft = {
@@ -151,5 +157,9 @@ export const aiStub: AiService = {
   },
   async draftPlan() {
     return structuredClone(SAMPLE_PLAN_DRAFT);
+  },
+  async draftHandoverNote(f) {
+    // The stub writes from the list by a fixed template; a real model would only reword the same facts.
+    return { label: "AI draft", text: en.vacancy.note(f) };
   },
 };

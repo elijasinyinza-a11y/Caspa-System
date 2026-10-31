@@ -10,6 +10,7 @@ import { nodeHref } from '../router';
 import { itemText } from './Checks';
 import { positionLabel, titleCounts } from './StructureTree';
 import { btn, CheckBox, Chip, input, label, link, plural, primary } from './ui';
+import { HolderChangePanel } from './Vacancies';
 
 const e = en.setup.edit;
 
@@ -114,6 +115,8 @@ export function PositionDialog({ access, page, id, unitId, onClose, onSaved }: {
           )}
         </div>
         <label className="flex min-h-11 items-center gap-2 text-14"><input type="checkbox" className="h-5 w-5 shrink-0" checked={acting} onChange={(x) => setActing(x.target.checked)} />{e.acting}</label>
+        {/* Slice 9: before a holder change is saved, what passes to the new holder or what the vacant post keeps. */}
+        {id && page.mode === 'structure' && <HolderChangePanel positionId={id} oldHolder={holder?.fullName ?? null} newHolder={name} />}
         {page.mode === 'setup' && (
           <div>
             <label htmlFor="e-ref" className={label}>{e.reference}</label>

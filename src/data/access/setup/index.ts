@@ -9,7 +9,7 @@
  * refused (D7-10). Removing follows "move first, then remove" (D7-3, D7-4).
  */
 import type {
-  AuditEntry, Id, ISODate, ISODateTime, Membership, OrgUnit, Person, Position, PositionAssignment, SourceDocument, AiTask, AssignedRole,
+  AuditEntry, Finding, Id, ISODate, ISODateTime, Membership, Money, OrgUnit, Person, Position, PositionAssignment, SourceDocument, AiTask, AssignedRole,
 } from '../../../contract/caspa-data-contract';
 import { aiStub, type StructureDraft } from '../../../ai';
 import {
@@ -20,6 +20,8 @@ import {
 import { dateInZone } from '../../../selectors/format';
 import { scopedStructure, structureScope } from '../../../rules/structure-view';
 import type { Store } from '../store';
+import { can } from '../permissions';
+import { holdingsIndex, positionHoldings, vacancyView, type Holdings, type HoldingState } from '../../../selectors/vacancy';
 import type { Viewer } from '../viewer';
 import { CONFIRM_ACTION, structureConfirmation, type StructureConfirmationRecord } from './confirmation';
 import { detailsOf, emptyDraft, human, structureOfStore, type DraftDetails, type DraftPerson, type DraftPosition, type DraftUnit, type RowProblem, type SetupDraft } from './draft';
@@ -119,6 +121,16 @@ export interface OrganisationAccess {
   dropVacantRoles(positionId: string): SetupResult;
   markChecked(kind: WorthKind, reason: string): SetupResult;
   confirm(): SetupResult;
+  /** H4: vacant and acting positions this viewer may see, in H1 order; null when the viewer gets no vacancy view. */
+  vacancies(): VacancyPage | null;
+  /** H5: the handover list for a position; null when the viewer may not open it. */
+  handover(positionId: string): HandoverView | null;
+  /** H5: whether this viewer may open a position's handover list. */
+  canOpenHandover(positionId: string): boolean;
+  /** For the administrator's holder-change dialog: what the position holds, as counts. */
+  holdingsPreview(positionId: string): { owned: number; lines: number; contracts: number; reports: number; needingSupervisor: number } | null;
+  /** H7: an AI handover note restating the list; shown, never stored. */
+  handoverNote(positionId: string): Promise<string | null>;
 }
 
 export interface AccessContext {
@@ -129,7 +141,39 @@ export interface AccessContext {
   clock: () => ISODateTime;
   audit: (action: string, entity: { type: string; id: string }, before: unknown, after: unknown) => AuditEntry;
   onChange?: () => void;
+  /** Whether this viewer is shown a finding today (slice 9: a check's words follow the drawer's rules). */
+  shownFinding?: (f: Finding) => boolean;
 }
+
+/* ───────── Vacancies and handover (slice 9, H1 to H9) ───────── */
+
+/** What a position holds, limited to what this viewer may see (section 6). */
+export interface HoldingsView {
+  positionId: string; title: string; unitPath: string[]; state: HoldingState;
+  holder: { name: string; acting: boolean; since: ISODate } | null;
+  vacantSince: ISODate | null; neverHeld: boolean;
+  owned: Holdings['owned'];
+  /** Amount null: the viewer sees "funded", never the amount. */
+  lines: { id: string; description: string; amount: Money | null; funds: { id: string; code: string; title: string } | null; mustFix: boolean }[];
+  answersFor: Holdings['answersFor'];
+  reports: Holdings['reports'];
+  /** Person null: the viewer may not see who holds the contract (employee, supervisor and HR only). */
+  contracts: (Omit<Holdings['contracts'][number], 'personName' | 'contractId'> & { personName: string | null })[];
+  corrective: Holdings['corrective'];
+  /** Message null: the viewer is not shown this check today. */
+  checks: { key: string; message: string | null; must: boolean }[];
+  dated: Holdings['dated'];
+  canHandover: boolean;
+}
+export interface HandoverView extends HoldingsView {
+  /** Assigned roles leaving with the person: administrators only (Membership row); null for others. */
+  rolesLeaving: AssignedRole[] | null;
+  /** The holder's own contract for this post this year, if the viewer may see it. */
+  ownContract: { status: string } | null;
+  waiting: HoldingsView['contracts'];
+  noteAvailable: boolean;
+}
+export interface VacancyPage { scope: 'all' | 'units'; rows: HoldingsView[] }
 
 const STRUCTURE_TYPES = new Set(['OrgUnit', 'Position', 'Person', 'PositionAssignment', 'Membership', 'Organisation']);
 
@@ -290,6 +334,53 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
     return through ? { ok: false, error: 'loop', through } : null;
   };
 
+  /* ───── Vacancies and handover ───── */
+  const index = () => holdingsIndex(s, ctx.financialYear, now);
+  const myPositions = new Set(viewer.positionIds as string[]);
+  const oversight = ['executive', 'hr', 'strategy_office', 'org_admin'].some((r) => viewer.roles.includes(r as AssignedRole));
+  /** v1.5: what part of the structure this viewer sees. */
+  const visiblePositions = (): Set<string> | null => {
+    if (!confirmed()) return new Set();
+    const scope = structureScope(structureOfStore(s, now), { personId: viewer.personId, roles: viewer.roles, positionIds: [...viewer.positionIds] }, s.organisation.settings.structureView);
+    return scope.whole ? null : scope.positions;
+  };
+  /** H4: oversight roles see every position; managers (a position others report to) see the units they answer for and below. */
+  const vacancyScope = (): 'all' | Set<string> | null => {
+    if (oversight) return 'all';
+    const ix = indexStructure(structureOfStore(s, now));
+    const manages = (pid: string) => (ix.reportsTo.get(pid)?.length ?? 0) > 0;
+    const units = new Set<string>();
+    for (const u of s.units) {
+      const a = answersFor(ix, u.id);
+      if (!a || a.fromUnitId || !myPositions.has(a.positionId) || !manages(a.positionId)) continue;
+      const stack = [u.id as string];
+      while (stack.length) { const id = stack.pop()!; if (units.has(id)) continue; units.add(id); for (const c of ix.children.get(id) ?? []) stack.push(c.id); }
+    }
+    return units.size ? new Set(s.positions.filter((p) => units.has(p.unitId)).map((p) => p.id as string)) : null;
+  };
+  /** H5: the administrator, the outgoing holder, their supervisor and HR. */
+  const canHandover = (positionId: string) => {
+    if (viewer.roles.includes('org_admin') || viewer.roles.includes('hr')) return true;
+    if (myPositions.has(positionId)) return true;
+    const p = s.positions.find((x) => x.id === positionId);
+    return !!p?.reportsToPositionId && myPositions.has(p.reportsToPositionId);
+  };
+  const restrict = (h: Holdings): HoldingsView => ({
+    positionId: h.positionId, title: h.title, unitPath: h.unitPath, state: h.state,
+    holder: h.holder && { name: h.holder.name, acting: h.holder.acting, since: h.holder.since },
+    vacantSince: h.vacantSince, neverHeld: h.neverHeld, owned: h.owned,
+    lines: h.lines.map((l) => ({
+      id: l.id, description: l.description, funds: l.funds, mustFix: l.mustFix,
+      amount: can(s, viewer, 'view', { type: 'BudgetLine', id: l.id }) ? { amountMinor: l.amountMinor, currency: l.currency } as Money : null,
+    })),
+    answersFor: h.answersFor, reports: h.reports,
+    contracts: h.contracts.map(({ contractId, personName, ...c }) => ({ ...c, personName: can(s, viewer, 'view', { type: 'PerformanceContract', id: contractId }) ? personName : null })),
+    corrective: h.corrective,
+    checks: h.checks.map((c) => ({ key: c.finding.key, message: ctx.shownFinding?.(c.finding) ? c.finding.message : null, must: c.must })),
+    dated: h.dated,
+    canHandover: canHandover(h.positionId),
+  });
+
   /* ───── Actions ───── */
   const removalBlockers = (kind: 'unit' | 'position', id: string): RemovalBlocker[] => {
     // Only administrators remove; the list names role holders, which only they may see.
@@ -309,6 +400,50 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
 
   return {
     page,
+
+    vacancies() {
+      if (!confirmed()) return null;
+      const scope = vacancyScope();
+      if (!scope) return null;
+      const visible = visiblePositions();
+      const ids = scope === 'all' ? visible ?? undefined : new Set([...scope].filter((id) => !visible || visible.has(id)));
+      const ix = index();
+      return { scope: scope === 'all' ? 'all' : 'units', rows: vacancyView(s, ix, ctx.financialYear, ids).map(restrict) };
+    },
+
+    handover(positionId) {
+      if (!confirmed() || !canHandover(positionId)) return null;
+      const visible = visiblePositions();
+      if (visible && !visible.has(positionId) && !viewer.roles.includes('org_admin')) return null;
+      const h = positionHoldings(s, index(), positionId, ctx.financialYear);
+      if (!h) return null;
+      const v = restrict(h);
+      const own = s.contracts.find((c) => c.positionId === positionId && c.financialYear === ctx.financialYear && (!h.holder || c.personId === h.holder.personId));
+      return {
+        ...v,
+        rolesLeaving: h.holder && isAdmin ? [...(s.memberships.find((m) => m.personId === h.holder!.personId && m.status === 'active')?.roles ?? [])] : null,
+        ownContract: own && can(s, viewer, 'view', { type: 'PerformanceContract', id: own.id }) ? { status: own.status } : null,
+        waiting: v.contracts.filter((c) => c.needsSupervisor),
+        noteAvailable: !!h.holder && s.organisation.settings.aiEnabled,
+      };
+    },
+
+    canOpenHandover: (positionId) => confirmed() && canHandover(positionId),
+
+    holdingsPreview(positionId) {
+      if (!isAdmin || !confirmed()) return null;
+      const h = positionHoldings(s, index(), positionId, ctx.financialYear);
+      return h && { owned: h.owned.length, lines: h.lines.length, contracts: h.contracts.length, reports: h.reports.length, needingSupervisor: h.contracts.filter((c) => c.needsSupervisor).length };
+    },
+
+    async handoverNote(positionId) {
+      const h = this.handover(positionId);
+      if (!h || !h.noteAvailable) return null;
+      return (await aiStub.draftHandoverNote({
+        title: h.title, holder: h.holder?.name ?? null, owned: h.owned.map((o) => o.code), lines: h.lines.length,
+        contracts: h.contracts.length, waiting: h.waiting.length, checks: h.checks.length,
+      })).text;
+    },
 
     managerOptions(positionId, unitId, query) {
       if (!isAdmin) return { options: [], total: 0 };

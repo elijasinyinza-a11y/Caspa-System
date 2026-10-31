@@ -110,7 +110,7 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
 
   it('HR sees contract coverage and the provisional score', () => {
     const hr = repo('hr').home().hr!;
-    expect(hr.contracts).toEqual({ signed: 1, issued: 0, draft: 1, none: 10 });
+    expect(hr.contracts).toEqual({ signed: 1, issued: 0, draft: 1, none: 9 }); // the vacant Head of Commercial post has nobody to contract (H2)
     expect(hr.scored.map((x) => [x.person, x.rating.label, x.rating.flags])).toEqual([['Mary Chileshe', 'Partly meets', 1]]);
   });
 });

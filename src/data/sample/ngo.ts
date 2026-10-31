@@ -27,7 +27,7 @@ export const createNgo = () =>
     people: [
       { key: 'cd', name: 'Florence Akello', title: 'Country Director', unit: 'office', reportsTo: null, roles: ['strategy_office'] },
       { key: 'fo', name: 'David Ssempala', title: 'Finance Officer', unit: 'office', reportsTo: 'cd', roles: ['finance', 'hr'] }, // one person, two roles: the merged queue
-      { key: 'pc', name: 'Grace Namutebi', title: 'Programme Coordinator', unit: 'office', reportsTo: 'cd' },
+      { key: 'pc', name: 'Grace Namutebi', title: 'Programme Coordinator', unit: 'office', reportsTo: 'cd', actingFrom: '2026-08-01' }, // H2: one acting post
       { key: 'chw1', name: 'Sarah Nakato', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
       { key: 'chw2', name: 'Peter Okello', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
       { key: 'chw3', name: 'Ruth Atim', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },

@@ -309,9 +309,22 @@ function Onboarding() {
 function StructureNotice() {
   const { repo, navigate } = useApp();
   const c = repo.structureConfirmed();
+  // H8: a line on the Executive and HR homes, never a "Needs you" item.
+  const v = repo.structure.vacancies();
+  const vacant = v?.rows.filter((r) => r.state === 'vacant') ?? [];
+  const acting = v?.rows.filter((r) => r.state === 'acting') ?? [];
+  const supervising = vacant.filter((r) => r.contracts.some((x) => x.needsSupervisor)).length;
+  const V = en.vacancy;
+  const plural = (n: number, one: string, many: string) => `${formatNumber(n)} ${n === 1 ? one : many}`;
   return (
     <section aria-labelledby="org-info" className={`${card} mt-6`}>
       <h2 id="org-info" className="text-18 font-bold text-navy">{en.setup.home.title}</h2>
+      {v && (
+        <p className="mt-1 text-14 text-text">
+          {v.rows.length ? V.home(plural(vacant.length, 'vacant position', 'vacant positions'), acting.length ? plural(acting.length, 'acting post', 'acting posts') : null, V.homeSupervising(supervising)) : V.homeNone}{' '}
+          <a href="#/organisation/vacancies" onClick={(e) => { e.preventDefault(); navigate({ kind: 'org', tab: 'vacancies' }); }} className="inline-flex min-h-11 items-center font-semibold text-navy underline underline-offset-4">{V.homeLink}</a>
+        </p>
+      )}
       <p className="mt-1 text-14 text-text">
         {c ? en.setup.home.confirmed(c.by, formatDate(c.on)) : en.setup.home.notYet}{' '}
         <a href="#/organisation" onClick={(e) => { e.preventDefault(); navigate({ kind: 'org' }); }} className="inline-flex min-h-11 items-center font-semibold text-navy underline underline-offset-4">{en.setup.home.see}</a>
@@ -371,7 +384,7 @@ export function Home() {
       <NeedsYou items={h.needsYou} />
       <Onboarding />
       {view}
-      {repo.viewer.roles.includes('executive') && <StructureNotice />}
+      {(repo.viewer.roles.includes('executive') || repo.viewer.roles.includes('hr')) && <StructureNotice />}
     </>
   );
 }

@@ -583,7 +583,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   return {
     viewer,
     financialYear,
-    structure: createOrganisationAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
+    structure: createOrganisationAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange, shownFinding: concerned }),
     onboarding: createOnboardingAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);

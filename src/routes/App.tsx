@@ -9,6 +9,7 @@ import { ALL_DEV_ROLES } from '../data/sample/all';
 import { createReviewOrgs, devMembership } from '../data/sample/review';
 import { OrganisationPage } from './organisation/OrganisationPage';
 import { Strategy } from './Strategy';
+import { HandoverPage } from './organisation/Vacancies';
 import { SAMPLE_NOW } from '../data/sample/seed';
 import { en } from '../strings/en';
 import { Budget } from './Budget';
@@ -55,7 +56,8 @@ export function App() {
   useEffect(() => { scroller.current?.scrollTo({ top: 0 }); }, [route]);
 
   const page =
-    route.kind === 'org' ? <OrganisationPage key={`${org.orgId}:${viewing}`} />
+    route.kind === 'org' && route.handover ? <HandoverPage key={`${org.orgId}:${viewing}:${route.handover}`} positionId={route.handover} />
+    : route.kind === 'org' ? <OrganisationPage key={`${org.orgId}:${viewing}`} tab={route.tab} />
     : route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />

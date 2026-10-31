@@ -74,7 +74,7 @@ describe('the limited structure', () => {
   it('keeps only holders of the positions shown', () => {
     const s = st();
     const scoped = scopedStructure(s, structureScope(s, as(['pos-mrb']), setting('own_line')));
-    expect(scoped.people.map((p) => p.id).sort()).toEqual(['p-cm', 'p-co', 'p-hoc', 'p-md', 'p-mrb']);
+    expect(scoped.people.map((p) => p.id).sort()).toEqual(['p-cm', 'p-co', 'p-md', 'p-mrb']); // Head of Commercial vacant (H2)
   });
   it('is worked out for 200 people in a structure of about 5,000 positions within the time limit', () => {
     let n = 0;

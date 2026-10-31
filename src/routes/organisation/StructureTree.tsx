@@ -10,6 +10,7 @@ import {
 } from '../../rules/setup';
 import { formatNumber } from '../../selectors/format';
 import { en } from '../../strings/en';
+import { useApp } from '../../components/AppContext';
 import { btn, Chip, FOLD, input, link, plural } from './ui';
 
 export interface TreeActions {
@@ -210,6 +211,8 @@ function UnitRow({ ix, u, depth, page, actions, open, toggle, showAll, more, fla
 }
 
 function PositionRow({ ix, p, page, actions, repeated }: { ix: StructureIndex; p: StructurePosition; page: OrganisationPage; actions: TreeActions | null; repeated: Map<string, number> }) {
+  const { repo, navigate } = useApp();
+  const handover = page.mode === 'structure' && repo.structure.canOpenHandover(p.id);
   const h = p.holder ? ix.person.get(p.holder.personId) : undefined;
   const to = p.reportsToId ? ix.position.get(p.reportsToId) : undefined;
   const ai = p.draft?.state === 'ai_draft';
@@ -234,11 +237,12 @@ function PositionRow({ ix, p, page, actions, repeated }: { ix: StructureIndex; p
           {t.reportsTo}: {to ? `${positionLabel(ix, to, repeated)} (${holderName(ix, to) ?? t.vacant})` : t.nobody}
         </div>
       </div>
-      {actions && (
+      {(actions || handover) && (
         <div className="flex flex-wrap gap-2">
-          {ai && <button type="button" className={btn} onClick={() => actions.accept(p.id)}>{t.accept}</button>}
-          <button type="button" className={btn} onClick={() => actions.editPosition(p.id)}>{ai ? t.correct : t.edit}</button>
-          <button type="button" className={btn} onClick={() => actions.remove('position', p.id)}>{t.remove}</button>
+          {handover && <a className={link} href={`#/organisation/handover/${encodeURIComponent(p.id)}`} onClick={(e) => { e.preventDefault(); navigate({ kind: 'org', handover: p.id }); }}>{en.vacancy.handover}</a>}
+          {actions && ai && <button type="button" className={btn} onClick={() => actions.accept(p.id)}>{t.accept}</button>}
+          {actions && <button type="button" className={btn} onClick={() => actions.editPosition(p.id)}>{ai ? t.correct : t.edit}</button>}
+          {actions && <button type="button" className={btn} onClick={() => actions.remove('position', p.id)}>{t.remove}</button>}
         </div>
       )}
     </li>

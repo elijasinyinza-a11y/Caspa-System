@@ -48,7 +48,7 @@ export interface KpiSpec {
 }
 export interface ObjectiveSpec { code: string; title: string; owner: string; kpis: KpiSpec[] }
 export interface GoalSpec { code: string; title: string; perspective: PerspectiveKey | null; owner: string; why?: { cell: FourQCell; text: string }; objectives: ObjectiveSpec[] }
-export interface PersonSpec { key: string; name: string; title: string; unit: string; reportsTo: string | null; roles?: AssignedRole[] }
+export interface PersonSpec { key: string; name: string; title: string; unit: string; reportsTo: string | null; roles?: AssignedRole[]; /** Held by an acting holder from this date (H2). */ actingFrom?: string }
 export interface ContractSpec {
   person: string; status: 'draft' | 'signed';
   objectives: { activity: string; title: string; qty: { value: number; unit: string } | null; weight: number; done?: number }[];
@@ -94,7 +94,8 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     { id: id<'Person'>(SHARED_EXECUTIVE.personId), fullName: SHARED_EXECUTIVE.fullName, email: SHARED_EXECUTIVE.email },
   ];
   const assignments = spec.people.map((p) => ({
-    ...base, id: id<'PositionAssignment'>(`pa-${k}-${p.key}`), positionId: pos(p.key), personId: per(p.key), kind: 'substantive' as const, from: d('2024-01-01'), to: null,
+    ...base, id: id<'PositionAssignment'>(`pa-${k}-${p.key}`), positionId: pos(p.key), personId: per(p.key),
+    kind: (p.actingFrom ? 'acting' : 'substantive') as 'acting' | 'substantive', from: d(p.actingFrom ?? '2024-01-01'), to: null,
   }));
   const membership = (mid: string, personId: Id<'Person'>, roles: AssignedRole[]): Membership => ({
     ...base, id: id(mid), personId, roles, startsOn: d('2024-01-01'), endsOn: null, status: 'active',

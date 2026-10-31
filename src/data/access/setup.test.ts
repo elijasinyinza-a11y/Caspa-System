@@ -331,7 +331,7 @@ describe('who sees the structure, as the organisation sets it (v1.5)', () => {
     expect(page.scoped).toBe(true);
     expect(page.structure.positions.map((p) => p.id).sort()).toEqual(['pos-cm', 'pos-co', 'pos-hoc', 'pos-md', 'pos-mrb']);
     expect(page.structure.units.map((u) => u.id).sort()).toEqual(['u-com', 'u-org', 'u-zone-b']);
-    expect(page.answers['u-com']).toMatchObject({ title: 'Head of Commercial', holder: 'Grace Zulu' });
+    expect(page.answers['u-com']).toMatchObject({ title: 'Head of Commercial', holder: null }); // vacant from 1 September 2026 (H2)
     expect(page.answers['u-fin']).toBeUndefined();
   });
 
