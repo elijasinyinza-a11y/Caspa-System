@@ -9,6 +9,8 @@ const FORBIDDEN = [
   /\bintegrity\b/i, /\bfindings?\b/i, /\backnowledge(d|ment)?\b/i, /\brules engine\b/i,
   // Organisation setup (D7-1): plain words on screen, system terms in code and audit records.
   /\bstaging\b/i, /\bmemberships?\b/i, /\baccountable positions?\b/i, /\bsubstantive\b/i,
+  // Vacancies and handover (BUILD-BRIEF section 26): the view states facts, never a rating.
+  /\brisk score\b/i, /\bsuccession\b/i, /\bcriticality\b/i,
 ];
 const PLACEHOLDER = /\[from the book\]/i;
 const pilot = process.env.CASPA_PILOT === '1';
