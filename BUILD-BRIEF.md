@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 26 record decisions made since; the latest is dated 30 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 28 record decisions made since; the latest is dated 31 October 2026.
 
 ## 1. What you are building
 
@@ -358,3 +358,30 @@ Source: the *CASPA™ Vacancy and Handover Specification v0.1* (a doc in the Pro
 - **H9:** this is slice 9, after onboarding; the phone layout review becomes slice 10.
 - **Shared list:** both features read one computed list per position, "What this position holds" (owned records, direct budget lines, units it answers for, direct reports, supervised contracts, corrective work, open checks, dated items), plus, for a handover, the roles leaving with the person and work waiting on the outgoing supervisor. Budget lines list direct holders only.
 - **Prototype approved** by Elijah on 30 October 2026: `reference/caspa-vacancy-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). Its holdings were computed by the v0.7.2 rules from the sample store with H2 applied. Build as v0.9.0, after onboarding (slice 8).
+
+## 27. Usability test timing (31 October 2026)
+
+Decided by Elijah on 31 October 2026. It amends section 21 ("the first round runs before onboarding").
+
+- **Deferred:** a first round is not possible now, so onboarding (slice 8) proceeds without it, on the best case that the clarity work (section 20) holds.
+- **Still required before the pilot:** the D5 test (five people, at least two likely pilot users; each task completed unaided by at least 4 of 5) runs before pilot go-live, as section 20 already requires. Its findings may change screens built before it.
+- **Nothing is recorded as passed.** No result is entered until a real round runs.
+
+## 28. Decisions on onboarding, slice 8 (31 October 2026)
+
+Source: the *CASPA™ Onboarding Specification v0.1* (a doc in the Project's chats); decisions O1 to O9 accepted as recommended by Elijah. No contract change.
+
+- **Scope:** from a confirmed structure to a published cascade, through two doors that make the same `StrategicPlan` (`entryDoor` `imported` or `formed`). Built in full: the first question, plan setup, the import door and a "Getting started" panel. The formation stages stay with the Strategy formation slice.
+- **O1:** the Strategy office or a facilitator answers the first question and sets up the plan (the matrix's `StrategicPlan` draft); the Executive confirms. With nobody in the Strategy office, "Getting started" asks the administrator to assign the role.
+- **O2:** an imported plan brings goals and objectives for the whole period, and KPI targets and activities for the current financial year only.
+- **O3, template:** type (goal, objective, KPI, activity), code, title, part of (the parent's code), owner (position title, and unit where titles repeat), perspective, KPI unit, direction, aggregation, baseline, baseline as of, this year's target, 6P level, quantity and unit. Codes kept as written, numbered when blank.
+- **Import routes:** the plan document (a `SourceDocument` of kind `strategic_plan`, an `AiTask` of kind `extract`, every item an AI draft with its page), the spreadsheet, or typing; every AI draft item is accepted or corrected by a person; owners are matched to positions by title, then title and unit, and an unmatched owner is a row to fix.
+- **O4:** once confirmed, an imported plan is active at once when its period includes the current year and no other plan is active (C1).
+- **Checks:** must fix before `plan.confirm`: the period, at least one goal, and every AI draft item accepted or corrected. Worth checking: the existing rules (objective with no KPI, KPI with no owner, unvalidated baseline, goal with no recorded "why" (O8), goal with no funded activity) and no vision or mission. `cascade.publish` keeps its existing hard blocks.
+- **O5:** the Strategy office publishes the cascade, after the Executive confirms the plan.
+- **O6:** "Form a new strategy" is shown as "Coming later" and cannot be chosen until the Strategy formation slice is built.
+- **O7:** the sample plan for Sample New Organisation is drafted with the prototype and approved with it.
+- **O8:** "Goal has no recorded why" stays worth checking for imported goals; "Getting started" points to the 4Q record sheet as a later step.
+- **O9:** an imported vision and mission are typed by a person and confirmed with the plan, not at `vision.confirm`. Under the matrix only the Executive drafts a `VisionStatement`, so the Executive types them; the AI never drafts them (F1).
+- **"Getting started":** on the Executive, Strategy office and administrator homes, each first-run step with its state computed from the records, until the cascade is published. Information only; confirming the plan reaches the Executive's "Needs you" as a gate approval.
+- **Prototype approved** by Elijah on 31 October 2026, with its sample plan wording (O7): `reference/caspa-onboarding-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). "Send to the Executive" is recorded as an audit entry on the plan and reaches the Executive's "Needs you" as a gate approval; confirming and publishing write gate events. The four existing sample organisations are seeded with a passed `cascade.publish`, so they never see "Getting started". Build as v0.8.0.

@@ -28,7 +28,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 6. Six-point decision map, with changing an activity's 6P level — done (v0.6.0). 4Q band-specific cell names
    (v0.5.2); header change (v0.5.3)
 7. Organisation setup (Organisation Setup Specification v0.3; decisions D7-1 to D7-14, BUILD-BRIEF section 23) — done (v0.7.0)
-8. Onboarding: the two doors
+8. Onboarding: the two doors (Onboarding Specification v0.1; decisions O1 to O9, BUILD-BRIEF section 28) — done (v0.8.0)
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — prototype approved 30 October 2026 (`reference/caspa-vacancy-prototype.html`); build after slice 8 as v0.9.0
 10. Phone layout review (responsive from slice 1)
 
@@ -44,6 +44,24 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Onboarding notes (v0.8.0)
+
+- BUILD-BRIEF section 28; Onboarding Specification v0.1 (a doc in the Project's chats). No contract change.
+  453 tests (13 new, `src/data/access/onboarding.test.ts`).
+- Try it: pick Sample New Organisation and confirm its structure (Organisation, sample file). As Strategy office
+  (Joseph Lungu), Home asks "Do you have a current strategic plan?"; choose "Bring your existing plan", save plan
+  setup, then "Use the sample plan document". Accept each AI draft item and choose an owner for A1.1.1.2. As
+  Executive (Mutale Banda), enter the vision and mission in Strategy. As Strategy office, send it; as Executive,
+  confirm it from "Needs you" with a board resolution. As Strategy office, publish: the existing rules block it (one
+  activity with no 6P level, five baselines not validated); fix both and publish. The goals then appear in Cascade.
+- Code: `src/rules/onboarding.ts` (owner matching, codes, checks, "Getting started"), `src/data/access/onboarding.ts`
+  (plan setup, the three routes, confirm, publish), `src/routes/Strategy.tsx`; Home shows the first question and
+  "Getting started". The plan being brought in is stored as records in a draft plan; every screen reads only the
+  active plan, so nothing shows elsewhere until confirmation.
+- Changed with it: integrity checks now cover only the active plan's activities; a rule that blocks at one gate is
+  still shown as worth checking at another (`checkGate`); the four running sample organisations are seeded with a
+  passed `cascade.publish`. Records reset on reload in the review build.
 
 ## Who sees the structure (v0.7.2)
 
@@ -165,7 +183,7 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 - The Clarity Specification document is not in the Project files; adding it helps later sessions.
 
 - Budget holders and Plan, budget phasing and 4Q labels: decided 28 October 2026 (BUILD-BRIEF section 21).
-- Usability test participants: being recruited; first round before slice 8.
+- Usability test: deferred by Elijah on 31 October 2026 (BUILD-BRIEF section 27); it runs before the pilot.
 - File-exchange slice: budget utilisation is planned; the spending-against-results rule awaits confirmation of its thresholds (BUILD-BRIEF section 21).
 
 - The achievement rule for lower-is-better contract objectives (scored "not confirmed" for now).
