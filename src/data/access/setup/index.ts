@@ -13,11 +13,12 @@ import type {
 } from '../../../contract/caspa-data-contract';
 import { aiStub, type StructureDraft } from '../../../ai';
 import {
-  indexStructure, mustCount, nearbyPositions, newMustProblems, positionRemovalBlockers, reportsToLoop, setupChecks,
+  answersFor, indexStructure, mustCount, nearbyPositions, newMustProblems, positionRemovalBlockers, reportsToLoop, setupChecks,
   unitParentLoop, unitRemovalBlockers, holdsPosition, type RemovalBlocker, type SetupChecks, type SetupItem, type StructureInput,
   type StructurePosition, type WorthKind,
 } from '../../../rules/setup';
 import { dateInZone } from '../../../selectors/format';
+import { scopedStructure, structureScope } from '../../../rules/structure-view';
 import type { Store } from '../store';
 import type { Viewer } from '../viewer';
 import { CONFIRM_ACTION, structureConfirmation, type StructureConfirmationRecord } from './confirmation';
@@ -84,6 +85,13 @@ export interface OrganisationPage {
   executives: string[];
   /** People with an end date on their access, by person id. */
   endsOn: Record<string, ISODate | null>;
+  /**
+   * Who answers for each unit shown, worked out on the whole structure, so a person who sees only part of it still
+   * sees who answers for each unit in their part (v1.5).
+   */
+  answers: Record<string, { positionId: string; title: string; holder: string | null; fromUnit: string | null } | null>;
+  /** True when this person sees only part of the structure under the organisation's setting (v1.5). */
+  scoped: boolean;
   /** Changes to the confirmed structure, newest first. */
   changes: StructureChange[];
   financialYear: number;
@@ -162,9 +170,20 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
     const d = drafts.get(s);
     const mode = entry ? 'structure' : isAdmin ? 'setup' : 'waiting';
     const raw = entry ? structureOfStore(s, now) : isAdmin ? draftOf(s).structure : { units: [], positions: [], people: [] };
+    // v1.5: only the part of the structure the organisation's setting lets this person see.
+    const scope = entry && !isAdmin
+      ? structureScope(raw, { personId: viewer.personId, roles: viewer.roles, positionIds: [...viewer.positionIds] }, s.organisation.settings.structureView)
+      : { whole: true as const };
+    const part = scopedStructure(raw, scope);
     // Emails, assigned roles and access end dates live on Person and Membership: administrators only (D7-5; Membership row).
-    const st: StructureInput = isAdmin ? raw : { ...raw, people: raw.people.map((p) => ({ ...p, email: null, roles: [] })) };
+    const st: StructureInput = isAdmin ? raw : { ...part, people: part.people.map((p) => ({ ...p, email: null, roles: [] })) };
     const ix = indexStructure(raw);
+    const answers = Object.fromEntries(st.units.map((u) => {
+      const a = answersFor(ix, u.id);
+      const p = a ? ix.position.get(a.positionId) : undefined;
+      const holder = p?.holder ? ix.person.get(p.holder.personId)?.fullName ?? null : null;
+      return [u.id, a && p ? { positionId: p.id, title: p.title, holder, fromUnit: a.fromUnitId ? ix.unit.get(a.fromUnitId)?.name ?? null : null } : null];
+    }));
     const staff = raw.people.find((p) => p.roles.includes('org_admin') && holdsPosition(ix, p.id));
     const checkedRaw = entry ? {} : d?.checked ?? {};
     return {
@@ -184,6 +203,8 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
       executives: isAdmin ? raw.people.filter((p) => p.roles.includes('executive')).map((p) => p.fullName) : [],
       endsOn: !isAdmin ? {} : Object.fromEntries((entry ? s.memberships.map((m) => [m.personId, m.endsOn]) : (d?.structure.people ?? []).map((p) => [p.id, p.endsOn])) as [string, ISODate | null][]),
       changes: isAdmin ? changes() : [],
+      answers,
+      scoped: !scope.whole,
       financialYear: ctx.financialYear,
     };
   };
@@ -290,6 +311,7 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
     page,
 
     managerOptions(positionId, unitId, query) {
+      if (!isAdmin) return { options: [], total: 0 };
       const st = current();
       const ix = indexStructure(st);
       const q = query.trim().toLowerCase();

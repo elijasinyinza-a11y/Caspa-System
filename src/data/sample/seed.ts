@@ -10,6 +10,7 @@ import {
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
+import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 
 const id = <T extends string>(s: string) => s as Id<T>;
 const d = (s: string) => s as ISODate;
@@ -163,7 +164,7 @@ function seedStore(): Store {
       ],
       settings: {
         overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 },
-        ratingSchemeId: id('rs-a'), aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5,
+        ratingSchemeId: id('rs-a'), aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5, structureView: structuredClone(DEFAULT_STRUCTURE_VIEW),
       },
     },
     people, memberships, units, positions, assignments,

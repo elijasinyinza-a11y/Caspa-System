@@ -4,6 +4,7 @@
  */
 import { RATING_PRESETS, type Id, type ISODate, type ISODateTime, type Stamp } from '../../contract/caspa-data-contract';
 import type { Store } from '../access/store';
+import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 import { DEFAULT_PERSPECTIVES, DEFAULT_TERMS } from './build';
 
 const id = <T extends string>(s: string) => s as Id<T>;
@@ -18,7 +19,7 @@ export function createNewOrganisation(): { orgId: string; store: Store; devRoles
       created: stamp, updated: stamp, termLabels: structuredClone(DEFAULT_TERMS), perspectives: structuredClone(DEFAULT_PERSPECTIVES),
       settings: {
         overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 }, ratingSchemeId: id('rs-new'),
-        aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5,
+        aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5, structureView: structuredClone(DEFAULT_STRUCTURE_VIEW),
       },
     },
     people: [

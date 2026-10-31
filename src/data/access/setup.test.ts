@@ -315,3 +315,58 @@ describe('what non-administrators receive (D7-5, Membership row)', () => {
     expect(page.structure.positions).toHaveLength(12); // the structure itself stays visible to all members
   });
 });
+
+describe('who sees the structure, as the organisation sets it (v1.5)', () => {
+  const limited = (others: 'answers_for' | 'own_line') => {
+    const f = fresh();
+    const admin = f.as(SWU, 'admin').structure;
+    const d = admin.page().details;
+    expect(admin.saveDetails({ ...d, settings: { ...d.settings, structureView: { fullViewRoles: ['executive', 'strategy_office', 'hr'], others } } })).toEqual({ ok: true });
+    return f;
+  };
+
+  it('an employee sees their own line, with who answers for each unit in it', () => {
+    const { as } = limited('own_line');
+    const page = as(SWU, 'employee').structure.page();
+    expect(page.scoped).toBe(true);
+    expect(page.structure.positions.map((p) => p.id).sort()).toEqual(['pos-cm', 'pos-co', 'pos-hoc', 'pos-md', 'pos-mrb']);
+    expect(page.structure.units.map((u) => u.id).sort()).toEqual(['u-com', 'u-org', 'u-zone-b']);
+    expect(page.answers['u-com']).toMatchObject({ title: 'Head of Commercial', holder: 'Grace Zulu' });
+    expect(page.answers['u-fin']).toBeUndefined();
+  });
+
+  it('a ticked role, and the administrator, still see the whole structure', () => {
+    const { as } = limited('own_line');
+    for (const role of ['executive', 'strategy', 'admin'] as const) {
+      const page = as(SWU, role).structure.page();
+      expect([role, page.scoped, page.structure.positions.length]).toEqual([role, false, 12]);
+    }
+    // Finance is not ticked here, so the Head of Finance sees their own line.
+    expect(as(SWU, 'finance').structure.page().structure.positions.map((p) => p.id).sort()).toEqual(['pos-hof', 'pos-md']);
+  });
+
+  it('is enforced in the permission check too, and leaves record pages alone', async () => {
+    const { can } = await import('./permissions');
+    const f = limited('own_line');
+    const repo = f.as(SWU, 'employee');
+    const s = f.store(SWU);
+    expect(can(s, repo.viewer, 'view', { type: 'Position', id: 'pos-co' })).toBe(true);
+    expect(can(s, repo.viewer, 'view', { type: 'Position', id: 'pos-hoo' })).toBe(true); // the record row is unchanged
+    expect((await import('./permissions')).can(s, repo.viewer, 'view', { type: 'OrganisationStructure', id: 'pos-hoo' } as never)).toBe(false);
+    // Who owns a record stays on the record's page, even outside the person's part of the structure.
+    const a = s.activities.find((x) => x.code === 'A1.2.1.1')!;
+    expect(repo.node('activity', a.id)?.owner).toMatchObject({ position: 'Head of Operations', person: 'Joseph Tembo' });
+  });
+
+  it('managers see the units they answer for', () => {
+    const { as } = limited('answers_for');
+    // In this sample the Supervisor answers for no unit, so sees their own line.
+    expect(as(SWU, 'supervisor').structure.page().structure.positions.map((p) => p.id).sort()).toEqual(['pos-bc', 'pos-cm', 'pos-co', 'pos-hoc', 'pos-md']);
+  });
+
+  it('records the change of setting', () => {
+    const f = limited('answers_for');
+    const last = f.store(SWU).auditEntries[f.store(SWU).auditEntries.length - 1]!;
+    expect([last.action, (last.after as { settings: { structureView: { others: string } } }).settings.structureView.others]).toEqual(['settings', 'answers_for']);
+  });
+});

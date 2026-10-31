@@ -487,6 +487,29 @@ function DetailsForm({ page, access }: { page: Page; access: OrganisationAccess 
             <label className="flex min-h-11 items-center gap-2 text-14"><input type="checkbox" className="h-5 w-5 shrink-0" checked={s.aiEnabled} onChange={(e) => set({ ...d, settings: { ...s, aiEnabled: e.target.checked } })} />{T.aiOn}</label>
             <p className="text-12 text-muted">{T.aiNote}</p>
           </fieldset>
+          <fieldset>
+            <legend className={label}>{T.structureView.title}</legend>
+            <p className="mt-1 text-13 font-semibold text-navy">{T.structureView.fullView}</p>
+            <p className="text-12 text-muted">{T.structureView.adminAlways}</p>
+            <div className="grid sm:grid-cols-2">
+              {(Object.keys(en.assignedRole) as AssignedRole[]).filter((r) => r !== 'org_admin').map((r) => (
+                <label key={r} className="flex min-h-11 items-center gap-2 text-14">
+                  <input type="checkbox" className="h-5 w-5 shrink-0" checked={s.structureView.fullViewRoles.includes(r)}
+                    onChange={(e) => set({ ...d, settings: { ...s, structureView: { ...s.structureView, fullViewRoles: e.target.checked ? [...s.structureView.fullViewRoles, r] : s.structureView.fullViewRoles.filter((x) => x !== r) } } })} />
+                  {en.assignedRole[r]}
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-13 font-semibold text-navy">{T.structureView.others}</p>
+            {(Object.keys(T.structureView.levels) as (keyof typeof T.structureView.levels)[]).map((k) => (
+              <label key={k} className="flex min-h-11 items-center gap-2 text-14">
+                <input type="radio" name="structure-others" className="h-5 w-5 shrink-0" checked={s.structureView.others === k}
+                  onChange={() => set({ ...d, settings: { ...s, structureView: { ...s.structureView, others: k } } })} />
+                {T.structureView.levels[k]}
+              </label>
+            ))}
+            <p className="mt-1 text-12 text-muted">{T.structureView.floor}</p>
+          </fieldset>
           <p className="text-14"><span className="font-semibold text-navy">{T.rating}: </span><span className="text-muted">{T.ratingNote}</span></p>
           <fieldset><legend className={label}>{T.words}</legend>
             <div className="mt-1 space-y-2">
@@ -525,7 +548,7 @@ function Structure({ page, access, tree, fix, reveal }: {
   return (
     <>
       <p className="mb-4 rounded-lg border border-complete-border bg-complete-bg px-4 py-3 text-14 text-complete-text">
-        {S.structure.confirmedBy(page.confirmed!.by, formatDate(page.confirmed!.on))}{page.isAdmin ? ` ${S.structure.changesSaved}` : ''}
+        {S.structure.confirmedBy(page.confirmed!.by, formatDate(page.confirmed!.on))}{page.isAdmin ? ` ${S.structure.changesSaved}` : ''}{page.scoped ? ` ${S.structure.scopedNote}` : ''}
       </p>
       {page.isAdmin && page.checks.worth.length > 0 && (
         <details className={`${card} mb-4`}>

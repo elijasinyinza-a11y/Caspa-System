@@ -866,6 +866,18 @@ export const en = {
       ai: 'AI assistance',
       aiOn: 'On',
       aiNote: 'Off hides the organogram route.',
+      structureView: {
+        title: 'Who sees the organisation structure',
+        fullView: 'See the whole structure',
+        adminAlways: 'The organisation administrator always does.',
+        others: 'Everyone else sees',
+        levels: {
+          whole: 'The whole structure',
+          answers_for: 'The units they answer for and everything below, plus their own line',
+          own_line: 'Their own line only',
+        },
+        floor: 'Everyone always sees their own line: their unit, their colleagues and the managers above them, up to the top. Who owns each goal, KPI and activity stays on its own page.',
+      },
       rating: 'Rating scheme',
       ratingNote: 'Set by HR (starts at preset A)',
       words: 'Your words for',
@@ -1066,6 +1078,7 @@ export const en = {
     structure: {
       confirmedBy: (who: string, date: string) => `Structure confirmed by ${who} on ${date}.`,
       changesSaved: 'Changes are saved straight away and recorded.',
+      scopedNote: 'You see your part of the structure, as your organisation has set it.',
       changes: 'Changes',
       change: (what: string, who: string, date: string) => `${what}: ${who}, ${date}`,
       actions: {

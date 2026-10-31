@@ -1,6 +1,8 @@
 /** Permission checks applied by the data-access layer (decisions B2, B3). Default is deny. */
 import { PERMISSIONS, type Action, type Finding, type Principal } from '../../contract/caspa-data-contract';
 import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structure';
+import { structureScope } from '../../rules/structure-view';
+import { structureOfStore } from './setup/draft';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
 
@@ -43,6 +45,13 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       const k = s.kpis.find((x) => x.id === subject.id);
       if (k) return mine(s.objectives.find((o) => o.id === k.objectiveId)?.ownerPositionId);
       return mine(s.objectives.find((o) => o.id === subject.id)?.ownerPositionId);
+    }
+    case 'structure_viewer': {
+      // v1.5: a unit or position of the confirmed structure, within what the organisation's setting lets them see.
+      // Holders are not read here: the viewer's own positions are passed in.
+      const scope = structureScope(structureOfStore(s, '0000-01-01' as never), { personId: v.personId, roles: v.roles, positionIds: [...v.positionIds] }, s.organisation.settings.structureView);
+      if (scope.whole) return true;
+      return subject.type === 'OrgUnit' ? scope.units.has(subject.id) : scope.positions.has(subject.id);
     }
     case 'budget_holder': {
       const l = s.budgetLines.find((x) => x.id === subject.id);

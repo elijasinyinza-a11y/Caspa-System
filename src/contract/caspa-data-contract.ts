@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.4
+ * CASPA™ data contract — v1.5
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -54,6 +54,15 @@
  *     administrators only. Person.email becomes optional (null when not
  *     given): a holder with no email can't be invited yet, and the duplicate
  *     email check ignores blanks.
+ * v1.5 (30 October 2026, Elijah): each organisation sets who sees its structure.
+ *     One setting, Organisation.settings.structureView, one principal,
+ *     'structure_viewer', and one matrix row, OrganisationStructure (the
+ *     structure as a whole: the tree, its counts and Find). The administrator
+ *     always sees all of it; the roles the organisation ticks see all of it;
+ *     everyone else sees the whole structure, the units they answer for and
+ *     below, or their own line only. Every member always sees their own line.
+ *     Records keep their own rows: the organisation's name and labels, and
+ *     who owns a record, stay visible wherever the record is.
  * Friction signals are removed for now and may return only with a confirmed
  * source. Leadership assessments are described generically.
  */
@@ -167,6 +176,15 @@ export interface Organisation extends Audited {
     aiEnabled: boolean; // organisation may switch AI assistance off
     boardApprovalRequired: { plan: boolean; budget: boolean }; // v1.1: plan.confirm and budget.approve require a BoardApproval when true
     consultationMinGroupSize: number; // v1.1: default 5; under 'unit_only', smaller units are shown as their parent unit
+    /**
+     * v1.5: who sees the organisation structure. The organisation administrator always sees all of it.
+     * fullViewRoles see all of it. Everyone else: 'whole', the whole structure; 'answers_for', the units whose
+     * accountable position they hold and every unit below, plus their own line; 'own_line', their own line only.
+     * Their own line, always visible: the units of the positions they hold, the positions in those units, and every
+     * position above theirs in the reporting line with its unit.
+     * Default: every assigned role ticked and 'whole'.
+     */
+    structureView: { fullViewRoles: AssignedRole[]; others: 'whole' | 'answers_for' | 'own_line' };
   };
 }
 
@@ -749,6 +767,7 @@ export type Principal =
   | 'supervisor' // holds the position the employee's position reports to
   | 'next_level_reviewer' // the supervisor's supervisor
   | 'finding_recipient' // v1.3: holds a position the finding is routed to
+  | 'structure_viewer' // v1.5: the part of the structure is within what Organisation.settings.structureView lets them see
   | 'all_members';
 
 export type PermissionMatrix = Partial<Record<string, Partial<Record<Action, Principal[]>>>>;
@@ -783,6 +802,8 @@ export const PERMISSIONS: PermissionMatrix = {
   Organisation: { view: ['all_members'], draft: ['org_admin'] },
   Person: { view: ['all_members'], draft: ['org_admin'] },
   PositionAssignment: { view: ['all_members'], draft: ['org_admin'] },
+  // v1.5: the structure as a whole (tree, counts, Find), limited by the organisation's own setting.
+  OrganisationStructure: { view: ['structure_viewer', 'org_admin'] },
   // v1.3: advisory flags only; hard blocks are never acknowledged. Viewing also needs sight of the finding's subject.
   Acknowledgement: { view: ['all_members'], draft: ['finding_recipient', 'executive', 'strategy_office'] },
 };

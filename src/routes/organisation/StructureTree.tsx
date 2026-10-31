@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { OrganisationPage } from '../../data/access/setup';
 import {
-  answersFor, childUnits, flaggedUnits, indexStructure, positionsIn, topUnits, unitCounts, unitPath, type StructureIndex, type StructurePosition, type StructureUnit,
+  childUnits, flaggedUnits, indexStructure, positionsIn, topUnits, unitCounts, unitPath, type StructureIndex, type StructurePosition, type StructureUnit,
 } from '../../rules/setup';
 import { formatNumber } from '../../selectors/format';
 import { en } from '../../strings/en';
@@ -43,7 +43,8 @@ export function StructureTree({ page, actions, reveal }: {
   const ix = indexStructure(st);
   const flagged = useMemo(() => flaggedUnits(ix, page.checks), [ix, page.checks]);
   const repeated = useMemo(() => titleCounts(ix), [ix]);
-  const [open, setOpen] = useState<Set<string>>(() => new Set(topUnits(ix).map((u) => u.id)));
+  // A person who sees only their part opens on all of it: it is short, and their own line is the point.
+  const [open, setOpen] = useState<Set<string>>(() => new Set((page.scoped ? st.units : topUnits(ix)).map((u) => u.id)));
   const [showAll, setShowAll] = useState<Set<string>>(new Set());
   const [find, setFind] = useState('');
   const [onlyFlagged, setOnlyFlagged] = useState(false);
@@ -147,8 +148,8 @@ function UnitRow({ ix, u, depth, page, actions, open, toggle, showAll, more, fla
   const kids = childUnits(ix, u.id).filter((k) => !onlyFlagged || flagged.has(k.id));
   const ps = positionsIn(ix, u.id);
   const c = unitCounts(ix, u.id);
-  const a = answersFor(ix, u.id);
-  const ap = a ? ix.position.get(a.positionId) : undefined;
+  // Worked out on the whole structure, so it holds even when this person sees only part of it.
+  const a = page.answers[u.id] ?? null;
   const allPos = showAll.has(`p:${u.id}`);
   const allKids = showAll.has(`u:${u.id}`);
   const ai = u.draft?.state === 'ai_draft';
@@ -169,7 +170,7 @@ function UnitRow({ ix, u, depth, page, actions, open, toggle, showAll, more, fla
             </div>
             <div className="text-12 text-muted">{t.unitCounts(plural(c.positions, 'position'), formatNumber(c.vacant), plural(c.people, 'person'))}</div>
             <div className="text-12 text-muted">
-              {t.answers}: {ap ? `${positionLabel(ix, ap, repeated)} (${holderName(ix, ap) ?? t.vacant})${a!.fromUnitId ? `, ${t.from(ix.unit.get(a!.fromUnitId)?.name ?? '')}` : ''}` : t.answersNone}
+              {t.answers}: {a ? `${ix.position.has(a.positionId) ? positionLabel(ix, ix.position.get(a.positionId)!, repeated) : a.title} (${a.holder ?? t.vacant})${a.fromUnit ? `, ${t.from(a.fromUnit)}` : ''}` : t.answersNone}
             </div>
           </div>
         </div>
