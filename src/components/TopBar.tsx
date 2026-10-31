@@ -13,7 +13,7 @@ const short = (t: string, n = 24) => (t.length > n ? `${t.slice(0, n - 1).trimEn
  * steps shorten to "…"; the full chain stays in "Why this matters".
  */
 export function TopBar() {
-  const { repo, route } = useApp();
+  const { repo, route, navigate } = useApp();
   const [codes] = useShowCodes();
   const onMap = route.kind === "map";
   const n = route.kind === "node" ? repo.node(route.node, route.id) : onMap ? repo.node("objective", route.objectiveId) : null;
@@ -101,6 +101,20 @@ export function TopBar() {
         <span className="sm:hidden">
           <IntegrityPill compact />
         </span>
+        {/* Phones (slice 10, option A): Organisation sits here; the bottom bar holds the role's workspaces. */}
+        <a
+          href="#/organisation"
+          onClick={(e) => { e.preventDefault(); navigate({ kind: "org" }); }}
+          aria-current={route.kind === "org" ? "page" : undefined}
+          title={en.setup.nav}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border md:hidden ${route.kind === "org" ? "border-navy bg-info-bg text-navy" : "border-control text-navy"}`}
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="3" width="6" height="5" rx="1" /><rect x="3" y="16" width="6" height="5" rx="1" /><rect x="15" y="16" width="6" height="5" rx="1" />
+            <path d="M12 8v4M6 16v-4h12v4" />
+          </svg>
+          <span className="sr-only">{en.setup.nav}</span>
+        </a>
         <RoleSwitcher />
       </div>
     </header>

@@ -118,9 +118,10 @@ function GoalRow({ g, terms }: { g: BudgetGoalGroup; terms: Terms }) {
   const visible = g.objectives.reduce((n, o) => n + o.lines.length, 0);
   return (
     <li className="py-2">
-      <div className="flex items-center gap-x-3">
+      <div className="flex flex-wrap items-center gap-x-3">
         <div className="min-w-0 flex-1"><CodeLink r={g.ref} /></div>
-        <span className="tabular shrink-0 text-right text-16 font-bold text-navy">
+        {/* Phones: a hidden subtotal's sentence wraps below the title instead of running off the screen. */}
+        <span className={`tabular ml-auto text-right text-16 font-bold text-navy ${g.subtotal ? 'shrink-0' : 'min-w-0'}`}>
           {g.subtotal ? formatMoney(g.subtotal) : <span className="text-13 font-normal text-muted">{en.budget.subtotalHidden}</span>}
         </span>
       </div>

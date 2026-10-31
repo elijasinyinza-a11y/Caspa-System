@@ -50,7 +50,7 @@ export function FirstQuestion({ page, onImport }: { page: OnboardingPage; onImpo
     <section className={card} aria-labelledby="first-q">
       <h2 id="first-q" className="text-22 font-bold text-navy">{O.question}</h2>
       <p className="mt-1 text-14 text-muted">{page.canSetUp ? O.questionIntro : O.questionOthers(page.strategyOffice)}</p>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         <button type="button" disabled={!page.canSetUp} onClick={onImport} className={`${door} border-t-strategy-mark hover:border-navy disabled:cursor-not-allowed disabled:opacity-75`}>
           <span className="text-22 font-bold text-navy">{O.importDoor}</span>
           <span className="text-14 text-text">{O.importDoorText}</span>
@@ -217,7 +217,7 @@ function PlanView({ page, setNote }: { page: OnboardingPage; setNote: (m: string
           </div>
         </div>
         {strategy && draft && (
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
             <div className="rounded-lg border border-border p-4">
               <h3 className="flex flex-wrap items-center gap-2 text-16 font-bold text-navy">{O.routes.docTitle} <Chip tone="info">{O.item.aiDraft(null)}</Chip></h3>
               {page.org.aiEnabled ? (
@@ -267,7 +267,7 @@ function PlanView({ page, setNote }: { page: OnboardingPage; setNote: (m: string
         </section>
       )}
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[3fr_2fr]">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className={card}>
           <h2 className="text-18 font-bold text-navy">{O.plan.content}</h2>
           {page.items.length ? (
@@ -339,7 +339,7 @@ function ItemRow({ i, kidsOf, page, fy, onEdit, onRemove }: {
   return (
     <li className="rounded-lg border border-border bg-white p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-[1_1_15rem]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-12 text-muted">{terms[i.kind].singular}</span>
             <b className="text-14 text-navy">{i.title}</b>

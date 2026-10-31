@@ -93,7 +93,7 @@ export function DecisionMapPage({ objectiveId, deficiencyId }: { objectiveId: st
           </Explain>
         </h1>
         <p className="max-w-[70ch] text-16 text-text">
-          <a href={nodeHref('objective', m.objective.id, 'cascade')} className="underline underline-offset-4 hover:text-navy">
+          <a href={nodeHref('objective', m.objective.id, 'cascade')} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-navy">
             {en.decisionMap.of(t.objective.singular, m.objective.title)}
           </a>
           {codes && <span className="tabular ml-2 text-14 text-muted">{m.objective.code}</span>}
@@ -239,7 +239,7 @@ function Row({ r, page, t, codes, editing, setEditing, onDone }: {
             <ul className="space-y-2">
               {r.corrective.map((c) => (
                 <li key={c.ref.id}>
-                  <a href={nodeHref('activity', c.ref.id, 'cascade')} className="font-semibold text-navy underline underline-offset-4">
+                  <a href={nodeHref('activity', c.ref.id, 'cascade')} className="inline-flex min-h-11 items-center font-semibold text-navy underline underline-offset-4">
                     {c.ref.title}
                   </a>
                   {codes && <span className="tabular ml-2 text-13 text-muted">{c.ref.code}</span>}
@@ -490,7 +490,7 @@ export function ActivityLevel({ activityId, title, level }: { activityId: string
           <span className="text-muted">{en.decisionMap.corrects} </span>
           {v.corrects.map((d, i) => (
             <span key={d.id}>
-              <a href={mapHref(d.objectiveId, d.id)} className="underline underline-offset-4 hover:text-navy">{d.description}</a> ({en.sixP[d.level]})
+              <a href={mapHref(d.objectiveId, d.id)} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-navy">{d.description}</a> ({en.sixP[d.level]})
               {level && level !== d.level && <span className="font-semibold text-cascade-text"> · {en.decisionMap.solvedAt(en.sixP[level])}</span>}
               {i < v.corrects!.length - 1 ? '; ' : ''}
             </span>

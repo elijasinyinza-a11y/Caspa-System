@@ -133,7 +133,7 @@ export function VacancyList({ onFill }: { onFill: (positionId: string) => void }
           return (
             <li key={h.positionId} className="rounded-lg border border-border bg-white">
               <div className="flex flex-wrap items-start justify-between gap-3 p-3">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-[1_1_15rem]">
                   <div className="text-16 font-bold text-navy">{h.title}</div>
                   <div className="text-12 text-muted">{h.unitPath.join(' › ')}</div>
                   <div className="mt-1 text-13">{stateLine(h)}</div>
@@ -201,7 +201,7 @@ export function HandoverPage({ positionId }: { positionId: string }) {
           <p className="mt-2 text-14">{note}</p>
         </section>
       )}
-      <div className="mt-4 grid gap-4 xl:grid-cols-[3fr_2fr]">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className={card}>
           <h2 className="text-18 font-bold text-navy">{V.holds.title}</h2>
           <Holdings h={h} />

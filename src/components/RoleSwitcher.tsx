@@ -20,7 +20,7 @@ export function RoleSwitcher() {
         id="dev-role"
         value={role}
         onChange={(e) => setRole(e.target.value as DevRole)}
-        className="min-h-11 max-w-[180px] rounded-lg border border-control bg-white px-2 text-13 font-semibold text-navy"
+        className="min-h-11 max-w-[104px] rounded-lg border border-control bg-white px-2 text-13 font-semibold text-navy sm:max-w-[180px]"
       >
         {dev.roles.map((r) => <option key={r} value={r}>{en.devSwitcher.viewingAs}: {en.roles[r]}</option>)}
       </select>

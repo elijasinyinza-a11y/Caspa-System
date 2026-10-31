@@ -157,7 +157,7 @@ function UnitRow({ ix, u, depth, page, actions, open, toggle, showAll, more, fla
   return (
     <li className="rounded-lg border border-border bg-white">
       <div className="flex flex-wrap items-start justify-between gap-2 p-2">
-        <div className="flex min-w-0 items-start gap-2">
+        <div className="flex min-w-0 flex-[1_1_15rem] items-start gap-2">
           <button id={`t-${u.id}`} type="button" onClick={() => toggle(u.id)} aria-expanded={isOpen} aria-label={isOpen ? t.close(u.name) : t.open(u.name)}
             className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-control text-18 font-bold text-navy">
             {isOpen ? '−' : '+'}
@@ -218,7 +218,7 @@ function PositionRow({ ix, p, page, actions, repeated }: { ix: StructureIndex; p
   const ai = p.draft?.state === 'ai_draft';
   return (
     <li id={`p-${p.id}`} tabIndex={-1} className="flex flex-wrap items-start justify-between gap-2 py-2 outline-none focus:ring-2 focus:ring-focus">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-[1_1_15rem]">
         <div className="flex flex-wrap items-center gap-2 text-14 font-semibold text-navy">
           {p.title}
           {p.ref && <span className="text-12 font-normal text-muted">{p.ref}</span>}

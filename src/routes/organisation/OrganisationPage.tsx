@@ -178,7 +178,7 @@ function Setup({ page, access, step, setStep, tree, fix, reveal, busy, fileError
         )}
         {step === 'build' && (
           <>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
               <section className={card}>
                 <h2 className="text-16 font-bold text-navy">{S.build.sheetTitle}</h2>
                 <p className="mt-1 text-14 text-muted">{S.build.sheetText}</p>
@@ -224,7 +224,7 @@ function Setup({ page, access, step, setStep, tree, fix, reveal, busy, fileError
               </p>
             )}
             {page.rowProblems.length > 0 && <RowProblems page={page} access={access} onEdit={tree.editPosition} onShow={onRevealPosition} />}
-            <div className="mt-4 grid gap-4 xl:grid-cols-[3fr_2fr]">
+            <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(34rem,2fr)]">
               <section className={card}>
                 <h2 className="mb-3 text-18 font-bold text-navy">{S.tree.draftTitle}</h2>
                 {st.units.length ? <StructureTree page={page} actions={tree} reveal={reveal} /> : <p className="text-14 text-muted">{S.tree.empty}</p>}
@@ -239,7 +239,7 @@ function Setup({ page, access, step, setStep, tree, fix, reveal, busy, fileError
           </>
         )}
         {step === 'review' && (
-          <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             <section className={card}>
               <h2 className="text-18 font-bold text-navy">{S.confirm.whatSaved}</h2>
               <p className="mt-1 mb-3 text-14 text-muted">{S.confirm.whatSavedNote(plural(st.units.length, 'unit'), plural(st.positions.length, 'position'), formatNumber(vacant), plural(st.people.length, 'person'))}</p>
@@ -365,7 +365,7 @@ function AccessList({ page, access, editable }: { page: Page; access: Organisati
           {editable ? (
             <fieldset><legend className="sr-only">{a.roles}: {p.fullName}</legend>
               {ROLE_KEYS.map((k) => (
-                <label key={k} className="flex min-h-8 items-center gap-2">
+                <label key={k} className="flex min-h-11 items-center gap-2">
                   <input type="checkbox" className="h-5 w-5 shrink-0" checked={p.roles.includes(k)}
                     onChange={(e) => access.savePerson(p.id, { roles: e.target.checked ? [...p.roles, k] : p.roles.filter((x) => x !== k) })} />
                   {en.assignedRole[k]}
@@ -440,7 +440,7 @@ function DetailsForm({ page, access }: { page: Page; access: OrganisationAccess 
   const num = (v: string, fallback: number) => (Number.isFinite(Number(v)) && v.trim() !== '' ? Number(v) : fallback);
   const terms = Object.keys(d.termLabels) as SystemTerm[];
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
       <section className={card}>
         <h2 className="text-18 font-bold text-navy">{D.title}</h2>
         <div className="mt-3 space-y-3">
@@ -583,7 +583,7 @@ function Structure({ page, access, tree, fix, reveal }: {
           <ChecksPanel page={page} a={fix} editable />
         </details>
       )}
-      <div className={`grid gap-4 ${page.isAdmin ? 'xl:grid-cols-[3fr_2fr]' : ''}`}>
+      <div className={`grid grid-cols-[minmax(0,1fr)] gap-4 ${page.isAdmin ? "xl:grid-cols-[minmax(0,3fr)_minmax(34rem,2fr)]" : ""}`}>
         <section className={card}>
           <h2 className="text-18 font-bold text-navy">{S.tree.structureTitle}</h2>
           <p className="mt-1 mb-3 text-14 text-muted">{S.tree.counts(plural(st.units.length, 'unit'), plural(st.positions.length, 'position'), formatNumber(vacant))}</p>
