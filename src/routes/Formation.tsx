@@ -11,6 +11,7 @@ import { PURPOSES, STAGES, type AgendaItem, type Format } from '../rules/formati
 import { formatDate, formatFinancialYear, formatNumber } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, input, label, plural, primary } from './organisation/ui';
+import { Board, Documents, MyPart, VisionMission } from './Conception';
 
 const F = en.formation;
 const FORMATS: Format[] = ['in_person', 'online', 'hybrid', 'async_review'];
@@ -21,7 +22,8 @@ export function Formation() {
   const { repo } = useApp();
   const f = repo.formation.page();
   const [setup, setSetup] = useState(false);
-  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions'>('formation');
+  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision'>('formation');
+  const c = repo.conception.page();
   if (!f.plan) {
     return (
       <section className={`${card} mt-4`} aria-labelledby="next-plan">
@@ -34,7 +36,16 @@ export function Formation() {
     );
   }
   const p = f.plan;
-  const tabs: [typeof tab, string][] = [['formation', F.tabs.formation], ['calendar', F.tabs.calendar], ['sessions', F.tabs.sessions]];
+  const C = en.conception.tabs;
+  const mine = c ? c.departments.filter((x) => c.myDepartments.includes(x.unitId)) : [];
+  const tabs: [typeof tab, string][] = [
+    ['formation', F.tabs.formation],
+    ...(mine.length ? [['mine', mine.length === 1 ? C.mine(mine[0]!.name) : C.mineMany] as [typeof tab, string]] : []),
+    ...(c && (c.seesAll || mine.length) ? [['board', C.board] as [typeof tab, string]] : []),
+    ...(c ? [['vision', C.vision] as [typeof tab, string]] : []),
+    ...(c?.seesAll ? [['documents', C.documents] as [typeof tab, string]] : []),
+    ['calendar', F.tabs.calendar], ['sessions', F.tabs.sessions],
+  ];
   return (
     <section className="mt-6" aria-labelledby="forming">
       <div className={card}>
@@ -60,6 +71,10 @@ export function Formation() {
         {tab === 'formation' && <Tracker f={f} openCalendar={() => setTab('calendar')} />}
         {tab === 'calendar' && <Calendar f={f} />}
         {tab === 'sessions' && <Sessions f={f} />}
+        {tab === 'board' && c && <Board c={c} openVision={() => setTab('vision')} />}
+        {tab === 'mine' && c && <MyPart c={c} />}
+        {tab === 'documents' && c && <Documents c={c} />}
+        {tab === 'vision' && c && <VisionMission c={c} />}
       </div>
     </section>
   );
@@ -173,10 +188,11 @@ function Tracker({ f, openCalendar }: { f: FormationPage; openCalendar: () => vo
           ))}
           {(['vision.confirm', 'plan.confirm'] as const).map((g) => {
             const target = g === 'vision.confirm' ? p.visionTargetOn : p.planTargetOn;
+            const done = g === 'vision.confirm' ? p.visionConfirmedOn : null;
             return (
               <li key={g} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <span className="text-14"><b>{T.gate(F.gates[g]!)}</b> <span className="text-12 text-muted">{target ? T.target(d(target)) : T.noTarget}</span></span>
-                <Chip tone="info">{T.notYetPassed}</Chip>
+                {done ? <Chip tone="complete">{T.passedOn(d(done))}</Chip> : <Chip tone="info">{T.notYetPassed}</Chip>}
               </li>
             );
           })}

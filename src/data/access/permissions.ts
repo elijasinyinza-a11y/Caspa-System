@@ -2,6 +2,7 @@
 import { PERMISSIONS, type Action, type Finding, type Principal } from '../../contract/caspa-data-contract';
 import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structure';
 import { structureScope } from '../../rules/structure-view';
+import { cardOwnerPositions } from '../../rules/conception';
 import { structureOfStore } from './setup/draft';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
@@ -37,6 +38,9 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       if (fd) return fd.ownerPositionIds.some((p) => mine(p));
       const ws = s.workshops.find((x) => x.id === subject.id);
       if (ws) return ws.participantPositionIds.some((p) => mine(p));
+      // Part 11b: a 4Q card's owners are the department heads (F-2) of the departments that raised it.
+      const q = s.fourQEntries.find((x) => x.id === subject.id);
+      if (q) return cardOwnerPositions(s, q).some((p) => mine(p));
       const rec =
         s.goals.find((x) => x.id === subject.id) ?? s.objectives.find((x) => x.id === subject.id) ??
         s.kpis.find((x) => x.id === subject.id) ?? s.activities.find((x) => x.id === subject.id);

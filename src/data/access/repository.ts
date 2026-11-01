@@ -29,6 +29,7 @@ import type { Store } from './store';
 import { createOrganisationAccess, type OrganisationAccess } from './setup';
 import { createOnboardingAccess, type OnboardingAccess } from './onboarding';
 import { createFormationAccess, type FormationAccess } from './formation';
+import { createConceptionAccess, type ConceptionAccess } from './conception';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
 
@@ -199,6 +200,8 @@ export interface Repository {
   onboarding: OnboardingAccess;
   /** Strategy formation (slice 11): the formed plan, its calendar and sessions. */
   formation: FormationAccess;
+  /** Strategy formation, part 11b: the 4Q board, department sheets, the interview, vision and mission. */
+  conception: ConceptionAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
   structureConfirmed(): { by: string; on: ISODate } | null;
 }
@@ -589,6 +592,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     structure: createOrganisationAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange, shownFinding: concerned }),
     onboarding: createOnboardingAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
     formation: createFormationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
+    conception: createConceptionAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);
       return e ? { by: personOf(e.actorMembershipId), on: on(e.at) } : null;

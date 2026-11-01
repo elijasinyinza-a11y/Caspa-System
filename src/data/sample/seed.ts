@@ -6,6 +6,7 @@ import {
   RATING_PRESETS, type Activity, type BudgetLine, type ContractObjective, type Deficiency, type DraftMeta, type FourQCell, type FourQEntry,
   type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
+  type AiTask, type SourceDocument,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
@@ -91,6 +92,43 @@ const fourQEntries: FourQEntry[] = [
   fourQ(2, { band: 'retraction', column: 'failure_factors' }, 'Ageing pumping equipment causes frequent supply interruptions.'),
   fourQ(4, { band: 'repositioning', column: 'failure_factors' }, 'Section heads were promoted from technical roles without supervisory training.'),
 ];
+/*
+ * Part 11b: what the AI drafted for the 2027–2031 plan when its documents were given (approved Strategy workspace
+ * prototype, wording as approved). The prototype's Sanitation and Engineering departments are raised by Operations,
+ * which answers for them in this sample. Every card is an AI draft on its department's sheet until a person checks it.
+ */
+const FORMING = id<'StrategicPlan'>('plan-2027');
+const draftedStamp: Stamp = { at: dt('2026-10-16T09:00:00+02:00'), byMembershipId: id('m-spm') };
+const draftedBase = { orgId, created: draftedStamp, updated: draftedStamp };
+const formationDocs: SourceDocument[] = ([
+  ['sd-2027-1', 'Strategic Plan 2022–2026', 'strategic_plan'], ['sd-2027-2', 'Annual Report 2025', 'annual_report'], ['sd-2027-3', 'Performance Report 2025', 'performance_report'],
+  ['sd-2027-4', 'Water Supply Licence', 'licence'], ['sd-2027-5', 'Regulatory notice: tariff review 2028', 'regulatory'],
+] as const).map(([i, title, kind]) => ({ ...draftedBase, id: id<'SourceDocument'>(i), title, kind, fileRef: `${title}.pdf` }));
+const EXTRACT = id<'AiTask'>('ai-2027-extract');
+const drafted = (n: string, cell: FourQCell, text: string, unit: string, from: { doc: string; page: number } | { evidence: string }): FourQEntry => ({
+  ...draftedBase, id: id(`q-2027-${n}`), planId: FORMING, cell, text, raisedByUnitIds: [id(unit)], scope: 'department', mergedIntoId: null,
+  evidence: 'evidence' in from ? from.evidence : null,
+  draft: { state: 'ai_draft', decided: null, provenance: 'doc' in from ? { kind: 'document', sourceDocumentId: id(from.doc), page: from.page, excerpt: '' } : { kind: 'ai_suggestion', aiTaskId: EXTRACT } },
+});
+const formationCards: FourQEntry[] = [
+  drafted('r1', { band: 'retraction', column: 'successes' }, 'Metered connections rose from 58% to 81%', 'u-com', { doc: 'sd-2027-2', page: 9 }),
+  drafted('r2', { band: 'retraction', column: 'success_factors' }, 'Dedicated metering project team', 'u-ops', { doc: 'sd-2027-2', page: 11 }),
+  drafted('r3', { band: 'retraction', column: 'failures' }, 'Sanitation coverage 31% against a 45% target', 'u-ops', { doc: 'sd-2027-3', page: 22 }),
+  drafted('r4', { band: 'retraction', column: 'failure_factors' }, 'No funded sanitation activities in annual budgets', 'u-fin', { evidence: 'FY2026 budget: G3 has no funded activity' }),
+  drafted('p1', { band: 'repositioning', column: 'successes' }, 'Supply hours up from 14 to 16 per day', 'u-ops', { evidence: 'K2.1.1 Average hours of supply per day' }),
+  drafted('p2', { band: 'repositioning', column: 'success_factors' }, 'Weekly zonal supply schedules published', 'u-ops', { doc: 'sd-2027-2', page: 14 }),
+  drafted('p3', { band: 'repositioning', column: 'failures' }, 'Non-revenue water at 47% against a 40% target', 'u-com', { evidence: 'K1.2.1 Non-revenue water' }),
+  drafted('p4', { band: 'repositioning', column: 'failures' }, 'High water losses in the distribution network', 'u-ops', { doc: 'sd-2027-3', page: 8 }),
+  drafted('j1', { band: 'projection', column: 'opportunities' }, 'Regulator’s tariff review window in 2028', 'u-fin', { doc: 'sd-2027-5', page: 3 }),
+  drafted('j2', { band: 'projection', column: 'key_strategic_actions' }, 'Cost-of-service study before the tariff application', 'u-fin', { doc: 'sd-2027-5', page: 4 }),
+  drafted('j3', { band: 'projection', column: 'risks' }, 'Drought reducing raw water yield', 'u-ops', { doc: 'sd-2027-3', page: 27 }),
+  drafted('j4', { band: 'projection', column: 'risk_strategies' }, 'Develop a second borehole field', 'u-ops', { doc: 'sd-2027-1', page: 41 }),
+];
+const formationAi: AiTask = {
+  orgId, id: EXTRACT, kind: 'extract', requested: draftedStamp, model: 'stub',
+  inputRefs: [...formationDocs.map((d) => ({ type: 'SourceDocument', id: d.id as string })), { type: 'StrategicPlan', id: FORMING as string }],
+  outputRefs: formationCards.map((c) => ({ type: 'FourQEntry', id: c.id as string })),
+};
 const goal = (n: number, title: string, perspective: Goal['perspective'], owner: string): Goal => ({
   ...base, id: id(`g${n}`), planId: PLAN, code: `G${n}`, title, perspective, ownerPositionId: pos(owner), themeIds: [],
   fourQEntryIds: fourQEntries.filter((q) => q.id === `q-g${n}-1`).map((q) => q.id), draft: human,
@@ -170,7 +208,7 @@ function seedStore(): Store {
       },
     },
     people, memberships, units, positions, assignments,
-    fourQEntries,
+    fourQEntries: [...fourQEntries, ...formationCards],
     plans: [
       {
         ...base, id: PLAN, title: 'Strategic Plan 2022–2026', startYear: 2022, endYear: 2026, entryDoor: 'imported', status: 'active',
@@ -268,8 +306,8 @@ function seedStore(): Store {
     gateEvents: [seededPublication(orgId, PLAN, id('m-spm'), dt('2026-01-20T09:00:00+02:00'))],
     // The structure was confirmed by the organisation administrator on 15 January 2026 (D7-9).
     auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length })],
-    sourceDocuments: [],
-    aiTasks: [], visionStatements: [],
+    sourceDocuments: formationDocs,
+    aiTasks: [formationAi], visionStatements: [],
   };
 }
 

@@ -28,6 +28,8 @@ export interface FormationPage {
     preparer: { membershipId: string; name: string } | null;
     published: { by: string; on: ISODate } | null;
     visionTargetOn: ISODate | null; planTargetOn: ISODate | null;
+    /** When vision.confirm passed (part 11b), or null. */
+    visionConfirmedOn: ISODate | null;
     stages: { stage: FormationStage; status: 'not_started' | 'open' | 'complete'; startsOn: ISODate | null; endsOn: ISODate | null }[];
   };
   canSetUp: boolean;
@@ -127,6 +129,7 @@ export function createFormationAccess(ctx: Ctx): FormationAccess {
         preparer: p.calendar?.preparerMembershipId ? { membershipId: p.calendar.preparerMembershipId, name: personOf(p.calendar.preparerMembershipId) } : null,
         published: p.calendar?.published ? { by: personOf(p.calendar.published.byMembershipId), on: dateInZone(p.calendar.published.at, s.organisation.timeZone) } : null,
         visionTargetOn: p.calendar?.visionTargetOn ?? null, planTargetOn: p.calendar?.planTargetOn ?? null,
+        visionConfirmedOn: ((c) => (c ? dateInZone(c.at, s.organisation.timeZone) : null))(s.visionStatements.find((v) => v.planId === p.id && v.kind === 'vision')?.confirmation),
         stages: STAGES.map((st) => ({ stage: st, status: p.formation?.[st]?.status ?? 'not_started', startsOn: p.formation?.[st]?.startsOn ?? null, endsOn: p.formation?.[st]?.endsOn ?? null })),
       },
       canSetUp: drafts,

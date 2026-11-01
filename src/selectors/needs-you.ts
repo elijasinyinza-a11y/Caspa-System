@@ -9,7 +9,9 @@ import type { Viewer } from '../data/access/viewer';
 import { blockersAt, computeFindings } from '../rules/integrity';
 import { rateContract } from '../rules/rating';
 import { sentBy } from '../rules/onboarding';
-import { escalated } from '../rules/formation';
+import { escalated, formingPlan } from '../rules/formation';
+import { canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentState, entriesOf, filledCells, isLive, visionConfirmed } from '../rules/conception';
+import { formatNumber } from './format';
 import { currentBudgetVersion } from '../rules/structure';
 import { en } from '../strings/en';
 import type { FixTarget } from './integrity';
@@ -182,6 +184,37 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
       add({ key: `formation:prepare:${p.id}`, kind: 'deadline', title: en.formation.needs.prepare(p.title), detail: null, due: p.calendar.visionTargetOn, severity: null, as: null, link: { kind: 'workspace', w: 'strategy' } });
     }
   }
+  /* Conception (part 11b), while the stage is open and the vision is not yet confirmed. */
+  const forming = formingPlan(s);
+  if (forming && forming.formation?.conception.status === 'open' && !visionConfirmed(s, forming.id)) {
+    const count = (n: number, k: 'card' | 'aiCard') => `${formatNumber(n)} ${n === 1 ? en.setup.plural[k]![0] : en.setup.plural[k]![1]}`;
+    const strategy: FixTarget = { kind: 'workspace', w: 'strategy' };
+    const due = forming.calendar?.visionTargetOn ?? null;
+    const C = en.conception.needs;
+    // Department heads (F-2): one next step per department they answer for.
+    for (const d of departmentsHeadedBy(s, v.positionIds as string[])) {
+      const st = departmentState(s, forming.id, d.unitId);
+      const blank = st.toCheck + st.waiting + st.consolidated === 0;
+      if (st.toCheck > 0) add({ key: `conception:check:${d.unitId}`, kind: 'deadline', title: C.check(count(st.toCheck, 'aiCard'), d.name), detail: forming.title, due, severity: null, as: null, link: strategy });
+      else if (blank && !st.interviewed && s.organisation.settings.aiEnabled) add({ key: `conception:interview:${d.unitId}`, kind: 'deadline', title: C.interview(d.name), detail: forming.title, due, severity: null, as: null, link: strategy });
+      else if (!st.submitted && canSubmitDepartment(st)) add({ key: `conception:send:${d.unitId}`, kind: 'deadline', title: C.send(d.name), detail: forming.title, due, severity: null, as: null, link: strategy });
+    }
+    // The Strategy office: AI drafts on the organisation sheet or on a department sheet with no head, and accepted cards to bring together.
+    if (v.roles.includes('strategy_office')) {
+      const headless = new Set(departments(s).filter((d) => !d.headPositionId || !holderOf(s, d.headPositionId, now)?.person).map((d) => d.unitId));
+      const drafts = entriesOf(s, forming.id).filter((e) => isLive(e) && e.draft.state === 'ai_draft' && (e.scope === 'organisation' || e.raisedByUnitIds.some((u) => headless.has(u)))).length;
+      if (drafts) add({ key: `conception:curate:${forming.id}`, kind: 'deadline', title: C.curate(count(drafts, 'aiCard')), detail: forming.title, due, severity: null, as: 'strategy_office', link: strategy });
+      for (const d of departments(s)) {
+        const st = departmentState(s, forming.id, d.unitId);
+        if (st.submitted && st.waiting > 0) add({ key: `conception:consolidate:${d.unitId}`, kind: 'deadline', title: C.consolidate(d.name), detail: forming.title, due, severity: null, as: 'strategy_office', link: strategy });
+      }
+    }
+    // The Executive: once every section has an accepted card, the vision is theirs to write and confirm.
+    if (v.roles.includes('executive') && filledCells(s, forming.id).length === CELLS.length) {
+      add({ key: `approve:vision:${forming.id}`, kind: 'approval', title: C.vision(forming.title), detail: C.visionDetail, due, severity: null, as: 'executive', link: strategy });
+    }
+  }
+
   /* Overdue formation deadlines reach the owner's supervisor after the organisation's escalation days. */
   for (const e of escalated(s, now)) {
     if (!mine(e.supervisorPositionId)) continue;
