@@ -69,7 +69,7 @@ export interface AiService {
   groupInputs(inputs: { id: string; text: string }[]): Promise<InputGroups>;
   /** Read a report or system export and draft baseline values, each tied to its page (F2). The data owner checks each one. */
   draftBaselinesFromDocument(fileName: string): Promise<BaselineDraft>;
-  /** Read a law, regulation, licence or policy and draft its obligations, each tied to its page (F3). Never from general knowledge. */
+  /** Read a law, regulation, licence, policy or standard and draft its obligations, each tied to its page (F3). Never from general knowledge. */
   draftComplianceFromDocument(fileName: string): Promise<ComplianceDraft>;
 }
 
@@ -106,7 +106,7 @@ export const SAMPLE_BASELINE_DRAFT: BaselineDraft = {
   ],
 };
 
-/** The stub's fixed obligations for any law, regulation, licence or policy (part 11c). Fictional and sector-neutral; for Elijah to approve. */
+/** The stub's fixed obligations for any law, regulation, licence, policy or standard (part 11c; standards from v1.7). Fictional and sector-neutral; for Elijah to approve. */
 export const SAMPLE_COMPLIANCE_DRAFT: ComplianceDraft = {
   label: "AI draft",
   sameForAnyFile: true,

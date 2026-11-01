@@ -1802,7 +1802,7 @@ export const en = {
       addButton: 'Add document',
       required: 'Give the document a title and choose a file.',
       aiOff: 'AI assistance is switched off for this organisation, so cards are added by hand.',
-      kinds: { strategic_plan: 'Strategic plan', annual_report: 'Annual report', performance_report: 'Performance report', board_paper: 'Board paper', budget: 'Budget', regulatory: 'Regulatory document', licence: 'Licence', policy: 'Policy', other: 'Other' } as Record<string, string>,
+      kinds: { strategic_plan: 'Strategic plan', annual_report: 'Annual report', performance_report: 'Performance report', board_paper: 'Board paper', budget: 'Budget', regulatory: 'Regulatory document', licence: 'Licence', policy: 'Policy', standard: 'Standard', other: 'Other' } as Record<string, string>,
     },
     vision: {
       title: 'Vision and mission',
@@ -2018,12 +2018,12 @@ export const en = {
       add: { title: 'Add an obligation the documents don’t cover', obligation: 'Obligation', kind: 'Kind', button: 'Add', added: 'Added.' },
       fromDocs: {
         title: 'Read obligations from a document',
-        intro: 'Only from the laws, regulations, licences and policies given for this plan. Each obligation links to its page, and the compliance officer reviews each one.',
+        intro: 'Only from the laws, regulations, licences, policies and standards given for this plan. Each obligation links to its page, and the compliance officer reviews each one.',
         button: 'Read obligations',
         document: 'Document',
         drafted: (n: string) => `The AI drafted ${n}. Review each one.`,
         none: 'No laws, regulations, licences or policies have been given yet. The Strategy office adds them under Source documents.',
-        notSource: 'Obligations are read only from laws, regulations, licences and policies.',
+        notSource: 'Obligations are read only from laws, regulations, licences, policies and standards.',
       },
     },
     progress: { title: 'Consultation and Confirmation so far', baselines: 'Baselines validated', compliance: 'Compliance items reviewed', inputs: 'Consultation inputs received', of: (n: string, total: string) => `${n} of ${total}` },

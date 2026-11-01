@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.6
+ * CASPA™ data contract — v1.7
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -74,6 +74,21 @@
  *       screen an input shows its unit only (attribution 'unit_only'; small units as their parent).
  *     - ComplianceItem row: seen by all members; drafted by the Strategy office, the compliance officer and its
  *       owners (heads of the departments that flagged it); reviewed by the compliance officer.
+ * v1.7 (1 November 2026, Elijah; Strategy formation part 11d, Composition): one document kind, one record and
+ *     four permission changes. No other field changes.
+ *     - SourceDocument.kind gains 'standard', so the AI may read obligations from a standard the organisation
+ *       provides, each tied to its page, as for laws, licences and policies.
+ *     - Theme row: seen by all members (its title; the text of its linked 4Q cards follows the FourQEntry row, and
+ *       others see a count); drafted by the Strategy office or a facilitator; accepted by the Strategy office.
+ *     - Objective row gains propose by its owner: a department head proposes an objective with their own position
+ *       as owner (proposedByPositionId). The Strategy office drafts and merges; the Executive confirms.
+ *     - Kpi row gains the objective's owner for draft and propose: KPIs, and a target for each plan year (KpiTarget
+ *       follows its Kpi), are proposed by the objective's owner. A KPI linked to a baseline measure reads its
+ *       baseline from the measure, and its own baseline stays null; the number is used only where no measure is
+ *       linked (imported KPIs).
+ *     - IndicativeCost: an objective's expected cost for one financial year, compared with the resource envelope
+ *       by the rule BOOK-ENVELOPE-EXCEEDED during formation. Seen by the Executive, Finance, the Strategy office
+ *       and the objective's owner; drafted by the objective's owner, Finance and the Strategy office.
  * Friction signals are removed for now and may return only with a confirmed
  * source. Leadership assessments are described generically.
  */
@@ -314,7 +329,7 @@ export type FormationStage = 'conception' | 'consultation' | 'confirmation' | 'c
 export interface SourceDocument extends OrgScoped, Audited {
   id: Id<'SourceDocument'>;
   title: string;
-  kind: 'strategic_plan' | 'annual_report' | 'performance_report' | 'board_paper' | 'budget' | 'regulatory' | 'licence' | 'policy' | 'other';
+  kind: 'strategic_plan' | 'annual_report' | 'performance_report' | 'board_paper' | 'budget' | 'regulatory' | 'licence' | 'policy' | 'standard' | 'other'; // v1.7: 'standard'
   fileRef: string;
 }
 
@@ -394,6 +409,14 @@ export interface ComplianceItem extends OrgScoped, Audited {
   flaggedByUnitIds: Id<'OrgUnit'>[];
   outcome: 'aligned' | 'needs_change' | 'not_applicable' | null;
   reviewed: Stamp | null;
+}
+
+/** v1.7: an objective's expected cost for one financial year of the plan (F4 step 6). Never a budget line. */
+export interface IndicativeCost extends OrgScoped, Audited {
+  id: Id<'IndicativeCost'>;
+  objectiveId: Id<'Objective'>;
+  financialYear: FinancialYear;
+  amount: Money;
 }
 
 export interface ResourceEnvelope extends OrgScoped, Audited {
@@ -504,7 +527,7 @@ export interface Kpi extends OrgScoped, Audited {
   unit: string; // "%", "hours per day", …
   direction: 'higher_is_better' | 'lower_is_better' | 'milestone';
   aggregation: 'latest' | 'sum' | 'average'; // P2
-  baseline: number | null; // null allowed; see P4
+  baseline: number | null; // null allowed; see P4. v1.7: null when baselineMeasureId is set; the measure's value is used
   baselineMeasureId: Id<'BaselineMeasure'> | null;
   milestones: { id: string; label: string; weight: number; completedOn: ISODate | null }[]; // P5, milestone KPIs only
   reportingFrequency: ReportingFrequency; // C4
@@ -788,8 +811,8 @@ export type PermissionMatrix = Partial<Record<string, Partial<Record<Action, Pri
 export const PERMISSIONS: PermissionMatrix = {
   StrategicPlan: { view: ['all_members'], draft: ['strategy_office', 'facilitator'], confirm: ['executive'] },
   Goal: { view: ['all_members'], draft: ['strategy_office', 'facilitator'], confirm: ['executive'] },
-  Objective: { view: ['all_members'], draft: ['strategy_office', 'facilitator'], confirm: ['executive'] },
-  Kpi: { view: ['all_members'], draft: ['owner', 'strategy_office'], propose: ['owner', 'strategy_office'], confirm: ['executive'] },
+  Objective: { view: ['all_members'], draft: ['strategy_office', 'facilitator'], propose: ['owner'], confirm: ['executive'] }, // v1.7: propose
+  Kpi: { view: ['all_members'], draft: ['owner', 'objective_owner', 'strategy_office'], propose: ['owner', 'objective_owner', 'strategy_office'], confirm: ['executive'] }, // v1.7: objective_owner
   Activity: { view: ['all_members'], draft: ['objective_owner', 'owner', 'strategy_office', 'facilitator'], approve: ['strategy_office'] },
   Deficiency: { view: ['executive', 'strategy_office', 'objective_owner', 'facilitator'], draft: ['objective_owner', 'strategy_office', 'facilitator'] },
   BudgetLine: { view: ['finance', 'executive', 'budget_holder'], draft: ['budget_holder', 'finance'], approve: ['finance', 'executive'] },
@@ -806,6 +829,10 @@ export const PERMISSIONS: PermissionMatrix = {
   // heads, expert input (held as a reference, never scored) from the Strategy office or a facilitator.
   ConsultationInput: { view: ['executive', 'strategy_office', 'facilitator', 'round_audience'], draft: ['round_audience', 'strategy_office', 'facilitator'] },
   ResourceEnvelope: { view: ['executive', 'finance', 'strategy_office'], draft: ['finance'] },
+  // v1.7: themes from the 4Q board. Linked card text follows the FourQEntry row; others see how many cards.
+  Theme: { view: ['all_members'], draft: ['strategy_office', 'facilitator'], approve: ['strategy_office'] },
+  // v1.7: indicative costs, compared with the envelope during formation.
+  IndicativeCost: { view: ['executive', 'finance', 'strategy_office', 'objective_owner'], draft: ['objective_owner', 'finance', 'strategy_office'] },
   PlanDocument: { view: ['executive', 'strategy_office', 'facilitator'], draft: ['strategy_office', 'facilitator'], approve: ['strategy_office'] },
   // PlanDocument view widens to all members once status is 'final'.
   CommunicationRecord: { view: ['all_members'], draft: ['strategy_office', 'owner'] },
