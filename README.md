@@ -2,7 +2,7 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 29 October 2026, including the clarity decisions in section 20 and organisation setup in section 23) first.
+with decisions to 1 November 2026, including the clarity decisions in section 20 and Conception in section 31) first.
 
 ## Run
 
@@ -31,7 +31,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 8. Onboarding: the two doors (Onboarding Specification v0.1; decisions O1 to O9, BUILD-BRIEF section 28) — done (v0.8.0)
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
-11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception;
+11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
     11c Consultation and Confirmation; 11d Composition; 11e Communication
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -46,6 +46,21 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Strategy formation, part 11b: Conception (v0.12.0)
+
+- BUILD-BRIEF section 31; Strategy Formation Specification v1.0 (F1). No contract change. 499 tests (25 new,
+  `src/rules/conception.test.ts`, `src/data/access/conception.test.ts`).
+- Try it on Sample Water Utility. As Strategy office (Bwalya Musonda), open Strategy, then under Formation › Stages open
+  Conception. "4Q board" shows the organisation sheet in Table 2 layout; under "Department sheets", open each sheet,
+  accept the AI drafts and add them to the organisation sheet. "Look for duplicates" pairs the two non-revenue water
+  cards; merge them. One section is still empty: add a card from the session, or, as Finance (Ruth Phiri), open
+  "Finance’s part" and answer the interview. "Workshop view" is the projector layout. As Executive (Chanda Mulenga),
+  "Vision and mission" opens once all 12 sections have an accepted card: "Summarise the board", write the vision and
+  confirm it. The tracker then shows the vision as confirmed.
+- Code: `src/rules/conception.ts` (cells, departments, checklist, vision checks), `src/data/access/conception.ts`,
+  `src/routes/Conception.tsx`, AI stub additions in `src/ai/index.ts`. Every AI call is an `AiTask`; every attempt to
+  confirm the vision is a `GateEvent`.
 
 ## Strategy formation, part 11a: calendar and sessions (v0.11.0)
 
@@ -221,6 +236,8 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
+- Part 11b choices and wording to confirm (BUILD-BRIEF section 31): department heads' Strategy workspace, the
+  Executive viewing but not accepting 4Q cards, the interview question, the sample document draft, flat organisations.
 - Slice 7 choices to confirm (BUILD-BRIEF section 24): the phone bottom bar, the "Consultant" development role, and
   who answers for a unit whose top positions are linked only through someone outside it.
 
