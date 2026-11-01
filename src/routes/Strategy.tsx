@@ -13,6 +13,7 @@ import type { PlanMust } from '../rules/onboarding';
 import { formatDate, formatFinancialYear, formatNumber } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, download, input, label, link, plural, primary } from './organisation/ui';
+import { Formation } from './Formation';
 
 const O = en.onboarding;
 
@@ -34,7 +35,11 @@ export function Strategy() {
         setup && page.canSetUp ? <SetupForm page={page} onDone={(m) => { setSetup(false); setNote(m); }} onCancel={() => setSetup(false)} />
           : <FirstQuestion page={page} onImport={() => setSetup(true)} />
       ) : (
-        <PlanView page={page} setNote={setNote} />
+        <>
+          <PlanView page={page} setNote={setNote} />
+          {/* Part 11a: forming the next plan beside the running one (BUILD-BRIEF section 30). */}
+          {page.plan.published && <Formation />}
+        </>
       )}
     </>
   );
@@ -182,7 +187,6 @@ function PlanView({ page, setNote }: { page: OnboardingPage; setNote: (m: string
         <p className="mt-1 text-14 text-muted">{p.label}</p>
         <p className="mt-2"><Chip tone="complete">{status}</Chip></p>
         {p.confirmed && <p className="mt-2 text-14">{O.confirm.confirmedBy(p.confirmed.by, formatDate(p.confirmed.on), p.confirmed.ref)}</p>}
-        <p className="mt-2 text-14 text-muted">{O.strategyHome.formingLater}</p>
         <a href="#/cascade" className={link} onClick={(e) => { e.preventDefault(); navigate({ kind: 'workspace', w: 'cascade' }); }}>{en.nav.cascade}</a>
       </section>
     );

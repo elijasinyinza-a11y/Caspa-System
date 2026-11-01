@@ -32,6 +32,11 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
   const mine = (pid: string | null | undefined) => !!pid && v.positionIds.includes(pid as Viewer['positionIds'][number]);
   switch (principal) {
     case 'owner': {
+      // Formation (part 11a): a deadline's owners, and a session's invited participants.
+      const fd = s.formationDeadlines.find((x) => x.id === subject.id);
+      if (fd) return fd.ownerPositionIds.some((p) => mine(p));
+      const ws = s.workshops.find((x) => x.id === subject.id);
+      if (ws) return ws.participantPositionIds.some((p) => mine(p));
       const rec =
         s.goals.find((x) => x.id === subject.id) ?? s.objectives.find((x) => x.id === subject.id) ??
         s.kpis.find((x) => x.id === subject.id) ?? s.activities.find((x) => x.id === subject.id);
