@@ -6,7 +6,7 @@
  */
 import type { AuditEntry, FormationDeadline, FormationStage, Id, ISODate, ISODateTime, StrategicPlan, Workshop, WorkshopPurpose } from '../../contract/caspa-data-contract';
 import {
-  agenda, canMoveStage, defaultParticipants, departmentHeadPositions, formationChecks, formingPlan, leadershipPositions, packageAdds, PACKAGES, sessionsOf, STAGES,
+  agenda, canMoveStage, defaultParticipants, departmentHeadPositions, formationChecks, formationInProgress, leadershipPositions, packageAdds, PACKAGES, sessionsOf, STAGES,
   type AgendaItem, type FormationCheck, type Format,
 } from '../../rules/formation';
 import { dateInZone, formatFinancialYear } from '../../selectors/format';
@@ -106,7 +106,7 @@ export function createFormationAccess(ctx: Ctx): FormationAccess {
     return s.positions.filter((x) => x.title === p.title).length > 1 ? `${p.title}, ${unitName(p.unitId)}` : p.title;
   };
   const personOf = (mid: string) => s.people.find((p) => p.id === s.memberships.find((m) => m.id === mid)?.personId)?.fullName ?? mid;
-  const plan = () => formingPlan(s);
+  const plan = () => formationInProgress(s);
   const isPreparer = () => !!plan()?.calendar?.preparerMembershipId && plan()!.calendar!.preparerMembershipId === viewer.membershipId;
   const fyLabel = (y: number) => formatFinancialYear(y, s.organisation.financialYearStartMonth);
   const touch = (p: StrategicPlan, before: unknown) => { p.updated = stamp(); audit('update', { type: 'StrategicPlan', id: p.id }, before, p); };

@@ -5,7 +5,10 @@
 import type { Finding, ISODate, PerspectiveKey, SixPLevel, StrategicPlan } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { checkGate, type GateCheck } from './gate';
-import { computeFindings } from './integrity';
+import { compositionFindings, pendingDecisions } from './composition';
+import { visionConfirmed } from './conception';
+import { complianceOf } from './consultation';
+import { computeFindings, RULES } from './integrity';
 
 /* ───────── Rows: what the template, the AI draft and the editor all produce (O3) ───────── */
 
@@ -79,7 +82,10 @@ export function rowProblems(rows: PlanRow[], positions: PositionRef[]): PlanRowP
 
 /* ───────── Checks before the plan is confirmed (O4, section 4) ───────── */
 
-export type PlanMust = { kind: 'period' } | { kind: 'no_goal' } | { kind: 'ai_pending'; count: number };
+export type PlanMust =
+  | { kind: 'period' } | { kind: 'no_goal' } | { kind: 'ai_pending'; count: number }
+  // Part 11d (D11d-10), a formed plan: the vision confirmed, every compliance item reviewed, every item decided.
+  | { kind: 'vision' } | { kind: 'compliance'; count: number } | { kind: 'pending'; count: number };
 
 /** The plan's records, if it were the active plan: so the existing rules check a draft before it is confirmed. */
 export function asIfActive(s: Store, planId: string): Store {
@@ -110,13 +116,30 @@ export interface PlanChecks {
 
 export function planChecks(s: Store, plan: StrategicPlan, financialYear: number): PlanChecks {
   const r = planRecords(s, plan.id);
+  const formed = plan.formation !== null;
   const must: PlanMust[] = [];
   if (plan.endYear < plan.startYear) must.push({ kind: 'period' });
+  if (formed && !visionConfirmed(s, plan.id)) must.push({ kind: 'vision' });
+  if (formed) {
+    const open = complianceOf(s, plan.id).filter((c) => c.outcome === null).length;
+    if (open) must.push({ kind: 'compliance', count: open });
+  }
   if (r.goals.length === 0) must.push({ kind: 'no_goal' });
-  const pending = [...r.goals, ...r.objectives, ...r.kpis, ...r.activities].filter((x) => x.draft.state === 'ai_draft').length;
-  if (pending) must.push({ kind: 'ai_pending', count: pending });
+  if (formed) {
+    const pending = pendingDecisions(s, plan.id);
+    if (pending) must.push({ kind: 'pending', count: pending });
+  } else {
+    const pending = [...r.goals, ...r.objectives, ...r.kpis, ...r.activities].filter((x) => x.draft.state === 'ai_draft').length;
+    if (pending) must.push({ kind: 'ai_pending', count: pending });
+  }
   const ids = new Set<string>([...r.goals, ...r.objectives, ...r.kpis, ...r.activities].map((x) => x.id));
-  const findings = computeFindings(asIfActive(s, plan.id), { financialYear }).filter((f) => ids.has(f.subject.id));
+  const fy = formed ? plan.startYear : financialYear;
+  const found = computeFindings(asIfActive(s, plan.id), { financialYear: fy }).filter((f) => ids.has(f.subject.id));
+  // D11d-10: a formed plan has no budget yet, so "no funded activity" and the budget-line envelope check are left out;
+  // its resource check reads indicative costs instead (D11d-7).
+  const findings = formed
+    ? [...found.filter((f) => f.ruleId !== RULES.goalNoFundedActivity.id && f.ruleId !== RULES.envelopeExceeded.id), ...compositionFindings(s, plan)]
+    : found;
   const gate = checkGate(findings, 'plan.confirm');
   const statements = s.visionStatements.filter((v) => v.planId === plan.id && v.text.trim());
   return {

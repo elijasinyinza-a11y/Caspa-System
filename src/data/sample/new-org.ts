@@ -32,7 +32,7 @@ export function createNewOrganisation(): { orgId: string; store: Store; devRoles
       { ...base, id: id('m-new-cn'), personId: id('p-new-cn'), roles: ['org_admin'], startsOn: '2026-10-01' as ISODate, endsOn: '2026-12-31' as ISODate, status: 'active' },
     ],
     units: [], positions: [], assignments: [], plans: [], fourQEntries: [], goals: [], objectives: [], kpis: [], kpiTargets: [], kpiActuals: [],
-    baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], activities: [], activityProgress: [], deficiencies: [], cycles: [], budgetVersions: [], budgetLines: [],
+    baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], themes: [], indicativeCosts: [], activities: [], activityProgress: [], deficiencies: [], cycles: [], budgetVersions: [], budgetLines: [],
     contracts: [], contractObjectives: [], progressUpdates: [], reviews: [],
     ratingSchemes: [{
       ...base, id: id('rs-new'), preset: 'A', bands: RATING_PRESETS.A, competencySection: { enabled: false, weightPct: 0 },

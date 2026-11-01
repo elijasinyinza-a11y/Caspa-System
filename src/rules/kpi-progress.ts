@@ -3,6 +3,7 @@
  * Progress values are raw shares (0.42 = 42%), never rounded here (P8) and never stored.
  */
 import type { Goal, ISODate, Kpi, Objective } from '../contract/caspa-data-contract';
+import { kpiBaseline } from './baseline';
 import type { Store } from '../data/access/store';
 
 export interface ProgressContext {
@@ -84,7 +85,8 @@ export const kpiActual = (s: Store, k: Kpi, ctx: ProgressContext): number | null
 export function kpiProgress(s: Store, k: Kpi, ctx: ProgressContext): KpiProgress {
   const thresholds = s.organisation.settings.kpiStatus;
   const expected = expectedToDate(ctx.financialYear, s.organisation.financialYearStartMonth, ctx.now);
-  const empty = { actual: null, baseline: k.baseline, baselineAssumedZero: false, progress: null, clamped: null, expected };
+  const base = kpiBaseline(s, k); // D11d-6: through the linked measure, when there is one
+  const empty = { actual: null, baseline: base, baselineAssumedZero: false, progress: null, clamped: null, expected };
 
   // P5: milestone KPIs — total weight of milestones completed by now.
   if (k.direction === 'milestone') {
@@ -101,11 +103,11 @@ export function kpiProgress(s: Store, k: Kpi, ctx: ProgressContext): KpiProgress
   if (actual === null) return { ...empty, kind: 'no_data', target, status: 'no_data' };
 
   // P4: no baseline.
-  if (k.baseline === null && k.direction === 'lower_is_better') {
+  if (base === null && k.direction === 'lower_is_better') {
     return { ...empty, actual, kind: 'target_check', target, status: actual <= target ? 'target_met' : 'target_not_met' };
   }
-  const baseline = k.baseline ?? 0;
-  const baselineAssumedZero = k.baseline === null;
+  const baseline = base ?? 0;
+  const baselineAssumedZero = base === null;
   if (target === baseline) return { ...empty, actual, baseline, baselineAssumedZero, kind: 'invalid', target, status: 'no_data' };
 
   // P1: movement from baseline as a share of the distance from baseline to target (works in both directions).

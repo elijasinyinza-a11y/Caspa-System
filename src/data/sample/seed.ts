@@ -11,6 +11,7 @@ import {
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
+import './composition'; // part 11d: the AI stub's approved sample wording for this organisation
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 
 const id = <T extends string>(s: string) => s as Id<T>;
@@ -288,7 +289,7 @@ function seedStore(): Store {
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [],
+    resourceEnvelopes: [], themes: [], indicativeCosts: [],
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [

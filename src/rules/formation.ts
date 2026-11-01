@@ -114,6 +114,12 @@ export const canMoveStage = (from: 'not_started' | 'open' | 'complete', to: 'ope
 
 /** The formed plan being prepared: a draft formed plan, newest first. */
 export const formingPlan = (s: Store): StrategicPlan | null => [...s.plans].reverse().find((p) => p.entryDoor === 'formed' && p.status === 'draft') ?? null;
+/**
+ * A formed plan still in formation: a draft, or confirmed but not yet active (Communication follows confirmation,
+ * part 11d). Screens read it; edits to the plan's content still need a draft (formingPlan).
+ */
+export const formationInProgress = (s: Store): StrategicPlan | null =>
+  [...s.plans].reverse().find((p) => p.entryDoor === 'formed' && (p.status === 'draft' || p.status === 'confirmed')) ?? null;
 
 /** Overdue formation deadlines past the organisation's escalation days, for the owners' supervisors. */
 export function escalated(s: Store, now: ISODate): { deadlineId: string; label: string; ownerPositionId: string; supervisorPositionId: string; dueOn: ISODate }[] {

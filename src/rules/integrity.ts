@@ -5,6 +5,7 @@
 import type { Finding, GateCode, Id, IntegrityRule } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { en } from '../strings/en';
+import { kpiBaseline } from './baseline';
 import { activityFingerprint } from './fingerprint';
 import { activitiesOfGoal, fundedActivityIds, linesOfVersion, objectiveOfActivity, objectiveOfKpi, accountablePositionOfUnit } from './structure';
 
@@ -20,6 +21,9 @@ export const RULES = {
   kpiBaselineNotValidated: { id: 'BOOK-KPI-BASELINE-NOT-VALIDATED', source: 'book', description: 'KPI uses a baseline that is not validated', blocksAt: ['cascade.publish'] },
   goalNoWhy: { id: 'BOOK-GOAL-NO-WHY', source: 'book', description: 'Goal has no recorded why (no linked 4Q entry)', blocksAt: [] },
   envelopeExceeded: { id: 'BOOK-ENVELOPE-EXCEEDED', source: 'book', description: "Objectives' indicative costs exceed the resource envelope", blocksAt: [] },
+  // Part 11d (D11d-8): checks at plan confirmation for a formed plan, computed by src/rules/composition.ts.
+  riskUnaddressed: { id: 'STRUCT-4Q-RISK-UNADDRESSED', source: 'structural', description: 'A critical failure factor or predicted future risk is not addressed by any goal or objective', blocksAt: [] },
+  goalNoObjective: { id: 'STRUCT-GOAL-NO-OBJECTIVE', source: 'structural', description: 'Goal has no accepted objective', blocksAt: [] },
 } as const satisfies Record<string, IntegrityRule>;
 
 type RuleKey = keyof typeof RULES;
@@ -58,8 +62,9 @@ export function computeFindings(s: Store, ctx: CheckContext): Finding[] {
   for (const k of kpis) {
     const o = objectiveOfKpi(s, k);
     const t = s.kpiTargets.find((x) => x.kpiId === k.id && x.financialYear === fy);
-    if (t && k.baseline !== null && k.direction !== 'milestone') {
-      const wrong = k.direction === 'lower_is_better' ? t.target >= k.baseline : t.target <= k.baseline;
+    const kb = kpiBaseline(s, k); // D11d-6
+    if (t && kb !== null && k.direction !== 'milestone') {
+      const wrong = k.direction === 'lower_is_better' ? t.target >= kb : t.target <= kb;
       if (wrong) push('kpiTargetInvalid', { type: 'Kpi', id: k.id }, en.findings.kpiTargetInvalid(terms, k.code, k.name), [k.ownerPositionId ?? o?.ownerPositionId]);
     }
     if (!k.ownerPositionId) push('kpiNoOwner', { type: 'Kpi', id: k.id }, en.findings.kpiNoOwner(terms, k.code, k.name), [o?.ownerPositionId]);

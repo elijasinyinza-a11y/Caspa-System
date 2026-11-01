@@ -16,7 +16,12 @@ export const GATE_ADVISORIES: Partial<Record<GateCode, readonly string[]>> = {
   'budget.submit_consolidated': [RULES.goalNoFundedActivity.id],
   'budget.approve': [RULES.goalNoFundedActivity.id],
   // Onboarding (section 28): what is worth checking when the Executive confirms a plan.
-  'plan.confirm': [RULES.objectiveNoKpi.id, RULES.kpiNoOwner.id, RULES.kpiBaselineNotValidated.id, RULES.goalNoWhy.id, RULES.goalNoFundedActivity.id],
+  // Part 11d (D11d-10): the resource check and the two checks of D11d-8. A formed plan leaves out "Goal has no funded
+  // activity" (no budget exists yet); planChecks drops it for formed plans.
+  'plan.confirm': [
+    RULES.objectiveNoKpi.id, RULES.kpiNoOwner.id, RULES.kpiBaselineNotValidated.id, RULES.goalNoWhy.id, RULES.goalNoFundedActivity.id,
+    RULES.envelopeExceeded.id, RULES.riskUnaddressed.id, RULES.goalNoObjective.id,
+  ],
 };
 
 export interface GateCheck {
