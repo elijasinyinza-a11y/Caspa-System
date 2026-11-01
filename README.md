@@ -2,7 +2,8 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 1 November 2026, including the clarity decisions in section 20 and Conception in section 31) first.
+with decisions to 1 November 2026, including the clarity decisions in section 20, Conception in section 31 and
+Consultation and Confirmation in section 32) first. The data contract is v1.6.
 
 ## Run
 
@@ -32,7 +33,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
-    11c Consultation and Confirmation; 11d Composition; 11e Communication
+    11c Consultation and Confirmation — done (v0.13.0); 11d Composition; 11e Communication
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -45,7 +46,24 @@ Sample Community Health NGO (flat, July–June year, UGX, renamed terms), Sample
 the Executive of Sample Water Utility belongs to all four, so the organisation switcher reaches them.
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
-Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
+and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Strategy formation, part 11c: Consultation and Confirmation (v0.13.0)
+
+- BUILD-BRIEF section 32; Strategy Formation Specification v1.0 (F2, F3). Contract v1.6: `BaselineMeasure.ownerUnitId`,
+  the principal `round_audience`, and rows for consultation rounds, consultation inputs and compliance items.
+  539 tests (40 new, `src/rules/consultation.test.ts`, `src/data/access/consultation.test.ts`).
+- Try it on Sample Water Utility. As Strategy office, open Strategy and, under Formation › Stages, open Consultation and
+  Confirmation. In "Consultation room", plan a round for all staff and open it. As Employee (Mary Chileshe), Strategy
+  opens on "Have your say": send an idea. It shows as "Commercial", because Zone B has fewer than five people. As
+  Executive, the room lists what was sent; "Group what people sent" is the AI grouping. As Finance (Ruth Phiri),
+  "Baseline register" shows only Finance's measure: confirm it. As Strategy office, validate it, set an owner for the
+  staff measure, and try "Draft baselines" or the spreadsheet import. As Compliance (Lillian Siame), the
+  "Compliance register" opens first: review each item. As Finance, mark the items that affect Finance.
+- Code: `src/rules/consultation.ts`, `src/data/access/consultation.ts`, `src/routes/Consultation.tsx`, tabs in
+  `src/routes/Formation.tsx`, AI stub additions in `src/ai/index.ts`. Every change is an audit entry; every AI call is
+  an `AiTask`.
 
 ## Strategy formation, part 11b: Conception (v0.12.0)
 
@@ -236,6 +254,8 @@ Employee. In the NGO one person holds both Finance and HR, so its queue shows it
 
 ## Open items for Elijah
 
+- Part 11c choices and wording to confirm (BUILD-BRIEF section 32), and two points for 11d: 4Q themes in the
+  consultation room (no `Theme` permission row) and standards as source documents (no document kind).
 - Part 11b choices and wording to confirm (BUILD-BRIEF section 31): department heads' Strategy workspace, the
   Executive viewing but not accepting 4Q cards, the interview question, the sample document draft, flat organisations.
 - Slice 7 choices to confirm (BUILD-BRIEF section 24): the phone bottom bar, the "Consultant" development role, and
