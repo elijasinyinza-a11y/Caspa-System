@@ -455,8 +455,17 @@ function EditDialog({ item, page, fy, onClose }: { item: PlanItemView; page: Onb
   );
 }
 
-function mustText(m: PlanMust) {
-  return m.kind === 'period' ? O.checks.period : m.kind === 'no_goal' ? O.checks.noGoal : O.checks.aiPending(plural(m.count, 'aiHave'));
+/** What must be fixed before a plan is confirmed, for both doors (imported plans, and formed plans in part 11d). */
+export function mustText(m: PlanMust) {
+  const K = en.composition.checks;
+  switch (m.kind) {
+    case 'period': return O.checks.period;
+    case 'no_goal': return O.checks.noGoal;
+    case 'ai_pending': return O.checks.aiPending(plural(m.count, 'aiHave'));
+    case 'vision': return K.vision;
+    case 'compliance': return K.compliance(plural(m.count, 'openItem'));
+    case 'pending': return K.pending(plural(m.count, 'toDecide'));
+  }
 }
 
 function Checks({ page, onEdit, setNote }: { page: OnboardingPage; onEdit: (i: PlanItemView) => void; setNote: (m: string | null) => void }) {

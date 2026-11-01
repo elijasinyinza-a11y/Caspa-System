@@ -71,7 +71,46 @@ export interface AiService {
   draftBaselinesFromDocument(fileName: string): Promise<BaselineDraft>;
   /** Read a law, regulation, licence, policy or standard and draft its obligations, each tied to its page (F3). Never from general knowledge. */
   draftComplianceFromDocument(fileName: string): Promise<ComplianceDraft>;
+  /* Part 11d, Composition (F4). Every result is a draft or a suggestion; people decide. */
+  /** Group accepted 4Q cards into candidate themes. */
+  suggestThemes(orgId: string, cards: CardForAi[]): Promise<ThemeSuggestions>;
+  /** Suggest objectives for confirmed goals, each linked to cards that explain it. */
+  suggestObjectives(orgId: string, goals: { id: string; title: string; themeTitles: string[] }[], cards: CardForAi[]): Promise<ObjectiveSuggestions>;
+  /** Suggest a KPI for an objective, only where a matching measure is in the baseline register; targets are sample values for the owner to set. */
+  suggestKpi(orgId: string, objectiveTitle: string, measures: { id: string; name: string }[], years: number): Promise<KpiSuggestion | null>;
+  /** Draft decision-map rows from the critical failure factors an objective is linked to, each with a suggested 6P level. */
+  suggestDeficiencyRows(orgId: string, cards: CardForAi[]): Promise<RowSuggestions>;
+  /** Note objective titles that may not be measurable as worded. Suggestions only, never checks (D11d-8). */
+  reviewWording(titles: { id: string; title: string }[]): Promise<WordingNotes>;
 }
+
+/** A card as the AI is given it: its section and text only, never who raised it. */
+export interface CardForAi { id: string; cell: FourQCell; text: string }
+export interface ThemeSuggestions { label: "AI draft"; themes: { title: string; cardIds: string[]; perspective: PerspectiveSuggestion | null }[] }
+export interface ObjectiveSuggestions { label: "AI draft"; objectives: { goalId: string; title: string; cardIds: string[] }[] }
+export interface KpiSuggestion { label: "AI draft"; measureId: string; direction: "higher_is_better" | "lower_is_better"; targets: number[] }
+export interface RowSuggestions { label: "AI draft"; rows: { cardId: string; description: string; level: SixPLevelSuggestion }[] }
+export interface WordingNotes { label: "AI suggestion"; notes: { id: string; text: string }[] }
+type PerspectiveSuggestion = "customer" | "internal" | "innovation_learning" | "financial";
+type SixPLevelSuggestion = "principle" | "process" | "people" | "policy" | "procedures" | "practices";
+
+/**
+ * Sample wording for the stub's Composition suggestions, supplied by an organisation's sample data (approved by
+ * Elijah on 1 November 2026 for the demo organisation). Cards are matched by their text. Without a script, the stub
+ * falls back to a neutral grouping by 4Q section and suggests no objectives or KPIs.
+ */
+export interface CompositionScript {
+  themes: { title: string; cards: string[]; perspective: PerspectiveSuggestion }[];
+  objectives: { theme: string; title: string; cards: string[] }[];
+  kpis: { objective: string; measure: string; direction: "higher_is_better" | "lower_is_better"; targets: number[] }[];
+  rowLevels: { card: string; level: SixPLevelSuggestion }[];
+}
+const scripts = new Map<string, CompositionScript>();
+/** Registered by sample data only. */
+export const registerCompositionScript = (orgId: string, script: CompositionScript) => { scripts.set(orgId, script); };
+
+/** The words the stub treats as vague at the start of an objective with no number (the approved prototype's list). */
+const VAGUE_START = /^(improve|enhance|strengthen|promote|support)\b/i;
 
 /** Inputs grouped by what they share. Groups are labelled by the shared word, as a reading aid only. */
 export interface InputGroups {
@@ -232,6 +271,10 @@ export const SAMPLE_EXPLANATIONS: Record<string, string> = {
     "Progress is measured from the baseline, so an unchecked baseline makes every progress figure uncertain. Validating the baseline measure clears the check.",
   [RULES.goalNoWhy.id]:
     "The reason for this goal has not been recorded. Linking it to the 4Q entry that explains why it exists keeps the reasoning with the goal.",
+  [RULES.riskUnaddressed.id]:
+    "Critical failure factors and predicted risks on the 4Q board are the things the plan most needs to answer. This one is not linked to any goal or objective, so the plan does not yet say how it will be dealt with. Link it to the goal or objective that addresses it, or record why it is left aside.",
+  [RULES.goalNoObjective.id]:
+    "A goal becomes work only through its objectives. This goal has no confirmed objective yet, so nothing below it can be measured or funded. Adding an objective, and having the Executive confirm it, clears the check.",
   [RULES.envelopeExceeded.id]:
     "The indicative costs under this goal add up to more than the resources set aside for it. Reducing the costs, or revising the envelope, brings them back in line.",
 };
@@ -295,5 +338,48 @@ export const aiStub: AiService = {
   },
   async draftComplianceFromDocument() {
     return structuredClone(SAMPLE_COMPLIANCE_DRAFT);
+  },
+  async suggestThemes(orgId, cards) {
+    const script = scripts.get(orgId);
+    const byText = (texts: string[]) => cards.filter((c) => texts.includes(c.text)).map((c) => c.id);
+    if (script) return { label: "AI draft", themes: script.themes.map((t) => ({ title: t.title, cardIds: byText(t.cards), perspective: t.perspective })) };
+    // Neutral fallback: one theme per kind of 4Q section that has cards.
+    const kinds: [string, string[]][] = [
+      [en.composition.fallbackTheme.sustain, ["successes", "success_factors"]],
+      [en.composition.fallbackTheme.correct, ["failures", "failure_factors"]],
+      [en.composition.fallbackTheme.act, ["opportunities", "key_strategic_actions"]],
+      [en.composition.fallbackTheme.risks, ["risks", "risk_strategies"]],
+    ];
+    return {
+      label: "AI draft",
+      themes: kinds.map(([title, cols]) => ({ title, cardIds: cards.filter((c) => cols.includes(c.cell.column)).map((c) => c.id), perspective: null })).filter((t) => t.cardIds.length),
+    };
+  },
+  async suggestObjectives(orgId, goals, cards) {
+    const script = scripts.get(orgId);
+    if (!script) return { label: "AI draft", objectives: [] };
+    return {
+      label: "AI draft",
+      objectives: goals.flatMap((g) => script.objectives.filter((o) => g.themeTitles.includes(o.theme)).map((o) => ({
+        goalId: g.id, title: o.title, cardIds: cards.filter((c) => o.cards.includes(c.text)).map((c) => c.id),
+      }))),
+    };
+  },
+  async suggestKpi(orgId, objectiveTitle, measures, years) {
+    const k = scripts.get(orgId)?.kpis.find((x) => x.objective === objectiveTitle);
+    const m = k && measures.find((x) => x.name === k.measure);
+    if (!k || !m) return null;
+    return { label: "AI draft", measureId: m.id, direction: k.direction, targets: k.targets.slice(0, years) };
+  },
+  async suggestDeficiencyRows(orgId, cards) {
+    // Rows come only from critical failure factors (approved 1 November 2026): what is lacking, not a result.
+    const levels = scripts.get(orgId)?.rowLevels ?? [];
+    return {
+      label: "AI draft",
+      rows: cards.filter((c) => c.cell.column === "failure_factors").map((c) => ({ cardId: c.id, description: c.text, level: levels.find((l) => l.card === c.text)?.level ?? "process" })),
+    };
+  },
+  async reviewWording(titles) {
+    return { label: "AI suggestion", notes: titles.filter((t) => VAGUE_START.test(t.title.trim()) && !/\d/.test(t.title)).map((t) => ({ id: t.id, text: en.composition.wordingNote })) };
   },
 };

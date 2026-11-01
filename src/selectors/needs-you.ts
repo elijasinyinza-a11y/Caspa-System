@@ -8,9 +8,10 @@ import type { Store } from '../data/access/store';
 import type { Viewer } from '../data/access/viewer';
 import { blockersAt, computeFindings } from '../rules/integrity';
 import { rateContract } from '../rules/rating';
-import { sentBy } from '../rules/onboarding';
 import { escalated, formingPlan } from '../rules/formation';
 import { canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentState, entriesOf, filledCells, isLive, visionConfirmed } from '../rules/conception';
+import { composition, isDecided } from '../rules/composition';
+import { sentBy } from '../rules/onboarding';
 import { baselineOwnerPosition, baselinesOf, baselineState, complianceOf, currentRound, inAudience, inputsOf, isLiveBaseline } from '../rules/consultation';
 import { formatNumber } from './format';
 import { currentBudgetVersion } from '../rules/structure';
@@ -254,6 +255,27 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     if (started('confirmation') && v.roles.includes('compliance')) {
       const open = complianceOf(s, forming.id).filter((c) => c.outcome === null).length;
       if (open) add({ key: `compliance:review:${forming.id}`, kind: 'deadline', title: N.review(count(open, 'complianceItem')), detail: N.reviewDetail, due: forming.calendar?.planTargetOn ?? null, severity: null, as: null, link: strategy });
+    }
+  }
+
+  /* Composition (part 11d, BUILD-BRIEF section 34). */
+  if (forming && visionConfirmed(s, forming.id) && forming.status === 'draft') {
+    const N = en.composition.needs;
+    const strategy: FixTarget = { kind: 'workspace', w: 'strategy' };
+    const count = (n: number, k: string) => `${formatNumber(n)} ${n === 1 ? en.setup.plural[k]![0] : en.setup.plural[k]![1]}`;
+    const rec = composition(s, forming.id);
+    const open = forming.formation?.composition.status === 'open';
+    // The Strategy office accepts or removes suggested themes.
+    const themes = rec.themes.filter((t) => !isDecided(t.draft)).length;
+    if (themes && v.roles.includes('strategy_office')) add({ key: `composition:themes:${forming.id}`, kind: 'deadline', title: N.themes(count(themes, 'theme')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: strategy });
+    if (open && v.roles.includes('executive')) {
+      const items = [...rec.goals, ...rec.objectives, ...rec.kpis].filter((x) => !isDecided(x.draft)).length;
+      if (items) add({ key: `composition:confirm:${forming.id}`, kind: 'approval', title: N.confirmItems(count(items, 'item')), detail: forming.title, due: null, severity: null, as: 'executive', link: strategy });
+    }
+    // Owners of confirmed objectives with no KPI yet propose them (D11d-5).
+    if (open) {
+      const bare = rec.objectives.filter((o) => isDecided(o.draft) && mine(o.ownerPositionId) && !rec.kpis.some((k) => k.objectiveId === o.id)).length;
+      if (bare) add({ key: `composition:kpis:${forming.id}`, kind: 'deadline', title: N.addKpis(count(bare, 'objective')), detail: forming.title, due: null, severity: null, as: null, link: strategy });
     }
   }
 

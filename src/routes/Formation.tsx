@@ -13,6 +13,7 @@ import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, input, label, plural, primary } from './organisation/ui';
 import { Board, Documents, MyPart, VisionMission } from './Conception';
 import { Baselines, Compliance, Room } from './Consultation';
+import { Composer } from './Composition';
 
 const F = en.formation;
 const K = en.consultation;
@@ -28,8 +29,9 @@ export function Formation() {
   const room = repo.consultation.room();
   const bl = repo.consultation.baselines();
   const cp = repo.consultation.compliance();
+  const comp = repo.composition.page();
   // Part 11c: someone here only to have their say, or the compliance officer, opens on their own tab.
-  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision' | 'room' | 'baselines' | 'compliance'>(() =>
+  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision' | 'room' | 'baselines' | 'compliance' | 'composition'>(() =>
     cp?.canReview && !c?.seesAll ? 'compliance' : room?.canComment && !room.canRun && !c?.seesAll && !c?.myDepartments.length ? 'room' : 'formation');
   if (!f.plan) {
     return (
@@ -54,6 +56,9 @@ export function Formation() {
     ...(room ? [['room', room.canRun || c?.seesAll || c?.myDepartments.length ? K.tabs.room : K.tabs.say] as [typeof tab, string]] : []),
     ...(bl && (bl.rows.length || bl.canRun || bl.ownUnits.length || c?.seesAll) ? [['baselines', K.tabs.baselines] as [typeof tab, string]] : []),
     ...(cp && (cp.canAdd || cp.canReview || c?.seesAll || c?.myDepartments.length) ? [['compliance', K.tabs.compliance] as [typeof tab, string]] : []),
+    // Part 11d: once the vision is confirmed, for those who shape the plan (and owners of its objectives).
+    ...(comp && (comp.runs || c?.seesAll || c?.myDepartments.length || repo.viewer.roles.includes('finance') || comp.goals.some((g) => g.objectives.some((o) => o.canAddKpi)))
+      ? [['composition', en.composition.tab] as [typeof tab, string]] : []),
     ['calendar', F.tabs.calendar], ['sessions', F.tabs.sessions],
   ];
   return (
@@ -88,6 +93,7 @@ export function Formation() {
         {tab === 'room' && room && <Room r={room} />}
         {tab === 'baselines' && bl && <Baselines b={bl} />}
         {tab === 'compliance' && cp && <Compliance c={cp} />}
+        {tab === 'composition' && comp && <Composer c={comp} />}
       </div>
     </section>
   );
