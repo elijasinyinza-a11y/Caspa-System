@@ -9,6 +9,7 @@ import type { Viewer } from '../data/access/viewer';
 import { blockersAt, computeFindings } from '../rules/integrity';
 import { rateContract } from '../rules/rating';
 import { sentBy } from '../rules/onboarding';
+import { escalated } from '../rules/formation';
 import { currentBudgetVersion } from '../rules/structure';
 import { en } from '../strings/en';
 import type { FixTarget } from './integrity';
@@ -173,6 +174,19 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     if (d.completed || !plan?.calendar?.published || !d.ownerPositionIds.some(mine)) continue;
     if (!input.canView({ type: 'FormationDeadline', id: d.id })) continue;
     add({ key: `formation:${d.id}`, kind: 'deadline', title: d.label, detail: plan.title, due: d.dueOn, severity: null, as: null, link: { kind: 'workspace', w: 'strategy' } });
+  }
+
+  /* Formation (part 11a): the calendar preparer prepares and publishes the calendar. */
+  for (const p of s.plans.filter((x) => x.entryDoor === 'formed' && x.status === 'draft')) {
+    if (p.calendar?.preparerMembershipId === v.membershipId && !p.calendar.published) {
+      add({ key: `formation:prepare:${p.id}`, kind: 'deadline', title: en.formation.needs.prepare(p.title), detail: null, due: p.calendar.visionTargetOn, severity: null, as: null, link: { kind: 'workspace', w: 'strategy' } });
+    }
+  }
+  /* Overdue formation deadlines reach the owner's supervisor after the organisation's escalation days. */
+  for (const e of escalated(s, now)) {
+    if (!mine(e.supervisorPositionId)) continue;
+    const owner = s.positions.find((x) => x.id === e.ownerPositionId)?.title ?? '';
+    add({ key: `formation:escalated:${e.deadlineId}:${e.ownerPositionId}`, kind: 'deadline', title: en.formation.needs.escalated(e.label, owner), detail: null, due: e.dueOn, severity: null, as: 'supervisor', link: { kind: 'workspace', w: 'strategy' } });
   }
 
   /* Decision-log actions from held sessions, owned by the person's positions. */
