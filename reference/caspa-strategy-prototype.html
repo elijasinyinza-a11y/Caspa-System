@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ Strategy workspace prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84; --panel:#223D56; --navy2:#16283B; --side-fg:#C8D1DB; --side-muted:#AEB8C4; --line:#EDECEA; --track:#E8E6E0;
+  --st:#378ADD; --st-t:#1A5A9E; --st-l:#EBF3FC;
+  --ca:#7C5CBF; --ca-t:#4A2D8F; --ca-l:#F2EEF9;
+  --pl:#B85C38; --pl-t:#8A3E22; --pl-l:#FBEEE8;
+  --pf:#C2417A; --pf-t:#9B2C63; --pf-l:#FBEAF2;
+  --blk:#B42318; --blk-l:#FEF3F2; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy)}
+h2{font-size:18px;margin:0;color:var(--navy)}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px}
+.mark{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;border:0;background:transparent;color:var(--side-fg);cursor:pointer;width:100%;text-align:left;font-weight:500}
+.navbtn[aria-current="page"]{background:var(--panel);color:#fff}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;min-height:64px}
+.crumbs{flex:1 1 280px;color:var(--muted);font-size:13px}
+.crumbs b{color:var(--navy);font-weight:600}
+.pill{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:#fff;cursor:pointer;color:var(--text)}
+.count{min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.c-blk{background:var(--blk);color:#fff}.c-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:36px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:#fff;color:var(--text)}
+.content{padding:28px 32px 96px;max-width:1180px;width:100%;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-direction:column;gap:4px}
+.eyebrow{font-size:13px;font-weight:600}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.stat{font-size:30px;font-weight:700;color:var(--navy)}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.rowline{padding:10px 0;border-top:1px solid var(--line)}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.tab:disabled{opacity:.6;cursor:not-allowed}
+.btn:disabled{background:#EDECEA;border-color:#EDECEA;color:var(--muted);cursor:not-allowed}
+.tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-blk{background:var(--blk-l);color:var(--blk);border:1px solid var(--blk)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.t-st{background:var(--st-l);color:var(--st-t)}.t-ca{background:var(--ca-l);color:var(--ca-t)}.t-pl{background:var(--pl-l);color:var(--pl-t)}.t-pf{background:var(--pf-l);color:var(--pf-t)}
+.bar{height:8px;border-radius:999px;background:var(--track);overflow:hidden}.bar>i{display:block;height:8px;background:var(--navy)}
+.finding{border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.f-blk{background:var(--blk-l);border:1px solid var(--blk)}.f-adv{background:var(--adv-l);border:1px solid var(--adv-b)}.f-ok{background:var(--ok-l);border:1px solid var(--ok-b)}
+.flabel{font-size:12px;font-weight:700}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;color:var(--text)}
+.tab[aria-selected="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+.lineage{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:10px}
+.lineage button{border:0;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px}
+.lens{border-top:4px solid}
+.drawer-bg{position:fixed;inset:0;background:rgba(13,27,42,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:21;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px));overflow-y:auto;display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--border)}
+.ai{border:1px dashed var(--control);border-radius:8px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:6px}
+textarea,input[type=text],input[type=number]{width:100%;min-height:44px;padding:10px 12px;border-radius:8px;border:1px solid var(--control);background:#fff;color:var(--text)}
+label{font-weight:600;font-size:13px}
+.q{display:grid;grid-template-columns:minmax(0,1fr) 110px 170px;gap:16px;align-items:center}
+.ws{background:var(--navy);color:#fff;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.ws h2,.ws h3{color:#fff}
+.band{background:var(--navy2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.qcard{background:#fff;color:var(--text);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;border:2px solid #fff}
+.qcard.draft{border-color:var(--adv-b)}
+.empty{border:2px dashed var(--adv-b);border-radius:10px;padding:10px;font-size:12px;color:var(--adv-b)}
+.timeline{display:grid;grid-template-columns:110px repeat(16,minmax(34px,1fr));gap:4px;min-width:880px;align-items:center}
+.seg{min-height:32px;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:600;display:flex;align-items:center;border:1px solid}
+.bottomnav{display:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;z-index:30;max-width:90vw}
+@media (max-width:760px){
+  .side{display:none}
+  .content{padding:18px 16px 110px}
+  .grid2,.grid4,.cells{grid-template-columns:1fr}
+  .q{grid-template-columns:1fr}
+  .top{padding:10px 16px}
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);z-index:15;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .bottomnav button{flex:1;min-height:60px;border:0;background:#fff;color:var(--muted);font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer}
+  .bottomnav button[aria-current="page"]{color:var(--navy);font-weight:700}
+  h1{font-size:24px}
+}
+</style>
+<style>details summary::-webkit-details-marker{display:none} select:disabled,input:disabled{background:#EDECEA}</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* ═════════ Helpers ═════════ */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n.toLocaleString('en-GB');
+const halfUp = x => Math.floor(x + 0.5);
+const pct = x => x == null || !isFinite(x) ? 'No data' : halfUp(x * 100) + '%';
+const sum = a => a.reduce((s, x) => s + x, 0);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TODAY = '2026-10-17';
+const dTxt = iso => { if (!iso) return 'Not set'; const [y, m, d] = iso.split('-').map(Number); return d + ' ' + MONTHS[m - 1] + ' ' + y; };
+const dShort = iso => { if (!iso) return 'Not set'; const [, m, d] = iso.split('-').map(Number); return d + ' ' + MONTHS[m - 1].slice(0, 3); };
+const uid = (() => { let n = 100; return p => p + (++n); })();
+const bar = p => `<div class="bar" aria-hidden="true"><i style="width:${halfUp(Math.max(0, Math.min(1, p || 0)) * 100)}%"></i></div>`;
+const tag = (cls, t) => `<span class="tag ${cls}">${esc(t)}</span>`;
+const stTag = st => st === 'accepted' ? tag('t-info', 'Accepted') : st === 'ai_draft' ? tag('t-adv', 'AI draft, needs review') : st === 'proposed' ? tag('t-st', 'Proposed by department') : st === 'rejected' ? tag('t-info', 'Rejected') : '';
+const finding = (kind, text, extra = '') => {
+  const K = { block: ['f-blk', 'var(--blk)', 'Blocks plan confirmation'], adv: ['f-adv', 'var(--adv)', 'Advisory, rules engine'], word: ['', 'var(--navy)', 'Wording, AI review'], ok: ['f-ok', 'var(--ok)', 'Covered'] }[kind];
+  return `<div class="finding ${K[0]}" ${kind === 'word' ? 'style="background:var(--info-l)"' : ''}><span class="flabel" style="color:${K[1]}">${K[2]}</span><span>${text}</span>${extra}</div>`;
+};
+
+/* ═════════ People in this prototype ═════════ */
+const ROLES = {
+  exec:     { person: 'Managing Director', role: 'Executive' },
+  strategy: { person: 'Head of Strategy', role: 'Strategy office, process owner' },
+  officer:  { person: 'Strategy Officer', role: 'Strategy office staff' },
+  dept:     { person: 'Head of Commercial', role: 'Department head' },
+  finance:  { person: 'Head of Finance', role: 'Finance' },
+  comp:     { person: 'Compliance Officer', role: 'Compliance' },
+  fac:      { person: 'External facilitator', role: 'Facilitator, cannot confirm' },
+  staff:    { person: 'Meter Reader, Zone B', role: 'Staff' }
+};
+const OWNER_ROLE = { 'Managing Director': 'exec', 'Head of Strategy': 'strategy', 'Strategy Officer': 'officer', 'Head of Commercial': 'dept', 'Head of Finance': 'finance', 'Compliance Officer': 'comp', 'External facilitator': 'fac' };
+const PREPARERS = ['Head of Strategy', 'Strategy Officer', 'External facilitator'];
+const isPreparer = () => S.P && OWNER_ROLE[S.P.calendar.preparer] === S.role;
+const TABS = {
+  home: 'Plan home', calendar: 'Formation calendar', mine: "My department's part", fourq: '4Q board', vision: 'Vision and mission', consult: 'Consultation', baselines: 'Baseline register',
+  compliance: 'Compliance register', composer: 'Plan composer', document: 'Plan document', comms: 'Communication', workshops: 'Workshops', docs: 'Source documents', say: 'Have your say'
+};
+const ROLE_TABS = {
+  exec: ['home', 'calendar', 'fourq', 'vision', 'consult', 'compliance', 'composer', 'document', 'comms', 'workshops'],
+  strategy: ['home', 'calendar', 'docs', 'fourq', 'vision', 'consult', 'baselines', 'compliance', 'composer', 'document', 'comms', 'workshops'],
+  officer: ['home', 'calendar', 'docs', 'fourq', 'workshops'],
+  dept: ['mine', 'fourq', 'consult', 'baselines', 'composer', 'comms'],
+  finance: ['home', 'baselines', 'composer'],
+  comp: ['compliance'],
+  fac: ['home', 'calendar', 'fourq', 'composer', 'comms', 'workshops'],
+  staff: ['say']
+};
+const IMPORT_TABS = { officer: ['home', 'docs'], exec: ['home', 'composer', 'document'], strategy: ['home', 'docs', 'composer', 'document', 'compliance'], dept: ['composer'], finance: ['composer'], comp: ['compliance'], fac: ['composer'], staff: ['say'] };
+
+/* ═════════ Framework structure (book: Table 2, Ch. 7) ═════════ */
+const CELLS = [
+  ['retraction', 'successes', 'Past successes'], ['retraction', 'success_factors', 'Critical success factors'], ['retraction', 'failures', 'Past failures'], ['retraction', 'failure_factors', 'Critical failure factors'],
+  ['repositioning', 'successes', 'Present successes'], ['repositioning', 'success_factors', 'Critical success factors'], ['repositioning', 'failures', 'Present failures'], ['repositioning', 'failure_factors', 'Critical failure factors'],
+  ['projection', 'opportunities', 'Predicted future opportunities'], ['projection', 'actions', 'Key strategic actions'], ['projection', 'risks', 'Predicted future risks'], ['projection', 'risk_strategies', 'Risk management strategies']
+].map(([band, col, title]) => ({ band, col, title, key: band + '.' + col }));
+const BAND = { retraction: ['Retraction', 'the 2022–2026 plan'], repositioning: ['Repositioning', 'where we stand now'], projection: ['Projection', 'the next five years'] };
+const cellTitle = e => BAND[e.band][0] + ', ' + CELLS.find(c => c.band === e.band && c.col === e.col).title;
+const SIXP = { principle: 'Principle', process: 'Process', people: 'People', policy: 'Policy', procedures: 'Procedures', practices: 'Practices' };
+const STAGES = [['conception', 'Conception'], ['consultation', 'Consultation'], ['confirmation', 'Confirmation'], ['composition', 'Composition'], ['communication', 'Communication']];
+const DEPTS = ['Operations', 'Commercial', 'Finance', 'Human Resources', 'Sanitation', 'Engineering', 'Audit'];
+const PERSPECTIVES = ['Financial', 'Customer', 'Internal', 'Innovation and learning'];
+
+const PACKS = {
+  standard: { l: 'Standard', note: 'Six sessions, in person.', s: [['Kick-off', ['kickoff'], 'In person'], ['4Q review', ['four_q_review'], 'In person'], ['Vision session', ['vision'], 'In person'], ['Composition workshop', ['composition'], 'In person'], ['Validation session', ['validation'], 'In person'], ['Launch', ['launch'], 'In person']] },
+  lean: { l: 'Lean', note: 'Two in-person days; kick-off and launch online.', s: [['Kick-off', ['kickoff'], 'Online'], ['Day 1: 4Q review and vision', ['four_q_review', 'vision'], 'In person'], ['Day 2: composition and validation', ['composition', 'validation'], 'In person'], ['Launch', ['launch'], 'Online']] },
+  remote: { l: 'Remote', note: 'All online; 4Q review and composition as asynchronous reviews.', s: [['Kick-off', ['kickoff'], 'Online'], ['4Q review', ['four_q_review'], 'Asynchronous review'], ['Vision session', ['vision'], 'Online'], ['Composition', ['composition'], 'Asynchronous review'], ['Validation session', ['validation'], 'Online'], ['Launch', ['launch'], 'Online']] }
+};
+const PURPOSES = { kickoff: 'Kick-off', four_q_review: '4Q review', vision: 'Vision', composition: 'Composition', validation: 'Validation', launch: 'Launch' };
+const FORMATS = ['In person', 'Online', 'Hybrid', 'Asynchronous review'];
+
+/* ═════════ Seed: what CASPA™ prepares when a plan is started ═════════ */
+function seedPlan(door) {
+  const docs = [
+    { id: 'D1', title: 'Strategic Plan 2022–2026', kind: 'Strategic plan', pages: 64 },
+    { id: 'D2', title: 'Annual Report 2025', kind: 'Annual report', pages: 48 },
+    { id: 'D3', title: 'Performance Report 2025', kind: 'Performance report', pages: 30 },
+    { id: 'D4', title: 'Water Supply Licence', kind: 'Licence', pages: 18 },
+    { id: 'D5', title: 'Regulatory notice: tariff review 2028', kind: 'Regulatory', pages: 6 }
+  ];
+  const P = {
+    door, title: 'Strategic Plan 2027–2031', period: '2027–2031', owner: 'Head of Strategy', pkg: 'standard', docs,
+    stages: { conception: 'open', consultation: 'not_started', confirmation: 'not_started', composition: 'not_started', communication: 'not_started' },
+    fourQ: [], interview: { done: false }, deptSubmitted: Object.fromEntries(DEPTS.map(d => [d, d !== 'Commercial'])),
+    vision: '', mission: '', visionConfirmed: false,
+    consultation: { status: 'not_started', inputs: [], meetings: [] },
+    baselines: [
+      { id: 'b1', name: 'Non-revenue water', unit: '%', value: 47, src: 'Billing export, September 2026', owner: 'Commercial', confirmed: false, validated: false },
+      { id: 'b2', name: 'Supply hours per day', unit: ' h', value: 16, src: 'Operations supply log', owner: 'Operations', confirmed: true, validated: false },
+      { id: 'b3', name: 'Collection efficiency', unit: '%', value: 78, src: 'Finance revenue report, Q3 2026', owner: 'Finance', confirmed: false, validated: false },
+      { id: 'b4', name: 'Sanitation coverage', unit: '%', value: 31, src: 'Performance Report 2025, p. 22', owner: 'Sanitation', confirmed: true, validated: false },
+      { id: 'b5', name: 'Metered connections', unit: '%', value: 81, src: 'Annual Report 2025, p. 9', owner: 'Commercial', confirmed: false, validated: false },
+      { id: 'b6', name: 'Staff with signed contracts', unit: '%', value: 85, src: 'HR records', owner: 'Human Resources', confirmed: true, validated: false }
+    ],
+    compliance: [
+      { id: 'c1', title: 'Report service hours to the regulator every quarter', src: 'Water Supply Licence, p. 3', ai: true, outcome: null },
+      { id: 'c2', title: 'Maintain drinking water quality to the national standard', src: 'Water Supply Licence, p. 5', ai: true, outcome: null },
+      { id: 'c3', title: 'Support tariff applications with a cost-of-service study', src: 'Water Supply Licence, p. 7', ai: true, outcome: null },
+      { id: 'c4', title: 'Keep an up-to-date asset register', src: 'Water Supply Licence, p. 12', ai: true, outcome: null },
+      { id: 'c5', title: 'Tariff review applications open in 2028', src: 'Regulatory notice, p. 2', ai: true, outcome: null },
+      { id: 'c6', title: 'Public finance management rules', src: 'Added by Compliance Officer', ai: false, outcome: null }
+    ],
+    themes: [], goals: [], envelopes: {}, comms: {}, boardRef: '', planConfirmed: false, docEdited: false,
+    workshops: [],
+    calendar: { preparer: 'Head of Strategy', published: false, publishedOn: null, stages: Object.fromEntries(STAGES.map(x => [x[0], { start: '', end: '' }])), gates: { vision: '', plan: '' }, deadlines: [] }
+  };
+  if (door === 'form') {
+    P.fourQ = [
+      q('r1', 'retraction', 'successes', 'Metered connections rose from 58% to 81%', ['Commercial'], 'Annual Report 2025, p. 9'),
+      q('r2', 'retraction', 'success_factors', 'Dedicated metering project team', ['Operations'], 'Annual Report 2025, p. 11'),
+      q('r3', 'retraction', 'failures', 'Sanitation coverage 31% against a 45% target', ['Sanitation'], 'Performance Report 2025, p. 22'),
+      q('r4', 'retraction', 'failure_factors', 'No funded sanitation activities in annual budgets', ['Finance'], 'Live CASPA™ data: budget 2026'),
+      q('p1', 'repositioning', 'successes', 'Supply hours up from 14 to 16 per day', ['Operations'], 'Live CASPA™ data: KPI supply hours'),
+      q('p2', 'repositioning', 'success_factors', 'Weekly zonal supply schedules published', ['Operations'], 'Annual Report 2025, p. 14'),
+      q('p3', 'repositioning', 'failures', 'Non-revenue water at 47% against a 40% target', ['Commercial'], 'Live CASPA™ data: KPI K1.2.1'),
+      q('p4', 'repositioning', 'failures', 'High water losses in the distribution network', ['Operations'], 'Performance Report 2025, p. 8'),
+      q('j1', 'projection', 'opportunities', "Regulator's tariff review window in 2028", ['Finance'], 'Regulatory notice, p. 3'),
+      q('j2', 'projection', 'actions', 'Cost-of-service study before the tariff application', ['Finance'], 'Regulatory notice, p. 4'),
+      q('j3', 'projection', 'risks', 'Drought reducing raw water yield', ['Operations'], 'Performance Report 2025, p. 27'),
+      q('j4', 'projection', 'risk_strategies', 'Develop a second borehole field', ['Engineering'], 'Strategic Plan 2022–2026, p. 41')
+    ];
+  } else {
+    P.stages = null;
+    P.goals = [
+      goal('G1', 'Improve financial sustainability', 'Financial', 'ai_draft', 'Strategic Plan 2022–2026, p. 18'),
+      goal('G2', 'Provide reliable water supply', 'Customer', 'ai_draft', 'Strategic Plan 2022–2026, p. 22'),
+      goal('G3', 'Expand access to sanitation', 'Customer', 'ai_draft', 'Strategic Plan 2022–2026, p. 26'),
+      goal('G4', 'Strengthen institutional capacity', 'Innovation and learning', 'ai_draft', 'Strategic Plan 2022–2026, p. 30')
+    ];
+  }
+  return P;
+}
+function q(id, band, col, text, units, src, st = 'ai_draft') { return { id, band, col, text, units, src, st, mergedInto: null }; }
+function goal(id, title, perspective, st, src) { return { id, title, perspective, st, src: src || null, themeId: null, objs: [] }; }
+function applyPackage(P, k) {
+  const covered = new Set(P.workshops.flatMap(w => w.purposes));
+  PACKS[k].s.filter(s => !s[1].some(p => covered.has(p))).forEach(s => P.workshops.push({ id: uid('w'), title: s[0], purposes: s[1], format: s[2], date: '', status: 'planned', log: [] }));
+  P.pkg = k;
+}
+const byDate = (a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1;
+
+/* ═════════ Rules engine (pure, deterministic) ═════════ */
+const live = P => P.fourQ.filter(e => !e.mergedInto && e.st !== 'rejected');
+const R = {
+  filledCells: P => CELLS.filter(c => live(P).some(e => e.band === c.band && e.col === c.col && e.st === 'accepted')).length,
+  visionReady: P => R.filledCells(P) === CELLS.length,
+  duplicates: P => { const e = live(P); const a = e.find(x => x.id === 'p3'), b = e.find(x => x.id === 'p4' && !x.notDup); return a && b ? [[a, b]] : []; },
+  acceptedGoals: P => P.goals.filter(g => g.st === 'accepted'),
+  acceptedObjs: P => R.acceptedGoals(P).flatMap(g => g.objs.filter(o => o.st === 'accepted').map(o => ({ ...o, goal: g }))),
+  vague: t => /^(improve|enhance|strengthen|promote|support)\b/i.test(t.trim()) && !/\d/.test(t),
+  kpiWrongSide: k => { const last = k.targets[k.targets.length - 1]; return k.dir === 'lower' ? last >= k.baseline : last <= k.baseline; },
+  confirmReqs: P => {
+    const reqs = [];
+    if (P.door === 'form') reqs.push(['Vision confirmed by leadership', P.visionConfirmed]);
+    reqs.push(['Every compliance item reviewed', P.compliance.every(c => c.outcome)]);
+    reqs.push(['At least one accepted goal', R.acceptedGoals(P).length > 0]);
+    return reqs;
+  },
+  checks: P => {
+    const out = { adv: [], word: [], ok: [] };
+    const objs = R.acceptedObjs(P);
+    const linked = new Set(objs.flatMap(o => o.links));
+    if (P.door === 'form') {
+      live(P).filter(e => e.st === 'accepted' && (e.col === 'failure_factors' || e.col === 'risks')).forEach(e => {
+        if (linked.has(e.id)) out.ok.push(`${cellTitle(e)} “${esc(e.text)}” is addressed.`);
+        else out.adv.push(`${cellTitle(e)} “${esc(e.text)}” is not addressed by any accepted objective.`);
+      });
+    }
+    R.acceptedGoals(P).forEach(g => { if (!g.objs.some(o => o.st === 'accepted')) out.adv.push(`Goal “${esc(g.title)}” has no accepted objective.`); });
+    objs.forEach(o => {
+      if (!o.kpis.length) out.adv.push(`Objective “${esc(o.title)}” has no KPI.`);
+      o.kpis.forEach(k => {
+        const b = P.baselines.find(x => x.id === k.baselineId);
+        if (!b || !b.validated) out.adv.push(`KPI “${esc(k.name)}” uses a baseline that is not yet validated.`);
+        if (b && R.kpiWrongSide({ ...k, baseline: b.value })) out.adv.push(`KPI “${esc(k.name)}”: the final target is on the wrong side of the baseline. This will block cascade publication.`);
+      });
+      if (R.vague(o.title)) out.word.push(`“${esc(o.title)}” may not be measurable as worded. Consider naming the measure.`);
+    });
+    R.acceptedGoals(P).forEach(g => {
+      const env = P.envelopes[g.id], cost = sum(g.objs.filter(o => o.st === 'accepted').map(o => o.cost || 0));
+      if (env != null && cost > env) out.adv.push(`Goal “${esc(g.title)}”: indicative costs (ZMW ${fmt(cost)}) exceed Finance's envelope (ZMW ${fmt(env)}).`);
+    });
+    const covered = new Set(P.workshops.flatMap(w => w.purposes));
+    if (P.door === 'form') Object.keys(PURPOSES).forEach(p => { if (!covered.has(p)) out.adv.push(`No session is planned for “${PURPOSES[p]}”. This never blocks; the process owner decides.`); });
+    if (P.door === 'form' && !P.calendar.published) out.adv.push('The formation calendar has not been published yet, so nobody has due dates.');
+    return out;
+  }
+};
+
+/* ═════════ What each person needs to do (computed) ═════════ */
+function needs(role) {
+  const P = S.P, out = [];
+  if (!P) { if (role === 'exec') out.push(['Start the 2027–2031 strategic plan', 'The current plan ends on 31 December 2026.', 'home']); return out; }
+  const f = P.door === 'form';
+  P.workshops.forEach(w => w.log.forEach(l => { if (!l.done && OWNER_ROLE[l.owner] === role) out.push([l.action, 'From the decision log of ' + w.title + '. Due ' + l.due + '.', 'workshops']); }));
+  if (f && OWNER_ROLE[P.calendar.preparer] === role && !P.calendar.published) out.push(['Prepare and publish the formation calendar', 'You were assigned as the calendar preparer. Nobody has due dates until it is published.', 'calendar']);
+  if (f && P.calendar.published) P.calendar.deadlines.forEach(dl => { if (dl.owners.some(o => OWNER_ROLE[o] === role || (o === 'All department heads' && role === 'dept'))) out.push([dl.label, 'Due ' + dTxt(dl.due) + (dl.due < TODAY ? ', overdue' : '') + '. From the formation calendar.', 'calendar']); });
+  if (role === 'exec') {
+    if (f && !P.visionConfirmed) out.push([R.visionReady(P) ? 'Write and confirm the vision' : 'Vision session: waiting for the 4Q board', R.filledCells(P) + ' of 12 sections have an accepted entry.', R.visionReady(P) ? 'vision' : 'fourq']);
+    const props = P.goals.flatMap(g => g.objs.filter(o => o.st === 'proposed' || o.st === 'ai_draft')).length;
+    if (props) out.push(['Review ' + props + ' proposed objectives', 'Accept or reject them in the composer.', 'composer']);
+    if (P.goals.some(g => g.st === 'ai_draft')) out.push(['Confirm the goals extracted from your existing plan', 'AI drafts from the uploaded plan.', 'composer']);
+    if (!P.planConfirmed && R.confirmReqs(P).every(r => r[1])) out.push(['Confirm the plan', 'All requirements are met.', 'composer']);
+  }
+  if (role === 'strategy') {
+    const drafts = live(P).filter(e => e.st === 'ai_draft').length;
+    if (f && drafts) out.push(['Curate ' + drafts + ' AI-drafted 4Q cards', 'Accept, edit or reject; merge duplicates.', 'fourq']);
+    if (f && R.duplicates(P).length) out.push(['Possible duplicate cards to merge', 'Suggested by the AI; you decide.', 'fourq']);
+    const nv = P.baselines.filter(b => b.confirmed && !b.validated).length;
+    if (f && nv) out.push(['Validate ' + nv + ' confirmed baselines', 'Data owners have confirmed the values.', 'baselines']);
+    const next = f && STAGES.find(s => P.stages[s[0]] === 'not_started');
+    if (next) out.push(['Open the ' + next[1] + ' stage when ready', P.calendar.stages[next[0]].start ? 'Planned to start ' + dTxt(P.calendar.stages[next[0]].start) + '.' : 'No date set in the calendar yet.', 'home']);
+  }
+  if (role === 'dept' && f) {
+    if (!P.interview.done) out.push(['Answer your 4Q interview', 'About 10 minutes. The AI drafts cards from your answers.', 'mine']);
+    else if (!P.deptSubmitted.Commercial) out.push(["Check and submit Commercial's 4Q cards", 'Then the strategy office consolidates.', 'mine']);
+    if (P.stages.consultation !== 'not_started') P.baselines.filter(b => b.owner === 'Commercial' && !b.confirmed).forEach(b => out.push(['Confirm the baseline for ' + b.name, 'Extracted from: ' + b.src + '.', 'baselines']));
+    if (P.stages.composition !== 'not_started' && R.acceptedGoals(P).length && !P.goals.some(g => g.objs.some(o => o.by === 'Head of Commercial'))) out.push(['Propose objectives for Commercial', 'Under the confirmed goals.', 'composer']);
+  }
+  if (role === 'finance') {
+    if (f && P.stages.consultation !== 'not_started') P.baselines.filter(b => b.owner === 'Finance' && !b.confirmed).forEach(b => out.push(['Confirm the baseline for ' + b.name, 'Extracted from: ' + b.src + '.', 'baselines']));
+    if (R.acceptedGoals(P).some(g => P.envelopes[g.id] == null)) out.push(['Enter indicative resource envelopes', 'One per goal, so objectives match resources.', 'composer']);
+  }
+  if (role === 'comp') { const n = P.compliance.filter(c => !c.outcome).length; if (n && (!f || P.stages.confirmation !== 'not_started')) out.push(['Review ' + n + ' compliance items', 'AI extracted them from uploaded documents only.', 'compliance']); }
+  if (role === 'staff' && f && P.consultation.status === 'open') out.push(['Have your say on the 2027–2031 plan', 'Consultation is open.', 'say']);
+  return out;
+}
+
+/* ═════════ State ═════════ */
+const S = { role: 'exec', tab: 'home', P: null, ui: { sel: null, focus: 'all', ws: false, docOpen: false }, toast: null };
+const can = (...roles) => roles.includes(S.role);
+
+/* ═════════ Views ═════════ */
+function viewStart() {
+  if (!can('exec')) return `<section class="card"><h2>No plan in formation</h2><p class="muted">The Managing Director starts a new plan. Switch to the Managing Director in “View as” to begin.</p></section>`;
+  return `<div class="head"><span class="eyebrow" style="color:var(--st-t)">Strategy workspace</span><h1>Start the 2027–2031 strategic plan</h1><p class="muted">The 2022–2026 plan ends on 31 December 2026. It keeps running in Cascade, Plan and Performance while the new one is formed.</p></div>
+  <section class="card"><h2>Plan setup</h2><div class="grid2">
+    <div><label for="period">Plan period</label><input type="text" id="period" value="2027–2031"></div>
+    <div><label for="owner">Process owner</label><select id="owner" style="width:100%;min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff"><option>Head of Strategy</option><option>Managing Director</option></select></div>
+    <div><label for="preparer">Calendar prepared by</label><select id="preparer" style="width:100%;min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff">${PREPARERS.map(x => `<option>${x}</option>`).join('')}</select><span class="small muted">The Head of Strategy, a staff member they assign, or the consultant.</span></div></div>
+    <p class="small muted">Leadership and all seven department heads are invited automatically from their positions. Staff join at Consultation. A facilitator is optional.</p>
+    <div><h3>Source documents to upload</h3>${['Strategic Plan 2022–2026', 'Annual Report 2025', 'Performance Report 2025', 'Water Supply Licence', 'Regulatory notice: tariff review 2028'].map(d => `<div class="row rowline"><span>${d}</span>${tag('t-ok', 'Uploaded')}</div>`).join('')}</div></section>
+  <h2>Choose a door</h2><div class="grid2">
+    <section class="card lens" style="border-top-color:var(--st)"><h3 style="color:var(--st-t)">Form a new strategy</h3><p>Work through Conception, Consultation, Confirmation, Composition and Communication. Leadership conceives and confirms the vision.</p><div><button class="btn btn-primary" data-act="start" data-door="form">Start formation</button></div></section>
+    <section class="card lens" style="border-top-color:var(--ca)"><h3 style="color:var(--ca-t)">Bring an existing plan</h3><p>The AI extracts the goals from the uploaded plan for leadership to confirm. You go straight to the composer.</p><div><button class="btn" data-act="start" data-door="import">Import a plan</button></div></section></div>`;
+}
+
+function viewHome() {
+  const P = S.P;
+  if (P.door === 'import') {
+    const reqs = R.confirmReqs(P);
+    return `<section class="card"><h2>Imported plan</h2><p>${R.acceptedGoals(P).length} of ${P.goals.length} extracted goals accepted. Vision, mission, objectives and KPIs are optional for imported plans; missing ones raise advisory flags.</p>
+    ${reqs.map(r => `<div class="row rowline"><span>${r[0]}</span>${r[1] ? tag('t-ok', 'Met') : tag('t-blk', 'Not yet')}</div>`).join('')}<div><button class="btn btn-primary" data-act="tab" data-tab="composer">Open the composer</button></div></section>`;
+  }
+  const C = P.calendar;
+  const ready = [
+    ['Departments that submitted 4Q entries', Object.values(P.deptSubmitted).filter(Boolean).length, DEPTS.length],
+    ['4Q sections with an accepted entry', R.filledCells(P), CELLS.length],
+    ['Baselines validated', P.baselines.filter(b => b.validated).length, P.baselines.length],
+    ['Compliance items reviewed', P.compliance.filter(c => c.outcome).length, P.compliance.length],
+    ['Consultation inputs received', P.consultation.inputs.length, null]
+  ];
+  const canRun = can('strategy');
+  const agenda = calendarItems(P).filter(i => i.date >= TODAY).slice(0, 6);
+  return `<section class="card"><div class="row"><h2>Formation calendar</h2>${C.published ? tag('t-ok', 'Published ' + dTxt(C.publishedOn)) : tag('t-adv', 'Not published')}</div>
+    ${C.published ? `<span class="small muted">Prepared by ${esc(C.preparer)}. Coming up:</span>${agenda.map(i => `<div class="row rowline"><span><b>${esc(i.label)}</b> <span class="small muted">${esc(i.kind)}</span></span><span class="num">${dTxt(i.date)}</span></div>`).join('') || '<p class="muted">Nothing upcoming.</p>'}`
+      : `<p class="muted">${esc(C.preparer)} prepares the calendar: stage dates, sessions, deadlines and target dates for the two gates. Nobody receives due dates until it is published.</p>`}
+    <div><button class="btn" data-act="tab" data-tab="calendar">${isPreparer() ? (C.published ? 'Edit calendar' : 'Prepare the calendar') : 'View calendar'}</button></div></section>
+  <section class="card"><h2>Stages</h2><p class="small muted">The process owner opens and closes stages when the work is ready. Stages may overlap; only the two gates are enforced.</p>
+    ${STAGES.map(x => { const st = P.stages[x[0]], cd = C.stages[x[0]]; return `<div class="row rowline"><span><b>${x[1]}</b> <span class="small muted">${cd.start ? dShort(cd.start) + ' to ' + dShort(cd.end) : 'No dates set'}</span></span><span style="display:flex;gap:8px;align-items:center">${st === 'complete' ? tag('t-ok', 'Complete') : st === 'open' ? tag('t-adv', 'Open') : tag('t-info', 'Not started')}${canRun && st === 'not_started' ? `<button class="btn btn-quiet" data-act="stage" data-s="${x[0]}" data-to="open">Open</button>` : ''}${canRun && st === 'open' ? `<button class="btn btn-quiet" data-act="stage" data-s="${x[0]}" data-to="complete">Mark complete</button>` : ''}</span></div>`; }).join('')}
+    <div class="row rowline"><span><b>Vision gate</b> <span class="small muted">target ${dShort(C.gates.vision)}</span></span>${P.visionConfirmed ? tag('t-ok', 'Passed') : tag('t-info', 'Not yet')}</div>
+    <div class="row rowline"><span><b>Plan confirmation gate</b> <span class="small muted">target ${dShort(C.gates.plan)}</span></span>${P.planConfirmed ? tag('t-ok', 'Passed') : tag('t-info', 'Not yet')}</div></section>
+  <div class="grid2"><section class="card"><h2>Readiness</h2>${ready.map(x => `<div><div class="row"><span>${x[0]}</span><span class="num">${x[1]}${x[2] ? ' of ' + x[2] : ''}</span></div>${x[2] ? bar(x[1] / x[2]) : ''}</div>`).join('')}</section>
+  <section class="card"><h2>Departments</h2>${DEPTS.map(d => `<div class="row rowline"><span>${d}</span>${P.deptSubmitted[d] ? tag('t-ok', '4Q submitted') : tag('t-adv', 'Not yet submitted')}</div>`).join('')}</section></div>`;
+}
+
+function calendarItems(P) {
+  const C = P.calendar, items = [];
+  STAGES.forEach(x => { const c = C.stages[x[0]]; if (c.start) items.push({ date: c.start, label: x[1] + ' opens', kind: 'Stage' }); if (c.end) items.push({ date: c.end, label: x[1] + ' closes', kind: 'Stage' }); });
+  P.workshops.forEach(w => { if (w.date) items.push({ date: w.date, label: w.title, kind: 'Session, ' + w.format.toLowerCase() }); });
+  C.deadlines.forEach(d => { if (d.due) items.push({ date: d.due, label: d.label, kind: 'Deadline, ' + d.owners.join(', ') }); });
+  if (C.gates.vision) items.push({ date: C.gates.vision, label: 'Vision confirmation, target', kind: 'Gate' });
+  if (C.gates.plan) items.push({ date: C.gates.plan, label: 'Plan confirmation, target', kind: 'Gate' });
+  return items.sort((a, b) => a.date < b.date ? -1 : 1);
+}
+
+function viewCalendar() {
+  const P = S.P, C = P.calendar, ed = isPreparer() && !P.planConfirmed;
+  const di = (id, v) => `<input type="date" id="${id}" value="${v || ''}" ${ed ? '' : 'disabled'} style="max-width:180px">`;
+  const items = calendarItems(P);
+  const months = [...new Set(items.map(i => i.date.slice(0, 7)))];
+  return `<div class="row"><div class="head"><h2>Formation calendar</h2><p class="muted">Prepared by ${esc(C.preparer)}. ${ed ? 'You can edit it; changes reach participants when you publish.' : 'View only. The preparer edits it.'}</p></div>${ed ? `<button class="btn btn-primary" data-act="publishCal">${C.published ? 'Publish changes' : 'Publish to participants'}</button>` : ''}</div>
+  <div class="grid2" style="align-items:start"><div style="display:flex;flex-direction:column;gap:14px">
+  <section class="card"><h3>Stage dates</h3>${STAGES.map(x => `<div class="row rowline"><b>${x[1]}</b><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${di('cs-' + x[0], C.stages[x[0]].start)}<span class="small muted">to</span>${di('ce-' + x[0], C.stages[x[0]].end)}</span></div>`).join('')}</section>
+  <section class="card"><h3>Gate target dates</h3><p class="small muted">Targets only. A gate passes when its requirements are met, whatever the date.</p>
+    <div class="row rowline"><b>Vision confirmation</b>${di('g-vision', C.gates.vision)}</div><div class="row rowline"><b>Plan confirmation</b>${di('g-plan', C.gates.plan)}</div></section>
+  <section class="card"><h3>Deadlines</h3>${C.deadlines.map(d => `<div class="row rowline"><span><b>${esc(d.label)}</b><div class="small muted">${esc(d.owners.join(', '))}</div></span><span style="display:flex;gap:8px;align-items:center"><span class="num">${dTxt(d.due)}</span>${ed ? `<button class="btn btn-quiet" style="min-height:36px" data-act="dropDl" data-id="${d.id}">Remove</button>` : ''}</span></div>`).join('') || '<p class="muted">No deadlines yet.</p>'}
+    ${ed ? `<div class="grid2"><input type="text" id="dl-label" aria-label="Deadline" placeholder="e.g. Submit department 4Q entries"><select id="dl-owner" aria-label="Owner" style="min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff"><option>All department heads</option>${Object.keys(OWNER_ROLE).map(o => `<option>${o}</option>`).join('')}</select>${di('dl-due', '')}<button class="btn" data-act="addDl">Add deadline</button></div><span class="small muted">Deadlines appear in the owner's “Needs you” once published. Overdue items are shown to the owner's supervisor after the organisation's set number of days.</span>` : ''}</section>
+  <section class="card"><h3>Sessions</h3><p class="small muted">Dates and formats for sessions are set on the Workshops tab.</p>${P.workshops.slice().sort(byDate).map(w => `<div class="row rowline"><span>${esc(w.title)} <span class="small muted">${esc(w.format)}</span></span><span class="num">${dTxt(w.date)}</span></div>`).join('') || '<p class="muted">No sessions planned.</p>'}</section>
+  </div>
+  <section class="card"><h3>Agenda</h3>${months.map(m => `<div class="rowline"><b>${MONTHS[+m.slice(5) - 1]} ${m.slice(0, 4)}</b>${items.filter(i => i.date.startsWith(m)).map(i => `<div class="row" style="padding:6px 0"><span>${esc(i.label)}<div class="small muted">${esc(i.kind)}</div></span><span class="num small">${dShort(i.date)}</span></div>`).join('')}</div>`).join('') || '<p class="muted">The agenda fills in as dates are set.</p>'}</section></div>`;
+}
+
+function viewDocs() {
+  const P = S.P;
+  return `<section class="card"><h2>Source documents</h2><p class="small muted">The AI reads these to draft 4Q cards, baselines and compliance items. Every draft links back to its page. Nothing enters the plan until a person accepts it.</p>
+  ${P.docs.map(d => `<div class="row rowline"><span><b>${esc(d.title)}</b> <span class="small muted">${esc(d.kind)}, ${d.pages} pages</span></span><span class="small muted">${countFrom(d.title)} items extracted</span></div>`).join('')}</section>`;
+}
+const countFrom = t => { const P = S.P, k = t.includes('Licence') ? 'Licence' : t.split(':')[0]; return P.fourQ.filter(e => e.src.includes(k)).length + P.baselines.filter(b => b.src.includes(k)).length + P.compliance.filter(c => c.src.includes(k)).length; };
+
+function viewMine() {
+  const P = S.P, mine = live(P).filter(e => e.units.includes('Commercial'));
+  const acc = mine.filter(e => e.st === 'accepted').length, drafts = mine.filter(e => e.st === 'ai_draft');
+  const QS = [['i1', 'repositioning', 'failure_factors', 'What is holding back revenue collection most today?', 'A lot of readings on the remote routes are estimated because readers skip far meters.'],
+    ['i2', 'repositioning', 'failures', 'What is going wrong right now in your area?', 'Billing disputes in Zone C have gone up this year.'],
+    ['i3', 'projection', 'risks', 'What could hurt your area over the next five years?', 'Customers may resist the 2028 tariff increase if service does not improve first.']];
+  const steps = [['Answer a short interview', P.interview.done ? 'Done' : 'About 10 minutes', P.interview.done], ['Check your 4Q cards', acc + ' of ' + mine.length + ' accepted', mine.length && !drafts.length], ['Submit to the strategy office', P.deptSubmitted.Commercial ? 'Submitted' : 'After checking', P.deptSubmitted.Commercial], ['Confirm baselines, then propose objectives', 'When Consultation and Composition open', false]];
+  return `<div class="head"><h1>Commercial's part in the new plan</h1><p class="muted">Most of the writing is drafted for you to check.</p></div>
+  <section class="card">${steps.map((s, i) => `<div class="row rowline"><span style="display:flex;gap:12px;align-items:center"><span class="count" style="width:30px;height:30px;background:${s[2] ? 'var(--ok)' : 'var(--info-l)'};color:${s[2] ? '#fff' : 'var(--navy)'}">${s[2] ? '✓' : i + 1}</span><b>${s[0]}</b></span><span class="small muted">${s[1]}</span></div>`).join('')}</section>
+  ${!P.interview.done ? `<section class="card"><h2>Your 4Q interview</h2><p class="small muted">Answer in your own words; edit the examples or replace them. The AI turns each answer into a draft card for you to check. It does not decide anything.</p>
+    ${QS.map(x => `<div><label for="ans-${x[0]}">${x[3]}</label><textarea id="ans-${x[0]}" rows="2">${esc(x[4])}</textarea><span class="small muted">Goes to: ${BAND[x[1]][0]}, ${CELLS.find(c => c.band === x[1] && c.col === x[2]).title}</span></div>`).join('')}
+    <div><button class="btn btn-primary" data-act="interview">Finish interview</button></div></section>` : ''}
+  <section class="card"><h2>Commercial's cards</h2>${mine.map(e => card(e, can('dept'))).join('') || '<p class="muted">No cards yet.</p>'}
+  ${P.interview.done && !P.deptSubmitted.Commercial ? `<div><button class="btn btn-primary" ${drafts.length ? 'disabled' : ''} data-act="submitDept">Submit to the strategy office</button></div>${drafts.length ? '<span class="small muted">Check every draft first.</span>' : ''}` : ''}</section>`;
+}
+function card(e, editable) {
+  const s = esc;
+  return `<div class="finding ${e.st === 'ai_draft' ? 'f-adv' : ''}" style="${e.st === 'ai_draft' ? '' : 'background:var(--cream)'}"><span class="small" style="font-weight:700">${cellTitle(e)}</span><b>${s(e.text)}</b><span class="small muted">${s(e.units.join(', '))}. Source: ${s(e.src)}</span>${stTag(e.st)}
+  ${editable && e.st === 'ai_draft' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" data-act="q" data-id="${e.id}" data-to="accepted">Accept</button><button class="btn btn-quiet" data-act="q" data-id="${e.id}" data-to="rejected">Reject</button></div>` : ''}</div>`;
+}
+
+function viewFourQ() {
+  const P = S.P, ws = S.ui.ws;
+  const editable = can('strategy', 'exec', 'fac') || (can('dept'));
+  const dups = R.duplicates(P);
+  const bandsHTML = ['retraction', 'repositioning', 'projection'].filter(b => S.ui.focus === 'all' || S.ui.focus === b).map(b => `<section class="band"><h3>${BAND[b][0]} <span class="small" style="font-weight:400;color:var(--side-muted)">${BAND[b][1]}</span></h3><div class="cells">
+    ${CELLS.filter(c => c.band === b).map(c => { const es = live(P).filter(e => e.band === b && e.col === c.col); const has = es.some(e => e.st === 'accepted');
+      return `<div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span class="small" style="font-weight:600;color:var(--side-fg)">${c.title}</span>
+      ${es.map(e => `<div class="qcard ${e.st === 'ai_draft' ? 'draft' : ''}"><span style="font-weight:600">${esc(e.text)}</span><span class="small muted">${esc(e.units.join(', '))}. ${esc(e.src)}</span>${stTag(e.st)}
+        ${e.st === 'ai_draft' && (can('strategy', 'exec', 'fac') || (can('dept') && e.units.includes('Commercial'))) ? `<div style="display:flex;gap:6px"><button class="btn btn-primary" style="min-height:36px" data-act="q" data-id="${e.id}" data-to="accepted">Accept</button><button class="btn btn-quiet" style="min-height:36px" data-act="q" data-id="${e.id}" data-to="rejected">Reject</button></div>` : ''}</div>`).join('')}
+      ${has ? '' : '<div class="empty">No accepted entry yet</div>'}
+</div>`; }).join('')}</div></section>`).join('');
+  const addForm = can('strategy', 'fac') ? `<section class="card"><h3>Add a card from the workshop</h3><div class="grid2"><select id="newqcell" aria-label="Section" style="min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff">${CELLS.map(c => `<option value="${c.key}">${BAND[c.band][0]}, ${c.title}</option>`).join('')}</select><input type="text" id="newq" aria-label="Card text" placeholder="What was said"></div><div><button class="btn" data-act="addQ">Add card</button></div></section>` : '';
+  return `<div class="row"><div class="tabs" role="group" aria-label="Focus">${[['all', 'All'], ['retraction', 'Retraction'], ['repositioning', 'Repositioning'], ['projection', 'Projection']].map(([k, l]) => `<button class="tab" aria-selected="${S.ui.focus === k}" data-act="focus" data-k="${k}">${l}</button>`).join('')}</div>
+    <button class="btn ${ws ? 'btn-primary' : ''}" data-act="ws">${ws ? 'Leave workshop mode' : 'Workshop mode'}</button></div>
+  ${dups.length && can('strategy') ? dups.map(([a, b]) => `<div class="finding f-adv"><span class="flabel" style="color:var(--adv)">Possible duplicate, AI suggestion</span><span>“${esc(b.text)}” (${esc(b.units.join(', '))}) looks like “${esc(a.text)}” (${esc(a.units.join(', '))}).</span><div style="display:flex;gap:8px"><button class="btn btn-primary" data-act="merge" data-a="${a.id}" data-b="${b.id}">Merge, keep both departments</button><button class="btn btn-quiet" data-act="keepBoth" data-b="${b.id}">Keep separate</button></div></div>`).join('') : ''}
+  <div class="${ws ? 'ws' : ''}" style="${ws ? '' : 'display:flex;flex-direction:column;gap:12px'}">${ws ? `<div class="row"><h2>4Q Model of leadership sight</h2><span class="small" style="color:var(--side-muted)">Workshop view for a projector or shared screen</span></div>` : ''}${ws ? bandsHTML : `<div class="ws">${bandsHTML}</div>`}</div>
+  ${addForm}<div class="card"><span style="font-weight:700;color:${R.visionReady(P) ? 'var(--ok)' : 'var(--adv)'}">${R.visionReady(P) ? 'Vision gate ready: all 12 sections have an accepted entry' : 'Vision gate: ' + R.filledCells(P) + ' of 12 sections have an accepted entry'}</span>${R.visionReady(P) && !P.visionConfirmed ? '<div><button class="btn btn-primary" data-act="tab" data-tab="vision">Go to vision and mission</button></div>' : ''}</div>`;
+}
+
+function viewVision() {
+  const P = S.P, ready = R.visionReady(P), isExec = can('exec');
+  if (P.visionConfirmed) return `<section class="card"><span class="tag t-ok" style="align-self:flex-start">Confirmed by the Managing Director</span><h2>Vision</h2><p style="font-size:18px">“${esc(P.vision)}”</p>${P.mission ? `<h2>Mission</h2><p>${esc(P.mission)}</p>` : ''}<p class="small muted">Written by leadership. Shared at Consultation.</p></section>`;
+  return `<div class="grid2"><section class="card"><h2>Vision and mission</h2>
+    <p class="small muted">The book: a vision cannot be formulated, only conceived. Leadership writes these. The AI does not draft them.</p>
+    <label for="vision">Vision</label><textarea id="vision" rows="3" ${ready && isExec ? '' : 'disabled'} placeholder="${!ready ? 'Unlocks when every 4Q section has an accepted entry' : isExec ? 'Leadership writes the vision here' : 'Only the leadership team writes the vision'}"></textarea>
+    <label for="mission">Mission (optional)</label><textarea id="mission" rows="3" ${ready && isExec ? '' : 'disabled'}></textarea>
+    <div><button class="btn btn-primary" ${ready && isExec ? '' : 'disabled'} data-act="confirmVision">Confirm vision</button></div>
+    ${!isExec ? '<span class="small muted">Only an Executive can confirm. Facilitators and the strategy office can prepare the session, not write or confirm the vision.</span>' : ''}</section>
+  <section class="card"><h2>What the 4Q board says</h2><span class="small muted">AI summary of accepted cards, for leadership to read. Not a draft vision.</span>
+    ${['retraction', 'repositioning', 'projection'].map(b => `<div class="rowline"><b>${BAND[b][0]}</b>${live(P).filter(e => e.band === b && e.st === 'accepted').slice(0, 4).map(e => `<div class="small">${esc(e.text)}</div>`).join('')}</div>`).join('')}</section></div>`;
+}
+
+function consultationPanel(forStaff) {
+  const P = S.P, C = P.consultation, open = C.status === 'open';
+  const units = [...new Set(C.inputs.map(i => i.unit))];
+  return `<div class="grid2"><section class="card"><span class="small muted">Draft vision</span><h2>${P.visionConfirmed ? '“' + esc(P.vision) + '”' : 'Shared here once leadership confirms it'}</h2>
+    ${C.inputs.length ? `<h3>What people are saying</h3><span class="small muted">AI summary of ${C.inputs.length} inputs from ${units.length} units, for the strategy office to check. Ideas raised by only one person stay listed.</span>${C.inputs.slice(-5).reverse().map(i => `<div class="rowline"><div>${esc(i.text)}</div><div class="small muted">${esc(i.unit)}${i.kind === 'meeting' ? ', section meeting summary' : ''}</div></div>`).join('')}` : '<p class="muted">No inputs yet.</p>'}</section>
+  <section class="card">${open ? (can('staff', 'dept') ? `<label for="idea">${can('dept') ? 'Record a section meeting summary' : 'Your idea or comment'}</label><textarea id="idea" rows="3" placeholder="${can('dept') ? 'Main points raised by your section' : "e.g. Let readers mark meters they can't reach, so routes can be fixed"}"></textarea><div><button class="btn btn-primary" data-act="postIdea">Send</button></div>` : '<p class="muted">Staff comment and departments record section meetings here.</p>') : `<p class="muted">${C.status === 'closed' ? 'The consultation round has closed.' : 'The consultation round has not opened yet.'}</p>`}
+    ${can('strategy') && !forStaff ? `<div class="rowline"><b>Round</b><div class="row"><span>${C.status === 'open' ? 'Open to all staff' : C.status === 'closed' ? 'Closed' : 'Not started'}</span>${C.status === 'not_started' ? '<button class="btn btn-quiet" data-act="round" data-to="open">Open round</button>' : C.status === 'open' ? '<button class="btn btn-quiet" data-act="round" data-to="closed">Close round</button>' : ''}</div></div>` : ''}</section></div>`;
+}
+const viewConsult = () => consultationPanel(false);
+const viewSay = () => S.P && S.P.door === 'form' ? `<div class="head"><h1>Have your say</h1><p class="muted">${esc(S.P.title)}</p></div>` + consultationPanel(true) : '<section class="card"><p class="muted">No consultation is open.</p></section>';
+
+function viewBaselines() {
+  const P = S.P, myUnit = { dept: 'Commercial', finance: 'Finance' }[S.role];
+  return `<section class="card"><div class="row"><h2>Baseline register</h2><span class="num">${P.baselines.filter(b => b.validated).length} of ${P.baselines.length} validated</span></div>
+  <p class="small muted">Values were extracted by the AI from reports and system exports, each with its source. The data owner confirms the value; the strategy office validates it. KPIs in the composer draw their baselines from here.</p>
+  <div class="tablewrap"><table><thead><tr><th>Measure</th><th>Value</th><th>Source</th><th>Owner</th><th>Status</th></tr></thead><tbody>
+  ${P.baselines.map(b => `<tr><td><b>${esc(b.name)}</b></td><td class="num">${b.value}${esc(b.unit)}</td><td class="small">${esc(b.src)}</td><td>${esc(b.owner)}</td><td>${b.validated ? tag('t-ok', 'Validated') : b.confirmed ? (can('strategy') ? `<button class="btn btn-quiet" data-act="validate" data-id="${b.id}">Validate</button>` : tag('t-st', 'Confirmed by owner')) : (myUnit === b.owner ? `<button class="btn btn-primary" data-act="confirmB" data-id="${b.id}">Confirm value</button>` : tag('t-adv', 'Awaiting owner'))}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+
+function viewCompliance() {
+  const P = S.P, isComp = can('comp');
+  return `<section class="card"><div class="row"><h2>Compliance register</h2><span class="num">${P.compliance.filter(c => c.outcome).length} of ${P.compliance.length} reviewed</span></div>
+  <p class="small muted">The AI extracts obligations only from uploaded laws, licences, policies and standards, each linked to its page, never from general knowledge. The compliance officer reviews every item.</p>
+  ${P.compliance.map(c => `<div class="rowline" style="display:flex;flex-direction:column;gap:6px"><div class="row"><b>${esc(c.title)}</b>${c.outcome ? tag(c.outcome === 'Needs change' ? 't-adv' : 't-ok', c.outcome) : tag('t-info', 'Not reviewed')}</div><span class="small muted">${c.ai ? 'AI extraction from ' : ''}${esc(c.src)}</span>
+    ${isComp && !c.outcome ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${['Aligned', 'Needs change', 'Not applicable'].map(o => `<button class="btn btn-quiet" data-act="outcome" data-id="${c.id}" data-o="${o}">${o}</button>`).join('')}</div>` : ''}</div>`).join('')}
+  ${isComp ? `<div class="rowline"><label for="newc">Add an obligation the documents don't cover</label><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="newc" style="flex:1 1 260px" placeholder="e.g. Environmental management requirements"><button class="btn" data-act="addC">Add</button></div></div>` : ''}</section>`;
+}
+
+function viewComposer() {
+  const P = S.P, f = P.door === 'form';
+  if (f && P.stages.composition === 'not_started' && !P.goals.length) return `<section class="card"><h2>Composition has not opened yet</h2><p class="muted">The process owner opens it on the date in the formation calendar. Leadership chooses goals from the vision and the themes drawn from the 4Q board.</p></section>`;
+  const checks = R.checks(P), reqs = R.confirmReqs(P), allOk = reqs.every(r => r[1]);
+  const themeHTML = f ? `<section class="card"><div class="row"><h2>Themes from the 4Q board</h2>${can('strategy', 'fac') && !P.themes.length ? '<button class="btn" data-act="suggestThemes">Suggest themes (AI)</button>' : ''}</div>
+    <p class="small muted">The AI groups accepted 4Q cards into candidate themes. The strategy office decides them; leadership turns them into goals.</p>
+    ${P.themes.map(t => `<div class="rowline" style="display:flex;flex-direction:column;gap:6px"><div class="row"><b>${esc(t.title)}</b>${stTag(t.st)}</div><span class="small muted">From: ${t.links.map(id => { const e = P.fourQ.find(x => x.id === id); return e ? esc(e.text) : ''; }).filter(Boolean).join('; ')}</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${t.st === 'ai_draft' && can('strategy') ? `<button class="btn btn-primary" data-act="theme" data-id="${t.id}" data-to="accepted">Accept theme</button><button class="btn btn-quiet" data-act="theme" data-id="${t.id}" data-to="rejected">Reject</button>` : ''}${t.st === 'accepted' && can('exec') && !P.goals.some(g => g.themeId === t.id) ? `<button class="btn btn-primary" data-act="makeGoal" data-id="${t.id}">Make this a goal</button>` : ''}${P.goals.some(g => g.themeId === t.id) ? tag('t-ok', 'Goal created') : ''}</div></div>`).join('') || '<p class="muted">No themes yet.</p>'}</section>` : '';
+  const goalsHTML = P.goals.map(g => `<section class="card lens" style="border-top-color:var(--st)"><div class="row"><h2>${esc(g.title)}</h2><span style="display:flex;gap:6px">${tag('t-st', g.perspective)}${stTag(g.st)}</span></div>
+    ${g.src ? `<span class="small muted">AI extraction from ${esc(g.src)}</span>` : ''}
+    ${g.st === 'ai_draft' && can('exec') ? `<div style="display:flex;gap:8px"><button class="btn btn-primary" data-act="goalSt" data-id="${g.id}" data-to="accepted">Confirm goal</button><button class="btn btn-quiet" data-act="goalSt" data-id="${g.id}" data-to="rejected">Reject</button></div>` : ''}
+    ${g.st === 'accepted' ? `${can('finance') ? `<div class="rowline"><label for="env-${g.id}">Indicative resource envelope, ZMW</label><div style="display:flex;gap:8px"><input type="number" id="env-${g.id}" value="${P.envelopes[g.id] ?? ''}" placeholder="e.g. 4000000"><button class="btn" data-act="env" data-id="${g.id}">Save</button></div></div>` : P.envelopes[g.id] != null ? `<span class="small muted num">Finance envelope: ZMW ${fmt(P.envelopes[g.id])}</span>` : ''}
+      ${g.objs.map(o => objectiveHTML(g, o)).join('')}
+      ${can('dept', 'strategy', 'fac') ? propose(g) : ''}` : ''}</section>`).join('');
+  const side = `<aside style="display:flex;flex-direction:column;gap:14px"><section class="card"><h2>Plan checks</h2>
+    ${checks.adv.map(t => finding('adv', t)).join('')}${checks.word.map(t => finding('word', t)).join('')}${checks.ok.map(t => finding('ok', t)).join('')}${!checks.adv.length && !checks.word.length && !checks.ok.length ? '<p class="muted">No checks yet.</p>' : ''}</section>
+    <section class="card"><h2>Plan confirmation</h2>${reqs.map(r => `<div class="row rowline"><span>${r[0]}</span>${r[1] ? tag('t-ok', 'Met') : tag('t-blk', 'Not yet')}</div>`).join('')}
+    ${P.planConfirmed ? tag('t-ok', 'Plan confirmed by the Managing Director' + (P.boardRef ? ', board resolution ' + P.boardRef : '')) : `<label for="board">Board resolution reference (if required)</label><input type="text" id="board" placeholder="e.g. BR/2026/14" ${can('exec') ? '' : 'disabled'}><div><button class="btn btn-primary" ${allOk && can('exec') ? '' : 'disabled'} data-act="confirmPlan">Confirm plan</button></div><span class="small muted">${can('exec') ? '' : 'Only an Executive can confirm. '}These are hard requirements; advisory checks never block. There is no override.</span>`}</section></aside>`;
+  return `<div class="grid2" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:start"><div style="display:flex;flex-direction:column;gap:14px">${f && P.visionConfirmed ? `<p class="muted">Vision: “${esc(P.vision)}”</p>` : ''}${themeHTML}${goalsHTML}${f && can('strategy', 'fac') && R.acceptedGoals(P).length ? '<div><button class="btn" data-act="suggestObjs">Suggest objectives for every goal (AI)</button></div>' : ''}</div>${side}</div>`;
+}
+function objectiveHTML(g, o) {
+  const P = S.P, isOwner = can('strategy') || (can('dept') && o.by === 'Head of Commercial');
+  return `<div class="rowline" style="display:flex;flex-direction:column;gap:8px"><div class="row"><b>${esc(o.title)}</b><span style="display:flex;gap:6px">${stTag(o.st)}</span></div>
+    <span class="small muted">${o.by ? 'Proposed by ' + esc(o.by) : 'AI suggestion'}${o.links.length ? '. Why: ' + o.links.map(id => { const e = P.fourQ.find(x => x.id === id); return e ? '“' + esc(e.text) + '”' : ''; }).join(', ') : ''}</span>
+    ${(o.st === 'proposed' || o.st === 'ai_draft') && can('exec') ? `<div style="display:flex;gap:8px"><button class="btn btn-primary" data-act="objSt" data-g="${g.id}" data-id="${o.id}" data-to="accepted">Accept objective</button><button class="btn btn-quiet" data-act="objSt" data-g="${g.id}" data-id="${o.id}" data-to="rejected">Reject</button></div>` : ''}
+    ${o.st === 'accepted' ? `${o.kpis.map(k => { const b = P.baselines.find(x => x.id === k.baselineId); return `<div class="small" style="padding:8px 10px;background:var(--cream);border-radius:8px"><b>KPI: ${esc(k.name)}</b>, ${k.dir === 'lower' ? 'lower' : 'higher'} is better. Baseline ${b ? b.value + b.unit + (b.validated ? ' (validated)' : ' (not yet validated)') : 'none'}. Targets 2027–2031: <span class="num">${k.targets.join(', ')}</span></div>`; }).join('')}
+      ${o.rows.map(r => `<div class="small" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px"><b>Decision map:</b> ${esc(r.text)}. Level ${r.st === 'ai_draft' ? 'suggested' : 'confirmed'}: ${SIXP[r.level]}${r.st === 'ai_draft' && isOwner ? ` <button class="btn btn-quiet" style="min-height:32px" data-act="rowOk" data-g="${g.id}" data-id="${o.id}">Confirm level</button>` : ''}</div>`).join('')}
+      ${isOwner ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${!o.kpis.length ? `<button class="btn btn-quiet" data-act="addKpi" data-g="${g.id}" data-id="${o.id}">Add KPI from baseline register</button>` : ''}${!o.rows.length ? `<button class="btn btn-quiet" data-act="addRow" data-g="${g.id}" data-id="${o.id}">Draft decision-map row (AI)</button>` : ''}${o.cost == null ? `<span style="display:flex;gap:6px"><input type="number" id="cost-${o.id}" aria-label="Indicative cost in ZMW" placeholder="Indicative cost, ZMW" style="max-width:200px"><button class="btn btn-quiet" data-act="cost" data-g="${g.id}" data-id="${o.id}">Save cost</button></span>` : `<span class="small muted num">Indicative cost ZMW ${fmt(o.cost)}</span>`}</div>` : (o.cost != null ? `<span class="small muted num">Indicative cost ZMW ${fmt(o.cost)}</span>` : '')}` : ''}</div>`;
+}
+function propose(g) {
+  const P = S.P, opts = live(P).filter(e => e.st === 'accepted' && (e.col === 'failure_factors' || e.col === 'risks' || e.col === 'failures' || e.col === 'opportunities'));
+  return `<details class="rowline"><summary style="cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center">Propose an objective under this goal</summary>
+    <div style="display:flex;flex-direction:column;gap:8px;padding-top:8px"><label for="obj-${g.id}">Objective</label><input type="text" id="obj-${g.id}" placeholder="e.g. Reduce non-revenue water">
+    ${opts.length ? `<span class="small" style="font-weight:600">Which 4Q entries does it address?</span>${opts.map(e => `<label style="font-weight:400;display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-link="${g.id}" value="${e.id}" style="width:auto;min-height:auto;margin-top:3px"> ${esc(e.text)}</label>`).join('')}` : ''}
+    <div><button class="btn btn-primary" data-act="propose" data-g="${g.id}">Propose</button></div></div></details>`;
+}
+
+function viewDocument() {
+  const P = S.P, gs = R.acceptedGoals(P);
+  if (!gs.length) return `<section class="card"><h2>Plan document</h2><p class="muted">The AI drafts the narrative once goals are accepted.</p></section>`;
+  return `<section class="card" style="max-width:820px"><div class="row"><span class="tag t-adv">AI draft narrative, for the strategy office to edit</span>${can('strategy') ? `<button class="btn btn-quiet" data-act="docEdited">${P.docEdited ? 'Marked as edited' : 'Mark as edited'}</button>` : ''}</div>
+  <h1>${esc(P.title)}</h1>
+  ${P.visionConfirmed ? `<h2>Our vision</h2><p>${esc(P.vision)}</p>` : P.door === 'import' ? '<p class="muted">No vision recorded for this imported plan.</p>' : ''}${P.mission ? `<h2>Our mission</h2><p>${esc(P.mission)}</p>` : ''}
+  ${P.door === 'form' ? `<h2>Where we stand</h2><p>Over the last plan we ${esc((live(P).find(e => e.band === 'retraction' && e.col === 'successes' && e.st === 'accepted') || {}).text?.toLowerCase() || 'made progress')}, but ${esc((live(P).find(e => e.band === 'retraction' && e.col === 'failures' && e.st === 'accepted') || {}).text?.toLowerCase() || 'some targets were missed')}. Today, ${esc((live(P).find(e => e.band === 'repositioning' && e.col === 'failures' && e.st === 'accepted') || {}).text?.toLowerCase() || 'challenges remain')}.</p>` : ''}
+  <h2>Goals and objectives</h2>${gs.map((g, i) => `<h3>${i + 1}. ${esc(g.title)}</h3>${g.objs.filter(o => o.st === 'accepted').map(o => `<p>${esc(o.title)}${o.kpis.length ? ', measured by ' + o.kpis.map(k => esc(k.name.toLowerCase()) + ' (targets ' + k.targets.join(', ') + ')').join('; ') : ''}.</p>`).join('') || '<p class="muted">No accepted objectives yet.</p>'}`).join('')}
+  <div><button class="btn" disabled>Export as document</button></div><span class="small muted">Export is not active in this prototype.</span></section>`;
+}
+
+function viewComms() {
+  const P = S.P, gs = R.acceptedGoals(P);
+  if (!gs.length) return `<section class="card"><h2>Communication</h2><p class="muted">Records are created per goal once goals are accepted.</p></section>`;
+  return `<p class="muted">For each goal: content (what changes), context (why) and concept (how). The book calls context the key to buy-in. Communication runs alongside Composition and continues through execution; it is not a gate.</p>` + gs.map(g => {
+    const c = P.comms[g.id] || { what: '', why: '', how: '', meetings: [] };
+    const editable = can('strategy', 'fac', 'exec');
+    return `<section class="card lens" style="border-top-color:var(--st)"><div class="row"><h2>${esc(g.title)}</h2>${!c.why ? tag('t-adv', 'No “why” recorded') : tag('t-ok', 'Record complete')}</div>
+    ${['what', 'why', 'how'].map(k => `<div><label for="${k}-${g.id}">${{ what: 'Content: what changes', why: 'Context: why', how: 'Concept: how' }[k]}</label><textarea id="${k}-${g.id}" rows="2" ${editable ? '' : 'disabled'}>${esc(c[k])}</textarea></div>`).join('')}
+    ${editable ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="draftComms" data-id="${g.id}">Draft with AI</button><button class="btn btn-primary" data-act="saveComms" data-id="${g.id}">Save</button></div>` : ''}
+    <div class="rowline"><b>Section meetings</b>${c.meetings.map(m => `<div class="small">${esc(m)}</div>`).join('') || '<div class="small muted">None recorded.</div>'}${can('dept') ? `<div style="display:flex;gap:8px;margin-top:8px"><input type="text" id="meet-${g.id}" placeholder="e.g. 22 Oct, Zone B readers: asked how targets affect routes"><button class="btn" data-act="meet" data-id="${g.id}">Log</button></div>` : ''}</div></section>`;
+  }).join('');
+}
+
+function viewWorkshops() {
+  const P = S.P, editable = can('strategy', 'fac', 'officer');
+  const covered = new Set(P.workshops.flatMap(w => w.purposes));
+  const missing = Object.keys(PURPOSES).filter(p => !covered.has(p));
+  return `<p class="muted">The calendar preparer plans the sessions. One session can serve several purposes, any session can be online or an asynchronous review, and any can be dropped. None of this breaks the flow: gates check the work produced.</p>
+  ${editable ? `<section class="card"><h3>Add a session</h3><div class="grid2"><input type="text" id="ws-title" aria-label="Session title" placeholder="e.g. Leadership day: 4Q review and vision"><select id="ws-format" aria-label="Format" style="min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff">${FORMATS.map(x => `<option>${x}</option>`).join('')}</select><input type="date" id="ws-date" aria-label="Date"></div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">${Object.keys(PURPOSES).map(p => `<label style="font-weight:400;display:flex;gap:6px;align-items:center"><input type="checkbox" data-purpose value="${p}" style="width:auto;min-height:auto"> ${PURPOSES[p]}</label>`).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" data-act="addW">Add session</button>${Object.keys(PACKS).map(k => `<button class="btn btn-quiet" data-act="pkg" data-k="${k}">Start from ${PACKS[k].l} package</button>`).join('')}</div><span class="small muted">Packages add undated sessions for purposes not yet covered. Lean: ${PACKS.lean.note.toLowerCase()} Remote: ${PACKS.remote.note.toLowerCase()}</span></section>` : ''}
+  ${missing.map(p => finding('adv', `No session is planned for “${PURPOSES[p]}”. The outcome still has to be produced, for example as an asynchronous review.`)).join('')}
+  ${P.workshops.slice().sort(byDate).map(w => `<section class="card"><div class="row"><h2>${esc(w.title)}</h2><span style="display:flex;gap:6px">${tag('t-ca', w.date ? dTxt(w.date) : 'No date')}${w.status === 'held' ? tag('t-ok', 'Held') : tag('t-info', 'Planned')}</span></div>
+    <span class="small muted">Purpose: ${w.purposes.map(p => PURPOSES[p]).join(' and ')}${w.purposes.includes('vision') ? '. Leadership writes and confirms the vision in any format.' : ''}</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="fmt-${w.id}" data-fmt="${w.id}" aria-label="Format" ${editable && w.status !== 'held' ? '' : 'disabled'} style="min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff">${FORMATS.map(x => `<option ${w.format.startsWith(x) ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <input type="date" data-wdate="${w.id}" aria-label="Date" value="${w.date}" ${editable && w.status !== 'held' ? '' : 'disabled'} style="max-width:180px">
+      ${editable && w.status !== 'held' ? `<button class="btn btn-quiet" data-act="held" data-id="${w.id}">Mark as held</button><button class="btn btn-quiet" data-act="dropW" data-id="${w.id}">Remove session</button>` : ''}</div>
+    <div class="rowline"><b>Decision log</b>${w.log.map(l => `<div class="small" style="padding:6px 0">${esc(l.decision)}. <span class="muted">Action: ${esc(l.action)}, ${esc(l.owner)}, due ${esc(l.due)}${l.done ? ', done' : ''}</span></div>`).join('') || '<div class="small muted">No decisions recorded.</div>'}
+    ${editable ? `<div class="grid2" style="margin-top:8px"><input type="text" id="dec-${w.id}" aria-label="Decision" placeholder="Decision"><input type="text" id="act-${w.id}" aria-label="Action" placeholder="Action"><select id="own-${w.id}" aria-label="Owner" style="min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:#fff">${Object.keys(OWNER_ROLE).map(o => `<option>${o}</option>`).join('')}</select><input type="text" id="due-${w.id}" aria-label="Due" placeholder="Due, e.g. 6 Nov"></div><div style="margin-top:8px"><button class="btn" data-act="log" data-id="${w.id}">Add to decision log</button></div><span class="small muted">Actions go straight into the owner's “Needs you” queue.</span>` : ''}</div></section>`).join('') || '<section class="card"><p class="muted">No sessions planned yet.</p></section>'}`;
+}
+
+function queue() {
+  const n = needs(S.role);
+  return `<section class="card"><div class="row"><h2>Needs you, ${n.length}</h2><span class="small muted">${esc(ROLES[S.role].person)}</span></div>${n.map(x => `<div class="q rowline"><div><b>${esc(x[0])}</b><div class="small muted">${esc(x[1])}</div></div><span></span><button class="btn btn-primary" data-act="tab" data-tab="${x[2]}">Open</button></div>`).join('') || '<p class="muted">Nothing needs you right now.</p>'}</section>`;
+}
+
+function render() {
+  const P = S.P;
+  let tabs = !P ? [] : (P.door === 'form' ? ROLE_TABS : IMPORT_TABS)[S.role];
+  if (P && !tabs.includes(S.tab)) S.tab = tabs[0];
+  const V = { calendar: viewCalendar, home: viewHome, docs: viewDocs, mine: viewMine, fourq: viewFourQ, vision: viewVision, consult: viewConsult, say: viewSay, baselines: viewBaselines, compliance: viewCompliance, composer: viewComposer, document: viewDocument, comms: viewComms, workshops: viewWorkshops };
+  const header = P ? `<div class="head"><span class="eyebrow" style="color:var(--st-t)">Strategy workspace${P.door === 'import' ? ', imported plan' : ', formation'}</span><h1>${esc(P.title)}</h1><p class="muted">${P.planConfirmed ? 'Confirmed. The 2027 cascade will be seeded as a draft at year-end close.' : 'Draft. Process owner: ' + esc(P.owner) + '. The 2022–2026 plan keeps running until 31 December.'}</p></div>` : '';
+  const body = !P ? viewStart() : header + queue() + `<div class="tabs" role="tablist">${tabs.map(t => `<button class="tab" role="tab" aria-selected="${S.tab === t}" data-act="tab" data-tab="${t}">${TABS[t]}</button>`).join('')}</div>` + V[S.tab]();
+  document.getElementById('app').innerHTML = `<div class="shell"><nav class="side" aria-label="CASPA navigation"><div class="brand"><div class="mark">C</div><div><div style="font-weight:700;font-size:16px">CASPA™</div><div class="small" style="color:var(--side-muted)">Strategy workspace prototype</div></div></div>
+    <div style="display:flex;flex-direction:column;gap:4px"><button class="navbtn" aria-current="page"><span class="dot" style="background:#378ADD"></span>Strategy</button>${['Cascade', 'Plan', 'Performance'].map((n, i) => `<button class="navbtn" disabled style="opacity:.5;cursor:default"><span class="dot" style="background:${['#7C5CBF', '#B85C38', '#C2417A'][i]}"></span>${n}</button>`).join('')}</div>
+    <div style="margin-top:auto;padding:12px;border-radius:10px;background:var(--navy2);font-size:12px;color:var(--side-muted)">Sample Water Utility. Fictional data. Other workspaces are outside this prototype.</div></nav>
+  <div class="main"><header class="top"><div class="crumbs">Sample Water Utility › <b>Strategy</b>${P ? ' › ' + esc(TABS[S.tab]) : ''}</div>
+    <label class="viewas">View as <select id="roleSel" aria-label="View as">${Object.keys(ROLES).map(k => `<option value="${k}" ${k === S.role ? 'selected' : ''}>${ROLES[k].person} (${ROLES[k].role})</option>`).join('')}</select></label>
+    <label class="viewas">Jump to <select id="jump" aria-label="Jump to a point in the process"><option value="">Choose</option><option value="start">Start (no plan)</option><option value="w1">Formation just started</option><option value="w6">4Q board complete, calendar published</option><option value="w11">Vision confirmed, composition open</option><option value="w14">Ready to confirm the plan</option><option value="import">Imported plan</option></select></label></header>
+  <main class="content">${body}</main></div></div>${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+}
+
+/* ═════════ Actions ═════════ */
+let tt; const toast = t => { S.toast = t; clearTimeout(tt); tt = setTimeout(() => { S.toast = null; render(); }, 3200); };
+const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+const findObj = (gid, oid) => S.P.goals.find(g => g.id === gid).objs.find(o => o.id === oid);
+const A = {
+  start: d => { S.P = seedPlan(d.door); S.P.period = val('period') || '2027–2031'; S.P.title = 'Strategic Plan ' + S.P.period; S.P.owner = val('owner') || 'Head of Strategy'; if (S.P.calendar) S.P.calendar.preparer = val('preparer') || 'Head of Strategy'; S.tab = 'home'; toast(d.door === 'form' ? 'Plan started. ' + S.P.calendar.preparer + ' prepares the formation calendar. The AI drafted 12 4Q cards, 6 baselines and 5 compliance items.' : 'Plan imported. The AI extracted 4 goals for leadership to confirm.'); },
+  tab: d => { S.tab = d.tab; window.scrollTo(0, 0); },
+  pkg: d => { applyPackage(S.P, d.k); toast(PACKS[d.k].l + ' package sessions added for uncovered purposes. Set their dates.'); },
+  addW: () => { const t = val('ws-title'), ps = [...document.querySelectorAll('[data-purpose]:checked')].map(x => x.value); if (!t || !ps.length) { toast('Give the session a title and at least one purpose.'); return; } S.P.workshops.push({ id: uid('w'), title: t, purposes: ps, format: val('ws-format'), date: val('ws-date'), status: 'planned', log: [] }); toast('Session added.'); },
+  publishCal: () => { const C = S.P.calendar; STAGES.forEach(x => { C.stages[x[0]] = { start: val('cs-' + x[0]), end: val('ce-' + x[0]) }; }); C.gates = { vision: val('g-vision'), plan: val('g-plan') }; C.published = true; C.publishedOn = TODAY; toast('Calendar published. Deadlines now appear in each owner\'s “Needs you”.'); },
+  addDl: () => { const C = S.P.calendar; STAGES.forEach(x => { C.stages[x[0]] = { start: val('cs-' + x[0]), end: val('ce-' + x[0]) }; }); C.gates = { vision: val('g-vision'), plan: val('g-plan') }; const l = val('dl-label'), due = val('dl-due'); if (!l || !due) { toast('Add a label and a date.'); return; } C.deadlines.push({ id: uid('dl'), label: l, owners: [val('dl-owner')], due }); },
+  dropDl: d => { S.P.calendar.deadlines = S.P.calendar.deadlines.filter(x => x.id !== d.id); },
+  stage: d => { S.P.stages[d.s] = d.to; if (d.s === 'consultation' && d.to === 'open' && S.P.consultation.status === 'not_started') S.P.consultation.status = 'open'; },
+  q: d => { const e = S.P.fourQ.find(x => x.id === d.id); e.st = d.to; },
+  addQ: () => { const t = val('newq'), k = val('newqcell'); if (!t) { toast('Write the card first.'); return; } const c = CELLS.find(x => x.key === k); S.P.fourQ.push(q(uid('m'), c.band, c.col, t, ['Strategy office'], 'Workshop', 'accepted')); toast('Card added from the workshop.'); },
+  merge: d => { const a = S.P.fourQ.find(x => x.id === d.a), b = S.P.fourQ.find(x => x.id === d.b); b.mergedInto = a.id; a.units = [...new Set(a.units.concat(b.units))]; toast('Merged. The card keeps both departments.'); },
+  keepBoth: d => { S.P.fourQ.find(x => x.id === d.b).notDup = true; },
+  focus: d => { S.ui.focus = d.k; },
+  ws: () => { S.ui.ws = !S.ui.ws; },
+  interview: () => {
+    const QS = [['i1', 'repositioning', 'failure_factors'], ['i2', 'repositioning', 'failures'], ['i3', 'projection', 'risks']];
+    QS.forEach(([id, band, col]) => { const t = val('ans-' + id); if (!t) return; const first = t.split(/(?<=\.)\s/)[0].replace(/\.$/, ''); S.P.fourQ.push(q(id, band, col, first.length > 90 ? first.slice(0, 87) + '…' : first, ['Commercial'], 'Interview: Head of Commercial')); });
+    S.P.interview.done = true; toast('The AI drafted cards from your answers. Check each one.');
+  },
+  submitDept: () => { S.P.deptSubmitted.Commercial = true; toast("Submitted. The strategy office consolidates Commercial's cards."); },
+  confirmVision: () => { const v = val('vision'); if (!v) { toast('Write the vision first.'); return; } S.P.vision = v; S.P.mission = val('mission'); S.P.visionConfirmed = true; S.P.stages.conception = 'complete'; toast('Vision confirmed. The first gate has passed.'); },
+  round: d => { S.P.consultation.status = d.to; },
+  postIdea: () => { const v = val('idea'); if (!v) return; S.P.consultation.inputs.push({ text: v, unit: can('dept') ? 'Commercial' : 'Commercial, Zone B', kind: can('dept') ? 'meeting' : 'idea' }); toast('Received by the strategy office.'); },
+  confirmB: d => { S.P.baselines.find(b => b.id === d.id).confirmed = true; },
+  validate: d => { S.P.baselines.find(b => b.id === d.id).validated = true; },
+  outcome: d => { S.P.compliance.find(c => c.id === d.id).outcome = d.o; },
+  addC: () => { const t = val('newc'); if (t) S.P.compliance.push({ id: uid('c'), title: t, src: 'Added by Compliance Officer', ai: false, outcome: null }); },
+  suggestThemes: () => {
+    const has = id => live(S.P).some(e => e.id === id && e.st === 'accepted');
+    S.P.themes = [
+      { id: 't1', title: 'Recover revenue and cut losses', links: ['p3', 'i1', 'r1'].filter(has), st: 'ai_draft' },
+      { id: 't2', title: 'Make supply reliable through drier years', links: ['p1', 'j3', 'j4'].filter(has), st: 'ai_draft' },
+      { id: 't3', title: 'Fund sanitation properly', links: ['r3', 'r4'].filter(has), st: 'ai_draft' },
+      { id: 't4', title: 'Prepare a sound tariff case for 2028', links: ['j1', 'j2', 'i3'].filter(has), st: 'ai_draft' }
+    ];
+  },
+  theme: d => { S.P.themes.find(t => t.id === d.id).st = d.to; },
+  makeGoal: d => { const t = S.P.themes.find(x => x.id === d.id); const persp = { t1: 'Financial', t2: 'Customer', t3: 'Customer', t4: 'Financial' }[t.id] || 'Internal'; const g = goal(uid('G'), t.title, persp, 'accepted'); g.themeId = t.id; S.P.goals.push(g); toast('Goal created by the Managing Director.'); },
+  goalSt: d => { S.P.goals.find(g => g.id === d.id).st = d.to; },
+  propose: d => { const t = val('obj-' + d.g); if (!t) { toast('Write the objective first.'); return; } const links = [...document.querySelectorAll(`[data-link="${d.g}"]:checked`)].map(x => x.value); S.P.goals.find(g => g.id === d.g).objs.push({ id: uid('o'), title: t, st: 'proposed', by: ROLES[S.role].person, links, kpis: [], rows: [], cost: null }); toast('Proposed. The goal owner reviews it.'); },
+  suggestObjs: () => {
+    const sug = { t1: [['Reduce non-revenue water', ['p3', 'i1']], ['Increase collection efficiency', ['i2']]], t2: [['Increase daily supply hours', ['p1']], ['Secure raw water sources against drought', ['j3']]], t3: [['Fund and deliver a sanitation programme', ['r3', 'r4']]], t4: [['Complete a cost-of-service study by 2027', ['j1', 'j2', 'i3']]] };
+    R.acceptedGoals(S.P).forEach(g => (sug[g.themeId] || [['Improve performance in this area', []]]).forEach(([t, l]) => { if (!g.objs.some(o => o.title === t)) g.objs.push({ id: uid('o'), title: t, st: 'ai_draft', by: null, links: l.filter(id => live(S.P).some(e => e.id === id)), kpis: [], rows: [], cost: null }); }));
+    toast('AI suggestions added as drafts. Leadership accepts or rejects them.');
+  },
+  objSt: d => { findObj(d.g, d.id).st = d.to; },
+  addKpi: d => {
+    const o = findObj(d.g, d.id); const P = S.P;
+    const guess = { 'non-revenue': 'b1', 'collection': 'b3', 'supply': 'b2', 'sanitation': 'b4', 'contract': 'b6' };
+    const key = Object.keys(guess).find(k => o.title.toLowerCase().includes(k));
+    const b = P.baselines.find(x => x.id === (key ? guess[key] : 'b5'));
+    const lower = b.id === 'b1';
+    const targets = lower ? [44, 41, 38, 35, 32] : Array.from({ length: 5 }, (_, i) => halfUp((b.value + (Math.min(100, b.value * 1.25) - b.value) * (i + 1) / 5) * 10) / 10);
+    o.kpis.push({ name: b.name, dir: lower ? 'lower' : 'higher', baselineId: b.id, targets });
+    toast('KPI added with its baseline from the register. Targets are sample values for the owner to set.');
+  },
+  addRow: d => { const o = findObj(d.g, d.id); const e = o.links.map(id => S.P.fourQ.find(x => x.id === id)).find(x => x && x.col === 'failure_factors') || o.links.map(id => S.P.fourQ.find(x => x.id === id))[0]; o.rows.push({ text: e ? e.text : 'Deficiency to be described', level: e && /estimated|readings/i.test(e.text) ? 'practices' : e && /fund/i.test(e.text) ? 'policy' : 'process', st: 'ai_draft' }); toast('Row drafted with a suggested 6P level. The owner confirms it.'); },
+  rowOk: d => { findObj(d.g, d.id).rows.forEach(r => r.st = 'accepted'); },
+  cost: d => { const v = parseInt(val('cost-' + d.id), 10); if (v > 0) findObj(d.g, d.id).cost = v; else toast('Enter an amount above zero.'); },
+  env: d => { const v = parseInt(val('env-' + d.id), 10); if (v > 0) { S.P.envelopes[d.id] = v; toast('Envelope saved. The rules engine compares it with indicative costs.'); } },
+  confirmPlan: () => { S.P.boardRef = val('board'); S.P.planConfirmed = true; if (S.P.stages) S.P.stages.composition = 'complete'; toast('Plan confirmed. The second gate has passed.'); },
+  docEdited: () => { S.P.docEdited = true; },
+  draftComms: d => { const g = S.P.goals.find(x => x.id === d.id); const t = S.P.themes.find(x => x.id === g.themeId); const why = t && t.links.length ? t.links.map(id => (S.P.fourQ.find(e => e.id === id) || {}).text).filter(Boolean).join('; ') : ''; S.P.comms[d.id] = { what: 'We will ' + g.title.toLowerCase() + ' over 2027–2031.', why: why ? 'Because ' + why.charAt(0).toLowerCase() + why.slice(1) + '.' : '', how: 'Each department turns this goal into yearly activities, budgets and individual objectives in CASPA™.', meetings: (S.P.comms[d.id] || {}).meetings || [] }; toast('AI draft added. Edit and save.'); },
+  saveComms: d => { const m = (S.P.comms[d.id] || {}).meetings || []; S.P.comms[d.id] = { what: val('what-' + d.id), why: val('why-' + d.id), how: val('how-' + d.id), meetings: m }; toast('Saved.'); },
+  meet: d => { const t = val('meet-' + d.id); if (!t) return; S.P.comms[d.id] = S.P.comms[d.id] || { what: '', why: '', how: '', meetings: [] }; S.P.comms[d.id].meetings.push(t); },
+  held: d => { S.P.workshops.find(w => w.id === d.id).status = 'held'; },
+  dropW: d => { S.P.workshops = S.P.workshops.filter(w => w.id !== d.id); toast('Session removed. Its purpose is now flagged, never blocked.'); },
+  log: d => { const dec = val('dec-' + d.id), act = val('act-' + d.id); if (!dec || !act) { toast('Add a decision and an action.'); return; } S.P.workshops.find(w => w.id === d.id).log.push({ decision: dec, action: act, owner: val('own-' + d.id), due: val('due-' + d.id) || 'not set', done: false }); toast('Logged. The action is now in the owner\'s queue.'); }
+};
+
+/* ═════════ Jump to a point in the process (prototype only) ═════════ */
+function jump(to) {
+  S.ui = { sel: null, focus: 'all', ws: false };
+  if (to === 'start') { S.P = null; return; }
+  if (to === 'import') { S.P = seedPlan('import'); S.tab = 'home'; return; }
+  const P = S.P = seedPlan('form'); S.tab = 'home';
+  if (to === 'w1') return;
+  applyPackage(P, 'standard');
+  const dates = ['2026-09-08', '2026-10-06', '2026-10-15', '2026-11-18', '2026-12-09', '2026-12-16'];
+  P.workshops.forEach((w, i) => { w.date = dates[i] || ''; });
+  Object.assign(P.calendar, { published: true, publishedOn: '2026-09-09', gates: { vision: '2026-10-16', plan: '2026-12-11' },
+    stages: { conception: { start: '2026-09-07', end: '2026-10-16' }, consultation: { start: '2026-10-19', end: '2026-11-13' }, confirmation: { start: '2026-10-19', end: '2026-11-27' }, composition: { start: '2026-11-16', end: '2026-12-11' }, communication: { start: '2026-11-30', end: '2026-12-18' } },
+    deadlines: [{ id: 'dl1', label: 'Submit department 4Q entries', owners: ['All department heads'], due: '2026-10-02' }, { id: 'dl2', label: 'Confirm baselines you own', owners: ['All department heads', 'Head of Finance'], due: '2026-11-06' }, { id: 'dl3', label: 'Review the compliance register', owners: ['Compliance Officer'], due: '2026-11-27' }, { id: 'dl4', label: 'Enter resource envelopes per goal', owners: ['Head of Finance'], due: '2026-11-20' }] });
+  P.interview.done = true; P.deptSubmitted.Commercial = true;
+  P.fourQ.push(q('i1', 'repositioning', 'failure_factors', 'Readings estimated on remote routes', ['Commercial'], 'Interview: Head of Commercial'), q('i2', 'repositioning', 'failures', 'Billing disputes rising in Zone C', ['Commercial'], 'Interview: Head of Commercial'), q('i3', 'projection', 'risks', 'Customers may resist the 2028 tariff increase', ['Commercial'], 'Interview: Head of Commercial'));
+  P.fourQ.find(e => e.id === 'p4').mergedInto = 'p3'; P.fourQ.find(e => e.id === 'p3').units.push('Operations');
+  P.fourQ.forEach(e => e.st = 'accepted');
+  P.workshops.filter(w => w.date && w.date <= '2026-10-06').forEach(w => w.status = 'held');
+  P.workshops.find(w => w.purposes.includes('four_q_review')).log.push({ decision: 'Sanitation failure to be treated as a funding failure, not a delivery failure', action: 'Cost a sanitation programme', owner: 'Head of Finance', due: '6 Nov', done: false });
+  if (to === 'w6') return;
+  P.vision = 'Safe, reliable water and sanitation for every household we serve'; P.visionConfirmed = true;
+  P.workshops.filter(w => w.date && w.date <= '2026-10-15').forEach(w => w.status = 'held');
+  P.stages = { conception: 'complete', consultation: 'complete', confirmation: 'open', composition: 'open', communication: 'not_started' };
+  P.consultation.status = 'closed';
+  P.consultation.inputs = [{ text: 'Fix leaks before we build new supply.', unit: 'Operations', kind: 'idea' }, { text: 'Sanitation needs its own budget line this time.', unit: 'Sanitation', kind: 'idea' }, { text: "Let readers mark meters they can't reach.", unit: 'Commercial, Zone B', kind: 'idea' }, { text: 'Zone B readers asked how new targets affect routes.', unit: 'Commercial', kind: 'meeting' }];
+  P.baselines.forEach(b => { b.confirmed = true; b.validated = true; });
+  P.compliance.forEach((c, i) => { if (i < 3) c.outcome = 'Aligned'; });
+  A.suggestThemes(); P.themes.forEach(t => t.st = 'accepted');
+  if (to === 'w11') return;
+  P.compliance.forEach(c => { c.outcome = c.outcome || (c.id === 'c4' ? 'Needs change' : 'Aligned'); });
+  P.stages.confirmation = 'complete';
+  P.themes.forEach(t => { const g = goal(uid('G'), { t1: 'Restore financial sustainability', t2: 'Provide reliable water supply', t3: 'Expand access to sanitation', t4: 'Prepare a sound tariff case for 2028' }[t.id], { t1: 'Financial', t2: 'Customer', t3: 'Customer', t4: 'Financial' }[t.id], 'accepted'); g.themeId = t.id; P.goals.push(g); });
+  A.suggestObjs();
+  P.goals.forEach(g => g.objs.forEach(o => { o.st = 'accepted'; if (o.title !== 'Secure raw water sources against drought') { A.addKpi({ g: g.id, id: o.id }); } }));
+  const nrw = P.goals[0].objs[0]; nrw.by = 'Head of Commercial'; A.addRow({ g: P.goals[0].id, id: nrw.id }); nrw.cost = 2700000;
+  P.envelopes[P.goals[0].id] = 4000000;
+  P.workshops.filter(w => w.date && w.date <= '2026-11-18').forEach(w => w.status = 'held');
+  S.toast = null;
+}
+
+/* ═════════ Wiring ═════════ */
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (!el || el.disabled) return; e.preventDefault(); const f = A[el.dataset.act]; if (f) { f(el.dataset); render(); } });
+document.addEventListener('change', e => {
+  if (e.target.id === 'roleSel') { S.role = e.target.value; S.ui.ws = false; render(); }
+  else if (e.target.id === 'jump' && e.target.value) { jump(e.target.value); render(); toast('Jumped. Switch “View as” to see each person\'s part.'); render(); }
+  else if (e.target.dataset && e.target.dataset.wdate) { S.P.workshops.find(x => x.id === e.target.dataset.wdate).date = e.target.value; render(); }
+  else if (e.target.dataset && e.target.dataset.fmt) { const w = S.P.workshops.find(x => x.id === e.target.dataset.fmt); w.format = e.target.value; render(); }
+});
+render();
+
+</script>
+</body>
+</html>

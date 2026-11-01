@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 29 record decisions made since; the latest is dated 31 October 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 30 record decisions made since; the latest is dated 31 October 2026.
 
 ## 1. What you are building
 
@@ -394,3 +394,12 @@ Decided by Elijah on 31 October 2026: option A. Built as v0.10.0. No contract ch
 - **Review method:** every screen opened at 390px for seven roles (Executive, Strategy office, Finance, HR, Supervisor, Employee, Organisation administrator), checking for anything wider than the screen outside a deliberate sideways-scrolling table, and for controls smaller than 44px.
 - **Fixed:** two-column layouts on Organisation, Strategy and the handover list let their columns shrink (a wide table had pushed the structure card past the screen); a hidden budget subtotal's sentence wraps instead of running off the Plan screen; rows with buttons (structure tree, vacancy list, the plan being brought in) give their text the full line before the buttons wrap; links on the decision map and the activity page's "Corrects" line, and the role checkboxes in People and access, are now 44px targets; the development role switcher is narrower on phones.
 - **Known and left:** with the development switcher in the top bar, a record page's breadcrumb on a phone shortens the current title to its first letters. Pilot builds have no development switcher, which frees the space.
+
+## 30. Decisions on the Strategy formation slice (31 October 2026)
+
+Source: the approved *CASPA™ Strategy Formation Specification v1.0* and the approved Strategy workspace prototype, restored to `reference/caspa-strategy-prototype.html` (it was missing from the repository). Decided by Elijah on 31 October 2026.
+
+- **Built in five parts, each a reviewable build:** 11a calendar and sessions; 11b Conception (4Q board and workshop view, source documents and AI-drafted cards, department checklist and AI interview, consolidation, vision and mission, `vision.confirm`); 11c Consultation and Confirmation (consultation room, baseline register, compliance register); 11d Composition (plan composer, `plan.confirm`, plan document, first-year cascade); 11e Communication (communication records, plan revisions).
+- **F-1 (option A), plan setup:** the Strategy office or a facilitator sets up a formed plan and names the calendar preparer, as O1 does for imported plans (the matrix's `StrategicPlan` draft). The Executive is told and decides at the two gates. No contract change. The preparer is chosen from people holding the Strategy office or facilitator role, because only they may draft workshops and deadlines under the matrix; a staff member who is to prepare the calendar is given one of those roles by the administrator.
+- **F-2 (option A), department heads:** whoever answers for each unit directly below the top unit, worked out from the structure as budget holders are.
+- **F-3, consultation anonymity (confirmed):** as decided for contract v1.1 on 18 October 2026: comments show the commenter's unit, never their name; the author is kept in the audit record; units smaller than `consultationMinGroupSize` (default five) show as their parent unit. The specification's open item is closed.

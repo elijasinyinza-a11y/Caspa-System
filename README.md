@@ -31,6 +31,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 8. Onboarding: the two doors (Onboarding Specification v0.1; decisions O1 to O9, BUILD-BRIEF section 28) — done (v0.8.0)
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
+11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception;
+    11c Consultation and Confirmation; 11d Composition; 11e Communication
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -44,6 +46,23 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Strategy formation, part 11a: calendar and sessions (v0.11.0)
+
+- BUILD-BRIEF section 30 (F-1 to F-3); Strategy Formation Specification v1.0; the approved Strategy workspace
+  prototype restored to `reference/caspa-strategy-prototype.html`. No contract change. 474 tests (9 new,
+  `src/data/access/formation.test.ts`).
+- Try it on Sample Water Utility: as Strategy office (Bwalya Musonda), open Strategy. Below the running 2022–2026 plan,
+  "Strategic Plan 2027–2031" is being formed. Edit plan setup (process owner, calendar preparer), open Conception, then
+  in "Formation calendar" set stage dates, the two target dates and a deadline for all department heads, and publish.
+  The deadline then appears in each department head's "Needs you" (for example as Finance). In "Sessions", start from a
+  package or add a session; mark it held and its decision-log actions reach their owners.
+- Rules: `src/rules/formation.ts` (department heads, leadership, default participants, packages, agenda, what is worth
+  checking, escalation). Data access: `src/data/access/formation.ts`. Screens: `src/routes/Formation.tsx`.
+- "Worth checking" here (calendar not published, a purpose with no session) is shown on the formation page to the
+  process owner and Strategy office only; it is not added to the integrity rule catalogue. Overdue deadlines reach
+  the owner's supervisor after the organisation's escalation days. Onboarding's "Form a new strategy" door stays
+  "Coming later" until the formation stages are built (11b to 11d).
 
 ## Phone layout notes (v0.10.0)
 
