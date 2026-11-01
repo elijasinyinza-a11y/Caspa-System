@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 32 record decisions made since; the latest is dated 1 November 2026.
+Read this whole file before writing any code. Put it in the repository root and treat it as the instructions for this build. Section 12 says which source wins when sources disagree; section 13 records the decisions behind v1.1. Sections 14 to 33 record decisions made since; the latest is dated 1 November 2026.
 
 ## 1. What you are building
 
@@ -433,3 +433,11 @@ Built to the Strategy Formation Specification v1.0 (F2, F3, "AI guardrails") and
 - **Formation home.** A progress card shows baselines validated, compliance items reviewed and inputs received, as in the prototype; Conception's checklist step 4 ("Check your baselines") is live once Consultation opens.
 - **For Elijah to confirm or change:** the audience getting the Strategy workspace while a round is open; meeting summaries shown under the unit above when the section is small; the Strategy office able to confirm baselines for owners; typed and imported measures counting as confirmed; edits clearing validation and review; the six baselines' "as of" dates (set in the build); the stub's sample baseline and obligation drafts (`SAMPLE_BASELINE_DRAFT`, `SAMPLE_COMPLIANCE_DRAFT`); the officer's name.
 - **Open for 11d:** the consultation room cannot show 4Q themes yet: staff may not read 4Q cards, and `Theme` has no row in the permission matrix. Standards have no `SourceDocument` kind, so a standard can be added by hand but not read by the AI.
+
+## 33. Framework explanations without a source line (v0.13.1, 1 November 2026)
+
+Decided by Elijah on 1 November 2026. Display only; no contract, rule or permission change. Amends section 20 (D2).
+
+- **No source line:** framework explanations (each 6P level, the 6P model and the decision map, the 7Cs and each stage, the 4Q Model and its three bands) show the confirmed line from `en.book` and, for 6P levels, "Covers:" with the scope. The line "From Business Beyond the Strategic Plan" no longer appears under them. The string `en.explain.source` is deleted.
+- **Page references kept in code:** each of the 20 lines in `en.book` keeps its `page`, for traceability to the book; pages are not shown on screen. `src/strings/book.test.ts` checks that every line keeps its page and that no source line returns.
+- **Unchanged:** only the confirmed lines are shown; unconfirmed wording still uses the `[from the book]` placeholder, which a pilot build rejects (section 2, rule 6).

@@ -2,8 +2,8 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 1 November 2026, including the clarity decisions in section 20, Conception in section 31 and
-Consultation and Confirmation in section 32) first. The data contract is v1.6.
+with decisions to 1 November 2026, including the clarity decisions in section 20, Conception in section 31,
+Consultation and Confirmation in section 32 and framework explanations in section 33) first. The data contract is v1.6.
 
 ## Run
 
@@ -48,6 +48,12 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Framework explanations (v0.13.1)
+
+- BUILD-BRIEF section 33. Explanations of the 6P levels, the 7Cs stages and the 4Q bands no longer show
+  "From Business Beyond the Strategic Plan"; `en.explain.source` is deleted. Page references stay in `en.book`, not
+  on screen. 541 tests (2 new, `src/strings/book.test.ts`). No contract change.
 
 ## Strategy formation, part 11c: Consultation and Confirmation (v0.13.0)
 
