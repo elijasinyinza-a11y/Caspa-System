@@ -312,7 +312,7 @@ describe('what non-administrators receive (D7-5, Membership row)', () => {
     expect(page.endsOn).toEqual({});
     expect(page.checks).toEqual({ must: [], worth: [] });
     expect(r.structure.removalBlockers('position', 'pos-hoo')).toEqual([]);
-    expect(page.structure.positions).toHaveLength(12); // the structure itself stays visible to all members
+    expect(page.structure.positions).toHaveLength(13); // the structure itself stays visible to all members
   });
 });
 
@@ -339,7 +339,7 @@ describe('who sees the structure, as the organisation sets it (v1.5)', () => {
     const { as } = limited('own_line');
     for (const role of ['executive', 'strategy', 'admin'] as const) {
       const page = as(SWU, role).structure.page();
-      expect([role, page.scoped, page.structure.positions.length]).toEqual([role, false, 12]);
+      expect([role, page.scoped, page.structure.positions.length]).toEqual([role, false, 13]);
     }
     // Finance is not ticked here, so the Head of Finance sees their own line.
     expect(as(SWU, 'finance').structure.page().structure.positions.map((p) => p.id).sort()).toEqual(['pos-hof', 'pos-md']);

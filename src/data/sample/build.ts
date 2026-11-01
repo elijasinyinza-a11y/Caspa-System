@@ -127,7 +127,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
       confirmation: { at: stamp.at, byMembershipId: sharedMembership }, boardApproval: null, formation: null, processOwnerPositionId: null, calendar: null, currentRevision: 0,
     }],
     fourQEntries, goals, objectives, kpis,
-    kpiTargets: [], kpiActuals: [], baselineMeasures: [], resourceEnvelopes: [], activities, activityProgress: [], deficiencies: [],
+    kpiTargets: [], kpiActuals: [], baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], activities, activityProgress: [], deficiencies: [],
     cycles: [{ ...base, id: id(`cy-${k}-budget`), kind: 'budget', financialYear: spec.fy, status: 'open', gateDueDates: {} }],
     budgetVersions: [{ ...base, id: id(`bv-${k}-1`), cycleId: id(`cy-${k}-budget`), version: 1, status: 'draft', approval: null, boardApproval: null }],
     budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [],

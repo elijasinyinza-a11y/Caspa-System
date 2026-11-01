@@ -11,6 +11,7 @@ import { rateContract } from '../rules/rating';
 import { sentBy } from '../rules/onboarding';
 import { escalated, formingPlan } from '../rules/formation';
 import { canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentState, entriesOf, filledCells, isLive, visionConfirmed } from '../rules/conception';
+import { baselineOwnerPosition, baselinesOf, baselineState, complianceOf, currentRound, inAudience, inputsOf, isLiveBaseline } from '../rules/consultation';
 import { formatNumber } from './format';
 import { currentBudgetVersion } from '../rules/structure';
 import { en } from '../strings/en';
@@ -212,6 +213,47 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     // The Executive: once every section has an accepted card, the vision is theirs to write and confirm.
     if (v.roles.includes('executive') && filledCells(s, forming.id).length === CELLS.length) {
       add({ key: `approve:vision:${forming.id}`, kind: 'approval', title: C.vision(forming.title), detail: C.visionDetail, due, severity: null, as: 'executive', link: strategy });
+    }
+  }
+
+  /* Consultation and Confirmation (part 11c). */
+  if (forming) {
+    const N = en.consultation.needs;
+    const strategy: FixTarget = { kind: 'workspace', w: 'strategy' };
+    const count = (n: number, k: string) => `${formatNumber(n)} ${n === 1 ? en.setup.plural[k]![0] : en.setup.plural[k]![1]}`;
+    const started = (st: 'consultation' | 'confirmation') => (forming.formation?.[st].status ?? 'not_started') !== 'not_started';
+    const round = currentRound(s, forming.id);
+    const runsRound = v.roles.includes('strategy_office') || v.roles.includes('facilitator');
+    // The round's audience: have your say while it is open, until you have sent something. Those running it are not asked.
+    if (round?.status === 'open' && !runsRound && inAudience(s, round, v.positionIds as string[]) && !inputsOf(s, round.id).some((i) => i.created.byMembershipId === v.membershipId)) {
+      add({ key: `consult:say:${round.id}`, kind: 'deadline', title: N.say(forming.title), detail: N.sayDetail, due: round.closesOn, severity: null, as: null, link: strategy });
+    }
+    if (round?.status === 'scheduled' && v.roles.includes('strategy_office') && forming.formation?.consultation.status === 'open') {
+      add({ key: `consult:open:${round.id}`, kind: 'deadline', title: N.openRound, detail: forming.title, due: round.opensOn, severity: null, as: 'strategy_office', link: strategy });
+    }
+    if (started('consultation')) {
+      const live = baselinesOf(s, forming.id).filter(isLiveBaseline);
+      // Owners: the measures of the units they answer for, still awaiting them.
+      const awaitingByUnit = new Map<string, number>();
+      for (const b of live) {
+        const pos = baselineOwnerPosition(s, b);
+        if (baselineState(b) === 'awaiting_owner' && b.ownerUnitId && mine(pos)) awaitingByUnit.set(b.ownerUnitId, (awaitingByUnit.get(b.ownerUnitId) ?? 0) + 1);
+      }
+      for (const [u, n] of awaitingByUnit) {
+        const name = s.units.find((x) => x.id === u)?.name ?? '';
+        add({ key: `baseline:check:${u}`, kind: 'deadline', title: N.check(count(n, 'baseline'), name), detail: forming.title, due: null, severity: null, as: null, link: strategy });
+      }
+      if (v.roles.includes('strategy_office')) {
+        const orphaned = live.filter((b) => baselineState(b) === 'awaiting_owner' && (() => { const pos = baselineOwnerPosition(s, b); return !pos || !holderOf(s, pos, now)?.person; })()).length;
+        if (orphaned) add({ key: `baseline:office:${forming.id}`, kind: 'deadline', title: N.officeCheck(count(orphaned, 'aiBaseline')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: strategy });
+        const toValidate = live.filter((b) => baselineState(b) === 'confirmed').length;
+        if (toValidate) add({ key: `baseline:validate:${forming.id}`, kind: 'deadline', title: N.validate(count(toValidate, 'baseline')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: strategy });
+      }
+    }
+    // The compliance officer reviews every item once Confirmation opens.
+    if (started('confirmation') && v.roles.includes('compliance')) {
+      const open = complianceOf(s, forming.id).filter((c) => c.outcome === null).length;
+      if (open) add({ key: `compliance:review:${forming.id}`, kind: 'deadline', title: N.review(count(open, 'complianceItem')), detail: N.reviewDetail, due: forming.calendar?.planTargetOn ?? null, severity: null, as: null, link: strategy });
     }
   }
 

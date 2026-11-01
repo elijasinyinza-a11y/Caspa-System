@@ -27,6 +27,7 @@ export function devMembership(org: ReviewOrg, role: DevRole, now: string): strin
     case 'finance': return byRole('finance')?.id ?? null;
     case 'hr': return byRole('hr')?.id ?? null;
     case 'admin': return byRole('org_admin')?.id ?? null;
+    case 'compliance': return byRole('compliance')?.id ?? null;
     case 'consultant': return active.find((m) => m.roles.includes('org_admin') && held(m.personId).length === 0 && m.endsOn)?.id ?? null;
     case 'supervisor':
     case 'employee': {

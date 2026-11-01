@@ -92,7 +92,7 @@ describe('sessions and decision logs', () => {
     expect(so.applyPackage('standard')).toEqual({ ok: true, added: 0 });
     const sessions = so.page().sessions;
     expect(sessions.map((w) => [w.purposes.join('+'), w.format, w.participants]).sort()).toEqual([
-      ['composition+validation', 'in_person', 4], ['four_q_review+vision', 'in_person', 4], ['kickoff', 'online', 4], ['launch', 'online', 12],
+      ['composition+validation', 'in_person', 4], ['four_q_review+vision', 'in_person', 4], ['kickoff', 'online', 4], ['launch', 'online', 13],
     ]);
     expect(so.page().checks.some((c) => c.kind === 'purpose_uncovered')).toBe(false);
     so.cancelSession(sessions.find((w) => w.purposes.includes('launch'))!.id);

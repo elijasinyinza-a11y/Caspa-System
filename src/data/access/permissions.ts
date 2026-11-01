@@ -3,6 +3,7 @@ import { PERMISSIONS, type Action, type Finding, type Principal } from '../../co
 import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structure';
 import { structureScope } from '../../rules/structure-view';
 import { cardOwnerPositions } from '../../rules/conception';
+import { baselineOwnerPosition, complianceOwnerPositions, inAudience } from '../../rules/consultation';
 import { structureOfStore } from './setup/draft';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
@@ -41,6 +42,11 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       // Part 11b: a 4Q card's owners are the department heads (F-2) of the departments that raised it.
       const q = s.fourQEntries.find((x) => x.id === subject.id);
       if (q) return cardOwnerPositions(s, q).some((p) => mine(p));
+      // Part 11c (contract v1.6): a baseline's owner answers for its unit; a compliance item's owners head the departments that flagged it.
+      const bm = s.baselineMeasures.find((x) => x.id === subject.id);
+      if (bm) return mine(baselineOwnerPosition(s, bm));
+      const ci = s.complianceItems.find((x) => x.id === subject.id);
+      if (ci) return complianceOwnerPositions(s, ci).some((p) => mine(p));
       const rec =
         s.goals.find((x) => x.id === subject.id) ?? s.objectives.find((x) => x.id === subject.id) ??
         s.kpis.find((x) => x.id === subject.id) ?? s.activities.find((x) => x.id === subject.id);
@@ -61,6 +67,12 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       const scope = structureScope(structureOfStore(s, '0000-01-01' as never), { personId: v.personId, roles: v.roles, positionIds: [...v.positionIds] }, s.organisation.settings.structureView);
       if (scope.whole) return true;
       return subject.type === 'OrgUnit' ? scope.units.has(subject.id) : scope.positions.has(subject.id);
+    }
+    case 'round_audience': {
+      // v1.6: a round, or an input of it (or, to add one, the round's id under ConsultationInput).
+      const input = s.consultationInputs.find((x) => x.id === subject.id);
+      const round = s.consultationRounds.find((r) => r.id === (input ? input.roundId : subject.id));
+      return !!round && inAudience(s, round, v.positionIds as string[]);
     }
     case 'budget_holder': {
       const l = s.budgetLines.find((x) => x.id === subject.id);

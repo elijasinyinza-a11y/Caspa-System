@@ -6,7 +6,7 @@ import {
   RATING_PRESETS, type Activity, type BudgetLine, type ContractObjective, type Deficiency, type DraftMeta, type FourQCell, type FourQEntry,
   type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
-  type AiTask, type SourceDocument,
+  type AiTask, type SourceDocument, type BaselineMeasure, type ComplianceItem,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
@@ -36,6 +36,8 @@ const PEOPLE: P[] = [
   // Organisation administrator added for slice 7 (prototype approved 29 October 2026).
   { key: 'hrm', name: 'Natasha Kabwe', title: 'Human Resources Manager', unit: 'u-org', reportsTo: 'md', roles: ['hr', 'org_admin'] },
   { key: 'spm', name: 'Bwalya Musonda', title: 'Strategy and Planning Manager', unit: 'u-org', reportsTo: 'md', roles: ['strategy_office'] },
+  // Added for part 11c (approved 1 November 2026), so the compliance register has a reviewer.
+  { key: 'lco', name: 'Lillian Siame', title: 'Legal and Compliance Officer', unit: 'u-org', reportsTo: 'md', roles: ['compliance'] },
   { key: 'hoo', name: 'Joseph Tembo', title: 'Head of Operations', unit: 'u-ops', reportsTo: 'md' },
   { key: 'hoc', name: 'Grace Zulu', title: 'Head of Commercial', unit: 'u-com', reportsTo: 'md' },
   { key: 'cm', name: 'Peter Mwansa', title: 'Commercial Manager', unit: 'u-com', reportsTo: 'hoc' },
@@ -129,6 +131,44 @@ const formationAi: AiTask = {
   inputRefs: [...formationDocs.map((d) => ({ type: 'SourceDocument', id: d.id as string })), { type: 'StrategicPlan', id: FORMING as string }],
   outputRefs: formationCards.map((c) => ({ type: 'FourQEntry', id: c.id as string })),
 };
+/*
+ * Part 11c (approved 1 November 2026): the prototype's six baselines and six compliance items, in its wording.
+ * Baselines were drafted by the AI with the 4Q cards; where the prototype names a page they point to it, otherwise
+ * to the drafting task with the system export named in words. Owners follow the sample's units as in 11b
+ * (Sanitation's measure is Operations'); the staff measure has no department here, so the Strategy office checks it.
+ * As in the prototype, Operations and the Strategy office have already confirmed theirs; none is validated yet.
+ */
+const confirmedBy = (m: string): Stamp => ({ at: dt('2026-10-17T10:00:00+02:00'), byMembershipId: id(m) });
+const baseline = (n: number, name: string, unit: string, value: number, asOf: string, source: string, owner: string | null, from: { doc: string; page: number } | null, confirmed: string | null): BaselineMeasure => ({
+  ...draftedBase, id: id(`bm-2027-${n}`), planId: FORMING, name, unit, value, asOf: d(asOf), sourceDescription: source, ownerUnitId: owner ? id(owner) : null, validated: null,
+  draft: {
+    state: confirmed ? 'accepted' : 'ai_draft', decided: confirmed ? confirmedBy(confirmed) : null,
+    provenance: from ? { kind: 'document', sourceDocumentId: id(from.doc), page: from.page, excerpt: '' } : { kind: 'ai_suggestion', aiTaskId: EXTRACT },
+  },
+});
+const formationBaselines: BaselineMeasure[] = [
+  baseline(1, 'Non-revenue water', '%', 47, '2026-09-30', 'Billing export, September 2026', 'u-com', null, null),
+  baseline(2, 'Supply hours per day', 'hours per day', 16, '2026-09-30', 'Operations supply log', 'u-ops', null, 'm-hoo'),
+  baseline(3, 'Collection efficiency', '%', 78, '2026-09-30', 'Finance revenue report, Q3 2026', 'u-fin', null, null),
+  baseline(4, 'Sanitation coverage', '%', 31, '2025-12-31', 'Performance Report 2025, p. 22', 'u-ops', { doc: 'sd-2027-3', page: 22 }, 'm-hoo'),
+  baseline(5, 'Metered connections', '%', 81, '2025-12-31', 'Annual Report 2025, p. 9', 'u-com', { doc: 'sd-2027-2', page: 9 }, null),
+  baseline(6, 'Staff with signed contracts', '%', 85, '2026-09-30', 'HR records', null, null, 'm-spm'),
+];
+/** Obligations come only from uploaded documents, or are typed by a person (never from the AI's general knowledge). */
+const obligation = (n: number, title: string, kind: ComplianceItem['kind'], from: { doc: string; page: number } | null): ComplianceItem => ({
+  ...(from ? draftedBase : { orgId, created: confirmedBy('m-lco'), updated: confirmedBy('m-lco') }), id: id(`ci-2027-${n}`), planId: FORMING, title, kind,
+  provenance: from ? { kind: 'document', sourceDocumentId: id(from.doc), page: from.page, excerpt: '' } : { kind: 'manual' },
+  flaggedByUnitIds: [], outcome: null, reviewed: null,
+});
+const formationCompliance: ComplianceItem[] = [
+  obligation(1, 'Report service hours to the regulator every quarter', 'licence_condition', { doc: 'sd-2027-4', page: 3 }),
+  obligation(2, 'Maintain drinking water quality to the national standard', 'licence_condition', { doc: 'sd-2027-4', page: 5 }),
+  obligation(3, 'Support tariff applications with a cost-of-service study', 'licence_condition', { doc: 'sd-2027-4', page: 7 }),
+  obligation(4, 'Keep an up-to-date asset register', 'licence_condition', { doc: 'sd-2027-4', page: 12 }),
+  obligation(5, 'Tariff review applications open in 2028', 'regulation', { doc: 'sd-2027-5', page: 2 }),
+  obligation(6, 'Public finance management rules', 'regulation', null),
+];
+
 const goal = (n: number, title: string, perspective: Goal['perspective'], owner: string): Goal => ({
   ...base, id: id(`g${n}`), planId: PLAN, code: `G${n}`, title, perspective, ownerPositionId: pos(owner), themeIds: [],
   fourQEntryIds: fourQEntries.filter((q) => q.id === `q-g${n}-1`).map((q) => q.id), draft: human,
@@ -246,7 +286,8 @@ function seedStore(): Store {
       ['1.1.1', 90], ['1.2.1', 40], ['2.1.1', 18], ['3.1.1', 36], ['4.1.1', 70],
     ].map(([k, t]) => ({ ...base, id: id(`kt-${k}-${FY}`), kpiId: id(`k${k}`), financialYear: FY, target: t as number })),
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
-    baselineMeasures: [],
+    baselineMeasures: formationBaselines,
+    consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
     resourceEnvelopes: [],
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
@@ -307,7 +348,9 @@ function seedStore(): Store {
     // The structure was confirmed by the organisation administrator on 15 January 2026 (D7-9).
     auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length })],
     sourceDocuments: formationDocs,
-    aiTasks: [formationAi], visionStatements: [],
+    // The same drafting task also drafted the baselines and the compliance items read from documents (part 11c).
+    aiTasks: [{ ...formationAi, outputRefs: [...formationAi.outputRefs, ...formationBaselines.map((b) => ({ type: 'BaselineMeasure', id: b.id as string })), ...formationCompliance.filter((c) => c.provenance.kind === 'document').map((c) => ({ type: 'ComplianceItem', id: c.id as string }))] }],
+    visionStatements: [],
   };
 }
 

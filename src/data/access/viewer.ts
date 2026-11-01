@@ -2,6 +2,8 @@
 import type { AssignedRole, Id, ISODate } from '../../contract/caspa-data-contract';
 import { budgetHolderPositions, linesOfVersion } from '../../rules/structure';
 import { headsADepartment } from '../../rules/conception';
+import { openRoundFor } from '../../rules/consultation';
+import { formingPlan } from '../../rules/formation';
 import type { Store } from './store';
 
 export interface Viewer {
@@ -17,6 +19,8 @@ export interface Viewer {
   isBudgetHolder: boolean;
   /** Answers for a department directly below the top unit while a plan is being formed (F-2, part 11b). */
   isDepartmentHead: boolean;
+  /** In the audience of an open consultation round of the plan being formed (part 11c), so may have their say there. */
+  inConsultation: boolean;
 }
 
 export function resolveViewer(s: Store, membershipId: string, now: ISODate, financialYear: number): Viewer {
@@ -37,6 +41,7 @@ export function resolveViewer(s: Store, membershipId: string, now: ISODate, fina
     hasContract: s.contracts.some((c) => c.personId === m.personId && c.financialYear === financialYear),
     isBudgetHolder: linesOfVersion(s, financialYear).some((l) => positionIds.some((p) => budgetHolderPositions(s, l).has(p))),
     isDepartmentHead: headsADepartment(s, positionIds),
+    inConsultation: !!openRoundFor(s, formingPlan(s), positionIds),
   };
 }
 

@@ -1,6 +1,6 @@
 /** The in-memory shape of one organisation's records. Holds stored records only, never computed values. */
 import type {
-  Acknowledgement, Activity, AiTask, AuditEntry, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
+  Acknowledgement, Activity, AiTask, AuditEntry, ComplianceItem, ConsultationInput, ConsultationRound, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review,
   SourceDocument, StrategicPlan, VisionStatement, Workshop,
@@ -45,4 +45,9 @@ export interface Store {
   aiTasks: AiTask[];
   /** Vision and mission (contract VisionStatement); for an imported plan, typed by the Executive (O9). */
   visionStatements: VisionStatement[];
+  /** Part 11c: consultation rounds and what people sent in (contract v1.6). */
+  consultationRounds: ConsultationRound[];
+  consultationInputs: ConsultationInput[];
+  /** Part 11c: the compliance register (Confirmation). */
+  complianceItems: ComplianceItem[];
 }

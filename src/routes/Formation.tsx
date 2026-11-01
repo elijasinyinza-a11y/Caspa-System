@@ -12,8 +12,10 @@ import { formatDate, formatFinancialYear, formatNumber } from '../selectors/form
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, input, label, plural, primary } from './organisation/ui';
 import { Board, Documents, MyPart, VisionMission } from './Conception';
+import { Baselines, Compliance, Room } from './Consultation';
 
 const F = en.formation;
+const K = en.consultation;
 const FORMATS: Format[] = ['in_person', 'online', 'hybrid', 'async_review'];
 const sessionTitle = (purposes: WorkshopPurpose[]) => en.list(purposes.map((p) => F.purpose[p]!));
 const d = (x: ISODate | null) => (x ? formatDate(x) : '');
@@ -22,8 +24,13 @@ export function Formation() {
   const { repo } = useApp();
   const f = repo.formation.page();
   const [setup, setSetup] = useState(false);
-  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision'>('formation');
   const c = repo.conception.page();
+  const room = repo.consultation.room();
+  const bl = repo.consultation.baselines();
+  const cp = repo.consultation.compliance();
+  // Part 11c: someone here only to have their say, or the compliance officer, opens on their own tab.
+  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision' | 'room' | 'baselines' | 'compliance'>(() =>
+    cp?.canReview && !c?.seesAll ? 'compliance' : room?.canComment && !room.canRun && !c?.seesAll && !c?.myDepartments.length ? 'room' : 'formation');
   if (!f.plan) {
     return (
       <section className={`${card} mt-4`} aria-labelledby="next-plan">
@@ -44,6 +51,9 @@ export function Formation() {
     ...(c && (c.seesAll || mine.length) ? [['board', C.board] as [typeof tab, string]] : []),
     ...(c ? [['vision', C.vision] as [typeof tab, string]] : []),
     ...(c?.seesAll ? [['documents', C.documents] as [typeof tab, string]] : []),
+    ...(room ? [['room', room.canRun || c?.seesAll || c?.myDepartments.length ? K.tabs.room : K.tabs.say] as [typeof tab, string]] : []),
+    ...(bl && (bl.rows.length || bl.canRun || bl.ownUnits.length || c?.seesAll) ? [['baselines', K.tabs.baselines] as [typeof tab, string]] : []),
+    ...(cp && (cp.canAdd || cp.canReview || c?.seesAll || c?.myDepartments.length) ? [['compliance', K.tabs.compliance] as [typeof tab, string]] : []),
     ['calendar', F.tabs.calendar], ['sessions', F.tabs.sessions],
   ];
   return (
@@ -75,6 +85,9 @@ export function Formation() {
         {tab === 'mine' && c && <MyPart c={c} />}
         {tab === 'documents' && c && <Documents c={c} />}
         {tab === 'vision' && c && <VisionMission c={c} />}
+        {tab === 'room' && room && <Room r={room} />}
+        {tab === 'baselines' && bl && <Baselines b={bl} />}
+        {tab === 'compliance' && cp && <Compliance c={cp} />}
       </div>
     </section>
   );
@@ -143,6 +156,29 @@ function agendaLabel(i: AgendaItem, f: FormationPage): { label: string; kind: st
   }
 }
 
+/** Part 11c: how far Consultation and Confirmation have got, as in the prototype's formation home. Counts only. */
+function Progress() {
+  const { repo } = useApp();
+  const room = repo.consultation.room();
+  const bl = repo.consultation.baselines();
+  const cp = repo.consultation.compliance();
+  const P = K.progress;
+  const rows: [string, string][] = [
+    ...(bl ? [[P.baselines, P.of(formatNumber(bl.counts.validated), formatNumber(bl.counts.total))] as [string, string]] : []),
+    ...(cp ? [[P.compliance, P.of(formatNumber(cp.counts.reviewed), formatNumber(cp.counts.total))] as [string, string]] : []),
+    ...(room?.round && room.seesInputs ? [[P.inputs, formatNumber(room.round.counts.inputs)] as [string, string]] : []),
+  ];
+  if (!rows.length) return null;
+  return (
+    <section className={`${card} xl:col-span-2`} aria-labelledby="progress">
+      <h3 id="progress" className="text-16 font-bold text-navy">{P.title}</h3>
+      <dl className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3">
+        {rows.map(([k, v]) => <div key={k} className="rounded-lg bg-cream p-3"><dt className="text-13 text-muted">{k}</dt><dd className="tabular text-22 font-bold text-navy">{v}</dd></div>)}
+      </dl>
+    </section>
+  );
+}
+
 function Tracker({ f, openCalendar }: { f: FormationPage; openCalendar: () => void }) {
   const { repo } = useApp();
   const p = f.plan!;
@@ -198,6 +234,7 @@ function Tracker({ f, openCalendar }: { f: FormationPage; openCalendar: () => vo
           })}
         </ul>
       </section>
+      {f.seesDraft && <Progress />}
       {f.checks.length > 0 && (
         <section className={`${card} xl:col-span-2`}>
           <h3 className="text-16 font-bold text-navy">{T.worth}</h3>

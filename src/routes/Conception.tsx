@@ -349,7 +349,15 @@ function Department({ c, d }: { c: ConceptionPage; d: DepartmentView }) {
           <Step n={1} title={c.aiEnabled ? M.steps.interview : M.steps.interviewManual} state={c.aiEnabled ? (d.interviewed ? '' : M.interviewTime) : M.manualHint} done={c.aiEnabled ? d.interviewed : total > 0} />
           <Step n={2} title={M.steps.check} state={M.checkState(formatNumber(accepted), formatNumber(total))} done={total > 0 && d.toCheck === 0} />
           <Step n={3} title={M.steps.send} state={d.submittedOn ? M.sentState(formatDate(d.submittedOn)) : M.sendState} done={d.submitted} />
-          <Step n={4} title={M.steps.baselines} state={M.later(en.formation.stage.consultation!)} done={false} later />
+          {(() => {
+            // Part 11c: this department's measures in the baseline register, once Consultation opens.
+            const b = repo.consultation.baselines();
+            const rows = b?.rows.filter((r) => r.owner?.unitId === d.unitId) ?? [];
+            const waiting = rows.filter((r) => r.state === 'awaiting_owner').length;
+            return !b || b.stage === 'not_started'
+              ? <Step n={4} title={M.steps.baselines} state={M.later(en.formation.stage.consultation!)} done={false} later />
+              : <Step n={4} title={M.steps.baselines} state={M.baselineState(formatNumber(rows.length - waiting), formatNumber(rows.length))} done={rows.length > 0 && waiting === 0} />;
+          })()}
           <Step n={5} title={M.steps.objectives} state={M.later(en.formation.stage.composition!)} done={false} later />
         </ol>
       </div>

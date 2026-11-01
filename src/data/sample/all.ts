@@ -9,10 +9,13 @@ import { createScale } from './scale';
 import { createSeed, DEV_ROLE_MEMBERSHIPS, ORG } from './seed';
 
 export type BaseDevRole = 'executive' | 'strategy' | 'finance' | 'hr' | 'supervisor' | 'employee';
-/** Every development role switch: the six roles, the organisation administrator (D7-13) and, where one exists, a consultant. */
-export type DevRole = BaseDevRole | 'admin' | 'consultant';
+/**
+ * Every development role switch: the six roles, the organisation administrator (D7-13), and, where one exists, the
+ * compliance officer (part 11c) and a consultant.
+ */
+export type DevRole = BaseDevRole | 'admin' | 'compliance' | 'consultant';
 export const DEV_ROLES: BaseDevRole[] = ['executive', 'strategy', 'finance', 'hr', 'supervisor', 'employee'];
-export const ALL_DEV_ROLES: DevRole[] = [...DEV_ROLES, 'admin', 'consultant'];
+export const ALL_DEV_ROLES: DevRole[] = [...DEV_ROLES, 'admin', 'compliance', 'consultant'];
 
 export interface SampleOrg {
   orgId: string;

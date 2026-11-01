@@ -268,7 +268,7 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
         const k = r.kpi ?? { unit: '', direction: 'higher_is_better' as const, aggregation: 'latest' as const, baseline: null, baselineAsOf: null, target: null };
         let measureId: Id<'BaselineMeasure'> | null = null;
         if (k.baseline !== null) {
-          const m: BaselineMeasure = { ...base(), id: nextId('bm') as Id<'BaselineMeasure'>, planId: planId as Id<'StrategicPlan'>, name: r.title, unit: k.unit, value: k.baseline, asOf: (k.baselineAsOf ?? now) as ISODate, sourceDescription, validated: null, draft: draft(r) };
+          const m: BaselineMeasure = { ...base(), id: nextId('bm') as Id<'BaselineMeasure'>, planId: planId as Id<'StrategicPlan'>, name: r.title, unit: k.unit, value: k.baseline, asOf: (k.baselineAsOf ?? now) as ISODate, sourceDescription, ownerUnitId: null, validated: null, draft: draft(r) };
           s.baselineMeasures.push(m);
           measureId = m.id;
         }
@@ -478,7 +478,7 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
           if (input.baseline === null) k.baselineMeasureId = null;
           else if (m) { m.value = input.baseline; m.validated = null; }
           else {
-            const nm: BaselineMeasure = { ...base(), id: nextId('bm') as Id<'BaselineMeasure'>, planId: p!.id, name: k.name, unit: k.unit, value: input.baseline, asOf: now, sourceDescription: en.onboarding.sourceTyped, validated: null, draft: { state: 'human', provenance: { kind: 'manual' }, decided: null } };
+            const nm: BaselineMeasure = { ...base(), id: nextId('bm') as Id<'BaselineMeasure'>, planId: p!.id, name: k.name, unit: k.unit, value: input.baseline, asOf: now, sourceDescription: en.onboarding.sourceTyped, ownerUnitId: null, validated: null, draft: { state: 'human', provenance: { kind: 'manual' }, decided: null } };
             s.baselineMeasures.push(nm);
             k.baselineMeasureId = nm.id;
           }
