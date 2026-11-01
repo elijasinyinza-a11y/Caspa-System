@@ -17,7 +17,6 @@ export function SevenCStage({ stage }: { stage: string }) {
       {named.map((c) => (
         <span key={c} className="mt-2 block"><span className="font-semibold">{c}: </span>{en.book.sevenCStage[c]!.text}</span>
       ))}
-      <span className="mt-1 block text-12 text-border">{en.explain.source}</span>
     </Explain>
   );
 }

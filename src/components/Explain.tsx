@@ -91,14 +91,12 @@ export function Explain({ term, label, children, className = '', triggerClass }:
   );
 }
 
-/** One confirmed line from the book, with its source. */
+/**
+ * One confirmed line from the book. The page reference stays with the line in `en.book` for traceability but is not
+ * shown on screen, and no source line is shown under it (Build Brief, section 33).
+ */
 export function BookLine({ line }: { line: { text: string; page: string } }) {
-  return (
-    <>
-      <span className="block">{line.text}</span>
-      <span className="mt-1 block text-12 text-border">{en.explain.source}</span>
-    </>
-  );
+  return <span className="block">{line.text}</span>;
 }
 
 /** A 6P level as a tappable chip: what the level is (from the book), then what it covers (SIX_P_SCOPE). */

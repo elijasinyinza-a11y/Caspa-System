@@ -237,7 +237,8 @@ export const en = {
   },
   /**
    * Framework explanations shown on tap (Clarity Specification, section 5). Taken from Business Beyond the
-   * Strategic Plan and confirmed by Elijah line by line on 28 October 2026. `page` is the ebook PDF page.
+   * Strategic Plan and confirmed by Elijah line by line on 28 October 2026. `page` is the ebook PDF page, kept
+   * for traceability and not shown on screen; no source line is shown under an explanation (Build Brief, section 33).
    */
   book: {
     sixP: { text: 'The six levels at which business decisions are made to drive the organisation towards its vision.', page: '152' },
@@ -274,7 +275,6 @@ export const en = {
     covers: 'Covers',
     sevenCIntro: (stage: string) => `${stage} is where this workspace sits in the 7Cs of leading strategy.`,
     sevenCStages: 'The 7Cs',
-    source: 'From Business Beyond the Strategic Plan',
   },
   frequency: { monthly: 'Monthly', quarterly: 'Quarterly', biannual: 'Twice a year', annual: 'Yearly' } satisfies Record<ReportingFrequency, string>,
   direction: { higher_is_better: 'Higher is better', lower_is_better: 'Lower is better', milestone: 'Milestones' } satisfies Record<Kpi['direction'], string>,
