@@ -33,7 +33,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
-    11c Consultation and Confirmation — done (v0.13.0); 11d Composition; 11e Communication
+    11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade next (v0.15.0); 11e Communication (v0.16.0)
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -49,13 +49,24 @@ The development role switcher has six roles: Executive, Strategy office, Finance
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
-## Part 11d in progress (toward v0.14.0)
+## Composition, part 11d (v0.14.0)
 
-- BUILD-BRIEF section 34: decisions D11d-1 to D11d-14, progress across plan years, and year close, accepted
-  1 November 2026. Contract v1.7 is in place (`standard` document kind; Theme, Objective, Kpi and IndicativeCost
-  rows; the IndicativeCost record). The AI may read obligations from standards. 546 tests.
-- Not built yet: the composer screens, store collections for themes and indicative costs, and the new checks. The
-  stub's sample wording for 11d awaits Elijah's approval before the build.
+- BUILD-BRIEF section 34; contract v1.7. 561 tests (15 new in `src/data/access/composition-flow.test.ts`, 4 in
+  `src/data/access/composition.test.ts`, 2 in `src/strings/book.test.ts`).
+- Code: `src/rules/composition.ts` (groupings, decisions, checks, the resource check, codes), `src/rules/baseline.ts`
+  (a KPI's baseline through its measure), `src/data/access/composition.ts`, `src/routes/Composition.tsx`, the stub's
+  Composition calls in `src/ai`, and the approved sample wording in `src/data/sample/composition.ts`.
+- Try it on Sample Water Utility. Conception first: as Strategy office, open Conception on the Formation tab, accept
+  the 12 drafted cards, add each department's sheet to the board, and add a card for the empty section; as Executive,
+  write the vision and mission and confirm. Then as Strategy office open Composition in the tracker and, on the
+  Composition tab, "Suggest themes (AI)", accept them and "Make it a goal"; as Executive confirm the goals; as Strategy
+  office "Suggest objectives" and "Suggest a KPI (AI)" (Non-revenue water: baseline 47% from the register, targets 44
+  to 32). As Finance set an envelope; with costs above it, the side panel shows it as worth checking. As Compliance
+  review the six items, as Executive confirm every item, as Strategy office "Send to the Executive", then as Executive
+  confirm with a board resolution reference.
+- Department heads (for example the Head of Operations, or Finance, who heads the Finance department) propose
+  objectives as their owners and add KPIs to them. Employees see themes and goals, card counts only.
+- Known: after confirmation the 4Q board and the registers close until v0.15.0 adds read-only views.
 
 ## Framework explanations (v0.13.1)
 
