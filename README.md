@@ -3,7 +3,7 @@
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
 with decisions to 1 November 2026, including the clarity decisions in section 20, Conception in section 31,
-Consultation and Confirmation in section 32 and framework explanations in section 33) first. The data contract is v1.6.
+Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34) first. The data contract is v1.7.
 
 ## Run
 
@@ -48,6 +48,14 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Part 11d in progress (toward v0.14.0)
+
+- BUILD-BRIEF section 34: decisions D11d-1 to D11d-14, progress across plan years, and year close, accepted
+  1 November 2026. Contract v1.7 is in place (`standard` document kind; Theme, Objective, Kpi and IndicativeCost
+  rows; the IndicativeCost record). The AI may read obligations from standards. 546 tests.
+- Not built yet: the composer screens, store collections for themes and indicative costs, and the new checks. The
+  stub's sample wording for 11d awaits Elijah's approval before the build.
 
 ## Framework explanations (v0.13.1)
 
