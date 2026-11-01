@@ -111,8 +111,15 @@ describe('the compliance register', () => {
     a!.outcome = 'aligned'; b!.outcome = 'needs_change'; c!.outcome = 'not_applicable'; c!.flaggedByUnitIds = ['u-ops'] as never;
     expect(complianceCounts(s, PLAN)).toEqual({ total: 6, reviewed: 3, aligned: 1, needsChange: 1, notApplicable: 1, flagged: 1 });
   });
-  it('reads obligations only from regulatory documents, licences and policies', () => {
+  it('reads obligations only from regulatory documents, licences, policies and standards', () => {
     const s = swu();
     expect(s.sourceDocuments.filter(isComplianceSource).map((d) => d.kind)).toEqual(['licence', 'regulatory']);
+  });
+  it('reads obligations from a standard the organisation provides (v1.7), never from other documents', () => {
+    const s = swu();
+    const doc = s.sourceDocuments.find((d) => d.kind === 'annual_report')!;
+    expect(isComplianceSource(doc)).toBe(false);
+    expect(isComplianceSource({ ...doc, kind: 'standard' })).toBe(true);
+    expect(isComplianceSource({ ...doc, kind: 'other' })).toBe(false);
   });
 });

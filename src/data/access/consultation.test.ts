@@ -283,7 +283,7 @@ describe('the compliance register', () => {
     expect(last(co.compliance()!.items).source).toBe('Added by Legal and Compliance Officer');
     expect(co.compliance()!.items.find((c) => c.id === 'ci-2027-1')!.source).toBe('Water Supply Licence, page 3');
   });
-  it('obligations are read only from laws, regulations, licences and policies', async () => {
+  it('obligations are read only from laws, regulations, licences, policies and standards', async () => {
     const f = fresh();
     const co = f.as('compliance').consultation;
     expect(co.compliance()!.documents.map((x) => x.title)).toEqual(['Water Supply Licence', 'Regulatory notice: tariff review 2028']);

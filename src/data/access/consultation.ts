@@ -136,7 +136,7 @@ export interface CompliancePage {
   canReview: boolean;
   counts: ReturnType<typeof complianceCounts>;
   items: ComplianceView[];
-  /** Laws, regulations, licences and policies given for this plan, which the AI may read obligations from. */
+  /** Laws, regulations, licences, policies and standards given for this plan, which the AI may read obligations from. */
   documents: { id: string; title: string }[];
 }
 

@@ -423,7 +423,7 @@ function Interview({ unitId, unit }: { unitId: string; unit: string }) {
 
 /* ───────── Source documents ───────── */
 
-const KINDS: SourceDocument['kind'][] = ['strategic_plan', 'annual_report', 'performance_report', 'board_paper', 'budget', 'regulatory', 'licence', 'policy', 'other'];
+const KINDS: SourceDocument['kind'][] = ['strategic_plan', 'annual_report', 'performance_report', 'board_paper', 'budget', 'regulatory', 'licence', 'policy', 'standard', 'other'];
 
 export function Documents({ c }: { c: ConceptionPage }) {
   const { repo } = useApp();

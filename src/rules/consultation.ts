@@ -8,7 +8,7 @@
  *   group is shown as its parent unit, going up until the group is large enough or the top unit is reached.
  * - The baseline register: the data owner answers for the measure's unit (contract v1.6); an AI draft waits for the
  *   owner to accept or correct it; the Strategy office validates. The AI never validates.
- * - The compliance register: obligations come only from uploaded laws, regulations, licences and policies, or are
+ * - The compliance register: obligations come only from uploaded laws, regulations, licences, policies and standards, or are
  *   typed by a person; department heads flag those affecting their area; the compliance officer reviews each one.
  */
 import type { BaselineMeasure, ComplianceItem, ConsultationInput, ConsultationRound, FormationStage, ISODate, SourceDocument, StrategicPlan } from '../contract/caspa-data-contract';
@@ -156,8 +156,8 @@ export function readBaselineRows(s: Store, rows: string[][]): BaselineRow[] {
 
 export const complianceOf = (s: Store, planId: string) => s.complianceItems.filter((c) => c.planId === planId);
 
-/** Documents the AI may read obligations from: laws and regulations, licences and policies only (F3). */
-export const COMPLIANCE_DOC_KINDS: SourceDocument['kind'][] = ['regulatory', 'licence', 'policy'];
+/** Documents the AI may read obligations from: laws and regulations, licences, policies and standards only (F3; standards from v1.7). */
+export const COMPLIANCE_DOC_KINDS: SourceDocument['kind'][] = ['regulatory', 'licence', 'policy', 'standard'];
 export const isComplianceSource = (d: SourceDocument) => COMPLIANCE_DOC_KINDS.includes(d.kind);
 
 /** The item's owners: heads of the departments that flagged it (contract v1.6). */
