@@ -4,7 +4,7 @@
  * alone decides whether a finding exists; an explanation never changes that.
  */
 import { en } from "../strings/en";
-import type { Finding } from "../contract/caspa-data-contract";
+import type { Finding, FourQCell } from "../contract/caspa-data-contract";
 import { RULES } from "../rules/integrity";
 
 export interface AiDraft {
@@ -54,6 +54,46 @@ export interface AiService {
   draftPlan(fileName: string): Promise<PlanDraft>;
   /** Turn a handover list into a readable note (H7). It restates the list only: no judgement, nothing decided. */
   draftHandoverNote(list: HandoverFacts): Promise<AiDraft>;
+  /** Read a source document and draft 4Q cards, each tied to its page (F1). Every card is a draft for a person to check. */
+  draftFourQFromDocument(fileName: string): Promise<FourQDraft>;
+  /** Turn a department head's interview answers into draft 4Q cards, one per answer (F1). Language only. */
+  draftFourQFromInterview(answers: { cell: FourQCell; answer: string }[]): Promise<FourQDraft>;
+  /** Summarise accepted cards for leadership to read before writing the vision. Never a draft vision (F1). */
+  summariseBoard(bands: { band: string; cards: string[] }[]): Promise<AiDraft>;
+  /** Suggest cards in the same section that may say the same thing. A suggestion only: people merge or keep both. */
+  suggestDuplicates(cards: { id: string; cell: FourQCell; text: string }[]): Promise<{ label: "AI suggestion"; pairs: [string, string][] }>;
+}
+
+/** Draft 4Q cards. The AI never decides which department raised a card or whether it is right. */
+export interface FourQDraft {
+  label: "AI draft";
+  cards: { cell: FourQCell; text: string; page: number | null }[];
+  /** Says plainly that the review build's stub returns the same draft for any file. */
+  sameForAnyFile: boolean;
+}
+
+/** The stub's fixed 4Q draft for any document (part 11b). Fictional and sector-neutral; for Elijah to approve. */
+export const SAMPLE_FOUR_Q_DRAFT: FourQDraft = {
+  label: "AI draft",
+  sameForAnyFile: true,
+  cards: [
+    { cell: { band: "retraction", column: "successes" }, text: "Most service targets in the last plan were met by its final year", page: 3 },
+    { cell: { band: "retraction", column: "failures" }, text: "Two major projects finished more than a year late", page: 5 },
+    { cell: { band: "repositioning", column: "failure_factors" }, text: "Approvals for spending take too long to reach field teams", page: 8 },
+    { cell: { band: "projection", column: "opportunities" }, text: "New funding programmes open to organisations of this size", page: 11 },
+  ],
+};
+
+/** Words that say little on their own, ignored when comparing cards. */
+const COMMON = new Set(["about", "above", "after", "again", "against", "being", "below", "could", "every", "first", "from", "have", "having", "into", "more", "most", "other", "over", "should", "since", "some", "than", "that", "their", "there", "these", "they", "this", "those", "through", "under", "until", "very", "were", "what", "when", "where", "which", "while", "with", "would", "your"]);
+const words = (t: string) => new Set(t.toLowerCase().split(/[^a-z0-9%]+/).filter((w) => w.length >= 5 && !COMMON.has(w)));
+
+/** The first sentence of an answer, as a card's text; long sentences are cut at a word boundary. */
+export function firstSentence(answer: string): string {
+  const one = answer.trim().split(/(?<=[.!?])\s/)[0]!.replace(/[.!?]+$/, "").trim();
+  if (one.length <= 120) return one;
+  const cut = one.slice(0, 117);
+  return `${cut.slice(0, cut.lastIndexOf(" ") > 60 ? cut.lastIndexOf(" ") : 117)}…`;
 }
 
 /** The facts a handover note may restate, already limited to what the reader may see. */
@@ -161,5 +201,26 @@ export const aiStub: AiService = {
   async draftHandoverNote(f) {
     // The stub writes from the list by a fixed template; a real model would only reword the same facts.
     return { label: "AI draft", text: en.vacancy.note(f) };
+  },
+  async draftFourQFromDocument() {
+    return structuredClone(SAMPLE_FOUR_Q_DRAFT);
+  },
+  async draftFourQFromInterview(answers) {
+    // The stub keeps each answer's first sentence; a real model would reword it. Blank answers draft nothing.
+    return { label: "AI draft", sameForAnyFile: false, cards: answers.filter((a) => a.answer.trim()).map((a) => ({ cell: a.cell, text: firstSentence(a.answer), page: null })) };
+  },
+  async summariseBoard(bands) {
+    // Restates accepted cards by band, by a fixed template. It never proposes a vision.
+    return { label: "AI draft", text: en.conception.summary(bands) };
+  },
+  async suggestDuplicates(cards) {
+    // The stub pairs cards in the same section that share a longer word; a real model would compare meaning.
+    const pairs: [string, string][] = [];
+    cards.forEach((a, i) => cards.slice(i + 1).forEach((b) => {
+      if (a.cell.band !== b.cell.band || a.cell.column !== b.cell.column) return;
+      const wa = words(a.text);
+      if ([...words(b.text)].some((w) => wa.has(w))) pairs.push([a.id, b.id]);
+    }));
+    return { label: "AI suggestion", pairs };
   },
 };
