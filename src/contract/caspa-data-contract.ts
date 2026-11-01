@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.5
+ * CASPA™ data contract — v1.6
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -63,6 +63,17 @@
  *     below, or their own line only. Every member always sees their own line.
  *     Records keep their own rows: the organisation's name and labels, and
  *     who owns a record, stay visible wherever the record is.
+ * v1.6 (1 November 2026, Elijah; Strategy formation part 11c, Consultation and Confirmation): one field, one
+ *     principal and three permission rows.
+ *     - BaselineMeasure.ownerUnitId: the unit whose data the measure is. Its owner is whoever answers for that
+ *       unit (the unit's accountable position); null means the Strategy office checks it.
+ *     - Principal 'round_audience': holds a position in a unit inside a consultation round's audience, or
+ *       any member when the audience is 'all'.
+ *     - ConsultationRound and ConsultationInput rows: rounds are seen by all members and run by the Strategy
+ *       office or a facilitator; the round's audience reads its inputs and adds comments and ideas. On every
+ *       screen an input shows its unit only (attribution 'unit_only'; small units as their parent).
+ *     - ComplianceItem row: seen by all members; drafted by the Strategy office, the compliance officer and its
+ *       owners (heads of the departments that flagged it); reviewed by the compliance officer.
  * Friction signals are removed for now and may return only with a confirmed
  * source. Leadership assessments are described generically.
  */
@@ -369,6 +380,7 @@ export interface BaselineMeasure extends OrgScoped, Audited {
   value: number;
   asOf: ISODate;
   sourceDescription: string;
+  ownerUnitId: Id<'OrgUnit'> | null; // v1.6: whose data it is; its owner answers for this unit. Null: the Strategy office checks it
   validated: Stamp | null; // a person vouches for it
   draft: DraftMeta;
 }
@@ -768,6 +780,7 @@ export type Principal =
   | 'next_level_reviewer' // the supervisor's supervisor
   | 'finding_recipient' // v1.3: holds a position the finding is routed to
   | 'structure_viewer' // v1.5: the part of the structure is within what Organisation.settings.structureView lets them see
+  | 'round_audience' // v1.6: holds a position in a unit inside the consultation round's audience (any member when 'all')
   | 'all_members';
 
 export type PermissionMatrix = Partial<Record<string, Partial<Record<Action, Principal[]>>>>;
@@ -785,7 +798,13 @@ export const PERMISSIONS: PermissionMatrix = {
   VisionStatement: { view: ['all_members'], draft: ['executive'], confirm: ['executive'] },
   FourQEntry: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['owner', 'strategy_office', 'facilitator'], propose: ['owner'] },
   BaselineMeasure: { view: ['executive', 'strategy_office', 'owner'], draft: ['owner', 'strategy_office'], approve: ['strategy_office'] },
-  ComplianceItem: { view: ['executive', 'strategy_office', 'compliance', 'owner'], draft: ['strategy_office', 'owner'], approve: ['compliance'] },
+  // v1.6: owners are the heads of the departments that flagged the item; flagging is the department head's draft.
+  ComplianceItem: { view: ['all_members'], draft: ['strategy_office', 'compliance', 'owner'], approve: ['compliance'] },
+  // v1.6: consultation. Rounds are opened and closed by people, never by the clock.
+  ConsultationRound: { view: ['all_members'], draft: ['strategy_office', 'facilitator'] },
+  // v1.6: by kind, comments and ideas come from the round's audience, section meeting summaries from department
+  // heads, expert input (held as a reference, never scored) from the Strategy office or a facilitator.
+  ConsultationInput: { view: ['executive', 'strategy_office', 'facilitator', 'round_audience'], draft: ['round_audience', 'strategy_office', 'facilitator'] },
   ResourceEnvelope: { view: ['executive', 'finance', 'strategy_office'], draft: ['finance'] },
   PlanDocument: { view: ['executive', 'strategy_office', 'facilitator'], draft: ['strategy_office', 'facilitator'], approve: ['strategy_office'] },
   // PlanDocument view widens to all members once status is 'final'.

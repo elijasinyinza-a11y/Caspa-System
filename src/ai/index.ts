@@ -62,7 +62,60 @@ export interface AiService {
   summariseBoard(bands: { band: string; cards: string[] }[]): Promise<AiDraft>;
   /** Suggest cards in the same section that may say the same thing. A suggestion only: people merge or keep both. */
   suggestDuplicates(cards: { id: string; cell: FourQCell; text: string }[]): Promise<{ label: "AI suggestion"; pairs: [string, string][] }>;
+  /**
+   * Group consultation inputs that say similar things, for the Strategy office to read (F2). Only the text is sent,
+   * never names or units. It decides nothing: ideas raised once stay listed on their own.
+   */
+  groupInputs(inputs: { id: string; text: string }[]): Promise<InputGroups>;
+  /** Read a report or system export and draft baseline values, each tied to its page (F2). The data owner checks each one. */
+  draftBaselinesFromDocument(fileName: string): Promise<BaselineDraft>;
+  /** Read a law, regulation, licence or policy and draft its obligations, each tied to its page (F3). Never from general knowledge. */
+  draftComplianceFromDocument(fileName: string): Promise<ComplianceDraft>;
 }
+
+/** Inputs grouped by what they share. Groups are labelled by the shared word, as a reading aid only. */
+export interface InputGroups {
+  label: "AI draft";
+  groups: { word: string; inputIds: string[] }[];
+  /** Inputs that share nothing with any other: kept visible, never dropped (specification F2). */
+  single: string[];
+}
+
+/** Draft baselines. The AI never decides whose data a measure is, nor whether it is valid. */
+export interface BaselineDraft {
+  label: "AI draft";
+  measures: { name: string; unit: string; value: number; asOf: string; page: number }[];
+  sameForAnyFile: true;
+}
+
+/** Draft obligations, only ever read from the document given. */
+export interface ComplianceDraft {
+  label: "AI draft";
+  items: { title: string; kind: "law" | "regulation" | "licence_condition" | "policy" | "standard"; page: number }[];
+  sameForAnyFile: true;
+}
+
+/** The stub's fixed baseline draft for any report (part 11c). Fictional and sector-neutral; for Elijah to approve. */
+export const SAMPLE_BASELINE_DRAFT: BaselineDraft = {
+  label: "AI draft",
+  sameForAnyFile: true,
+  measures: [
+    { name: "Customer complaints resolved within the target time", unit: "%", value: 72, asOf: "2025-12-31", page: 4 },
+    { name: "Projects completed on time", unit: "%", value: 58, asOf: "2025-12-31", page: 10 },
+    { name: "Staff turnover", unit: "%", value: 9, asOf: "2025-12-31", page: 15 },
+  ],
+};
+
+/** The stub's fixed obligations for any law, regulation, licence or policy (part 11c). Fictional and sector-neutral; for Elijah to approve. */
+export const SAMPLE_COMPLIANCE_DRAFT: ComplianceDraft = {
+  label: "AI draft",
+  sameForAnyFile: true,
+  items: [
+    { title: "Submit audited financial statements within six months of the year end", kind: "regulation", page: 4 },
+    { title: "Publish an annual report on service performance", kind: "licence_condition", page: 6 },
+    { title: "Review the procurement policy at least every two years", kind: "policy", page: 9 },
+  ],
+};
 
 /** Draft 4Q cards. The AI never decides which department raised a card or whether it is right. */
 export interface FourQDraft {
@@ -222,5 +275,25 @@ export const aiStub: AiService = {
       if ([...words(b.text)].some((w) => wa.has(w))) pairs.push([a.id, b.id]);
     }));
     return { label: "AI suggestion", pairs };
+  },
+  async groupInputs(inputs) {
+    // The stub groups inputs sharing a longer word, largest groups first; a real model would compare meaning.
+    const counts = new Map<string, string[]>();
+    for (const i of inputs) for (const w of words(i.text)) counts.set(w, [...(counts.get(w) ?? []), i.id]);
+    const placed = new Set<string>();
+    const groups: InputGroups["groups"] = [];
+    for (const [word, ids] of [...counts].filter(([, ids]) => ids.length > 1).sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1))) {
+      const free = ids.filter((id) => !placed.has(id));
+      if (free.length < 2) continue;
+      free.forEach((id) => placed.add(id));
+      groups.push({ word, inputIds: free });
+    }
+    return { label: "AI draft", groups, single: inputs.map((i) => i.id).filter((id) => !placed.has(id)) };
+  },
+  async draftBaselinesFromDocument() {
+    return structuredClone(SAMPLE_BASELINE_DRAFT);
+  },
+  async draftComplianceFromDocument() {
+    return structuredClone(SAMPLE_COMPLIANCE_DRAFT);
   },
 };
