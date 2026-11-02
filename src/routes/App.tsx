@@ -14,6 +14,7 @@ import type { ISODate } from '../contract/caspa-data-contract';
 const DEV_DATES = ['2026-10-18', '2027-01-04'] as ISODate[];
 import { OrganisationPage } from './organisation/OrganisationPage';
 import { PlanDocumentPrint } from './PlanDocument';
+import { BoardPaperPrint, CommunicationPage } from './Communication';
 import { Strategy } from './Strategy';
 import { HandoverPage } from './organisation/Vacancies';
 import { SAMPLE_NOW } from '../data/sample/seed';
@@ -82,6 +83,8 @@ export function App() {
     : route.kind === 'org' ? <OrganisationPage key={`${org.orgId}:${viewing}`} tab={route.tab} />
     : route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
+    : route.kind === 'communication' ? <CommunicationPage key={`${org.orgId}:${viewing}:${route.goalId ?? ''}`} goalId={route.goalId} />
+    : route.kind === 'boardPaper' ? <BoardPaperPrint key={`${org.orgId}:${viewing}:${route.goalId}`} goalId={route.goalId} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />

@@ -16,6 +16,7 @@ export function workspacesFor(v: Viewer): WorkspaceKey[] {
   if (v.hasContract) add('performance');
   if (v.isBudgetHolder) add('plan'); // slice 5: budget holders link and review their own lines
   if (v.isDepartmentHead) add('strategy'); // part 11b: department heads fill in their department's 4Q sheet
-  if (v.inConsultation) add('strategy'); // part 11c: the audience of an open consultation round has its say there
+  if (v.inConsultation) add('strategy');
+  if (v.writesCommunication) add('strategy'); // part 11e: goal owners and department heads reach the Communication page // part 11c: the audience of an open consultation round has its say there
   return WORKSPACE_ORDER.filter((w) => set.has(w));
 }

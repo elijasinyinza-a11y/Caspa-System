@@ -21,11 +21,17 @@ export type Route =
    */
   | { kind: 'org'; tab?: 'vacancies'; handover?: string }
   /** The plan document's print version, #/plan-document (D15-5). */
-  | { kind: 'planDocument' };
+  | { kind: 'planDocument' }
+  /** The Communication page in Strategy, #/communication, optionally at one goal: #/communication/<goalId> (D16-3). */
+  | { kind: 'communication'; goalId?: string }
+  /** A goal's board version printed as a short board paper, #/board-paper/<goalId> (D16-7). */
+  | { kind: 'boardPaper'; goalId: string };
 
 export const hrefFor = (r: Route): string =>
   r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? '#/organisation/vacancies' : '#/organisation')
   : r.kind === 'planDocument' ? '#/plan-document'
+  : r.kind === 'communication' ? `#/communication${r.goalId ? `/${encodeURIComponent(r.goalId)}` : ''}`
+  : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
   : r.kind === 'workspace' ? `#/${r.w}`
   : r.kind === 'map' ? `#/map/${encodeURIComponent(r.objectiveId)}${r.deficiencyId ? `/${encodeURIComponent(r.deficiencyId)}` : ''}`
   : `#/node/${r.node}/${encodeURIComponent(r.id)}${r.from ? `~${r.from}` : ''}`;
@@ -46,6 +52,8 @@ export const parseRoute = (hash: string): Route => {
     return { kind: 'map', objectiveId: decodeURIComponent(parts[1]), deficiencyId: parts[2] ? decodeURIComponent(parts[2]) : undefined };
   }
   if (parts[0] === 'plan-document') return { kind: 'planDocument' };
+  if (parts[0] === 'communication') return { kind: 'communication', goalId: parts[1] ? decodeURIComponent(parts[1]) : undefined };
+  if (parts[0] === 'board-paper' && parts[1]) return { kind: 'boardPaper', goalId: decodeURIComponent(parts[1]) };
   if (parts[0] === 'organisation') {
     if (parts[1] === 'handover' && parts[2]) return { kind: 'org', handover: decodeURIComponent(parts[2]) };
     return parts[1] === 'vacancies' ? { kind: 'org', tab: 'vacancies' } : { kind: 'org' };

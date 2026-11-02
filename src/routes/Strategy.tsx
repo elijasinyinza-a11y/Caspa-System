@@ -14,6 +14,7 @@ import { formatDate, formatFinancialYear, formatNumber } from '../selectors/form
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, download, input, label, link, plural, primary } from './organisation/ui';
 import { Formation } from './Formation';
+import { CommunicationCard } from './Communication';
 
 const O = en.onboarding;
 
@@ -41,6 +42,8 @@ export function Strategy() {
           {page.plan.published && <Formation />}
         </>
       )}
+      {/* Part 11e (D16-3): Communication does not depend on formation. */}
+      <CommunicationCard />
     </>
   );
 }

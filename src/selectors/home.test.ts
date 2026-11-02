@@ -26,7 +26,8 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
   });
 
   it('Executive: approval due 27 November, waiting for submission', () => {
-    expect(queue('executive')).toEqual([['deadline', 'Approve the budget', '2026-11-27', -40]]);
+    // Part 11e (D16-10): the Managing Director owns G4, which has no communication record yet (undated, so last).
+    expect(queue('executive')).toEqual([['deadline', 'Approve the budget', '2026-11-27', -40], ['deadline', 'Write the communication record for G4 Strengthen institutional capacity', null, null]]);
   });
 
   it('Supervisor: the unissued Zone C contract is overdue; the review is due 15 January 2027', () => {
@@ -60,7 +61,7 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
       id: 'ge-1' as never, orgId: ORG, gate: 'budget.submit_consolidated', subject: { type: 'BudgetVersion', id: 'bv-2026-1' },
       attempted: { at: '2026-11-02T09:00:00Z' as never, byMembershipId: 'm-hof' as never }, outcome: 'passed', blockingFindingKeys: [], advisoryAtGate: [],
     });
-    expect(repo('executive', s).home().needsYou.map((i) => [i.kind, i.detail])).toEqual([['approval', 'Submitted by Ruth Phiri. Whoever submits a step cannot approve it.']]);
+    expect(repo('executive', s).home().needsYou.map((i) => [i.kind, i.detail])).toEqual([['approval', 'Submitted by Ruth Phiri. Whoever submits a step cannot approve it.'], ['deadline', 'Strategic Plan 2022–2026']]);
     expect(repo('finance', s).home().needsYou).toEqual([]);
   });
 

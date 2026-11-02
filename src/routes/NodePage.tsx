@@ -13,6 +13,7 @@ import type { NodeKind, NodeRef, NodeView, PlanGroup, PlanLine } from '../select
 import { en, type WorkspaceKey } from '../strings/en';
 import { nodeHref } from './router';
 import { ActivityLevel, MapSummary } from './DecisionMap';
+import { GoalRecordSection } from './Communication';
 
 type Panel = 'strategy' | 'cascade' | 'plan' | 'performance';
 
@@ -237,6 +238,7 @@ function StrategyPanel({ n }: { n: NodeView }) {
           <p className="mt-1 text-14 text-muted">{en.node.reasonsHidden(s.reasons.count)}</p>
         )}
       </div>
+      {n.ref.kind === 'goal' && <GoalRecordSection goalId={n.ref.id} />}
     </PanelCard>
   );
 }

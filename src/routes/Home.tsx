@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
 import { NeedsYou } from '../components/NeedsYou';
+import { OurPlanCard } from './Communication';
 import { ProgressBar } from '../components/Status';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import { countFindings, type HomeView } from '../data/access/repository';
@@ -382,6 +383,8 @@ export function Home() {
         </div>
       )}
       <NeedsYou items={h.needsYou} />
+      {/* D16-2: information, not a "Needs you" item. */}
+      <OurPlanCard />
       <Onboarding />
       {view}
       {(repo.viewer.roles.includes('executive') || repo.viewer.roles.includes('hr')) && <StructureNotice />}

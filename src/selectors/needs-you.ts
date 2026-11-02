@@ -12,6 +12,7 @@ import { escalated, formingPlan } from '../rules/formation';
 import { canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentState, entriesOf, filledCells, isLive, visionConfirmed } from '../rules/conception';
 import { composition, isDecided } from '../rules/composition';
 import { sentBy } from '../rules/onboarding';
+import { goalsNeedingRecord } from '../rules/communication';
 import { baselineOwnerPosition, baselinesOf, baselineState, complianceOf, currentRound, inAudience, inputsOf, isLiveBaseline } from '../rules/consultation';
 import { formatNumber } from './format';
 import { currentBudgetVersion } from '../rules/structure';
@@ -21,7 +22,7 @@ import type { HomeKind } from './home';
 import { holderOf } from './node';
 
 export type NeedsYouKind = 'deadline' | 'decision_action' | 'finding' | 'approval';
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | null;
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | null;
 
 export interface NeedsYouItem {
   key: string;
@@ -284,6 +285,18 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     if (!mine(e.supervisorPositionId)) continue;
     const owner = s.positions.find((x) => x.id === e.ownerPositionId)?.title ?? '';
     add({ key: `formation:escalated:${e.deadlineId}:${e.ownerPositionId}`, kind: 'deadline', title: en.formation.needs.escalated(e.label, owner), detail: null, due: e.dueOn, severity: null, as: 'supervisor', link: { kind: 'workspace', w: 'strategy' } });
+  }
+
+  /* Part 11e (D16-10): confirmed goals with no communication record, for the goal's owner and the Strategy office. Undated. */
+  for (const g of goalsNeedingRecord(s)) {
+    const owns = mine(g.ownerPositionId);
+    const office = v.roles.includes('strategy_office');
+    if (!owns && !office) continue;
+    const plan = s.plans.find((p) => p.id === g.planId);
+    add({
+      key: `communication:write:${g.id}`, kind: 'deadline', title: en.communication.needs.write(g.code, g.title), detail: plan?.title ?? null,
+      due: null, severity: null, as: owns ? null : 'strategy_office', link: { kind: 'communication', goalId: g.id },
+    });
   }
 
   /* Decision-log actions from held sessions, owned by the person's positions. */
