@@ -3,7 +3,7 @@
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
 with decisions to 1 November 2026, including the clarity decisions in section 20, Conception in section 31,
-Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34) first. The data contract is v1.7.
+Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34, the plan document and first year in section 35) first. The data contract is v1.8.
 
 ## Run
 
@@ -33,7 +33,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
-    11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade next (v0.15.0); 11e Communication (v0.16.0)
+    11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication next (v0.16.0)
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -48,6 +48,26 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Plan document and first year's cascade (v0.15.0)
+
+- BUILD-BRIEF section 35; contract v1.8 (a final plan document is read by all members). 565 tests (4 new in
+  `src/data/access/first-year.test.ts`).
+- Code: `src/data/access/plan-document.ts`, `src/selectors/plan-document.ts` (layout in one place, live content,
+  the figures note), `src/routes/PlanDocument.tsx` (panel and the print version at `#/plan-document`),
+  `src/data/access/first-year.ts` (adding next year's work, publishing and the switch-over),
+  `src/components/NextYear.tsx`, and the development date control in `src/components/RoleSwitcher.tsx`.
+- Try it on Sample Water Utility, after confirming the 2027–2031 plan (see v0.14.0 below). As Strategy office, open
+  Strategy › Formation › Plan document, "Draft the plan document (AI)", accept each section, finalise, and open the
+  print version; as Employee the final document opens at `#/plan-document`. In Cascade choose "Next year (draft):
+  FY2027": the publish panel lists what must be fixed. On a KPI page in the draft year, "Add activity". Set the date
+  to 4 January 2027 beside the role switcher; owners confirm their measures and the Strategy office validates them in
+  the baseline register; then "Publish the cascade": the 2027–2031 plan becomes active and the 2022–2026 plan is
+  superseded.
+- After confirmation the 4Q board, room and baseline register stay readable and locked (owners still confirm and the
+  Strategy office still validates measures); the compliance register stays open.
+- Open for Elijah: whether the final document shows the accepted 4Q cards' text to everyone (today staff see a count,
+  following the 4Q card rule); how staff reach the final document (suggested: Communication, 11e).
 
 ## Composition, part 11d (v0.14.0)
 
@@ -66,7 +86,7 @@ and a consultant. In the NGO one person holds both Finance and HR, so its queue 
   confirm with a board resolution reference.
 - Department heads (for example the Head of Operations, or Finance, who heads the Finance department) propose
   objectives as their owners and add KPIs to them. Employees see themes and goals, card counts only.
-- Known: after confirmation the 4Q board and the registers close until v0.15.0 adds read-only views.
+- After confirmation the 4Q board and the registers stay readable (v0.15.0).
 
 ## Framework explanations (v0.13.1)
 
