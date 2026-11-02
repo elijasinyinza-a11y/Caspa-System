@@ -21,7 +21,7 @@ import {
   inputsOf, isComplianceSource, isLiveBaseline, readBaselineRows, roundChecks, roundCounts, roundsOf, shownUnit, unitAndBelow,
   type BaselineRow, type BaselineState, type RoundMust,
 } from '../../rules/consultation';
-import { formingPlan } from '../../rules/formation';
+import { formationInProgress, formingPlan } from '../../rules/formation';
 import { dateInZone } from '../../selectors/format';
 import { en } from '../../strings/en';
 import { can } from './permissions';
@@ -193,6 +193,9 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
   };
   const tz = s.organisation.timeZone;
   const plan = (): StrategicPlan | null => formingPlan(s);
+  /** D15-11: a confirmed plan's room and registers stay readable; see each action for what still changes. */
+  const viewPlan = (): StrategicPlan | null => formationInProgress(s);
+  const lockedPlan = () => viewPlan()?.status !== 'draft';
   const stageOf = (p: StrategicPlan, st: 'consultation' | 'confirmation'): Stage => p.formation?.[st].status ?? 'not_started';
   const unitName = (u: string | null) => (u ? s.units.find((x) => x.id === u)?.name ?? '' : '');
   const personOf = (mid: string) => s.people.find((p) => p.id === s.memberships.find((m) => m.id === mid)?.personId)?.fullName ?? '';
@@ -256,7 +259,8 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
       state: st, fromAi: b.draft.provenance.kind !== 'manual',
       confirmed: b.draft.decided ? { by: personOf(b.draft.decided.byMembershipId), on: dateInZone(b.draft.decided.at, tz) } : null,
       validated: b.validated ? { by: personOf(b.validated.byMembershipId), on: dateInZone(b.validated.at, tz) } : null,
-      canDecide: decidesBaseline(b) && st !== 'rejected',
+      // D15-11: after confirmation an owner may still confirm a drafted measure; values and wording are locked.
+      canDecide: decidesBaseline(b) && st !== 'rejected' && (!lockedPlan() || st === 'awaiting_owner'),
       canValidate: st === 'confirmed' && can(s, viewer, 'approve', { type: 'BaselineMeasure', id: b.id }),
       mine: ownsBaseline(b),
     };
@@ -304,7 +308,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     /* ───────── The room ───────── */
 
     room() {
-      const p = plan();
+      const p = viewPlan();
       if (!p) return null;
       const r = currentRound(s, p.id);
       const sees = !!r && seesInputsOf(r);
@@ -312,12 +316,12 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
       const mission = s.visionStatements.find((v) => v.planId === p.id && v.kind === 'mission');
       const open = r?.status === 'open';
       return {
-        planId: p.id, planTitle: p.title, stage: stageOf(p, 'consultation'), aiEnabled: s.organisation.settings.aiEnabled, canRun: runs,
+        planId: p.id, planTitle: p.title, stage: stageOf(p, 'consultation'), aiEnabled: s.organisation.settings.aiEnabled, canRun: runs && p.status === 'draft',
         round: r ? roundView(r) : null,
         earlierRounds: Math.max(0, roundsOf(s, p.id).length - (r ? 1 : 0)),
         seesInputs: sees,
         inputs: sees && r ? [...inputsOf(s, r.id)].reverse().map(inputView) : [],
-        canComment: !!r && open && inAudience(s, r, viewer.positionIds as string[]),
+        canComment: p.status === 'draft' && !!r && open && inAudience(s, r, viewer.positionIds as string[]),
         meetingUnits: open ? meetingUnits() : [],
         vision: vision?.confirmation ? { vision: vision.text, mission: mission?.confirmation ? mission.text : '' } : null,
         minGroup: s.organisation.settings.consultationMinGroupSize,
@@ -409,13 +413,13 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     /* ───────── Baselines ───────── */
 
     baselines() {
-      const p = plan();
+      const p = viewPlan();
       if (!p) return null;
       const all = baselinesOf(s, p.id).filter(isLiveBaseline);
       const shown = all.filter(seesBaseline);
       return {
-        planId: p.id, stage: stageOf(p, 'consultation'), aiEnabled: s.organisation.settings.aiEnabled, canRun: isSO,
-        ownUnits: myDepts().map((d) => ({ id: d.unitId, name: d.name })),
+        planId: p.id, stage: stageOf(p, 'consultation'), aiEnabled: s.organisation.settings.aiEnabled, canRun: isSO && p.status === 'draft',
+        ownUnits: p.status !== 'draft' ? [] : myDepts().map((d) => ({ id: d.unitId, name: d.name })),
         counts: baselineCounts(s, p.id), rows: shown.map(baselineView), hidden: all.length - shown.length,
         documents: isSO ? formationDocs(p).map((d) => ({ id: d.id, title: d.title })) : [],
         units: isSO ? s.units.map((u) => ({ id: u.id as string, name: u.name })) : [],
@@ -434,7 +438,8 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     decideBaseline(id, decision) {
-      const p = plan();
+      const p = viewPlan();
+      if (p && p.status !== 'draft' && decision !== 'accept') return deny('locked');
       const b = p && s.baselineMeasures.find((x) => x.id === id && x.planId === p.id && isLiveBaseline(x));
       if (!b) return deny('not_found');
       if (!decidesBaseline(b)) return deny();
@@ -479,7 +484,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     validateBaseline(id) {
-      const p = plan();
+      const p = viewPlan();
       const b = p && s.baselineMeasures.find((x) => x.id === id && x.planId === p.id && isLiveBaseline(x));
       if (!b) return deny('not_found');
       if (!can(s, viewer, 'approve', { type: 'BaselineMeasure', id: b.id })) return deny();
@@ -522,7 +527,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     /* ───────── Compliance ───────── */
 
     compliance() {
-      const p = plan();
+      const p = viewPlan();
       if (!p) return null;
       return {
         planId: p.id, stage: stageOf(p, 'confirmation'), aiEnabled: s.organisation.settings.aiEnabled,
@@ -534,7 +539,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     addCompliance(input) {
-      const p = plan();
+      const p = viewPlan();
       if (!p) return deny('not_found');
       if (!listsCompliance) return deny();
       if (!input.title.trim() || !KINDS.includes(input.kind)) return deny('required');
@@ -549,7 +554,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     editCompliance(id, input) {
-      const p = plan();
+      const p = viewPlan();
       const c = p && s.complianceItems.find((x) => x.id === id && x.planId === p.id);
       if (!c) return deny('not_found');
       if (!listsCompliance) return deny();
@@ -567,7 +572,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     flagCompliance(id, unitId, flagged) {
-      const p = plan();
+      const p = viewPlan();
       const c = p && s.complianceItems.find((x) => x.id === id && x.planId === p.id);
       if (!c) return deny('not_found');
       if (!departments(s).some((d) => d.unitId === unitId)) return deny('not_found');
@@ -583,7 +588,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     reviewCompliance(id, outcome) {
-      const p = plan();
+      const p = viewPlan();
       const c = p && s.complianceItems.find((x) => x.id === id && x.planId === p.id);
       if (!c) return deny('not_found');
       if (!can(s, viewer, 'approve', { type: 'ComplianceItem', id: c.id })) return deny();
@@ -597,7 +602,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
     },
 
     async draftCompliance(documentId) {
-      const p = plan();
+      const p = viewPlan();
       if (!listsCompliance) return deny();
       if (!s.organisation.settings.aiEnabled) return deny('ai_off');
       const doc = s.sourceDocuments.find((d) => d.id === documentId);

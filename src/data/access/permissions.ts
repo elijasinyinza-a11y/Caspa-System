@@ -103,6 +103,8 @@ const personnelHidden = (s: Store, v: Viewer, subject: Subject): boolean =>
 
 export function can(s: Store, v: Viewer, action: Action, subject: Subject): boolean {
   if (action === 'view' && personnelHidden(s, v, subject)) return false;
+  // Contract v1.8 (D15-1): a final plan document is read by all members.
+  if (action === 'view' && subject.type === 'PlanDocument' && s.planDocuments.some((d) => d.id === subject.id && d.status === 'final')) return true;
   const type = GOVERNED_BY[subject.type] ?? subject.type;
   const principals = PERMISSIONS[type]?.[action] ?? [];
   return principals.some((p) => holds(s, v, p, subject));

@@ -82,6 +82,14 @@ export interface AiService {
   suggestDeficiencyRows(orgId: string, cards: CardForAi[]): Promise<RowSuggestions>;
   /** Note objective titles that may not be measurable as worded. Suggestions only, never checks (D11d-8). */
   reviewWording(titles: { id: string; title: string }[]): Promise<WordingNotes>;
+  /** Draft the plan document's narrative: an executive summary and one section per goal, with no figures (D15-2, D15-3). */
+  draftPlanDocument(input: { planTitle: string; organisation: string; vision: string; goals: { id: string; title: string; themes: string[] }[] }): Promise<PlanDocumentDraft>;
+}
+
+export interface PlanDocumentDraft {
+  label: "AI draft";
+  summary: { heading: string; text: string };
+  goals: { goalId: string; heading: string; text: string }[];
 }
 
 /** A card as the AI is given it: its section and text only, never who raised it. */
@@ -377,6 +385,15 @@ export const aiStub: AiService = {
     return {
       label: "AI draft",
       rows: cards.filter((c) => c.cell.column === "failure_factors").map((c) => ({ cardId: c.id, description: c.text, level: levels.find((l) => l.card === c.text)?.level ?? "process" })),
+    };
+  },
+  async draftPlanDocument(input) {
+    // Fixed sentences filled from the records (D15-6): no figures, no sector words.
+    const T = en.planDocument.template;
+    return {
+      label: "AI draft",
+      summary: { heading: T.summaryHeading, text: T.summary(input.planTitle, input.organisation, input.vision) },
+      goals: input.goals.map((g) => ({ goalId: g.id, heading: g.title, text: g.themes[0] ? T.goal(g.themes[0]) : T.goalNoTheme })),
     };
   },
   async reviewWording(titles) {

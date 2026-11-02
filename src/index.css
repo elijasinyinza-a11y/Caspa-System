@@ -11,3 +11,11 @@ body { @apply bg-cream text-text font-sans text-14; font-variant-numeric: normal
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 /* The skip-link target takes focus on every page change; it needs no ring of its own. */
 #main:focus { outline: none; }
+
+/* The plan document's print version (D15-5): only the document is printed. */
+@media print {
+  [data-chrome] { display: none !important; }
+  html, body, #root { height: auto; background: #FFFFFF; }
+  .print-flow { overflow: visible !important; }
+  .no-print { display: none !important; }
+}

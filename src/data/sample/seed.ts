@@ -289,7 +289,7 @@ function seedStore(): Store {
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [], themes: [], indicativeCosts: [],
+    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [],
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [

@@ -13,7 +13,7 @@ import {
   canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentSheet, departmentState, entriesOf, filledCells, isAccepted, isLive,
   keptSeparate, KEEP_SEPARATE_ACTION, pairKey, sameCell, submissionOf, SUBMIT_ACTION, visionChecks, visionMustKey, type DepartmentState, type VisionMust,
 } from '../../rules/conception';
-import { formingPlan } from '../../rules/formation';
+import { formationInProgress, formingPlan } from '../../rules/formation';
 import { dateInZone } from '../../selectors/format';
 import { en } from '../../strings/en';
 import { can } from './permissions';
@@ -148,7 +148,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
   };
   const view = (e: FourQEntry, p: StrategicPlan): CardView => ({
     id: e.id, cell: e.cell, text: e.text, units: e.raisedByUnitIds.map((u) => unitName(u)), source: sourceOf(e), evidence: e.evidence,
-    state: e.draft.state, scope: e.scope, merged: entriesOf(s, p.id).filter((x) => x.mergedIntoId === e.id).length, canDecide: decides(e),
+    state: e.draft.state, scope: e.scope, merged: entriesOf(s, p.id).filter((x) => x.mergedIntoId === e.id).length, canDecide: p.status === 'draft' && decides(e),
   });
   const touch = (e: FourQEntry, before: unknown, action = 'update') => {
     e.updated = stamp();
@@ -180,8 +180,10 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
   const visionOf = (p: StrategicPlan, kind: 'vision' | 'mission') => s.visionStatements.find((v) => v.planId === p.id && v.kind === kind) ?? null;
 
   const page = (): ConceptionPage | null => {
-    const p = plan();
+    // D15-11: a confirmed plan's board stays readable; its content is locked (changes go through plan().)
+    const p = formationInProgress(s);
     if (!p) return null;
+    const locked = p.status !== 'draft';
     const org = entriesOf(s, p.id).filter((e) => e.scope === 'organisation' && isLive(e));
     const shown = org.filter(sees);
     const heads = new Set(mine());
@@ -191,7 +193,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
     const filled = filledCells(s, p.id).length;
     return {
       planId: p.id, planTitle: p.title, stage: p.formation?.conception.status ?? 'not_started', aiEnabled: s.organisation.settings.aiEnabled,
-      canCurate: curates, seesAll, isExecutive: has('executive'),
+      canCurate: curates && !locked, seesAll, isExecutive: has('executive'),
       board: CELLS.map((c) => {
         const cards = shown.filter((e) => sameCell(e.cell, c));
         return { cell: c, cards: cards.map((e) => view(e, p)), filled: org.some((e) => sameCell(e.cell, c) && isAccepted(e)) };

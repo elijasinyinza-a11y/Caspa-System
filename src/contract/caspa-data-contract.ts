@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.7
+ * CASPA™ data contract — v1.8
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -74,6 +74,8 @@
  *       screen an input shows its unit only (attribution 'unit_only'; small units as their parent).
  *     - ComplianceItem row: seen by all members; drafted by the Strategy office, the compliance officer and its
  *       owners (heads of the departments that flagged it); reviewed by the compliance officer.
+ * v1.8 (1 November 2026, Elijah; D15-1): once a plan document is final, all members may read it; drafts stay with the
+ *     Executive, the Strategy office and facilitators. A note on the PlanDocument row; no field changes.
  * v1.7 (1 November 2026, Elijah; Strategy formation part 11d, Composition): one document kind, one record and
  *     four permission changes. No other field changes.
  *     - SourceDocument.kind gains 'standard', so the AI may read obligations from a standard the organisation
@@ -833,6 +835,7 @@ export const PERMISSIONS: PermissionMatrix = {
   Theme: { view: ['all_members'], draft: ['strategy_office', 'facilitator'], approve: ['strategy_office'] },
   // v1.7: indicative costs, compared with the envelope during formation.
   IndicativeCost: { view: ['executive', 'finance', 'strategy_office', 'objective_owner'], draft: ['objective_owner', 'finance', 'strategy_office'] },
+  // v1.8: a final document is read by all members (enforced in the data-access layer); drafts as listed.
   PlanDocument: { view: ['executive', 'strategy_office', 'facilitator'], draft: ['strategy_office', 'facilitator'], approve: ['strategy_office'] },
   // PlanDocument view widens to all members once status is 'final'.
   CommunicationRecord: { view: ['all_members'], draft: ['strategy_office', 'owner'] },

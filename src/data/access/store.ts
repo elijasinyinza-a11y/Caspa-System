@@ -2,7 +2,7 @@
 import type {
   Acknowledgement, Activity, AiTask, AuditEntry, ComplianceItem, ConsultationInput, ConsultationRound, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
-  PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review, Theme, IndicativeCost,
+  PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review, Theme, IndicativeCost, PlanDocument,
   SourceDocument, StrategicPlan, VisionStatement, Workshop,
 } from '../../contract/caspa-data-contract';
 
@@ -25,6 +25,8 @@ export interface Store {
   /** v1.7, part 11d: themes from the 4Q board, and objectives' indicative costs. */
   themes: Theme[];
   indicativeCosts: IndicativeCost[];
+  /** v0.15.0 (D15-4): plan documents. */
+  planDocuments: PlanDocument[];
   activities: Activity[];
   activityProgress: ActivityProgress[];
   deficiencies: Deficiency[];
