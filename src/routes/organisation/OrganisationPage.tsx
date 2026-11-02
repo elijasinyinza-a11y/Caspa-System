@@ -3,6 +3,7 @@
  * it is confirmed; the administrator also sets it up and edits it. Setup is not a stage of leading strategy, so the
  * header has a purpose sentence and "What is this page?" but no 7Cs stage.
  */
+import { EntryRow } from '../../components/SubMenu';
 import { useState, type ReactNode } from 'react';
 import { usePref } from '../../components/Explain';
 import { useApp } from '../../components/AppContext';
@@ -32,7 +33,7 @@ type Modal =
   | { kind: 'replace'; ai: boolean; run: () => void }
   | null;
 
-export function OrganisationPage({ tab }: { tab?: 'vacancies' }) {
+export function OrganisationPage({ tab }: { tab?: 'vacancies' | 'people' }) {
   const { repo } = useApp();
   const access = repo.structure;
   const page = access.page();
@@ -98,11 +99,21 @@ export function OrganisationPage({ tab }: { tab?: 'vacancies' }) {
           onConfirm={() => setModal({ kind: 'confirm' })} onRevealPosition={show} />
       )}
       {page.mode === 'structure' && (
-        <StructureTabs tab={tab}>
-          {tab === 'vacancies'
+        <>
+          {/* v0.17.0 (NV-2): Vacancies and People and access are sub-menu entries; on a phone, a row of links. */}
+          <EntryRow w="organisation" />
+          {tab === 'vacancies' && repo.structure.vacancies()
             ? <VacancyList onFill={(id) => setModal({ kind: 'position', id, unitId: '' })} />
+            : tab === 'people' && page.isAdmin
+            ? (
+              <section className={card}>
+                <h2 className="text-18 font-bold text-navy">{S.access.title}</h2>
+                <p className="mt-1 text-14 text-muted">{S.access.intro}</p>
+                <AccessList page={page} access={access} editable />
+              </section>
+            )
             : <Structure page={page} access={access} tree={tree} fix={fix} reveal={reveal} />}
-        </StructureTabs>
+        </>
       )}
 
       {modal?.kind === 'position' && <PositionDialog access={access} page={page} id={modal.id} unitId={modal.unitId} onClose={close} onSaved={done} />}
@@ -546,25 +557,6 @@ function DetailsForm({ page, access }: { page: Page; access: OrganisationAccess 
 /* ───────── After confirmation ───────── */
 
 /** Structure, and Vacant and acting positions for those who get that view (slice 9, H4). */
-function StructureTabs({ tab, children }: { tab?: 'vacancies'; children: ReactNode }) {
-  const { repo, navigate } = useApp();
-  if (!repo.structure.vacancies()) return <>{children}</>;
-  const tabs: [string, string, 'vacancies' | undefined][] = [['structure', en.vacancy.tabStructure, undefined], ['vacancies', en.vacancy.tab, 'vacancies']];
-  return (
-    <>
-      <div role="tablist" aria-label={en.setup.title} className="mb-4 flex flex-wrap gap-2">
-        {tabs.map(([k, l, t]) => (
-          <button key={k} role="tab" type="button" aria-selected={tab === t} onClick={() => navigate({ kind: 'org', tab: t })}
-            className={`min-h-11 rounded-lg px-4 text-14 font-semibold ${tab === t ? 'bg-navy text-white' : 'border border-control bg-white text-navy hover:border-navy'}`}>
-            {l}
-          </button>
-        ))}
-      </div>
-      <div role="tabpanel">{children}</div>
-    </>
-  );
-}
-
 function Structure({ page, access, tree, fix, reveal }: {
   page: Page; access: OrganisationAccess; tree: TreeActions; fix: FixActions; reveal: { unitId: string; positionId?: string; n: number } | null;
 }) {
@@ -592,11 +584,6 @@ function Structure({ page, access, tree, fix, reveal }: {
         </section>
         {page.isAdmin && (
           <div className="space-y-4">
-            <section className={card}>
-              <h2 className="text-18 font-bold text-navy">{S.access.title}</h2>
-              <p className="mt-1 text-14 text-muted">{S.access.intro}</p>
-              <AccessList page={page} access={access} editable />
-            </section>
             {page.changes.length > 0 && (
               <section className={card}>
                 <h2 className="text-18 font-bold text-navy">{S.structure.changes}</h2>

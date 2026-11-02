@@ -3,7 +3,7 @@
  * preparer-built calendar and its sessions with decision logs. Behaviour from the approved Strategy workspace
  * prototype (`reference/caspa-strategy-prototype.html`).
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
 import type { FormationPage, SessionView } from '../data/access/formation';
 import type { FormationStage, ISODate, WorkshopPurpose } from '../contract/caspa-data-contract';
@@ -15,6 +15,8 @@ import { Board, Documents, MyPart, VisionMission } from './Conception';
 import { Baselines, Compliance, Room } from './Consultation';
 import { Composer } from './Composition';
 import { PlanDocumentPanel } from './PlanDocument';
+import { hrefFor } from './router';
+import type { FormingStage, RegisterTab } from '../selectors/nav';
 
 const F = en.formation;
 const K = en.consultation;
@@ -22,85 +24,146 @@ const FORMATS: Format[] = ['in_person', 'online', 'hybrid', 'async_review'];
 const sessionTitle = (purposes: WorkshopPurpose[]) => en.list(purposes.map((p) => F.purpose[p]!));
 const d = (x: ISODate | null) => (x ? formatDate(x) : '');
 
-export function Formation() {
+/** Tabs within a sub-menu page: real links, so every view has its own address (NV-5). */
+export function PageTabs({ label: name, tabs, current }: { label: string; tabs: [string, string, string][]; current: string }) {
+  if (tabs.length < 2) return null;
+  return (
+    <nav aria-label={name} className="mt-4 flex flex-wrap gap-2">
+      {tabs.map(([k, l, href]) => (
+        <a key={k} href={href} aria-current={current === k ? 'page' : undefined}
+          className={`inline-flex min-h-11 items-center rounded-lg px-4 text-14 font-semibold ${current === k ? 'bg-navy text-white' : 'border border-control bg-white text-navy hover:border-navy'}`}>{l}</a>
+      ))}
+    </nav>
+  );
+}
+
+/** Strategy overview: setting up the next plan, or a pointer to it while it is being formed (part 11a, NV-9). */
+export function NextPlanCard() {
   const { repo } = useApp();
   const f = repo.formation.page();
   const [setup, setSetup] = useState(false);
-  const c = repo.conception.page();
-  const room = repo.consultation.room();
-  const bl = repo.consultation.baselines();
-  const cp = repo.consultation.compliance();
-  const comp = repo.composition.page();
-  const pdoc = repo.planDocument.page();
-  // Part 11c: someone here only to have their say, or the compliance officer, opens on their own tab.
-  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision' | 'room' | 'baselines' | 'compliance' | 'composition' | 'document'>(() =>
-    cp?.canReview && !c?.seesAll ? 'compliance' : room?.canComment && !room.canRun && !c?.seesAll && !c?.myDepartments.length ? 'room' : 'formation');
-  if (!f.plan) {
+  const forming = repo.menu().strategy.some((e) => e.entry === 'forming');
+  if (f.plan) {
+    if (!forming) return null;
     return (
-      <section className={`${card} mt-4`} aria-labelledby="next-plan">
-        <h2 id="next-plan" className="text-18 font-bold text-navy">{F.nextPlan}</h2>
-        {f.activePlan && <p className="mt-1 text-14 text-muted">{F.nextPlanText(f.activePlan.title)}</p>}
-        {setup && f.canSetUp ? <SetupForm f={f} onDone={() => setSetup(false)} /> : f.canSetUp
-          ? <button type="button" className={`${primary} mt-3`} onClick={() => setSetup(true)}>{F.nextPlanStart}</button>
-          : <p className="mt-2 text-14">{F.nextPlanOthers}</p>}
+      <section className={`${card} mt-6`} aria-labelledby="next-plan">
+        <h2 id="next-plan" className="text-18 font-bold text-navy">{en.menu.entry.forming}</h2>
+        <p className="mt-1 text-14 text-muted">{en.menu.formingCard(f.plan.title)}</p>
+        <a className={`${btn} mt-3`} href={hrefFor({ kind: 'strategy', entry: 'forming' })}>{en.menu.formingOpen}</a>
       </section>
     );
   }
+  return (
+    <section className={`${card} mt-6`} aria-labelledby="next-plan">
+      <h2 id="next-plan" className="text-18 font-bold text-navy">{F.nextPlan}</h2>
+      {f.activePlan && <p className="mt-1 text-14 text-muted">{F.nextPlanText(f.activePlan.title)}</p>}
+      {setup && f.canSetUp ? <SetupForm f={f} onDone={() => setSetup(false)} /> : f.canSetUp
+        ? <button type="button" className={`${primary} mt-3`} onClick={() => setSetup(true)}>{F.nextPlanStart}</button>
+        : <p className="mt-2 text-14">{F.nextPlanOthers}</p>}
+    </section>
+  );
+}
+
+/**
+ * Forming the next plan (NV-9, C-1): one entry, opening on the stage that is open now, with a stage row
+ * (Overview, Conception, Consultation, Composition). Someone here only to have their say sees the room alone.
+ */
+export function FormingPage({ stage, tab }: { stage?: FormingStage; tab?: string }) {
+  const { repo, navigate } = useApp();
+  const f = repo.formation.page();
+  const menu = repo.menu();
+  const m = menu.forming;
+  const [setup, setSetup] = useState(false);
+  if (!f.plan || !m) return null;
   const p = f.plan;
+  const st: FormingStage = stage && m.stages.includes(stage) ? stage : m.openStage;
+  const at = (s2: FormingStage, t2?: string) => hrefFor({ kind: 'strategy', entry: 'forming', stage: s2, tab: t2 });
+  const c = repo.conception.page();
+  const room = repo.consultation.room();
+  const comp = repo.composition.page();
   const C = en.conception.tabs;
   const mine = c ? c.departments.filter((x) => c.myDepartments.includes(x.unitId)) : [];
-  const tabs: [typeof tab, string][] = [
-    ['formation', F.tabs.formation],
-    ...(mine.length ? [['mine', mine.length === 1 ? C.mine(mine[0]!.name) : C.mineMany] as [typeof tab, string]] : []),
-    ...(c && (c.seesAll || mine.length) ? [['board', C.board] as [typeof tab, string]] : []),
-    ...(c ? [['vision', C.vision] as [typeof tab, string]] : []),
-    ...(c?.seesAll ? [['documents', C.documents] as [typeof tab, string]] : []),
-    ...(room ? [['room', room.canRun || c?.seesAll || c?.myDepartments.length ? K.tabs.room : K.tabs.say] as [typeof tab, string]] : []),
-    ...(bl && (bl.rows.length || bl.canRun || bl.ownUnits.length || c?.seesAll) ? [['baselines', K.tabs.baselines] as [typeof tab, string]] : []),
-    ...(cp && (cp.canAdd || cp.canReview || c?.seesAll || c?.myDepartments.length) ? [['compliance', K.tabs.compliance] as [typeof tab, string]] : []),
-    // Part 11d: once the vision is confirmed, for those who shape the plan (and owners of its objectives).
-    ...(comp && (comp.runs || c?.seesAll || c?.myDepartments.length || repo.viewer.roles.includes('finance') || comp.goals.some((g) => g.objectives.some((o) => o.canAddKpi)))
-      ? [['composition', en.composition.tab] as [typeof tab, string]] : []),
-    // D15-4: once the plan is confirmed, for those who draft it, and for everyone once it is final.
-    ...(pdoc && (pdoc.canDraft || pdoc.document) ? [['document', en.planDocument.tab] as [typeof tab, string]] : []),
-    ['calendar', F.tabs.calendar], ['sessions', F.tabs.sessions],
-  ];
+  let tabs: [string, string, string][] = [];
+  let body: ReactNode = null;
+  let current = '';
+  if (st === 'overview') {
+    tabs = (['stages', 'calendar', 'sessions'] as const).map((k) => [k, en.menu.overviewTabs[k], at('overview', k)]);
+    current = tab && tabs.some(([k]) => k === tab) ? tab : 'stages';
+    body = current === 'calendar' ? <Calendar f={f} /> : current === 'sessions' ? <Sessions f={f} /> : <Tracker f={f} openCalendar={() => navigate({ kind: 'strategy', entry: 'forming', stage: 'overview', tab: 'calendar' })} />;
+  } else if (st === 'conception' && c) {
+    tabs = [
+      ...(mine.length ? [['mine', mine.length === 1 ? C.mine(mine[0]!.name) : C.mineMany, at('conception', 'mine')] as [string, string, string]] : []),
+      ...(c.seesAll || mine.length ? [['board', C.board, at('conception', 'board')] as [string, string, string]] : []),
+      ['vision', C.vision, at('conception', 'vision')],
+      ...(c.seesAll ? [['documents', C.documents, at('conception', 'documents')] as [string, string, string]] : []),
+    ];
+    current = tab && tabs.some(([k]) => k === tab) ? tab : tabs[0]![0];
+    body = current === 'mine' ? <MyPart c={c} /> : current === 'board' ? <Board c={c} openVision={() => navigate({ kind: 'strategy', entry: 'forming', stage: 'conception', tab: 'vision' })} />
+      : current === 'documents' ? <Documents c={c} /> : <VisionMission c={c} />;
+  } else if (st === 'consultation' && room) {
+    body = <Room r={room} />;
+  } else if (st === 'composition' && comp) {
+    body = <Composer c={comp} />;
+  }
   return (
-    <section className="mt-6" aria-labelledby="forming">
-      <div className={card}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 flex-[1_1_15rem]">
-            <h2 id="forming" className="text-18 font-bold text-navy">{p.title}</h2>
-            <p className="mt-1 text-13 text-muted">
-              {p.label}{p.processOwner ? ` · ${F.tracker.processOwner(`${p.processOwner.label} (${p.processOwner.holder ?? en.onboarding.vacant})`)}` : ''}
-            </p>
+    <>
+      {!m.audienceOnly && (
+        <div className={card}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-[1_1_15rem]">
+              <h2 className="text-18 font-bold text-navy">{p.title}</h2>
+              <p className="mt-1 text-13 text-muted">
+                {p.label}{p.processOwner ? ` · ${F.tracker.processOwner(`${p.processOwner.label} (${p.processOwner.holder ?? en.onboarding.vacant})`)}` : ''}
+              </p>
+            </div>
+            {f.canSetUp && !setup && <button type="button" className={btn} onClick={() => setSetup(true)}>{F.setup.edit}</button>}
           </div>
-          {f.canSetUp && !setup && <button type="button" className={btn} onClick={() => setSetup(true)}>{F.setup.edit}</button>}
+          {setup && f.canSetUp && <SetupForm f={f} onDone={() => setSetup(false)} />}
         </div>
-        {setup && f.canSetUp && <SetupForm f={f} onDone={() => setSetup(false)} />}
-        <p className="mt-2 text-13 text-muted">{F.later}</p>
-      </div>
-      <div role="tablist" aria-label={p.title} className="mt-4 flex flex-wrap gap-2">
-        {tabs.map(([k, l]) => (
-          <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={`min-h-11 rounded-lg px-4 text-14 font-semibold ${tab === k ? 'bg-navy text-white' : 'border border-control bg-white text-navy hover:border-navy'}`}>{l}</button>
-        ))}
-      </div>
-      <div role="tabpanel" className="mt-4">
-        {tab === 'formation' && <Tracker f={f} openCalendar={() => setTab('calendar')} />}
-        {tab === 'calendar' && <Calendar f={f} />}
-        {tab === 'sessions' && <Sessions f={f} />}
-        {tab === 'board' && c && <Board c={c} openVision={() => setTab('vision')} />}
-        {tab === 'mine' && c && <MyPart c={c} />}
-        {tab === 'documents' && c && <Documents c={c} />}
-        {tab === 'vision' && c && <VisionMission c={c} />}
-        {tab === 'room' && room && <Room r={room} />}
-        {tab === 'baselines' && bl && <Baselines b={bl} />}
-        {tab === 'compliance' && cp && <Compliance c={cp} />}
-        {tab === 'composition' && comp && <Composer c={comp} />}
-        {tab === 'document' && pdoc && <PlanDocumentPanel d={pdoc} />}
-      </div>
-    </section>
+      )}
+      {!m.audienceOnly && (
+        <nav aria-label={en.menu.stagesLabel} className="mt-4 flex gap-1 overflow-x-auto rounded-lg border border-border bg-white px-2">
+          {m.stages.map((s2) => (
+            <a key={s2} href={at(s2)} aria-current={s2 === st ? 'page' : undefined}
+              className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 border-b-4 px-3 text-14 ${s2 === st ? 'border-strategy-mark font-bold text-navy' : 'border-transparent text-muted hover:text-navy'}`}>
+              {en.menu.stage[s2]}
+              {s2 === m.openStage && s2 !== 'overview' && <span className="rounded-full border border-border bg-info-bg px-2 text-12 font-medium text-navy">{en.menu.openNow}</span>}
+            </a>
+          ))}
+        </nav>
+      )}
+      {menu.formingConfirmed && st !== 'overview' && <p className="mt-3 rounded-lg bg-info-bg px-4 py-3 text-14">{en.menu.readOnly}</p>}
+      <PageTabs label={en.menu.stage[st]} tabs={tabs} current={current} />
+      <div className="mt-4">{body}</div>
+    </>
+  );
+}
+
+/** Registers (NV-3): baselines and compliance, one entry with two tabs; Compliance first for the compliance officer. */
+export function RegistersPage({ tab }: { tab?: string }) {
+  const { repo } = useApp();
+  const order = repo.menu().registers;
+  const bl = repo.consultation.baselines();
+  const cp = repo.consultation.compliance();
+  if (!order.length) return null;
+  const current = order.includes(tab as RegisterTab) ? (tab as RegisterTab) : order[0]!;
+  const tabs = order.map((k) => [k, k === 'baselines' ? K.tabs.baselines : K.tabs.compliance, hrefFor({ kind: 'strategy', entry: 'registers', tab: k })] as [string, string, string]);
+  return (
+    <>
+      <PageTabs label={en.menu.entry.registers!} tabs={tabs} current={current} />
+      <div className="mt-4">{current === 'baselines' && bl ? <Baselines b={bl} /> : current === 'compliance' && cp ? <Compliance c={cp} /> : null}</div>
+    </>
+  );
+}
+
+/** Plan document (D15-4): the document to read or draft, with its print version at its own address. */
+export function PlanDocumentEntry() {
+  const pdoc = useApp().repo.planDocument.page();
+  if (!pdoc) return null;
+  return (
+    <>
+      <PlanDocumentPanel d={pdoc} />
+    </>
   );
 }
 

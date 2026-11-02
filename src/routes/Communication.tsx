@@ -34,20 +34,21 @@ export function CommunicationCard() {
           </li>
         ))}
       </ul>
-      <a className={link} href={hrefFor({ kind: 'communication' })}>{C.open}</a>
+      <a className={link} href={hrefFor({ kind: 'strategy', entry: 'communication' })}>{C.open}</a>
     </section>
   );
 }
 
 /* ───────── #/communication ───────── */
 
-export function CommunicationPage({ goalId }: { goalId?: string }) {
+export function CommunicationPage({ goalId, embedded = false }: { goalId?: string; embedded?: boolean }) {
   const { repo } = useApp();
   const page = repo.communication.page();
   const terms = repo.settings().termLabels;
   return (
     <>
-      <WorkspaceHeader w="strategy" title={C.title} intro={C.intro} />
+      {!embedded && <WorkspaceHeader w="strategy" title={C.title} intro={C.intro} />}
+      {embedded && <p className="mb-2 max-w-3xl text-14 text-muted">{C.intro}</p>}
       {!page.plans.length && <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{C.none}</p>}
       {page.plans.map((p) => (
         <section key={p.planId} className="mt-6" aria-labelledby={`comm-${p.planId}`}>
@@ -130,7 +131,7 @@ export function GoalCommunication({ g, onGoalPage = false }: { g: CommunicationG
       {g.record && <Meetings g={g} act={act} />}
       <p className="flex flex-wrap gap-x-4">
         {g.documentFinal && <a className={link} href={hrefFor({ kind: 'planDocument' })}>{C.documentLink}</a>}
-        {onGoalPage && reachesPage && <a className={link} href={hrefFor({ kind: 'communication', goalId: g.goalId })}>{C.openPage}</a>}
+        {onGoalPage && reachesPage && <a className={link} href={hrefFor({ kind: 'strategy', entry: 'communication', goalId: g.goalId })}>{C.openPage}</a>}
       </p>
     </div>
   );
@@ -357,13 +358,13 @@ export function BoardPaperPrint({ goalId }: { goalId: string }) {
     return (
       <div className={card}>
         <p className="text-14 text-muted">{P.notReady}</p>
-        <a className={link} href={hrefFor({ kind: 'communication', goalId })}>{P.back}</a>
+        <a className={link} href={hrefFor({ kind: 'strategy', entry: 'communication', goalId })}>{P.back}</a>
       </div>
     );
   }
   return (
     <article className="rounded-xl bg-white p-6 md:p-10">
-      <p className="no-print text-13 text-muted">{P.print} <a className={link} href={hrefFor({ kind: 'communication', goalId })}>{P.back}</a></p>
+      <p className="no-print text-13 text-muted">{P.print} <a className={link} href={hrefFor({ kind: 'strategy', entry: 'communication', goalId })}>{P.back}</a></p>
       <p className="mt-4 text-13 text-muted">{paper.organisation} · {paper.planTitle} ({paper.period})</p>
       <h1 className="mt-1 text-28 font-bold text-navy">{P.title}</h1>
       <h2 className="mt-2 text-18 font-bold text-navy">{P.goal(paper.goalLabel, paper.code, paper.title)}</h2>

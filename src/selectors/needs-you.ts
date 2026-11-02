@@ -13,6 +13,7 @@ import { canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmen
 import { composition, isDecided } from '../rules/composition';
 import { sentBy } from '../rules/onboarding';
 import { goalsNeedingRecord } from '../rules/communication';
+import type { FormingStage, StrategyEntry } from './nav';
 import { baselineOwnerPosition, baselinesOf, baselineState, complianceOf, currentRound, inAudience, inputsOf, isLiveBaseline } from '../rules/consultation';
 import { formatNumber } from './format';
 import { currentBudgetVersion } from '../rules/structure';
@@ -22,7 +23,10 @@ import type { HomeKind } from './home';
 import { holderOf } from './node';
 
 export type NeedsYouKind = 'deadline' | 'decision_action' | 'finding' | 'approval';
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | null;
+/** A Strategy sub-menu page (v0.17.0, C-4): "Needs you" opens the exact entry, stage and tab. */
+export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string };
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | null;
+const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {
   key: string;
@@ -121,7 +125,7 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
       if (sender && sender !== v.membershipId) {
         add({
           key: `approve:plan:${p.id}`, kind: 'approval', title: en.needsYou.confirmPlan(p.title), detail: en.needsYou.submittedBy(personName(sender)),
-          due: null, severity: null, as: 'executive', link: { kind: 'workspace', w: 'strategy' },
+          due: null, severity: null, as: 'executive', link: at('forming', 'composition'),
         });
       }
     }
@@ -178,50 +182,49 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     const plan = s.plans.find((p) => p.id === d.planId);
     if (d.completed || !plan?.calendar?.published || !d.ownerPositionIds.some(mine)) continue;
     if (!input.canView({ type: 'FormationDeadline', id: d.id })) continue;
-    add({ key: `formation:${d.id}`, kind: 'deadline', title: d.label, detail: plan.title, due: d.dueOn, severity: null, as: null, link: { kind: 'workspace', w: 'strategy' } });
+    add({ key: `formation:${d.id}`, kind: 'deadline', title: d.label, detail: plan.title, due: d.dueOn, severity: null, as: null, link: at('forming', 'overview') });
   }
 
   /* Formation (part 11a): the calendar preparer prepares and publishes the calendar. */
   for (const p of s.plans.filter((x) => x.entryDoor === 'formed' && x.status === 'draft')) {
     if (p.calendar?.preparerMembershipId === v.membershipId && !p.calendar.published) {
-      add({ key: `formation:prepare:${p.id}`, kind: 'deadline', title: en.formation.needs.prepare(p.title), detail: null, due: p.calendar.visionTargetOn, severity: null, as: null, link: { kind: 'workspace', w: 'strategy' } });
+      add({ key: `formation:prepare:${p.id}`, kind: 'deadline', title: en.formation.needs.prepare(p.title), detail: null, due: p.calendar.visionTargetOn, severity: null, as: null, link: at('forming', 'overview', 'calendar') });
     }
   }
   /* Conception (part 11b), while the stage is open and the vision is not yet confirmed. */
   const forming = formingPlan(s);
   if (forming && forming.formation?.conception.status === 'open' && !visionConfirmed(s, forming.id)) {
     const count = (n: number, k: 'card' | 'aiCard') => `${formatNumber(n)} ${n === 1 ? en.setup.plural[k]![0] : en.setup.plural[k]![1]}`;
-    const strategy: FixTarget = { kind: 'workspace', w: 'strategy' };
     const due = forming.calendar?.visionTargetOn ?? null;
     const C = en.conception.needs;
     // Department heads (F-2): one next step per department they answer for.
     for (const d of departmentsHeadedBy(s, v.positionIds as string[])) {
       const st = departmentState(s, forming.id, d.unitId);
       const blank = st.toCheck + st.waiting + st.consolidated === 0;
-      if (st.toCheck > 0) add({ key: `conception:check:${d.unitId}`, kind: 'deadline', title: C.check(count(st.toCheck, 'aiCard'), d.name), detail: forming.title, due, severity: null, as: null, link: strategy });
-      else if (blank && !st.interviewed && s.organisation.settings.aiEnabled) add({ key: `conception:interview:${d.unitId}`, kind: 'deadline', title: C.interview(d.name), detail: forming.title, due, severity: null, as: null, link: strategy });
-      else if (!st.submitted && canSubmitDepartment(st)) add({ key: `conception:send:${d.unitId}`, kind: 'deadline', title: C.send(d.name), detail: forming.title, due, severity: null, as: null, link: strategy });
+      if (st.toCheck > 0) add({ key: `conception:check:${d.unitId}`, kind: 'deadline', title: C.check(count(st.toCheck, 'aiCard'), d.name), detail: forming.title, due, severity: null, as: null, link: at('forming', 'conception', 'mine') });
+      else if (blank && !st.interviewed && s.organisation.settings.aiEnabled) add({ key: `conception:interview:${d.unitId}`, kind: 'deadline', title: C.interview(d.name), detail: forming.title, due, severity: null, as: null, link: at('forming', 'conception', 'mine') });
+      else if (!st.submitted && canSubmitDepartment(st)) add({ key: `conception:send:${d.unitId}`, kind: 'deadline', title: C.send(d.name), detail: forming.title, due, severity: null, as: null, link: at('forming', 'conception', 'mine') });
     }
     // The Strategy office: AI drafts on the organisation sheet or on a department sheet with no head, and accepted cards to bring together.
     if (v.roles.includes('strategy_office')) {
       const headless = new Set(departments(s).filter((d) => !d.headPositionId || !holderOf(s, d.headPositionId, now)?.person).map((d) => d.unitId));
       const drafts = entriesOf(s, forming.id).filter((e) => isLive(e) && e.draft.state === 'ai_draft' && (e.scope === 'organisation' || e.raisedByUnitIds.some((u) => headless.has(u)))).length;
-      if (drafts) add({ key: `conception:curate:${forming.id}`, kind: 'deadline', title: C.curate(count(drafts, 'aiCard')), detail: forming.title, due, severity: null, as: 'strategy_office', link: strategy });
+      if (drafts) add({ key: `conception:curate:${forming.id}`, kind: 'deadline', title: C.curate(count(drafts, 'aiCard')), detail: forming.title, due, severity: null, as: 'strategy_office', link: at('forming', 'conception', 'board') });
       for (const d of departments(s)) {
         const st = departmentState(s, forming.id, d.unitId);
-        if (st.submitted && st.waiting > 0) add({ key: `conception:consolidate:${d.unitId}`, kind: 'deadline', title: C.consolidate(d.name), detail: forming.title, due, severity: null, as: 'strategy_office', link: strategy });
+        if (st.submitted && st.waiting > 0) add({ key: `conception:consolidate:${d.unitId}`, kind: 'deadline', title: C.consolidate(d.name), detail: forming.title, due, severity: null, as: 'strategy_office', link: at('forming', 'conception', 'board') });
       }
     }
     // The Executive: once every section has an accepted card, the vision is theirs to write and confirm.
     if (v.roles.includes('executive') && filledCells(s, forming.id).length === CELLS.length) {
-      add({ key: `approve:vision:${forming.id}`, kind: 'approval', title: C.vision(forming.title), detail: C.visionDetail, due, severity: null, as: 'executive', link: strategy });
+      add({ key: `approve:vision:${forming.id}`, kind: 'approval', title: C.vision(forming.title), detail: C.visionDetail, due, severity: null, as: 'executive', link: at('forming', 'conception', 'vision') });
     }
   }
 
   /* Consultation and Confirmation (part 11c). */
   if (forming) {
     const N = en.consultation.needs;
-    const strategy: FixTarget = { kind: 'workspace', w: 'strategy' };
+    const strategy = at('forming', 'consultation');
     const count = (n: number, k: string) => `${formatNumber(n)} ${n === 1 ? en.setup.plural[k]![0] : en.setup.plural[k]![1]}`;
     const started = (st: 'consultation' | 'confirmation') => (forming.formation?.[st].status ?? 'not_started') !== 'not_started';
     const round = currentRound(s, forming.id);
@@ -243,26 +246,26 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
       }
       for (const [u, n] of awaitingByUnit) {
         const name = s.units.find((x) => x.id === u)?.name ?? '';
-        add({ key: `baseline:check:${u}`, kind: 'deadline', title: N.check(count(n, 'baseline'), name), detail: forming.title, due: null, severity: null, as: null, link: strategy });
+        add({ key: `baseline:check:${u}`, kind: 'deadline', title: N.check(count(n, 'baseline'), name), detail: forming.title, due: null, severity: null, as: null, link: at('registers', undefined, 'baselines') });
       }
       if (v.roles.includes('strategy_office')) {
         const orphaned = live.filter((b) => baselineState(b) === 'awaiting_owner' && (() => { const pos = baselineOwnerPosition(s, b); return !pos || !holderOf(s, pos, now)?.person; })()).length;
-        if (orphaned) add({ key: `baseline:office:${forming.id}`, kind: 'deadline', title: N.officeCheck(count(orphaned, 'aiBaseline')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: strategy });
+        if (orphaned) add({ key: `baseline:office:${forming.id}`, kind: 'deadline', title: N.officeCheck(count(orphaned, 'aiBaseline')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: at('registers', undefined, 'baselines') });
         const toValidate = live.filter((b) => baselineState(b) === 'confirmed').length;
-        if (toValidate) add({ key: `baseline:validate:${forming.id}`, kind: 'deadline', title: N.validate(count(toValidate, 'baseline')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: strategy });
+        if (toValidate) add({ key: `baseline:validate:${forming.id}`, kind: 'deadline', title: N.validate(count(toValidate, 'baseline')), detail: forming.title, due: null, severity: null, as: 'strategy_office', link: at('registers', undefined, 'baselines') });
       }
     }
     // The compliance officer reviews every item once Confirmation opens.
     if (started('confirmation') && v.roles.includes('compliance')) {
       const open = complianceOf(s, forming.id).filter((c) => c.outcome === null).length;
-      if (open) add({ key: `compliance:review:${forming.id}`, kind: 'deadline', title: N.review(count(open, 'complianceItem')), detail: N.reviewDetail, due: forming.calendar?.planTargetOn ?? null, severity: null, as: null, link: strategy });
+      if (open) add({ key: `compliance:review:${forming.id}`, kind: 'deadline', title: N.review(count(open, 'complianceItem')), detail: N.reviewDetail, due: forming.calendar?.planTargetOn ?? null, severity: null, as: null, link: at('registers', undefined, 'compliance') });
     }
   }
 
   /* Composition (part 11d, BUILD-BRIEF section 34). */
   if (forming && visionConfirmed(s, forming.id) && forming.status === 'draft') {
     const N = en.composition.needs;
-    const strategy: FixTarget = { kind: 'workspace', w: 'strategy' };
+    const strategy = at('forming', 'composition');
     const count = (n: number, k: string) => `${formatNumber(n)} ${n === 1 ? en.setup.plural[k]![0] : en.setup.plural[k]![1]}`;
     const rec = composition(s, forming.id);
     const open = forming.formation?.composition.status === 'open';
@@ -284,7 +287,7 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
   for (const e of escalated(s, now)) {
     if (!mine(e.supervisorPositionId)) continue;
     const owner = s.positions.find((x) => x.id === e.ownerPositionId)?.title ?? '';
-    add({ key: `formation:escalated:${e.deadlineId}:${e.ownerPositionId}`, kind: 'deadline', title: en.formation.needs.escalated(e.label, owner), detail: null, due: e.dueOn, severity: null, as: 'supervisor', link: { kind: 'workspace', w: 'strategy' } });
+    add({ key: `formation:escalated:${e.deadlineId}:${e.ownerPositionId}`, kind: 'deadline', title: en.formation.needs.escalated(e.label, owner), detail: null, due: e.dueOn, severity: null, as: 'supervisor', link: at('forming', 'overview') });
   }
 
   /* Part 11e (D16-10): confirmed goals with no communication record, for the goal's owner and the Strategy office. Undated. */
@@ -304,7 +307,7 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     w.decisionLog.forEach((entry, i) =>
       entry.actions.forEach((a, j) => {
         if (!mine(a.ownerPositionId)) return;
-        add({ key: `action:${w.id}:${i}:${j}`, kind: 'decision_action', title: a.text, detail: entry.decision, due: a.dueOn, severity: null, as: null, link: { kind: 'workspace', w: 'strategy' } });
+        add({ key: `action:${w.id}:${i}:${j}`, kind: 'decision_action', title: a.text, detail: entry.decision, due: a.dueOn, severity: null, as: null, link: at('forming', 'overview', 'sessions') });
       }),
     );
   }

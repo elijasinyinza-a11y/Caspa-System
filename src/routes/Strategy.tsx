@@ -13,8 +13,10 @@ import type { PlanMust } from '../rules/onboarding';
 import { formatDate, formatFinancialYear, formatNumber } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, download, input, label, link, plural, primary } from './organisation/ui';
-import { Formation } from './Formation';
-import { CommunicationCard } from './Communication';
+import { FormingPage, NextPlanCard, PlanDocumentEntry, RegistersPage } from './Formation';
+import { EntryRow } from '../components/SubMenu';
+import type { FormingStage, StrategyEntry } from '../selectors/nav';
+import { CommunicationCard, CommunicationPage } from './Communication';
 
 const O = en.onboarding;
 
@@ -31,6 +33,7 @@ export function Strategy() {
   return (
     <>
       <WorkspaceHeader w="strategy" title={en.nav.strategy} intro={en.workspaceIntro.strategy} />
+      <EntryRow w="strategy" />
       {note && <p role="status" className="mb-4 rounded-lg border border-complete-border bg-complete-bg px-4 py-3 text-14 text-complete-text">{note}</p>}
       {!page.plan ? (
         setup && page.canSetUp ? <SetupForm page={page} onDone={(m) => { setSetup(false); setNote(m); }} onCancel={() => setSetup(false)} />
@@ -38,12 +41,32 @@ export function Strategy() {
       ) : (
         <>
           <PlanView page={page} setNote={setNote} />
-          {/* Part 11a: forming the next plan beside the running one (BUILD-BRIEF section 30). */}
-          {page.plan.published && <Formation />}
+          {/* Part 11a: forming the next plan beside the running one; its pages are a sub-menu entry (NV-9). */}
+          {page.plan.published && <NextPlanCard />}
         </>
       )}
       {/* Part 11e (D16-3): Communication does not depend on formation. */}
       <CommunicationCard />
+    </>
+  );
+}
+
+/* ───────── A Strategy sub-menu entry (v0.17.0, BUILD-BRIEF section 37) ───────── */
+
+export function StrategyEntryPage({ entry, stage, tab, goalId }: { entry: StrategyEntry; stage?: FormingStage; tab?: string; goalId?: string }) {
+  const { repo } = useApp();
+  const e = repo.menu().strategy.find((x) => x.entry === entry);
+  const label = e?.label ?? entry;
+  return (
+    <>
+      <WorkspaceHeader w="strategy" title={en.menu.entry[label] ?? en.nav.strategy} intro={en.menu.purpose[label] ?? en.workspaceIntro.strategy} />
+      <EntryRow w="strategy" />
+      {!e ? (
+        <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{en.menu.notOpen} <a className="font-semibold text-navy underline underline-offset-4" href="#/strategy">{en.menu.back}</a></p>
+      ) : entry === 'forming' ? <FormingPage stage={stage} tab={tab} />
+        : entry === 'registers' ? <RegistersPage tab={tab} />
+        : entry === 'plan-document' ? <PlanDocumentEntry />
+        : <CommunicationPage goalId={goalId} embedded />}
     </>
   );
 }

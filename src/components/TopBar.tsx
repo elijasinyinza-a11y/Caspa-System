@@ -84,7 +84,15 @@ export function TopBar() {
               <>
                 <li className="font-semibold text-navy">{en.setup.nav}</li>
                 <li aria-hidden="true" className="text-muted">›</li>
-                <li aria-current="page" className="font-semibold text-navy">{route.handover ? en.vacancy.handover : route.tab ? en.vacancy.tab : repo.structureConfirmed() ? en.setup.crumbStructure : en.setup.crumbSetup}</li>
+                <li aria-current="page" className="font-semibold text-navy">{route.handover ? en.vacancy.handover : route.tab === "people" ? en.menu.entry.people : route.tab ? en.vacancy.tab : repo.structureConfirmed() ? en.setup.crumbStructure : en.setup.crumbSetup}</li>
+              </>
+            ) : route.kind === "strategy" ? (
+              <>
+                <li><a href="#/strategy" className="inline-flex min-h-11 items-center text-muted hover:text-navy hover:underline">{en.nav.strategy}</a></li>
+                <li aria-hidden="true" className="text-muted">›</li>
+                <li aria-current="page" className="font-semibold text-navy">
+                  {en.menu.entry[repo.menu().strategy.find((e) => e.entry === route.entry)?.label ?? route.entry] ?? en.nav.strategy}
+                </li>
               </>
             ) : (
               <li aria-current="page" className="font-semibold text-navy">

@@ -59,7 +59,9 @@ export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
       );
     }
     if (link.kind === "workspace" && !reachable.includes(link.w)) return null;
-    const href = link.kind === "communication" ? hrefFor({ kind: "communication", goalId: link.goalId }) : fixHref(link);
+    if (link.kind === "strategy" && !reachable.includes("strategy")) return null;
+    const href = link.kind === "communication" ? hrefFor({ kind: "strategy", entry: "communication", goalId: link.goalId })
+      : link.kind === "strategy" ? hrefFor({ kind: "strategy", entry: link.entry, stage: link.stage, tab: link.tab }) : fixHref(link);
     return (
       <a href={href} className={cls}>
         {en.needsYou.open}

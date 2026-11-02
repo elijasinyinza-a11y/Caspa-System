@@ -1,7 +1,7 @@
 /** Hash routes, so the single-file build works anywhere without a server. */
 import { useEffect, useState } from 'react';
 import { NODE_KINDS, type NodeKind } from '../selectors/node';
-import { WORKSPACE_ORDER } from '../selectors/nav';
+import { FORMING_STAGES, WORKSPACE_ORDER, type FormingStage, type StrategyEntry } from '../selectors/nav';
 import type { WorkspaceKey } from '../strings/en';
 import type { FixTarget } from '../selectors/integrity';
 
@@ -19,22 +19,32 @@ export type Route =
    * The organisation's structure and its setup, #/organisation (slice 7, D7-13); its vacant and acting positions,
    * #/organisation/vacancies, and a position's handover list, #/organisation/handover/<positionId> (slice 9).
    */
-  | { kind: 'org'; tab?: 'vacancies'; handover?: string }
-  /** The plan document's print version, #/plan-document (D15-5). */
+  | { kind: 'org'; tab?: 'vacancies' | 'people'; handover?: string }
+  /** The plan document's print version, #/strategy/plan-document/print (D15-5; was #/plan-document, which redirects). */
   | { kind: 'planDocument' }
-  /** The Communication page in Strategy, #/communication, optionally at one goal: #/communication/<goalId> (D16-3). */
-  | { kind: 'communication'; goalId?: string }
+  /**
+   * A Strategy sub-menu entry (v0.17.0, NV-5): #/strategy/<entry>, with Forming the next plan's stage and tab
+   * (#/strategy/forming/<stage>/<tab>), a register (#/strategy/registers/<tab>), or one goal on Communication
+   * (#/strategy/communication/<goalId>; was #/communication, which redirects).
+   */
+  | { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string; goalId?: string }
   /** A goal's board version printed as a short board paper, #/board-paper/<goalId> (D16-7). */
   | { kind: 'boardPaper'; goalId: string };
 
 export const hrefFor = (r: Route): string =>
-  r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? '#/organisation/vacancies' : '#/organisation')
-  : r.kind === 'planDocument' ? '#/plan-document'
-  : r.kind === 'communication' ? `#/communication${r.goalId ? `/${encodeURIComponent(r.goalId)}` : ''}`
+  r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
+  : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
+  : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
   : r.kind === 'workspace' ? `#/${r.w}`
   : r.kind === 'map' ? `#/map/${encodeURIComponent(r.objectiveId)}${r.deficiencyId ? `/${encodeURIComponent(r.deficiencyId)}` : ''}`
   : `#/node/${r.node}/${encodeURIComponent(r.id)}${r.from ? `~${r.from}` : ''}`;
+function strategyHref(r: Extract<Route, { kind: 'strategy' }>): string {
+  const tail = r.entry === 'forming' ? [r.stage, r.stage && r.tab].filter(Boolean)
+    : r.entry === 'registers' ? [r.tab]
+    : r.entry === 'communication' ? [r.goalId && encodeURIComponent(r.goalId)] : [];
+  return ['#/strategy', r.entry, ...tail.filter((x): x is string => !!x)].join('/');
+}
 export const mapHref = (objectiveId: string, deficiencyId?: string) => hrefFor({ kind: 'map', objectiveId, deficiencyId });
 /** Where a check's fix opens. */
 export const fixHref = (fix: FixTarget, from?: WorkspaceKey): string =>
@@ -51,22 +61,41 @@ export const parseRoute = (hash: string): Route => {
   if (parts[0] === 'map' && parts[1]) {
     return { kind: 'map', objectiveId: decodeURIComponent(parts[1]), deficiencyId: parts[2] ? decodeURIComponent(parts[2]) : undefined };
   }
+  // NV-5: earlier addresses still open.
   if (parts[0] === 'plan-document') return { kind: 'planDocument' };
-  if (parts[0] === 'communication') return { kind: 'communication', goalId: parts[1] ? decodeURIComponent(parts[1]) : undefined };
+  if (parts[0] === 'communication') return { kind: 'strategy', entry: 'communication', goalId: parts[1] ? decodeURIComponent(parts[1]) : undefined };
+  if (parts[0] === 'strategy' && parts[1]) {
+    const entry = parts[1] as StrategyEntry;
+    if (entry === 'plan-document') return parts[2] === 'print' ? { kind: 'planDocument' } : { kind: 'strategy', entry };
+    if (entry === 'communication') return { kind: 'strategy', entry, goalId: parts[2] ? decodeURIComponent(parts[2]) : undefined };
+    if (entry === 'registers') return { kind: 'strategy', entry, tab: parts[2] || undefined };
+    if (entry === 'forming') {
+      const stage = FORMING_STAGES.includes(parts[2] as FormingStage) ? (parts[2] as FormingStage) : undefined;
+      return { kind: 'strategy', entry, stage, tab: stage ? parts[3] || undefined : undefined };
+    }
+  }
   if (parts[0] === 'board-paper' && parts[1]) return { kind: 'boardPaper', goalId: decodeURIComponent(parts[1]) };
   if (parts[0] === 'organisation') {
     if (parts[1] === 'handover' && parts[2]) return { kind: 'org', handover: decodeURIComponent(parts[2]) };
-    return parts[1] === 'vacancies' ? { kind: 'org', tab: 'vacancies' } : { kind: 'org' };
+    return parts[1] === 'vacancies' || parts[1] === 'people' ? { kind: 'org', tab: parts[1] } : { kind: 'org' };
   }
   const w = parts[0] as WorkspaceKey;
   return { kind: 'workspace', w: WORKSPACE_ORDER.includes(w) ? w : 'home' };
 };
 
+/** Old addresses are replaced in the address bar by their new ones, so links already shared still open (NV-5). */
+export const LEGACY = /^#\/(communication|plan-document)(\/|$)/;
+function canonical(hash: string): Route {
+  const r = parseRoute(hash);
+  if (LEGACY.test(hash)) window.history.replaceState(null, '', hrefFor(r));
+  return r;
+}
+
 export function useRoute(): [Route, (r: Route) => void] {
-  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.hash));
+  const [route, setRoute] = useState<Route>(() => canonical(window.location.hash));
   useEffect(() => {
     const on = () => {
-      setRoute(parseRoute(window.location.hash));
+      setRoute(canonical(window.location.hash));
       document.getElementById('main')?.focus({ preventScroll: false });
     };
     window.addEventListener('hashchange', on);
