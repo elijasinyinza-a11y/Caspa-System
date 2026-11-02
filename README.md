@@ -2,8 +2,8 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 1 November 2026, including the clarity decisions in section 20, Conception in section 31,
-Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34, the plan document and first year in section 35) first. The data contract is v1.8.
+with decisions to 2 November 2026, including the clarity decisions in section 20, Conception in section 31,
+Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34, the plan document and first year in section 35, Communication in section 36) first. The data contract is v1.9.
 
 ## Run
 
@@ -33,7 +33,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 9. Vacancies and handover (Vacancy and Handover Specification v0.1; decisions H1 to H9, BUILD-BRIEF section 26) — done (v0.9.0)
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
-    11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication next (v0.16.0)
+    11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication — done (v0.16.0)
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -48,6 +48,27 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Communication, part 11e (v0.16.0)
+
+- BUILD-BRIEF section 36 (D16-1 to D16-12) and the ten build points confirmed by Elijah on 2 November 2026; contract
+  v1.9 (D16-1, D16-5; no field changes). 605 tests (14 new in `src/data/access/communication.test.ts`, 2 in
+  `src/data/access/first-year.test.ts`, 6 in `src/data/access/all-orgs.test.ts`).
+- Code: `src/rules/communication.ts` (which plans and goals, status, first version, meeting units, the goals still
+  needing a record), `src/data/access/communication.ts`, `src/routes/Communication.tsx` (the page at
+  `#/communication`, the record on goal pages, the board paper at `#/board-paper/<goalId>`, the Home card), the
+  stub's `draftCommunication` and `draftAudienceVersions`, and the "owner" rule for records in `permissions.ts`.
+- Try it on Sample Water Utility. As Strategy office, Strategy › Communication: G1 is complete; open it to see the
+  three parts, its linked 4Q point shown live, the three versions and the Commercial meeting of 15 October 2026.
+  "Print as a board paper" opens the board version. G2 to G4 show "No context yet" and are in "Needs you": open G2,
+  "Write the record", "Suggest wording (AI)", save, then "Draft the versions (AI)" and accept each. As Executive,
+  Home lists only G4 (the Managing Director owns it); G1 opens on the board version. As Employee, open G1 from the
+  contract: the staff version first, the 4Q point as a count. Department heads who do not own the goal
+  (tested with the Head of Operations on G1) log meetings for their own department only.
+- After confirming the 2027–2031 plan and finalising its document (see v0.15.0 below), everyone's Home shows "Our
+  strategic plan", the document shows the accepted 4Q cards to all readers (D16-1), and its confirmed goals are listed
+  on the Communication page from Composition onward.
+- Not built (section 36): anonymous staff feedback during execution needs a new record (later item).
 
 ## Plan document and first year's cascade (v0.15.0)
 
@@ -66,8 +87,7 @@ and a consultant. In the NGO one person holds both Finance and HR, so its queue 
   superseded.
 - After confirmation the 4Q board, room and baseline register stay readable and locked (owners still confirm and the
   Strategy office still validates measures); the compliance register stays open.
-- Open for Elijah: whether the final document shows the accepted 4Q cards' text to everyone (today staff see a count,
-  following the 4Q card rule); how staff reach the final document (suggested: Communication, 11e).
+- Settled in section 36 (D16-1, D16-2): the final document's 4Q card text and how staff reach it, built in v0.16.0.
 
 ## Composition, part 11d (v0.14.0)
 
