@@ -832,7 +832,7 @@ export const en = {
     draftBanner: 'Draft structure (not yet saved).',
     draftCounts: (units: string, positions: string, vacant: string, people: string) => `${units} · ${positions} (${vacant} vacant) · ${people}.`,
     rowsNeedAttention: (n: string) => n,
-    tabs: { label: 'Setting up', details: '1. Details and settings', build: '2. Build the structure', review: (must: string, check: string) => `3. Review and confirm · ${must} must fix · ${check} to check` },
+    tabs: { structureEntry: 'Structure', label: 'Setting up', details: '1. Details and settings', build: '2. Build the structure', review: (must: string, check: string) => `3. Review and confirm · ${must} must fix · ${check} to check` },
     details: {
       title: 'Organisation details',
       name: 'Name',
@@ -2247,6 +2247,31 @@ export const en = {
       final: 'This document is final and can no longer be changed.', pending: 'Accept every section first.', ai_off: 'AI is switched off for your organisation.',
       exists: 'A draft already exists.', required: 'The text cannot be empty.',
     } as Record<string, string>,
+  },
+  /** Sidebar sub-menus (v0.17.0; Navigation Specification v1.1, BUILD-BRIEF section 37). */
+  menu: {
+    rowLabel: (w: string) => `${w} pages`,
+    overview: 'Overview',
+    entry: { forming: 'Forming the next plan', say: 'Have your say', registers: 'Registers', 'plan-document': 'Plan document', communication: 'Communication', vacancies: 'Vacancies', people: 'People and access' } as Record<string, string>,
+    purpose: {
+      forming: 'Forming the next plan, stage by stage: the 4Q review, consultation and composition.',
+      say: 'Ideas and comments on the draft plan from the people it asks.',
+      registers: 'Baselines the targets start from, and the laws and standards the plan must meet.',
+      'plan-document': 'The plan as one document, with its figures always up to date.',
+      communication: 'What each goal changes, why, and how it will be delivered, for every audience.',
+      vacancies: 'Vacant and acting positions, ranked by what they hold.',
+      people: 'Who can sign in, and the roles each person has.',
+    } as Record<string, string>,
+    stagesLabel: 'Stages',
+    stage: { overview: 'Overview', conception: 'Conception', consultation: 'Consultation', composition: 'Composition' },
+    openNow: 'open now',
+    readOnly: 'Read-only: the plan is confirmed.',
+    notOpen: 'This page isn’t open to you at the moment.',
+    back: 'Back to Strategy',
+    formingCard: (plan: string) => `${plan} is being formed.`,
+    formingOpen: 'Open Forming the next plan',
+    overviewTabs: { stages: 'Stages', calendar: 'Calendar', sessions: 'Sessions' },
+    print: 'Print version',
   },
   /** Communication, part 11e (v0.16.0; BUILD-BRIEF section 36, D16-1 to D16-12). */
   communication: {
