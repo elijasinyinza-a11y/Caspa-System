@@ -14,6 +14,7 @@ import { btn, card, CheckBox, Chip, input, label, plural, primary } from './orga
 import { Board, Documents, MyPart, VisionMission } from './Conception';
 import { Baselines, Compliance, Room } from './Consultation';
 import { Composer } from './Composition';
+import { PlanDocumentPanel } from './PlanDocument';
 
 const F = en.formation;
 const K = en.consultation;
@@ -30,8 +31,9 @@ export function Formation() {
   const bl = repo.consultation.baselines();
   const cp = repo.consultation.compliance();
   const comp = repo.composition.page();
+  const pdoc = repo.planDocument.page();
   // Part 11c: someone here only to have their say, or the compliance officer, opens on their own tab.
-  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision' | 'room' | 'baselines' | 'compliance' | 'composition'>(() =>
+  const [tab, setTab] = useState<'formation' | 'calendar' | 'sessions' | 'board' | 'mine' | 'documents' | 'vision' | 'room' | 'baselines' | 'compliance' | 'composition' | 'document'>(() =>
     cp?.canReview && !c?.seesAll ? 'compliance' : room?.canComment && !room.canRun && !c?.seesAll && !c?.myDepartments.length ? 'room' : 'formation');
   if (!f.plan) {
     return (
@@ -59,6 +61,8 @@ export function Formation() {
     // Part 11d: once the vision is confirmed, for those who shape the plan (and owners of its objectives).
     ...(comp && (comp.runs || c?.seesAll || c?.myDepartments.length || repo.viewer.roles.includes('finance') || comp.goals.some((g) => g.objectives.some((o) => o.canAddKpi)))
       ? [['composition', en.composition.tab] as [typeof tab, string]] : []),
+    // D15-4: once the plan is confirmed, for those who draft it, and for everyone once it is final.
+    ...(pdoc && (pdoc.canDraft || pdoc.document) ? [['document', en.planDocument.tab] as [typeof tab, string]] : []),
     ['calendar', F.tabs.calendar], ['sessions', F.tabs.sessions],
   ];
   return (
@@ -94,6 +98,7 @@ export function Formation() {
         {tab === 'baselines' && bl && <Baselines b={bl} />}
         {tab === 'compliance' && cp && <Compliance c={cp} />}
         {tab === 'composition' && comp && <Composer c={comp} />}
+        {tab === 'document' && pdoc && <PlanDocumentPanel d={pdoc} />}
       </div>
     </section>
   );

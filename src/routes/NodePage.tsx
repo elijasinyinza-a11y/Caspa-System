@@ -1,4 +1,5 @@
 import { createContext, useContext, useId, useState, type ReactNode } from 'react';
+import { AddNextYearActivity, NextYearBar } from '../components/NextYear';
 import { useApp } from '../components/AppContext';
 import { identity } from '../components/identity';
 import { ProgressBar, StatusBadge } from '../components/Status';
@@ -609,6 +610,7 @@ export function NodePage({ kind, id, from }: { kind: NodeKind; id: string; from?
   if (!n) {
     return (
       <div className="rounded-xl border border-border bg-white p-6">
+        <NextYearBar />
         <p className="text-16 text-text">{en.node.notFound}</p>
         <a href={repo.workspaces().includes('cascade') ? '#/cascade' : '#/home'} className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-navy px-4 text-14 font-semibold text-white">
           {repo.workspaces().includes('cascade') ? en.node.backToCascade : en.node.goHome}
@@ -619,7 +621,9 @@ export function NodePage({ kind, id, from }: { kind: NodeKind; id: string; from?
   const labels: Record<NodeKind, string> = { goal: terms.goal.plural, objective: terms.objective.plural, kpi: terms.kpi.plural, activity: terms.activity.plural };
   return (
     <>
+      <NextYearBar />
       <RecordHeading n={n} />
+      {kind === 'kpi' && <AddNextYearActivity kpiId={id} ownerDefault={null} />}
       <Findings n={n} />
       <NextStep n={n} />
       {/* Reading order is the source order, so on a phone the sections stack as Strategy, Cascade, Plan, Performance. */}

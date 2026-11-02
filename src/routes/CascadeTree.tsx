@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { NextYearBar } from '../components/NextYear';
 import { useApp } from '../components/AppContext';
 import { SixPChip, usePref } from '../components/Explain';
 import { useShowCodes } from '../components/prefs';
@@ -186,6 +187,7 @@ export function CascadeTree() {
           </>
         ) : undefined}
       />
+      <NextYearBar />
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         {hasPart && (
           <div role="group" aria-label={en.cascadeTree.scopeLabel} className="inline-flex overflow-hidden rounded-lg border border-control bg-white">

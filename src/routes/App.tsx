@@ -7,7 +7,13 @@ import { TopBar } from '../components/TopBar';
 import { createMemoryRepository, sampleClock } from '../data/access/repository';
 import { ALL_DEV_ROLES } from '../data/sample/all';
 import { createReviewOrgs, devMembership } from '../data/sample/review';
+import { asIfActive } from '../rules/onboarding';
+import type { ISODate } from '../contract/caspa-data-contract';
+
+/** D15-10: the dates the review build can run at. */
+const DEV_DATES = ['2026-10-18', '2027-01-04'] as ISODate[];
 import { OrganisationPage } from './organisation/OrganisationPage';
+import { PlanDocumentPrint } from './PlanDocument';
 import { Strategy } from './Strategy';
 import { HandoverPage } from './organisation/Vacancies';
 import { SAMPLE_NOW } from '../data/sample/seed';
@@ -28,19 +34,35 @@ export function App() {
   const [drawer, setDrawer] = useState(false);
   // Every stored change bumps the revision, so findings and counts recompute on every screen at once.
   const [revision, setRevision] = useState(0);
-  const [clock] = useState(() => sampleClock(SAMPLE_NOW));
+  // D15-10: the review build's date, 18 October 2026 or 4 January 2027 (development only; resets on reload).
+  const [now, setNow] = useState<ISODate>(SAMPLE_NOW);
+  const clock = useMemo(() => sampleClock(now), [now]);
+  const [year, setYear] = useState<'this' | 'next'>('this');
   const scroller = useRef<HTMLDivElement>(null);
   const org = orgs.find((o) => o.orgId === orgId) ?? orgs[0]!;
   // Development roles this organisation has now; Sample New Organisation gains most of them once confirmed.
-  const roles = ALL_DEV_ROLES.filter((r) => devMembership(org, r, SAMPLE_NOW) !== null);
+  const roles = ALL_DEV_ROLES.filter((r) => devMembership(org, r, now) !== null);
   const viewing: DevRole = roles.includes(role) ? role : roles[0]!;
   // Keep the role actually shown, so a confirmation that adds roles does not switch the person away.
   useEffect(() => { if (viewing !== role) setRole(viewing); }, [viewing, role]);
-  const repo = useMemo(
-    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, devMembership(org, viewing, SAMPLE_NOW)!, SAMPLE_NOW, { clock, onChange: () => setRevision((r) => r + 1) }),
+  const base = useMemo(
+    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, devMembership(org, viewing, now)!, now, { clock, onChange: () => setRevision((r) => r + 1) }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- revision is the signal that the store changed
-    [orgs, org, viewing, clock, revision],
+    [orgs, org, viewing, clock, revision, now],
   );
+  // D15-7: next year's draft. Cascade and record pages read a view of the records in which the confirmed plan counts
+  // as active, dated at the start of its first year; the view shares the record lists, so changes are kept.
+  const next = base.firstYear.page();
+  const nextYear = next ? { label: next.yearLabel, planTitle: next.planTitle } : null;
+  const showsNext = year === 'next' && !!next && (route.kind === 'node' || route.kind === 'map' || (route.kind === 'workspace' && route.w === 'cascade'));
+  const repo = useMemo(() => {
+    if (!showsNext || !next) return base;
+    const start = `${next.financialYear}-${String(org.store.organisation.financialYearStartMonth).padStart(2, '0')}-01` as ISODate;
+    const at = now > start ? now : start;
+    const view = asIfActive(org.store, next.planId);
+    return createMemoryRepository(orgs.map((o) => (o.orgId === org.orgId ? view : o.store)), org.orgId, devMembership(org, viewing, now)!, at, { clock, onChange: () => setRevision((r) => r + 1) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- base changes with every stored change
+  }, [base, showsNext]);
   const closeDrawer = useCallback(() => setDrawer(false), []);
   const setOrgId = (id: string) => {
     setOrgIdState(id);
@@ -59,6 +81,7 @@ export function App() {
     route.kind === 'org' && route.handover ? <HandoverPage key={`${org.orgId}:${viewing}:${route.handover}`} positionId={route.handover} />
     : route.kind === 'org' ? <OrganisationPage key={`${org.orgId}:${viewing}`} tab={route.tab} />
     : route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
+    : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />
@@ -67,18 +90,18 @@ export function App() {
     : <Workspace w={route.w} />;
 
   return (
-    <AppContext.Provider value={{ repo, role: viewing, setRole, orgId: org.orgId, setOrgId, dev: { orgs: orgs.map((o) => ({ id: o.orgId, name: o.store.organisation.name })), roles }, route, navigate, openFindings: () => setDrawer(true) }}>
+    <AppContext.Provider value={{ repo, role: viewing, setRole, orgId: org.orgId, setOrgId, dev: { orgs: orgs.map((o) => ({ id: o.orgId, name: o.store.organisation.name })), roles, dates: DEV_DATES }, now, setNow, base, year, setYear, nextYear, preview: showsNext, route, navigate, openFindings: () => setDrawer(true) }}>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">{en.skipToContent}</a>
       <div className="flex h-full">
-        <Sidebar />
-        <div ref={scroller} className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-          <TopBar />
+        <div data-chrome className="contents"><Sidebar /></div>
+        <div ref={scroller} className="print-flow flex min-w-0 flex-1 flex-col overflow-y-auto">
+          <div data-chrome className="contents"><TopBar /></div>
           <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1100px] flex-1 px-4 pb-28 pt-6 outline-none md:px-8 md:pb-10 md:pt-8">
             {page}
           </main>
         </div>
       </div>
-      <BottomBar />
+      <div data-chrome className="contents"><BottomBar /></div>
       {drawer && <IntegrityDrawer onClose={closeDrawer} />}
     </AppContext.Provider>
   );
