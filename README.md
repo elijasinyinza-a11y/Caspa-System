@@ -2,7 +2,7 @@
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 2 November 2026, including the clarity decisions in section 20, Conception in section 31,
+with decisions to 2 November 2026 (navigation in section 37), including the clarity decisions in section 20, Conception in section 31,
 Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34, the plan document and first year in section 35, Communication in section 36) first. The data contract is v1.9.
 
 ## Run
@@ -34,6 +34,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 10. Phone layout review (BUILD-BRIEF section 29) — done (v0.10.0)
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
     11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication — done (v0.16.0)
+12. Navigation: sidebar sub-menus (Navigation Specification v1.1; NV-1 to NV-9, BUILD-BRIEF section 37) — done (v0.17.0)
+13. Offline progress capture — scheduled after navigation (v0.18.0); order after it proposed in section 37
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -48,6 +50,24 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Navigation: sidebar sub-menus (v0.17.0)
+
+- BUILD-BRIEF section 37; Navigation Specification v1.1 (a doc in the Project's chats), NV-1 to NV-9; prototype
+  approved 2 November 2026 (`reference/caspa-navigation-prototype.html`). No contract change. 658 tests (49 in
+  `src/data/access/menu.test.ts`, 3 in `src/routes/router.test.ts`).
+- Code: the rule in `src/selectors/nav.ts` (`strategyMenu`, `organisationMenu`, `openStageOf`, `MENU_CAP` = 4); each
+  person's menu from the data-access results in `src/data/access/menu.ts` (`repo.menu()`), so it grants nothing;
+  `src/components/SubMenu.tsx` (entry links, the phone row); the sidebar lists the current workspace's entries.
+- Strategy's entries: Forming the next plan (`#/strategy/forming/<stage>/<tab>`, stage row Overview, Conception,
+  Consultation, Composition, opening on the stage open now; "Have your say" for the round's audience), Registers
+  (`#/strategy/registers/<tab>`, Compliance first for the compliance officer), Plan document
+  (`#/strategy/plan-document`, print at `/print`) and Communication (`#/strategy/communication/<goalId>`).
+  Organisation's: Vacancies and People and access (administrator). `#/communication` and `#/plan-document` redirect.
+- "Needs you" items for Strategy now open their exact entry, stage and tab (C-4).
+- Try it on Sample Water Utility: as Strategy office the sidebar shows Forming the next plan, Registers and
+  Communication under Strategy; as Compliance, Registers opens on Compliance; as HR, Organisation shows Vacancies and
+  People and access. At 390px the entries are a row of links under the header. Checked at 390px for eight roles.
 
 ## Communication, part 11e (v0.16.0)
 

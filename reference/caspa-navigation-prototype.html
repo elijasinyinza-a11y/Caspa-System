@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: sidebar sub-menus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only. Navigation Specification v1.0, NV-1 to NV-8. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--info-b:#EDECEA;
+--s:#378ADD;--s-t:#1A5A9E;--s-tint:#EBF3FC;--c:#7C5CBF;--p:#B85C38;--f:#C2417A;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.proto{background:var(--white);border-bottom:1px dashed var(--control);padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.proto label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.proto select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white)}
+.proto .note{font-size:12px;color:var(--muted);flex:1 1 220px}
+.stage{display:flex;justify-content:center;padding:16px}
+.frame{display:flex;background:var(--cream);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:1180px;height:720px}
+.frame.phone{max-width:390px;flex-direction:column;height:760px}
+.side{width:240px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:2px;flex-shrink:0;overflow:auto}
+.phone .side{display:none}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav,.sub{list-style:none;margin:0;padding:0}
+.nav>li>a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500;position:relative}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.nav>li>a.here{background:rgba(255,255,255,.15)}
+.mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35);flex-shrink:0}
+.sub{margin:2px 0 6px 14px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px}
+.sub a{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;gap:8px}
+.sub a[aria-current=page]{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.sub a[aria-current=page]::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--wmark)}
+.sep{height:1px;background:rgba(255,255,255,.2);margin:10px 4px}
+.tip{position:fixed;transform:translateY(-50%);width:230px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:400;z-index:5;box-shadow:0 2px 8px rgba(13,27,42,.12)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap}
+.addr{font-size:12px;color:var(--muted);font-family:inherit;background:var(--info-b);border-radius:6px;padding:4px 8px;flex:1;min-width:140px;overflow-wrap:anywhere}
+.orgbtn{display:none;min-height:44px;min-width:44px;border:1px solid var(--control);background:var(--white);border-radius:8px;padding:0 10px}
+.phone .orgbtn{display:inline-flex;align-items:center}
+.body{flex:1;overflow:auto;padding:20px 24px}
+.phone .body{padding:16px}
+.wlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--wtext);font-weight:600}
+.wlabel i{width:10px;height:10px;border-radius:2px;background:var(--wmark)}
+.wlabel span{color:var(--muted);font-weight:400;text-decoration:underline dotted;text-underline-offset:3px}
+h1{font-size:28px;color:var(--navy);margin:4px 0 4px}
+.phone h1{font-size:22px}
+.lead{color:var(--muted);margin:0 0 12px;max-width:62ch}
+.row{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;margin:0 -2px 8px;border-bottom:1px solid var(--border)}
+.row{gap:4px;padding-bottom:0}
+.row a{flex-shrink:0;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);text-decoration:none;font-weight:500;font-size:14px;border-bottom:3px solid transparent;margin-bottom:-1px}
+.row a[aria-current=page]{color:var(--navy);font-weight:700;border-bottom-color:var(--wmark)}
+.stages{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:0 6px;margin-bottom:12px}
+.stages a .open{font-size:12px;font-weight:500;color:var(--navy);background:var(--info-b);border:1px solid var(--border);border-radius:999px;padding:0 6px;margin-left:6px}
+.card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--wmark);border-radius:12px;padding:16px;margin-bottom:12px}
+.card h2{font-size:18px;color:var(--navy);margin:0 0 6px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.tabs button{min-height:44px;border-radius:8px;padding:0 14px;border:1px solid var(--control);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.why{font-size:13px;color:var(--muted)}
+.chip{display:inline-block;font-size:12px;border-radius:999px;padding:2px 8px;background:var(--ok-b);color:var(--ok-t);border:1px solid var(--ok-r)}
+.redir{border:1px solid var(--border);background:var(--info-b);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+.links button{min-height:44px;border:1px solid var(--control);background:var(--white);border-radius:8px;padding:0 12px;margin:4px 6px 0 0;cursor:pointer;color:var(--navy);font-weight:600}
+.bar{display:none;background:var(--white);border-top:1px solid var(--border)}
+.phone .bar{display:grid}
+.bar a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:56px;font-size:12px;color:var(--muted);text-decoration:none;gap:2px}
+.bar a.here{color:var(--navy);font-weight:600}
+.bar a i{width:16px;height:4px;border-radius:2px;background:var(--border)}
+.bar a.here i{background:var(--wmark)}
+ul.plain{margin:6px 0 0;padding-left:18px}
+@media (max-width:760px){.frame{height:auto;min-height:640px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body>
+<div class="proto" role="group" aria-label="Prototype controls">
+  <label>Viewing as<select id="role">
+    <option value="so">Strategy office</option><option value="exec">Executive</option><option value="head">Head of Finance (a department head)</option>
+    <option value="comp">Compliance officer</option><option value="emp">Employee (in the consultation round)</option><option value="hr">HR (organisation administrator)</option>
+  </select></label>
+  <label>Situation<select id="sit">
+    <option value="composition">Next plan in Composition, a round open</option>
+    <option value="confirmed">Next plan confirmed, document being drafted</option>
+    <option value="execution">Plan active, document final, nothing being formed</option>
+  </select></label>
+  <label>Screen<select id="screen"><option value="desk">Desktop</option><option value="phone">Phone, 390px</option></select></label>
+  <p class="note">Prototype of the CASPA™ Navigation Specification v1.1 (NV-1 to NV-9). Behaviour to match, not code to copy. Sample Water Utility.</p>
+</div>
+<div class="stage"><div class="frame" id="frame">
+  <nav class="side" aria-label="Main"><div class="brand">CASPA™</div><ul class="nav" id="nav"></ul></nav>
+  <div class="main">
+    <div class="top"><span class="addr" id="addr" aria-label="Address"></span><button class="orgbtn" id="orgbtn" type="button" aria-label="Organisation">Org</button></div>
+    <main class="body" id="body"></main>
+    <nav class="bar" id="bar" aria-label="Workspaces"></nav>
+  </div>
+</div></div>
+<script>
+const W={home:{name:'Home',mark:'var(--navy)',text:'var(--navy)',purpose:'What needs you now, and how your part of the plan is going.'},
+strategy:{name:'Strategy',mark:'var(--s)',text:'var(--s-t)',stage:'Conception to Communication',purpose:'The plan’s goals and why they were chosen, formed here or imported.'},
+cascade:{name:'Cascade',mark:'var(--c)',text:'var(--c)',stage:'Coordination',purpose:'How each goal breaks down into measurable work, and who owns each piece.'},
+plan:{name:'Plan',mark:'var(--p)',text:'var(--p)',stage:'Coordination',purpose:'What the work costs and where the money comes from.'},
+performance:{name:'Performance',mark:'var(--f)',text:'var(--f)',stage:'Controlling',purpose:'Who has committed to deliver what, and how they are doing.'},
+organisation:{name:'Organisation',mark:'var(--navy)',text:'var(--navy)',purpose:'Your organisation’s units, positions and the people who hold them.'}};
+/* Entries (section 6 of the specification). show(role, situation) decides N-4; tabs stay inside (NV-3, NV-6). */
+const E={
+strategy:[
+ {k:'forming',name:r=>r==='emp'?'Have your say':'Forming the next plan',purpose:'Forming the next plan, stage by stage: the 4Q review, consultation and composition.',
+  show:(r,s)=>s!=='execution'&&r!=='hr',tabs:r=>r==='emp'?['Open round','Earlier rounds']:[],
+  stages:(r,s)=>r==='emp'?null:[
+   {k:'overview',name:'Overview',tabs:['Stages','Calendar','Sessions']},
+   ...(['so','exec','head'].includes(r)?[{k:'conception',name:'Conception',tabs:r==='head'?['Your department’s sheet','Whole board','Documents','Workshop view','Vision and mission']:['Whole board','Department sheets','Documents','Workshop view','Vision and mission']}]:[]),
+   {k:'consultation',name:'Consultation',tabs:['Open round','Earlier rounds']},
+   ...(['so','exec','head'].includes(r)?[{k:'composition',name:'Composition',tabs:['Goals and objectives','Costs and envelope','Checks']}]:[])],
+  openStage:(r,s)=>s==='composition'?(['so','exec','head'].includes(r)?'composition':'consultation'):'overview',
+  why:'C-1: one entry for one piece of work. It opens on the stage that is open now and leaves the menu once the plan is active (NV-9).'},
+ {k:'registers',name:'Registers',purpose:'Baselines the targets start from, and the laws and standards the plan must meet.',
+  show:(r,s)=>['so','exec','head','comp'].includes(r),tabs:r=>r==='comp'?['Compliance','Baselines']:['Baselines','Compliance'],
+  why:'One entry with two tabs (NV-3). Compliance opens first for the compliance officer and stays while any plan is active.'},
+ {k:'document',name:'Plan document',purpose:'The plan as one document, with its figures always up to date.',
+  show:(r,s)=>(s==='confirmed'&&['so','exec'].includes(r))||(s==='execution'&&r!=='hr'&&r!=='emp'),tabs:['Read','Print version'],why:'Shown once a document exists that you may read (N-4). Employees reach the final document from Home.'},
+ {k:'communication',name:'Communication',purpose:'What each goal changes, why, and how it will be delivered, for every audience.',
+  show:(r,s)=>r!=='hr'&&(r!=='emp'||s==='composition'),tabs:[],why:'Used through execution (D16-3). The board paper keeps its own address.'}],
+organisation:[
+ {k:'structure',name:'Structure',landing:true,purpose:'Units, positions and who holds them.',show:()=>true,tabs:[]},
+ {k:'vacancies',name:'Vacancies',purpose:'Vacant and acting positions, ranked by what they hold.',show:r=>['exec','hr'].includes(r),tabs:[],why:'The Executive, HR and the administrator return to it (N-2).'},
+ {k:'people',name:'People and access',purpose:'Who can sign in and the roles each person has.',show:r=>r==='hr',tabs:[],why:'The organisation administrator only (N-4).'}]};
+const hasStrategy=(r,s)=>r!=='hr'&&(r!=='emp'||s==='composition');
+const workspaces=(r,s)=>['home',...(hasStrategy(r,s)?['strategy']:[]),...(r==='emp'||r==='comp'?[]:['cascade']),...(['so','exec','head'].includes(r)?['plan']:[]),'performance'];
+const nm=(e,r)=>typeof e.name==='function'?e.name(r):e.name;
+const tabsOf=(e,r)=>typeof e.tabs==='function'?e.tabs(r):e.tabs;
+const entries=(w,r,s)=>(E[w]||[]).filter(e=>e.show(r,s));
+let state={w:'strategy',k:null,tab:0,stage:null,redirect:null};
+const $=id=>document.getElementById(id);
+function addr(){if(!state.k)return `#/${state.w}`;const st=stageOf();const tb=st?st.tabs:tabsOf(cur(),role());return `#/${state.w}/${state.k}${st?'/'+st.k:''}${state.tab?'/'+slug(tb[state.tab]):''}`}
+function stageOf(){const e=cur();if(!e||!e.stages)return null;const list=e.stages(role(),sit());if(!list)return null;const k=state.stage||e.openStage(role(),sit());return list.find(x=>x.k===k)||list[0]}
+const slug=t=>t.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const role=()=>$('role').value, sit=()=>$('sit').value, phone=()=>$('screen').value==='phone';
+const cur=()=>entries(state.w,role(),sit()).find(e=>e.k===state.k);
+function go(w,k,tab=0,redirect=null,stage=null){state={w,k:k??null,tab,stage,redirect};render();$('body').focus?.()}
+function render(){
+ const r=role(),s=sit(),ws=workspaces(r,s);
+ if(!ws.includes(state.w)&&state.w!=='organisation')state={w:'home',k:null,tab:0};
+ const list=entries(state.w,r,s); if(state.k&&!list.some(e=>e.k===state.k))state.k=null;
+ if(state.w==='organisation'&&!state.k)state.k='structure';
+ $('frame').className='frame'+(phone()?' phone':'');
+ document.documentElement.style.setProperty('--wmark',W[state.w].mark);document.documentElement.style.setProperty('--wtext',W[state.w].text);
+ /* Sidebar: the current workspace opens to its entries (NV-2). */
+ const nav=$('nav');nav.innerHTML='';
+ const item=(w)=>{const li=document.createElement('li');const a=document.createElement('a');a.href='#';a.dataset.w=w;
+  const subs=entries(w,r,s).filter(e=>!e.landing);const here=state.w===w;
+  a.className=here&&!state.k?'here':'';if(here&&!state.k)a.setAttribute('aria-current','page');
+  a.innerHTML=`<span class="mark" style="background:${W[w].mark}"></span>${W[w].name}`;
+  const tid='tip-'+w;a.setAttribute('aria-describedby',tid);
+  if(subs.length)a.setAttribute('aria-expanded',here?'true':'false');
+  a.onclick=e=>{e.preventDefault();go(w,null)};tip(a,tid,W[w].purpose);li.appendChild(a);
+  if(here&&subs.length){const ul=document.createElement('ul');ul.className='sub';
+   subs.forEach(en=>{const l=document.createElement('li');const b=document.createElement('a');b.href='#';b.textContent=nm(en,r);
+    const t='tip-'+w+'-'+en.k;b.setAttribute('aria-describedby',t);if(state.k===en.k)b.setAttribute('aria-current','page');
+    b.onclick=e=>{e.preventDefault();go(w,en.k)};tip(b,t,en.purpose);l.appendChild(b);ul.appendChild(l)});li.appendChild(ul)}
+  nav.appendChild(li)};
+ ws.forEach(item);const sep=document.createElement('li');sep.className='sep';sep.setAttribute('role','presentation');nav.appendChild(sep);item('organisation');
+ /* Phone: bottom bar keeps the workspaces only (section 29). */
+ const bar=$('bar');bar.style.gridTemplateColumns=`repeat(${ws.length},minmax(0,1fr))`;
+ bar.innerHTML=ws.map(w=>`<a href="#" data-w="${w}" class="${state.w===w?'here':''}" ${state.w===w?'aria-current="page"':''}><i style="${state.w===w?'':''}"></i>${W[w].name}</a>`).join('');
+ bar.querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault();go(a.dataset.w,null)});
+ $('orgbtn').onclick=()=>go('organisation','structure');
+ $('addr').textContent=addr();
+ body(r,s,list);
+}
+function tip(a,id,text){let t=null,el=null;const open=()=>{if(el)return;el=document.createElement('span');el.className='tip';el.id=id;el.setAttribute('role','tooltip');el.textContent=text;const q=a.getBoundingClientRect();el.style.left=(q.right+10)+'px';el.style.top=(q.top+q.height/2)+'px';a.appendChild(el)};
+ const shut=()=>{clearTimeout(t);el?.remove();el=null};
+ const sr=document.createElement('span');sr.id=id;sr.hidden=true;sr.textContent=text;a.appendChild(sr);
+ a.addEventListener('mouseenter',()=>{t=setTimeout(()=>{sr.remove();open()},500)});a.addEventListener('focus',()=>{t=setTimeout(()=>{sr.remove();open()},500)});
+ a.addEventListener('mouseleave',()=>{shut();a.appendChild(sr)});a.addEventListener('blur',()=>{shut();a.appendChild(sr)});
+ a.addEventListener('keydown',e=>{if(e.key==='Escape'){shut();a.appendChild(sr)}})}
+function body(r,s,list){
+ const b=$('body'),w=state.w,e=cur(),subs=list.filter(x=>!x.landing);
+ const head=`<p class="wlabel"><i></i>${W[w].name}${W[w].stage?` <span tabindex="0" title="Opens its explanation on tap">${W[w].stage}</span>`:''}</p>`;
+ const row=phone()&&subs.length?`<nav class="row" aria-label="${W[w].name} pages"><a href="#" data-k="" ${!state.k||e?.landing?'aria-current="page"':''}>Overview</a>${subs.map(x=>`<a href="#" data-k="${x.k}" ${state.k===x.k?'aria-current="page"':''}>${nm(x,r)}</a>`).join('')}</nav>`:'';
+ const redirect=state.redirect?`<p class="redir" role="status">${state.redirect} redirected to ${addr()}. Links already shared still open.</p>`:'';
+ let html=redirect+head;
+ if(!e||e.landing){
+  const title=w==='organisation'?'Structure':W[w].name;
+  html+=`<h1>${title}</h1><p class="lead">${W[w].purpose}</p>${row}`;
+  if(w==='strategy')html+=`<div class="card"><h2>Overview</h2><p>The plan being run, its goals and vision. Plan setup and the import door stay sections here (N-2: done once).</p><p class="why">Entries under Strategy for you now: ${subs.map(x=>nm(x,r)).join(', ')||'none'}.</p></div>`;
+  else if(w==='home')html+=`<div class="card"><h2>Needs you</h2><p>Unchanged. Each item opens the entry it belongs to, for example “Write the communication record for G2” opens Strategy › Communication at G2.</p><div class="links"><button type="button" id="ny">Open that item</button></div></div>${r==='emp'&&s==='execution'?'<div class="card"><h2>Our strategic plan</h2><p>Employees reach the final plan document from here and from goal pages; they have no Strategy workspace outside a consultation round.</p></div>':''}`;
+  else if(w==='organisation')html+=`<div class="card"><h2>Structure</h2><p>Units, positions and holders. Details and settings, and recent changes, stay sections of this page.</p></div>`;
+  else html+=`<div class="card"><h2>${W[w].name}</h2><p>No sub-menu entries in this workspace yet: its extra views are filters, modes, record parts or one-off tasks (section 4 of the specification).</p></div>`;
+  html+=`<div class="card"><h2>Try the old addresses</h2><p class="why">NV-5: entries move under their workspace; old links redirect.</p><div class="links"><button type="button" data-old="#/communication">#/communication</button><button type="button" data-old="#/plan-document">#/plan-document</button><button type="button" data-old="#/organisation/vacancies">#/organisation/vacancies</button></div></div>`;
+ }else{
+  const st=stageOf(),stages=e.stages?e.stages(r,s):null,tabs=st?st.tabs:tabsOf(e,r);
+  html+=`<h1>${nm(e,r)}</h1><p class="lead">${e.purpose}</p>${row}`;
+  if(stages)html+=`<nav class="row stages" aria-label="Stages">${stages.map(x=>`<a href="#" data-st="${x.k}" ${st.k===x.k?'aria-current="page"':''}>${x.name}${x.k===e.openStage(r,s)&&x.k!=='overview'?' <span class="open">open now</span>':''}</a>`).join('')}</nav>`;
+  if(tabs.length)html+=`<div class="tabs" role="tablist" aria-label="${nm(e,r)}">${tabs.map((t,i)=>`<button type="button" role="tab" aria-selected="${i===state.tab}" data-i="${i}">${t}</button>`).join('')}</div>`;
+  html+=`<div class="card"><h2>${tabs.length?tabs[state.tab]:nm(e,r)}</h2><p>The page as built today, at its own address. Content is not part of this prototype.${s==='confirmed'&&st&&st.k!=='overview'?' Read-only now: the plan is confirmed.':''}</p>${e.why?`<p class="why"><span class="chip">On the menu</span> ${e.why}</p>`:''}</div>`;
+ }
+ b.innerHTML=html;
+ b.querySelectorAll('.row:not(.stages) a').forEach(a=>a.onclick=ev=>{ev.preventDefault();go(w,a.dataset.k||null)});
+ b.querySelectorAll('.stages a').forEach(a=>a.onclick=ev=>{ev.preventDefault();go(w,state.k,0,null,a.dataset.st)});
+ b.querySelectorAll('.tabs button').forEach(t=>t.onclick=()=>{state.tab=+t.dataset.i;render()});
+ b.querySelectorAll('[data-old]').forEach(x=>x.onclick=()=>{const o=x.dataset.old;
+  const map={'#/communication':['strategy','communication'],'#/plan-document':['strategy','document'],'#/organisation/vacancies':['organisation','vacancies']};
+  const [ww,kk]=map[o];const ok=(ww==='organisation'||workspaces(role(),sit()).includes(ww))&&entries(ww,role(),sit()).some(z=>z.k===kk);
+  if(ok)go(ww,kk,0,o);else{state.redirect=null;b.insertAdjacentHTML('afterbegin',`<p class="redir" role="status">${o} redirects to ${ww==='organisation'?'#/organisation/':'#/strategy/'}${kk}, which is not open to this role in this situation. The page says so and links Home.</p>`)}});
+ const ny=$('ny');if(ny)ny.onclick=()=>{if(entries('strategy',role(),sit()).some(z=>z.k==='communication')&&workspaces(role(),sit()).includes('strategy'))go('strategy','communication');};
+}
+['role','sit','screen'].forEach(id=>$(id).addEventListener('change',()=>{state.redirect=null;render()}));
+go('strategy',null);
+</script>
+</body></html>
