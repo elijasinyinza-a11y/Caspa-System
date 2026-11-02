@@ -6,13 +6,14 @@ import {
   RATING_PRESETS, type Activity, type BudgetLine, type ContractObjective, type Deficiency, type DraftMeta, type FourQCell, type FourQEntry,
   type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
-  type AiTask, type SourceDocument, type BaselineMeasure, type ComplianceItem,
+  type AiTask, type CommunicationRecord, type SourceDocument, type BaselineMeasure, type ComplianceItem,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
 import './composition'; // part 11d: the AI stub's approved sample wording for this organisation
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
+import { en } from '../../strings/en';
 
 const id = <T extends string>(s: string) => s as Id<T>;
 const d = (s: string) => s as ISODate;
@@ -289,7 +290,7 @@ function seedStore(): Store {
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [],
+    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords,
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [
@@ -350,10 +351,32 @@ function seedStore(): Store {
     auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length })],
     sourceDocuments: formationDocs,
     // The same drafting task also drafted the baselines and the compliance items read from documents (part 11c).
-    aiTasks: [{ ...formationAi, outputRefs: [...formationAi.outputRefs, ...formationBaselines.map((b) => ({ type: 'BaselineMeasure', id: b.id as string })), ...formationCompliance.filter((c) => c.provenance.kind === 'document').map((c) => ({ type: 'ComplianceItem', id: c.id as string }))] }],
+    aiTasks: [communicationAi, { ...formationAi, outputRefs: [...formationAi.outputRefs, ...formationBaselines.map((b) => ({ type: 'BaselineMeasure', id: b.id as string })), ...formationCompliance.filter((c) => c.provenance.kind === 'document').map((c) => ({ type: 'ComplianceItem', id: c.id as string }))] }],
     visionStatements: [],
   };
 }
+
+/*
+ * Part 11e (D16-11, wording approved 2 November 2026): G1's communication record, its three versions drafted by the AI
+ * stub and accepted by the Strategy office, and the Commercial meeting on 15 October 2026 (moved from 22 October so it
+ * lies before both review-build dates).
+ */
+const COMM_AI = id<'AiTask'>('ai-comm-g1');
+const commStamp: Stamp = { at: dt('2026-10-12T10:00:00+02:00'), byMembershipId: id('m-spm') };
+const commAccepted: Stamp = { at: dt('2026-10-12T10:30:00+02:00'), byMembershipId: id('m-spm') };
+const T = en.communication.template;
+const g1What = T.what('improve financial sustainability', 'FY2022–FY2026');
+const communicationRecords: CommunicationRecord[] = [{
+  orgId, id: id('cr-g1'), goalId: id('g1'), created: commStamp, updated: commAccepted,
+  content: g1What, context: T.why, concept: T.how,
+  audienceVersions: ([
+    ['board', T.board(g1What, T.why, T.how)], ['managers', T.managers(g1What, T.why)], ['staff', T.staff(g1What, T.why)],
+  ] as const).map(([audience, text]) => ({ audience, text, draft: { state: 'accepted' as const, provenance: { kind: 'ai_suggestion' as const, aiTaskId: COMM_AI }, decided: commAccepted } })),
+  meetings: [{ unitId: id('u-com'), heldOn: d('2026-10-15'), feedbackSummary: 'Meter readers asked how the new targets affect their routes' }],
+}];
+const communicationAi: AiTask = {
+  orgId, id: COMM_AI, kind: 'draft', requested: commStamp, inputRefs: [{ type: 'Goal', id: 'g1' }], outputRefs: [{ type: 'CommunicationRecord', id: 'cr-g1' }], model: 'stub',
+};
 
 /** The sample's clock. Rules never read the system clock; "now" is always passed in. */
 export const SAMPLE_NOW = '2026-10-18' as ISODate;

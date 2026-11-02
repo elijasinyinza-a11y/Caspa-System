@@ -1,6 +1,6 @@
 import type { NeedsYouItem } from "../selectors/needs-you";
 import { formatDate } from "../selectors/format";
-import { fixHref } from "../routes/router";
+import { fixHref, hrefFor } from "../routes/router";
 import { en } from "../strings/en";
 import { useApp } from "./AppContext";
 
@@ -59,7 +59,7 @@ export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
       );
     }
     if (link.kind === "workspace" && !reachable.includes(link.w)) return null;
-    const href = fixHref(link);
+    const href = link.kind === "communication" ? hrefFor({ kind: "communication", goalId: link.goalId }) : fixHref(link);
     return (
       <a href={href} className={cls}>
         {en.needsYou.open}

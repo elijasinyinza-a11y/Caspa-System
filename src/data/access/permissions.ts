@@ -3,6 +3,7 @@ import { PERMISSIONS, type Action, type Finding, type Principal } from '../../co
 import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structure';
 import { structureScope } from '../../rules/structure-view';
 import { cardOwnerPositions } from '../../rules/conception';
+import { communicationOwnerPositions } from '../../rules/communication';
 import { baselineOwnerPosition, complianceOwnerPositions, inAudience } from '../../rules/consultation';
 import { structureOfStore } from './setup/draft';
 import type { Store } from './store';
@@ -34,6 +35,13 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
   const mine = (pid: string | null | undefined) => !!pid && v.positionIds.includes(pid as Viewer['positionIds'][number]);
   switch (principal) {
     case 'owner': {
+      // Contract v1.9 (D16-5): a goal's communication record (by its id, or the goal's before one exists). Its owners
+      // are the goal's owner and the department heads, who log meetings in their own unit; the data-access layer
+      // limits what each may change.
+      if (subject.type === 'CommunicationRecord') {
+        const cr = s.communicationRecords.find((x) => x.id === subject.id);
+        return communicationOwnerPositions(s, cr ? cr.goalId : subject.id).some((p) => mine(p));
+      }
       // Formation (part 11a): a deadline's owners, and a session's invited participants.
       const fd = s.formationDeadlines.find((x) => x.id === subject.id);
       if (fd) return fd.ownerPositionIds.some((p) => mine(p));

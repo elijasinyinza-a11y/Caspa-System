@@ -1,6 +1,6 @@
 /** The in-memory shape of one organisation's records. Holds stored records only, never computed values. */
 import type {
-  Acknowledgement, Activity, AiTask, AuditEntry, ComplianceItem, ConsultationInput, ConsultationRound, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
+  Acknowledgement, CommunicationRecord, Activity, AiTask, AuditEntry, ComplianceItem, ConsultationInput, ConsultationRound, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review, Theme, IndicativeCost, PlanDocument,
   SourceDocument, StrategicPlan, VisionStatement, Workshop,
@@ -27,6 +27,8 @@ export interface Store {
   indicativeCosts: IndicativeCost[];
   /** v0.15.0 (D15-4): plan documents. */
   planDocuments: PlanDocument[];
+  /** v0.16.0 (part 11e): communication records, one per goal (D16-3). */
+  communicationRecords: CommunicationRecord[];
   activities: Activity[];
   activityProgress: ActivityProgress[];
   deficiencies: Deficiency[];

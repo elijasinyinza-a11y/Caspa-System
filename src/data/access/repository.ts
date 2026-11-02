@@ -33,6 +33,7 @@ import { createConceptionAccess, type ConceptionAccess } from './conception';
 import { createConsultationAccess, type ConsultationAccess } from './consultation';
 import { createCompositionAccess, type CompositionAccess } from './composition';
 import { createPlanDocumentAccess, type PlanDocumentAccess } from './plan-document';
+import { createCommunicationAccess, type CommunicationAccess } from './communication';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
@@ -212,6 +213,8 @@ export interface Repository {
   composition: CompositionAccess;
   /** The plan document (v0.15.0, section 35). */
   planDocument: PlanDocumentAccess;
+  /** Communication (v0.16.0, section 36): goals' communication records, audience versions and meetings. */
+  communication: CommunicationAccess;
   /** The first year's cascade of a confirmed formed plan (v0.15.0, section 35). */
   firstYear: FirstYearAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
@@ -608,6 +611,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     consultation: createConsultationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     composition: createCompositionAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     planDocument: createPlanDocumentAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
+    communication: createCommunicationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);

@@ -104,6 +104,22 @@ describe.each(orgs.map((o) => [o.store.organisation.name, o] as const))('%s', (_
     if (h.finance?.total) expect(s.budgetLines.every((l) => can(s, repo.viewer, 'view', { type: 'BudgetLine', id: l.id }))).toBe(true);
   });
 
+  it.each(DEV_ROLES)('the Communication page lists every confirmed goal for the %s role, and its "Needs you" links open (part 11e)', (role) => {
+    const repo = createMemoryRepository(stores, org.orgId, org.devRoles[role], NOW);
+    const page = repo.communication.page();
+    const active = org.store.plans.find((p) => p.status === 'active');
+    if (active) expect(page.plans[0]!.goals.length).toBe(org.store.goals.filter((g) => g.planId === active.id).length);
+    for (const g of page.plans.flatMap((p) => p.goals)) {
+      // Readers see accepted versions only; nobody but the Strategy office, owners and facilitators writes.
+      if (!g.can.editVersions) expect(g.versions.every((v) => v.state === 'accepted')).toBe(true);
+      if (g.can.write) expect(repo.viewer.roles.includes('strategy_office') || repo.viewer.roles.includes('facilitator') || g.owner !== null).toBe(true);
+    }
+    for (const i of repo.home().needsYou.filter((x) => x.link?.kind === 'communication')) {
+      expect(repo.communication.goal((i.link as { goalId: string }).goalId)).not.toBeNull();
+      expect(repo.workspaces()).toContain('strategy');
+    }
+  });
+
   it('formats its money and financial year by its own currency and year start', () => {
     const o = org.store.organisation;
     const line = org.store.budgetLines[0]!;

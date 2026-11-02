@@ -1,10 +1,18 @@
 /** Who is looking: assigned roles plus authority derived from structure (decision B1). Pure. */
 import type { AssignedRole, Id, ISODate } from '../../contract/caspa-data-contract';
 import { budgetHolderPositions, linesOfVersion } from '../../rules/structure';
-import { headsADepartment } from '../../rules/conception';
+import { departmentsHeadedBy, headsADepartment } from '../../rules/conception';
+import { communicationGoals, communicationPlans } from '../../rules/communication';
 import { openRoundFor } from '../../rules/consultation';
 import { formingPlan } from '../../rules/formation';
 import type { Store } from './store';
+
+/** Part 11e: owns a goal that can have a record, or heads a department while any goal can have one. */
+function writesCommunication(s: Store, positionIds: readonly string[]): boolean {
+  const goals = communicationPlans(s).flatMap((p) => communicationGoals(s, p.id));
+  if (!goals.length) return false;
+  return goals.some((g) => !!g.ownerPositionId && positionIds.includes(g.ownerPositionId)) || departmentsHeadedBy(s, positionIds).length > 0;
+}
 
 export interface Viewer {
   membershipId: Id<'Membership'>;
@@ -21,6 +29,11 @@ export interface Viewer {
   isDepartmentHead: boolean;
   /** In the audience of an open consultation round of the plan being formed (part 11c), so may have their say there. */
   inConsultation: boolean;
+  /**
+   * Owns a goal that can have a communication record, or heads a department while such a goal exists (part 11e), so
+   * may open the Communication page in Strategy.
+   */
+  writesCommunication: boolean;
 }
 
 export function resolveViewer(s: Store, membershipId: string, now: ISODate, financialYear: number): Viewer {
@@ -42,6 +55,7 @@ export function resolveViewer(s: Store, membershipId: string, now: ISODate, fina
     isBudgetHolder: linesOfVersion(s, financialYear).some((l) => positionIds.some((p) => budgetHolderPositions(s, l).has(p))),
     isDepartmentHead: headsADepartment(s, positionIds),
     inConsultation: !!openRoundFor(s, formingPlan(s), positionIds),
+    writesCommunication: writesCommunication(s, positionIds),
   };
 }
 

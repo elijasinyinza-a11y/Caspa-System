@@ -84,7 +84,18 @@ export interface AiService {
   reviewWording(titles: { id: string; title: string }[]): Promise<WordingNotes>;
   /** Draft the plan document's narrative: an executive summary and one section per goal, with no figures (D15-2, D15-3). */
   draftPlanDocument(input: { planTitle: string; organisation: string; vision: string; goals: { id: string; title: string; themes: string[] }[] }): Promise<PlanDocumentDraft>;
+  /** Suggest a goal's three parts, what, why and how, from its records (D16-11). Never figures copied from cards (D16-6). */
+  draftCommunication(input: { goalTitle: string; planPeriod: string }): Promise<CommunicationDraft>;
+  /** Draft the board, managers and staff versions from the three parts (D16-7). A person edits and accepts each. */
+  draftAudienceVersions(input: { what: string; why: string; how: string }): Promise<AudienceVersionsDraft>;
 }
+
+export interface CommunicationDraft { label: "AI draft"; what: string; why: string; how: string }
+export interface AudienceVersionsDraft { label: "AI draft"; versions: { audience: "board" | "managers" | "staff"; text: string }[] }
+/** A part ending without a full stop gets one, so the versions read as sentences. */
+const stop = (x: string) => { const v = x.trim(); return /[.!?”"]$/.test(v) ? v : `${v}.`; };
+/** Lower-case a goal title for use inside a sentence, but leave acronyms as they are. */
+const inSentence = (title: string) => title.replace(/^(\p{Lu})(\p{Ll})/u, (_m, a: string, b: string) => a.toLowerCase() + b);
 
 export interface PlanDocumentDraft {
   label: "AI draft";
@@ -394,6 +405,24 @@ export const aiStub: AiService = {
       label: "AI draft",
       summary: { heading: T.summaryHeading, text: T.summary(input.planTitle, input.organisation, input.vision) },
       goals: input.goals.map((g) => ({ goalId: g.id, heading: g.title, text: g.themes[0] ? T.goal(g.themes[0]) : T.goalNoTheme })),
+    };
+  },
+  async draftCommunication(input) {
+    // Fixed sentences filled from the records (D16-11). The why sentence is followed on screen by the goal's linked
+    // 4Q points, shown live, never copied (D16-6).
+    const T = en.communication.template;
+    return { label: "AI draft", what: T.what(inSentence(input.goalTitle), input.planPeriod), why: T.why, how: T.how };
+  },
+  async draftAudienceVersions(input) {
+    const T = en.communication.template;
+    const [what, why, how] = [stop(input.what), stop(input.why), stop(input.how)];
+    return {
+      label: "AI draft",
+      versions: [
+        { audience: "board", text: T.board(what, why, how) },
+        { audience: "managers", text: T.managers(what, why) },
+        { audience: "staff", text: T.staff(what, why) },
+      ],
     };
   },
   async reviewWording(titles) {

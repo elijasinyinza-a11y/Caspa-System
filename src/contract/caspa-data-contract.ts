@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.8
+ * CASPA™ data contract — v1.9
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -74,6 +74,12 @@
  *       screen an input shows its unit only (attribution 'unit_only'; small units as their parent).
  *     - ComplianceItem row: seen by all members; drafted by the Strategy office, the compliance officer and its
  *       owners (heads of the departments that flagged it); reviewed by the compliance officer.
+ * v1.9 (2 November 2026, Elijah; Strategy formation part 11e, Communication; D16-1, D16-5): two rules, no field
+ *     changes.
+ *     - FourQEntry row: once a plan document is final, the accepted organisation-level cards it shows are read there by
+ *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
+ *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
+ *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
  * v1.8 (1 November 2026, Elijah; D15-1): once a plan document is final, all members may read it; drafts stay with the
  *     Executive, the Strategy office and facilitators. A note on the PlanDocument row; no field changes.
  * v1.7 (1 November 2026, Elijah; Strategy formation part 11d, Composition): one document kind, one record and
@@ -821,6 +827,7 @@ export const PERMISSIONS: PermissionMatrix = {
   PerformanceContract: { view: ['self', 'supervisor', 'hr'], draft: ['supervisor'], sign: ['self', 'supervisor'] },
   Review: { view: ['self', 'supervisor', 'next_level_reviewer', 'hr'], draft: ['self', 'supervisor'] },
   VisionStatement: { view: ['all_members'], draft: ['executive'], confirm: ['executive'] },
+  // v1.9 (D16-1): accepted organisation-level cards shown in a final plan document are read there by all members.
   FourQEntry: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['owner', 'strategy_office', 'facilitator'], propose: ['owner'] },
   BaselineMeasure: { view: ['executive', 'strategy_office', 'owner'], draft: ['owner', 'strategy_office'], approve: ['strategy_office'] },
   // v1.6: owners are the heads of the departments that flagged the item; flagging is the department head's draft.
@@ -838,7 +845,8 @@ export const PERMISSIONS: PermissionMatrix = {
   // v1.8: a final document is read by all members (enforced in the data-access layer); drafts as listed.
   PlanDocument: { view: ['executive', 'strategy_office', 'facilitator'], draft: ['strategy_office', 'facilitator'], approve: ['strategy_office'] },
   // PlanDocument view widens to all members once status is 'final'.
-  CommunicationRecord: { view: ['all_members'], draft: ['strategy_office', 'owner'] },
+  // v1.9 (D16-5): facilitators draft too. "owner" is the goal's owner, and department heads for meetings in their own unit.
+  CommunicationRecord: { view: ['all_members'], draft: ['strategy_office', 'owner', 'facilitator'] },
   Workshop: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
   FormationDeadline: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
   // Calendar edits are further limited to the assigned preparer (StrategicPlan.calendar.preparerMembershipId).

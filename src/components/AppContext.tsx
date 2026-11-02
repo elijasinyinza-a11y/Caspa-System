@@ -41,4 +41,4 @@ export function useApp(): AppState {
 
 /** The workspace a route belongs to, for navigation highlights. Node pages sit in Cascade. */
 export const workspaceOf = (r: Route) =>
-  r.kind === "workspace" ? r.w : r.kind === "org" ? null : r.kind === "planDocument" ? "strategy" : "cascade";
+  r.kind === "workspace" ? r.w : r.kind === "org" ? null : r.kind === "planDocument" || r.kind === "communication" || r.kind === "boardPaper" ? "strategy" : "cascade";

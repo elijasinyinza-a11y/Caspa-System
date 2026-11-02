@@ -90,6 +90,41 @@ describe('the plan document (D15-1 to D15-6)', () => {
     // Approval comes from the confirmation record.
     expect(f.as('strategy').planDocument.page()!.approval).toMatchObject({ boardRef: 'BR/2026/21', boardOn: '2026-10-17' });
   });
+  it('shows the accepted organisation-level cards to everyone once final (contract v1.9, D16-1); the board stays restricted', async () => {
+    const f = fresh();
+    await confirmedPlan(f);
+    const so = f.as('strategy').planDocument;
+    await so.draft();
+    for (const x of so.page()!.document!.sections) so.acceptSection(x.id);
+    so.finalise();
+    const emp = f.as('employee');
+    const shown = emp.planDocument.page()!.content.where.flatMap((b) => b.sections).filter((x) => x.count > 0);
+    expect(shown.length).toBeGreaterThan(0);
+    expect(shown.every((x) => x.cards !== null && x.cards.length === x.count)).toBe(true);
+    // Outside the document, card text still follows the FourQEntry row: staff see a count on goal pages.
+    const goal = f.store.goals.find((g) => g.planId !== 'plan-2022' && g.fourQEntryIds.length > 0)!;
+    expect(emp.communication.goal(goal.id)!.whyCardsVisible).toBe(false);
+    expect(emp.conception.page()?.seesAll ?? false).toBe(false);
+  });
+});
+
+describe('Communication for a formed plan (D16-2, D16-4, point 8)', () => {
+  it('lists confirmed goals from Composition onward and puts "Our strategic plan" within reach once final', async () => {
+    const f = fresh();
+    await confirmedPlan(f);
+    const page = f.as('strategy').communication.page();
+    const formed = page.plans.find((p) => p.title === 'Strategic Plan 2027–2031')!;
+    expect(formed.goals.map((g) => g.title)).toEqual(['Recover revenue and cut losses', 'Make supply reliable through drier years', 'Fund sanitation properly', 'Prepare a sound tariff case for 2028']);
+    expect(formed.goals.every((g) => g.status === 'no_context' && !g.documentFinal)).toBe(true);
+    expect(formed.period).toBe('FY2027–FY2031');
+    const so = f.as('strategy');
+    const s = await so.communication.suggest(formed.goals[0]!.goalId);
+    expect(s).toMatchObject({ ok: true, fields: { what: 'We will recover revenue and cut losses over FY2027–FY2031.' } });
+    await so.planDocument.draft();
+    for (const x of so.planDocument.page()!.document!.sections) so.planDocument.acceptSection(x.id);
+    so.planDocument.finalise();
+    expect(f.as('employee').communication.goal(formed.goals[0]!.goalId)!.documentFinal).toBe(true);
+  });
 });
 
 describe('after confirmation (D15-11)', () => {

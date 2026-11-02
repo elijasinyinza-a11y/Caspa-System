@@ -112,7 +112,8 @@ export function createPlanDocumentAccess(ctx: Ctx): PlanDocumentAccess {
         hidden: !!d && !reads,
         canDraft: !d && drafts(),
         aiEnabled: s.organisation.settings.aiEnabled,
-        content: planDocumentContent(s, p, (id) => can(s, viewer, 'view', { type: 'FourQEntry', id })),
+        // Contract v1.9 (D16-1): a final document shows its accepted organisation-level cards to all its readers.
+        content: planDocumentContent(s, p, (id) => (d?.status === 'final' && reads) || can(s, viewer, 'view', { type: 'FourQEntry', id })),
         names,
         approval: confirmation ? {
           confirmedBy: personOf(confirmation.byMembershipId), confirmedOn: dateInZone(confirmation.at, tz),
