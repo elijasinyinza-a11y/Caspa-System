@@ -6,7 +6,7 @@ import {
   RATING_PRESETS, type Activity, type BudgetLine, type ContractObjective, type Deficiency, type DraftMeta, type FourQCell, type FourQEntry,
   type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
-  type AiTask, type CommunicationRecord, type SourceDocument, type BaselineMeasure, type ComplianceItem,
+  type AiTask, type CommunicationRecord, type SourceDocument, type BaselineMeasure, type ComplianceItem, type ProgressUpdate,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
@@ -325,13 +325,20 @@ function seedStore(): Store {
       signed(act('1.2.1.3'), 'Replace 400 faulty meters on route', 400, 'meters', 50, 1),
       signed(act('1.1.1.1'), 'Complete scheduled meter readings', 2400, 'readings', 50, 2),
     ],
-    progressUpdates: [
+    progressUpdates: ([
       ['co-b-1', 140], ['co-b-2', 2210],
-    ].map(([c, q]) => ({
-      ...base, id: id(`pu-${c}`), contractObjectiveId: id(c as string), periodEnd: d('2026-06-30'), quantityDone: q as number, note: '', evidence: 'Route sheet',
+    ] as const).map(([c, q]): ProgressUpdate => ({
+      ...base, id: id(`pu-${c}`), contractObjectiveId: id(c), periodEnd: d('2026-06-30'), quantityDone: q, note: '', evidence: 'Route sheet',
       verified: { at: dt('2026-07-03T09:00:00+02:00'), byMembershipId: id('m-co') },
       sync: { capturedOffline: false, capturedAt: dt('2026-07-01T16:00:00+02:00'), syncedAt: dt('2026-07-01T16:00:00+02:00') },
-    })),
+      returned: null,
+    })).concat([{
+      // OP-11 (approved 2 November 2026): 260 meters at 30 September 2026, saved offline, waiting for the Commercial Officer.
+      orgId, id: id('pu-co-b-1-2026-09'), contractObjectiveId: id('co-b-1'), periodEnd: d('2026-09-30'), quantityDone: 260, note: '', evidence: 'Job cards',
+      created: { at: dt('2026-10-03T07:55:00+02:00'), byMembershipId: id('m-mrb') }, updated: { at: dt('2026-10-03T07:55:00+02:00'), byMembershipId: id('m-mrb') },
+      verified: null, returned: null,
+      sync: { capturedOffline: true, capturedAt: dt('2026-10-02T15:40:00+02:00'), syncedAt: dt('2026-10-03T07:55:00+02:00') },
+    }]),
     // One open mid-year review for the Zone B contract (approved 23 October 2026). Scores are computed, never stored here.
     reviews: [{
       ...base, id: id('rv-mrb-2026-mid'), contractId: id('pc-mrb-2026'), kind: 'mid_year', selfAssessment: null, supervisorAssessment: null,

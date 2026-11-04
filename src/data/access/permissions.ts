@@ -4,6 +4,7 @@ import { budgetHolderPositions, objectiveOfActivity } from '../../rules/structur
 import { structureScope } from '../../rules/structure-view';
 import { cardOwnerPositions } from '../../rules/conception';
 import { communicationOwnerPositions } from '../../rules/communication';
+import { verifierPosition } from '../../rules/progress';
 import { baselineOwnerPosition, complianceOwnerPositions, inAudience } from '../../rules/consultation';
 import { structureOfStore } from './setup/draft';
 import type { Store } from './store';
@@ -15,7 +16,8 @@ export interface Subject {
 }
 
 /** Records whose permissions are governed by a parent record type. */
-const GOVERNED_BY: Record<string, string> = { ContractObjective: 'PerformanceContract', ProgressUpdate: 'PerformanceContract' };
+const GOVERNED_BY: Record<string, string> = { ContractObjective: 'PerformanceContract' };
+// v1.10: ProgressUpdate has its own row. Its subject is an update, or, to add one, the contract objective it is for.
 
 function contractOf(s: Store, subject: Subject) {
   if (subject.type === 'PerformanceContract') return s.contracts.find((c) => c.id === subject.id);
@@ -23,7 +25,8 @@ function contractOf(s: Store, subject: Subject) {
     const r = s.reviews.find((x) => x.id === subject.id);
     return r && s.contracts.find((c) => c.id === r.contractId);
   }
-  const co = s.contractObjectives.find((x) => x.id === subject.id);
+  const pu = subject.type === 'ProgressUpdate' ? s.progressUpdates.find((x) => x.id === subject.id) : undefined;
+  const co = s.contractObjectives.find((x) => x.id === (pu ? pu.contractObjectiveId : subject.id));
   return co && s.contracts.find((c) => c.id === co.contractId);
 }
 
@@ -55,6 +58,15 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       if (bm) return mine(baselineOwnerPosition(s, bm));
       const ci = s.complianceItems.find((x) => x.id === subject.id);
       if (ci) return complianceOwnerPositions(s, ci).some((p) => mine(p));
+      // v1.10: an activity's or KPI's figures belong to its owner (by the record, or the activity or KPI to add one).
+      if (subject.type === 'ActivityProgress') {
+        const ap = s.activityProgress.find((x) => x.id === subject.id);
+        return mine(s.activities.find((a) => a.id === (ap ? ap.activityId : subject.id))?.ownerPositionId);
+      }
+      if (subject.type === 'KpiActual') {
+        const ka = s.kpiActuals.find((x) => x.id === subject.id);
+        return mine(s.kpis.find((k) => k.id === (ka ? ka.kpiId : subject.id))?.ownerPositionId);
+      }
       const rec =
         s.goals.find((x) => x.id === subject.id) ?? s.objectives.find((x) => x.id === subject.id) ??
         s.kpis.find((x) => x.id === subject.id) ?? s.activities.find((x) => x.id === subject.id);
@@ -92,6 +104,9 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       return contractOf(s, subject)?.personId === v.personId;
     case 'supervisor': {
       const c = contractOf(s, subject);
+      // v1.10 (OP-6): for progress updates the supervisor is whoever verifies: the position reported to, or the next
+      // one up when it is vacant or held by the employee. Nobody verifies their own update.
+      if (subject.type === 'ProgressUpdate') return !!c && c.personId !== v.personId && mine(verifierPosition(s, c, v.now));
       return mine(s.positions.find((p) => p.id === c?.positionId)?.reportsToPositionId);
     }
     case 'next_level_reviewer': {

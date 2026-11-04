@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.9
+ * CASPA™ data contract — v1.10
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,16 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.10 (2 November 2026, Elijah; Offline Progress Capture Specification v1.0, OP-2 and OP-3): one field and three
+ *     permission rows. No other field changes; verified and sync (K1) are unchanged, and so are P1–P10 and R1–R10.
+ *     - ProgressUpdate.returned: a supervisor's return, with its reason and who returned it, or null. A returned
+ *       update stays unverified and never counts (R6); the employee sends a corrected figure.
+ *     - ProgressUpdate row: seen by the employee, the supervisor, the next-level reviewer and HR; drafted by the
+ *       employee (self); approved, meaning verified or returned, by the supervisor. When the supervisor's position is
+ *       vacant, or its holder is the employee, the next position up the reporting line verifies (OP-6), enforced in
+ *       the data-access layer as "owner" narrowing is elsewhere. Nobody verifies their own update.
+ *     - ActivityProgress row: seen by all members; drafted by the activity's owner.
+ *     - KpiActual row: seen by all members; drafted by the KPI's owner.
  * v1.8 (1 November 2026, Elijah; D15-1): once a plan document is final, all members may read it; drafts stay with the
  *     Executive, the Strategy office and facilitators. A note on the PlanDocument row; no field changes.
  * v1.7 (1 November 2026, Elijah; Strategy formation part 11d, Composition): one document kind, one record and
@@ -710,6 +720,7 @@ export interface ProgressUpdate extends OrgScoped, Audited {
   evidence: string; // note or document reference (R6)
   verified: Stamp | null; // counts towards achievement only once verified by the supervisor
   sync: { capturedOffline: boolean; capturedAt: ISODateTime; syncedAt: ISODateTime | null }; // K1
+  returned: { reason: string; by: Stamp } | null; // v1.10 (OP-2): a supervisor's return, with its reason
 }
 
 export interface Review extends OrgScoped, Audited {
@@ -826,6 +837,11 @@ export const PERMISSIONS: PermissionMatrix = {
   BudgetLine: { view: ['finance', 'executive', 'budget_holder'], draft: ['budget_holder', 'finance'], approve: ['finance', 'executive'] },
   PerformanceContract: { view: ['self', 'supervisor', 'hr'], draft: ['supervisor'], sign: ['self', 'supervisor'] },
   Review: { view: ['self', 'supervisor', 'next_level_reviewer', 'hr'], draft: ['self', 'supervisor'] },
+  // v1.10 (OP-3): approve means verify or return. A vacant supervisor, or one who is the employee, passes to the next
+  // position up the reporting line (OP-6), enforced in the data-access layer.
+  ProgressUpdate: { view: ['self', 'supervisor', 'next_level_reviewer', 'hr'], draft: ['self'], approve: ['supervisor'] },
+  ActivityProgress: { view: ['all_members'], draft: ['owner'] }, // v1.10
+  KpiActual: { view: ['all_members'], draft: ['owner'] }, // v1.10
   VisionStatement: { view: ['all_members'], draft: ['executive'], confirm: ['executive'] },
   // v1.9 (D16-1): accepted organisation-level cards shown in a final plan document are read there by all members.
   FourQEntry: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['owner', 'strategy_office', 'facilitator'], propose: ['owner'] },

@@ -38,6 +38,11 @@ describe.each(orgs.map((o) => [o.store.organisation.name, o] as const))('%s', (_
       if (e.entry === 'plan-document') expect(repo.planDocument.page()).not.toBeNull();
       if (e.entry === 'communication') expect(repo.communication.page().plans.length).toBeGreaterThan(0);
     }
+    // v0.18.0: Progress updates shows exactly when its page holds the person's own contract or someone to verify.
+    expect(menu.performance.length).toBeLessThanOrEqual(MENU_CAP);
+    const pp = repo.workspaces().includes('performance') ? repo.progress.page() : null;
+    expect(menu.performance.some((e) => e.entry === 'progress')).toBe(!!pp && (pp.mine !== null || pp.verify !== null));
+    if (menu.performance.length) expect(repo.workspaces()).toContain('performance');
     if (menu.organisation.some((e) => e.entry === 'vacancies')) expect(repo.structure.vacancies()).not.toBeNull();
     if (menu.organisation.some((e) => e.entry === 'people')) expect(repo.structure.page().isAdmin).toBe(true);
   });
@@ -55,6 +60,12 @@ describe('Sample Water Utility at 18 October 2026', () => {
     expect(as('employee').menu().organisation).toEqual([]);
     expect(as('strategy').menu().forming).toMatchObject({ openStage: 'overview', audienceOnly: false });
   });
+  it('gives Progress updates to the Meter Reader, Zone B and the Commercial Officer only (v0.18.0)', () => {
+    const perf = (r: Parameters<typeof devMembership>[1]) => as(r).menu().performance.map((e) => e.label);
+    expect(perf('employee')).toEqual(['progress']);
+    expect(perf('supervisor')).toEqual(['progress']);
+    for (const r of ['executive', 'strategy', 'finance', 'hr'] as const) expect(perf(r)).toEqual([]);
+  });
   it('opens Registers on Compliance for the compliance officer (NV-3)', () => {
     expect(as('compliance').menu().registers[0]).toBe('compliance');
     expect(as('strategy').menu().registers[0]).toBe('baselines');
@@ -69,6 +80,10 @@ describe('"Needs you" opens the exact page (C-4)', () => {
       const repo = createMemoryRepository(stores, o.orgId, m, NOW);
       for (const i of repo.home().needsYou) {
         expect(i.link?.kind === 'workspace' && i.link.w === 'strategy', i.key).toBe(false);
+        if (i.link?.kind === 'progress') {
+          expect(repo.workspaces(), i.key).toContain('performance');
+          expect(repo.menu().performance.map((e) => e.entry), i.key).toContain('progress');
+        }
         if (i.link?.kind === 'strategy') {
           expect(repo.workspaces(), i.key).toContain('strategy');
           expect(repo.menu().strategy.map((e) => e.entry), i.key).toContain(i.link.entry);

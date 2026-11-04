@@ -5,6 +5,7 @@ import { departmentsHeadedBy, headsADepartment } from '../../rules/conception';
 import { communicationGoals, communicationPlans } from '../../rules/communication';
 import { openRoundFor } from '../../rules/consultation';
 import { formingPlan } from '../../rules/formation';
+import { verifierPosition } from '../../rules/progress';
 import type { Store } from './store';
 
 /** Part 11e: owns a goal that can have a record, or heads a department while any goal can have one. */
@@ -34,6 +35,12 @@ export interface Viewer {
    * may open the Communication page in Strategy.
    */
   writesCommunication: boolean;
+  /** The date the viewer is resolved at, so checks that depend on who holds a position use the same day (v0.18.0). */
+  now: ISODate;
+  /** Has a signed contract this financial year, so reports progress on it (slice 13). */
+  hasSignedContract: boolean;
+  /** Verifies at least one signed contract this financial year (OP-6), so has someone to verify (slice 13). */
+  verifiesProgress: boolean;
 }
 
 export function resolveViewer(s: Store, membershipId: string, now: ISODate, financialYear: number): Viewer {
@@ -56,6 +63,9 @@ export function resolveViewer(s: Store, membershipId: string, now: ISODate, fina
     isDepartmentHead: headsADepartment(s, positionIds),
     inConsultation: !!openRoundFor(s, formingPlan(s), positionIds),
     writesCommunication: writesCommunication(s, positionIds),
+    now,
+    hasSignedContract: s.contracts.some((c) => c.personId === m.personId && c.financialYear === financialYear && c.status === 'signed'),
+    verifiesProgress: s.contracts.some((c) => c.financialYear === financialYear && c.status === 'signed' && c.personId !== m.personId && positionIds.includes(verifierPosition(s, c, now) as never)),
   };
 }
 

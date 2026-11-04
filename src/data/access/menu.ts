@@ -5,7 +5,7 @@
  */
 import { formationInProgress } from '../../rules/formation';
 import {
-  openStageOf, organisationMenu, strategyMenu, type FormingStage, type MenuEntry, type RegisterTab, type StrategyMenuInput,
+  openStageOf, organisationMenu, performanceMenu, strategyMenu, type FormingStage, type MenuEntry, type RegisterTab, type StrategyMenuInput,
 } from '../../selectors/nav';
 import type { Repository } from './repository';
 import type { Store } from './store';
@@ -13,6 +13,8 @@ import type { Store } from './store';
 export interface Menu {
   strategy: MenuEntry[];
   organisation: MenuEntry[];
+  /** v0.18.0: Progress updates. */
+  performance: MenuEntry[];
   /** Forming the next plan: its stages for this person, the one open now, and whether it is only "Have your say". */
   forming: StrategyMenuInput['forming'];
   /** The register tabs, in the order this person opens them. */
@@ -63,5 +65,8 @@ export function menuFor(repo: Repository, s: Store): Menu {
   }) : [];
   const org = repo.structure.page();
   const organisation = org.mode === 'structure' ? organisationMenu({ vacancies: !!repo.structure.vacancies(), people: org.isAdmin }) : [];
-  return { strategy, organisation, forming, registers, formingConfirmed: plan?.status === 'confirmed' };
+  // N-4 from what the data-access layer returns: the person's own contract to report on, or someone's updates to verify.
+  const pp = repo.workspaces().includes('performance') ? repo.progress.page() : null;
+  const performance = performanceMenu({ progress: !!pp && (pp.mine !== null || pp.verify !== null) });
+  return { strategy, organisation, performance, forming, registers, formingConfirmed: plan?.status === 'confirmed' };
 }

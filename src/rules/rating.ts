@@ -6,6 +6,7 @@
 import {
   RATING_PRESETS, type ContractObjective, type ISODate, type PerformanceContract, type RatingScheme, type Review,
 } from '../contract/caspa-data-contract';
+import { latestVerified } from './progress';
 import type { Store } from '../data/access/store';
 
 export type Score = 1 | 2 | 3 | 4 | 5;
@@ -84,12 +85,8 @@ export interface RatingContext {
 }
 
 /** The latest verified update on or before "now". Unverified updates never count (R6). */
-export const verifiedDone = (s: Store, co: ContractObjective, now: ISODate): number | null => {
-  const latest = s.progressUpdates
-    .filter((u) => u.contractObjectiveId === co.id && u.verified !== null && u.periodEnd <= now)
-    .sort((a, b) => (a.periodEnd < b.periodEnd ? -1 : a.periodEnd > b.periodEnd ? 1 : 0));
-  return last(latest)?.quantityDone ?? null;
-};
+export const verifiedDone = (s: Store, co: ContractObjective, now: ISODate): number | null =>
+  latestVerified(s.progressUpdates, co.id, now)?.quantityDone ?? null; // v0.18.0: a verified correction supersedes (OP-4)
 
 /** The review that applies now: an open one first, otherwise the latest completed. */
 export const currentReview = (s: Store, contractId: string): Review | undefined => {

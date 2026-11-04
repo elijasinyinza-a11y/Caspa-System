@@ -18,7 +18,7 @@ import {
   activePlanTitle, financeSummary, goalHealth, homesFor, hrSummary, myContracts, team,
   type FinanceSummary, type GoalHealth, type HomeKind, type HrSummary, type MyContract, type TeamMember,
 } from '../../selectors/home';
-import { needsYou, type NeedsYouItem } from '../../selectors/needs-you';
+import { needsYou, sortQueue, type NeedsYouItem } from '../../selectors/needs-you';
 import { expectedToDate } from '../../rules/kpi-progress';
 import { cascadeTree, nodeView, type CascadeTree, type NodeKind, type NodeRef, type NodeView } from '../../selectors/node';
 import { workspacesFor } from '../../selectors/nav';
@@ -35,6 +35,8 @@ import { createCompositionAccess, type CompositionAccess } from './composition';
 import { createPlanDocumentAccess, type PlanDocumentAccess } from './plan-document';
 import { createCommunicationAccess, type CommunicationAccess } from './communication';
 import { menuFor, type Menu } from './menu';
+import { createDevice, type Device } from './device';
+import { createProgressAccess, type ProgressAccess } from './progress';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
@@ -135,6 +137,8 @@ export interface RepositoryOptions {
   clock?: () => ISODateTime;
   /** Called after every stored change, so screens recompute findings at once. */
   onChange?: () => void;
+  /** The device the person works on: offline switch and what waits to be sent (slice 13, OP-7). One per session. */
+  device?: Device;
 }
 
 /** Everything the role homes show, already restricted to this viewer. A view the viewer does not have is null. */
@@ -220,6 +224,8 @@ export interface Repository {
   menu(): Menu;
   /** The first year's cascade of a confirmed formed plan (v0.15.0, section 35). */
   firstYear: FirstYearAccess;
+  /** Progress capture (v0.18.0, section 39): the Performance landing, progress updates, activity and KPI figures. */
+  progress: ProgressAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
   structureConfirmed(): { by: string; on: ISODate } | null;
 }
@@ -616,6 +622,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     planDocument: createPlanDocumentAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     communication: createCommunicationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     menu: () => menuFor(repo, s),
+    progress: createProgressAccess({ s, viewer, now, financialYear, clock, audit, device: options.device ?? createDevice(), changed: () => options.onChange?.() }),
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);
@@ -739,7 +746,8 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
         planTitle: activePlanTitle(s),
         expected: expectedToDate(financialYear, s.organisation.financialYearStartMonth, now),
         homes,
-        needsYou: needsYou(s, { viewer, financialYear, now, routedFindings, ...access }),
+        // v0.18.0: progress items (OP-10) merged in, soonest first as ever.
+        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs()]),
         goalHealth: has('executive') || has('strategy_office') || has('member') ? goalHealth(s, ctx) : null,
         finance: has('finance') ? financeSummary(s, financialYear, access) : null,
         hr: has('hr') ? hrSummary(s, ctx, access) : null,

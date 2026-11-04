@@ -226,7 +226,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
         const at = dt(`${end}T16:00:00Z`);
         store.progressUpdates.push({
           ...base, id: id(`pu-${k}-${c.person}-${i + 1}`), contractObjectiveId: coid, periodEnd: d(end), quantityDone: o.done, note: '', evidence: 'Supervisor check',
-          verified: { at, byMembershipId: id(`m-${k}-${supervisorKey}`) }, sync: { capturedOffline: true, capturedAt: at, syncedAt: at },
+          verified: { at, byMembershipId: id(`m-${k}-${supervisorKey}`) }, sync: { capturedOffline: true, capturedAt: at, syncedAt: at }, returned: null,
         });
       }
     });
