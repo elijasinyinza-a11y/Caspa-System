@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: progress updates, offline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only.
+   Offline Progress Capture Specification v1.0; BUILD-BRIEF section 39, OP-1 to OP-12. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--info-t:#0D1B2A;--info-b:#EDECEA;--info-r:#D5D2CA;
+--c:#7C5CBF;--f:#C2417A;--f-t:#9B2C63;--f-tint:#FBEAF2;--bar:#BAB7AF;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* Prototype controls, outside the product */
+.proto{background:var(--white);border-bottom:1px dashed var(--control);padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.proto label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.proto select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white)}
+.proto .pbtn{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;background:var(--white);cursor:pointer}
+.proto .note{font-size:12px;color:var(--muted);flex:1 1 260px}
+.layout{display:flex;gap:16px;justify-content:center;padding:16px;align-items:flex-start;flex-wrap:wrap}
+.side-notes{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.panel h2{font-size:16px;color:var(--navy);margin:0 0 6px}
+.panel ol{margin:0;padding-left:20px}
+.panel li{margin:4px 0}
+.panel .done{color:var(--muted);text-decoration:line-through}
+.audit{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+.audit li{border-top:1px solid var(--border);padding:6px 0;font-size:12px}
+.audit time{display:block;color:var(--muted)}
+/* The frame */
+.frame{display:flex;background:var(--cream);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:1040px;height:780px}
+.frame.phone{max-width:390px;flex-direction:column}
+.sidebar{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:2px;flex-shrink:0;overflow:auto}
+.phone .sidebar{display:none}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav,.sub{list-style:none;margin:0;padding:0}
+.nav>li>a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav>li>a.here{background:rgba(255,255,255,.15)}
+.nav .mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.nav .mark.f{background:var(--f)}.nav .mark.c{background:var(--c)}
+.sub{margin:2px 0 6px 14px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px}
+.sub a{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,.85);text-decoration:none;gap:8px}
+.sub a[aria-current=page]{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.sub li{position:relative}
+.tip{position:absolute;left:0;top:100%;z-index:5;width:220px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:400;visibility:hidden;opacity:0}
+.sub li:hover .tip,.sub a:focus-visible+.tip{visibility:visible;opacity:1;transition:opacity .1s .4s,visibility 0s .4s}
+.tip.closed{visibility:hidden!important}
+.sub a[aria-current=page]::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--f)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.top .who{font-size:12px;color:var(--muted);flex:1;min-width:120px}
+.top .who b{display:block;color:var(--navy);font-size:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 10px;background:var(--white);cursor:pointer;font-size:13px}
+.switch .knob{width:32px;height:18px;border-radius:9px;background:var(--info-b);border:1px solid var(--control);position:relative;flex-shrink:0}
+.switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--control)}
+.switch[aria-checked=true] .knob{background:var(--navy);border-color:var(--navy)}
+.switch[aria-checked=true] .knob::after{left:16px;background:var(--white)}
+.waiting{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;background:var(--info-b);border:1px solid var(--info-r);color:var(--info-t);text-decoration:none}
+.offbar{background:var(--info-b);border-bottom:1px solid var(--border);padding:8px 12px;font-size:13px;color:var(--navy)}
+.body{flex:1;overflow:auto;padding:20px 24px}
+.phone .body{padding:14px}
+.bottom{display:none;background:var(--navy);padding:4px 6px}
+.phone .bottom{display:flex}
+.bottom a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;border-radius:8px;gap:4px}
+.bottom a .mark{width:18px;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.bottom a.here{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.bottom a.here .mark.f{background:var(--f)}.bottom a.here .mark.c{background:var(--c)}
+/* Workspace header */
+.wlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--f-t);font-weight:600;flex-wrap:wrap}
+.wlabel i{width:10px;height:10px;border-radius:2px;background:var(--f)}
+.linkish{background:none;border:0;padding:0;min-height:44px;color:var(--muted);font-weight:400;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+.book{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;margin:4px 0 8px}
+.book small{display:block;color:var(--muted);margin-top:2px}
+h1{font-size:28px;color:var(--navy);margin:2px 0 4px}
+.phone h1{font-size:22px}
+.lead{color:var(--muted);margin:0 0 10px;max-width:62ch}
+.subrow{display:none;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin:0 0 12px}
+.phone .subrow{display:flex}
+.subrow a{flex-shrink:0;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px}
+.subrow a[aria-current=page]{color:var(--navy);font-weight:700;border-bottom-color:var(--f)}
+.tabs{display:flex;gap:8px;margin:4px 0 12px}
+.tabs a{min-height:44px;display:inline-flex;align-items:center;border-radius:8px;padding:0 14px;border:1px solid var(--control);background:var(--white);color:var(--navy);font-weight:600;text-decoration:none}
+.tabs a[aria-selected=true]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.tabs .count{margin-left:6px;font-weight:500}
+/* Content */
+.card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--f);border-radius:12px;padding:14px;margin-bottom:12px}
+.card.plain{border-top-width:1px;border-top-color:var(--border)}
+.card h2,.card h3{font-size:16px;color:var(--navy);margin:0 0 2px}
+.partof{font-size:13px;color:var(--muted);margin:0 0 8px}
+.partof a{color:var(--muted)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0;font-size:13px}
+.facts dt{color:var(--muted)}.facts dd{margin:0}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0}
+.track{position:relative;height:8px;flex:1;min-width:64px;border-radius:999px;background:var(--info-b)}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--navy)}
+.exp{position:absolute;top:-3px;width:2px;height:14px;background:var(--muted)}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid;white-space:nowrap}
+.chip.ok{background:var(--ok-b);color:var(--ok-t);border-color:var(--ok-r)}
+.chip.adv{background:var(--adv-b);color:var(--adv-t);border-color:var(--adv-r)}
+.chip.info{background:var(--info-b);color:var(--info-t);border-color:var(--info-r)}
+.line{font-size:13px;margin:4px 0}
+.muted{color:var(--muted)}
+.needs{list-style:none;margin:0;padding:0}
+.needs li{border-top:1px solid var(--border)}
+.needs li:first-child{border-top:0}
+.needs a{display:flex;flex-direction:column;justify-content:center;min-height:56px;padding:6px 0;color:var(--navy);font-weight:600;text-decoration:none}
+.needs a span{font-weight:400;color:var(--muted);font-size:13px}
+h2.sec{font-size:18px;color:var(--navy);margin:16px 0 8px}
+form{margin:0}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.field label{font-weight:600;font-size:13px;color:var(--navy)}
+.field .hint{font-size:12px;color:var(--muted)}
+.field input,.field select,.field textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white);width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.field input.big{font-size:22px;font-weight:600}
+.flag{border:1px solid var(--adv-r);background:var(--adv-b);color:var(--adv-t);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.flag b{display:block}
+.err{color:var(--adv-t);font-size:13px;font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{min-height:44px;border-radius:8px;padding:0 16px;border:1px solid var(--navy);background:var(--navy);color:var(--white);font-weight:600;cursor:pointer}
+.btn.sec{background:var(--white);color:var(--navy);border-color:var(--control)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.upd{border-top:1px solid var(--border);padding:10px 0}
+.upd:first-child{border-top:0}
+.upd .head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.upd .fig{font-weight:600;color:var(--navy)}
+.quote{border-left:3px solid var(--adv-r);padding:2px 0 2px 8px;margin:6px 0;font-size:13px}
+.notice{border:1px solid var(--info-r);background:var(--info-b);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px}
+.team{width:100%;border-collapse:collapse}
+.team td{border-top:1px solid var(--border);padding:8px 4px;vertical-align:middle}
+.team tr:first-child td{border-top:0}
+.team a{color:var(--navy);font-weight:600}
+.empty{color:var(--muted);font-size:13px}
+.live{position:absolute;left:-9999px}
+.toast{position:sticky;bottom:0;margin-top:12px;background:var(--navy);color:var(--white);border-radius:8px;padding:10px 12px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+</style></head>
+<body>
+<div class="proto" role="region" aria-label="Prototype controls (not part of the product)">
+  <label>Screen<select id="pFrame"><option value="phone">Phone, 390px</option><option value="wide">Computer</option></select></label>
+  <label>Next arrival check<select id="pFail">
+    <option value="">Passes</option>
+    <option value="contract">Contract no longer signed</option>
+    <option value="objective">Objective removed from the contract</option>
+    <option value="year">Period outside the financial year</option>
+    <option value="position">Did not hold the position at the period’s end</option>
+  </select></label>
+  <label>Phone clock<select id="pClock"><option value="">Right</option><option value="fast">One day fast</option></select></label>
+  <button class="pbtn" id="pReset" type="button">Start again</button>
+  <p class="note">Prototype only. Each person has their own phone: “Work offline” in the top bar is the development switch (OP-7), and its setting is kept per person here so Mary can be offline while Esther is not. Nothing is stored; “Start again” resets everything.</p>
+</div>
+
+<div class="layout">
+  <div class="frame phone" id="frame">
+    <nav class="sidebar" aria-label="Main"><div class="brand">CASPA™</div><ul class="nav" id="sideNav"></ul></nav>
+    <div class="main">
+      <div class="top" id="top"></div>
+      <div id="offbar"></div>
+      <main class="body" id="body" tabindex="-1"></main>
+      <nav class="bottom" id="bottom" aria-label="Workspaces"></nav>
+    </div>
+  </div>
+  <aside class="side-notes" aria-label="Prototype notes">
+    <div class="panel"><h2>Try it</h2><ol id="steps"></ol></div>
+    <div class="panel"><h2>What is recorded</h2><p class="muted" style="margin:0 0 6px;font-size:12px">Prototype aid: the audit entries and record changes the build would write, newest first.</p><ul class="audit" id="audit"></ul></div>
+  </aside>
+</div>
+<div class="live" aria-live="polite" id="live"></div>
+
+<script>
+'use strict';
+/* ── Fixed records, from the v0.17.0 seed for Sample Water Utility ── */
+const TODAY = '2026-10-18';                 // review build's default date
+const FY = 2026, START_MONTH = 1;
+const THRESH = { onTrackAt: 0.9, atRiskAt: 0.7 };
+const PEOPLE = {
+  mrb: { name: 'Mary Chileshe', pos: 'Meter Reader, Zone B', first: 'Mary' },
+  co:  { name: 'Esther Banda', pos: 'Commercial Officer', first: 'Esther' },
+};
+const OBJS = [
+  { id: 'co-b-1', title: 'Replace 400 faulty meters on route', target: 400, unit: 'meters', weight: 50, act: 'Replace faulty customer meters', code: 'A1.2.1.3', freq: 'monthly' },
+  { id: 'co-b-2', title: 'Complete scheduled meter readings', target: 2400, unit: 'readings', weight: 50, act: 'Complete monthly meter-reading routes', code: 'A1.1.1.1', freq: 'monthly' },
+];
+const TEAM = [ // Esther's direct reports, with their contracts as seeded
+  { name: 'Moses Lungu', pos: 'Meter Reader, Zone A', contract: null },
+  { name: 'Mary Chileshe', pos: 'Meter Reader, Zone B', contract: 'signed', key: 'mrb' },
+  { name: 'Daniel Sakala', pos: 'Meter Reader, Zone C', contract: 'draft' },
+  { name: 'Agnes Mumba', pos: 'Billing Clerk', contract: null },
+];
+const BOOK_CONTROLLING = 'Managers watch results as closely as processes, using a clear dashboard to keep strategy in the right lane, direction and speed.';
+const PURPOSE = 'Who has committed to deliver what, and how they are doing.';
+
+/* ── Formatting ── */
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const n = (x) => x.toLocaleString('en-GB');
+const dLong = (iso) => { const [y, m, d] = iso.slice(0, 10).split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const tLong = (iso) => `${dLong(iso)}, ${iso.slice(11, 16)}`;
+const monthName = (iso) => MONTHS[Number(iso.slice(5, 7)) - 1];
+const pct = (x) => `${Math.floor(x * 100 + 0.5)}%`; // half up, display only
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ── Rules (stand-ins for src/rules/progress.ts and kpi-progress.ts) ── */
+const DAY = 864e5, utc = (d) => { const [y, m, dd] = d.split('-').map(Number); return Date.UTC(y, m - 1, dd); };
+const isoOf = (ms) => new Date(ms).toISOString().slice(0, 10);
+function periodEnds(freq) { // ends of each reporting period in the financial year, from the year start
+  const step = { monthly: 1, quarterly: 3, biannual: 6, annual: 12 }[freq], out = [];
+  for (let k = step; k <= 12; k += step) out.push(isoOf(Date.UTC(FY, START_MONTH - 1 + k, 1) - DAY));
+  return out;
+}
+const endedPeriods = (freq) => periodEnds(freq).filter((e) => e < TODAY);
+function expected() { const s = utc(`${FY}-01-01`), e = utc(`${FY}-12-31`); return Math.min(1, ((utc(TODAY) - s) / DAY + 1) / ((e - s) / DAY + 1)); }
+function statusFor(p, x) { if (x <= 0 || p >= x) return 'on_track'; const r = p / x; return r >= THRESH.onTrackAt ? 'on_track' : r >= THRESH.atRiskAt ? 'at_risk' : 'behind'; }
+const STATUS = { on_track: ['On track', 'ok'], at_risk: ['At risk', 'adv'], behind: ['Behind', 'adv'], no_data: ['No data', 'info'] };
+
+/* ── State ── */
+let S;
+function fresh() {
+  return {
+    as: 'mrb', frame: 'phone', route: 'home', clock: Date.parse('2026-10-18T09:00:00+02:00'),
+    offline: { mrb: false, co: false },
+    edit: null, returning: null, open: [], notices: { mrb: [], co: [] }, toast: null, openHelp: false,
+    steps: [false, false, false, false, false],
+    // server records (ProgressUpdate), plus device-only items (where: 'device')
+    updates: [
+      { id: 'pu-co-b-1', obj: 'co-b-1', period: '2026-06-30', qty: 140, note: '', evidence: 'Route sheet', where: 'server', version: 1,
+        verified: { at: '2026-07-03T09:00', by: 'co' }, returned: null, captured: { offline: false, at: '2026-07-01T16:00' }, synced: '2026-07-01T16:00', replaced: false },
+      { id: 'pu-co-b-2', obj: 'co-b-2', period: '2026-06-30', qty: 2210, note: '', evidence: 'Route sheet', where: 'server', version: 1,
+        verified: { at: '2026-07-03T09:00', by: 'co' }, returned: null, captured: { offline: false, at: '2026-07-01T16:00' }, synced: '2026-07-01T16:00', replaced: false },
+      // OP-11: 260 meters at 30 September 2026, saved offline, waiting for the Commercial Officer.
+      { id: 'pu-co-b-1-2026-09', obj: 'co-b-1', period: '2026-09-30', qty: 260, note: '', evidence: 'Job cards', where: 'server', version: 1,
+        verified: null, returned: null, captured: { offline: true, at: '2026-10-02T15:40' }, synced: '2026-10-03T07:55', replaced: false },
+    ],
+    decisions: [], // Esther's queued decisions on her phone
+    audit: [{ at: '2026-10-03T07:55', text: 'Mary Chileshe’s update for September (260 meters) arrived. Saved offline on 2 October 2026, 15:40.' }],
+    seq: 1,
+  };
+}
+const nowIso = () => { const d = new Date(S.clock + 2 * 36e5); return d.toISOString().slice(0, 16); };
+const tick = () => { S.clock += 3 * 6e4; };
+const log = (text) => S.audit.unshift({ at: nowIso(), text });
+const say = (msg) => { S.toast = msg; document.getElementById('live').textContent = msg; };
+
+const objOf = (id) => OBJS.find((o) => o.id === id);
+const serverUpd = (o) => S.updates.filter((u) => u.obj === o && u.where === 'server' && !u.replaced);
+function lastVerified(o) { // latest verified on or before "now"; a later verification for the same period supersedes (OP-4)
+  const v = serverUpd(o).filter((u) => u.verified && u.period <= TODAY)
+    .sort((a, b) => a.period.localeCompare(b.period) || a.verified.at.localeCompare(b.verified.at));
+  return v[v.length - 1] || null;
+}
+function prevVerifiedFor(u) { // what the supervisor compares with: the latest verified figure other than this update
+  const v = serverUpd(u.obj).filter((x) => x.verified && x.id !== u.id && x.period <= u.period)
+    .sort((a, b) => a.period.localeCompare(b.period) || a.verified.at.localeCompare(b.verified.at));
+  return v[v.length - 1] || null;
+}
+function stateOf(u) {
+  if (u.where === 'device') return u.fail ? 'failed' : 'waiting';
+  if (u.verified) return 'verified';
+  if (u.returned) return 'returned';
+  return 'sent';
+}
+const STATE = { waiting: ['Waiting to send', 'info'], sent: ['Sent', 'info'], verified: ['Verified', 'ok'], returned: ['Returned', 'adv'], failed: ['Couldn’t be sent', 'adv'] };
+const waitingCount = (who) => who === 'mrb' ? S.updates.filter((u) => u.where === 'device' && !u.fail).length : S.decisions.filter((d) => !d.result).length;
+const toVerify = () => S.updates.filter((u) => u.where === 'server' && !u.replaced && !u.verified && !u.returned);
+function marksOf(u) {
+  const m = [], p = prevVerifiedFor(u);
+  if (p && u.qty < p.qty) m.push(['Lower than last time', `Last verified figure: ${n(p.qty)} at ${dLong(p.period)}.`]);
+  if (u.captured.at > u.synced) m.push(['Saved time looks wrong', `Saved at ${tLong(u.captured.at)}, which is after it arrived (${tLong(u.synced)}).`]);
+  return m;
+}
+function dueItems() { // OP-10: a period has ended with no update; a returned update needs a corrected figure
+  const items = [];
+  OBJS.forEach((o) => {
+    const ended = endedPeriods(o.freq), last = ended[ended.length - 1];
+    const all = S.updates.filter((u) => u.obj === o.id && !u.replaced);
+    const ret = all.find((u) => stateOf(u) === 'returned');
+    if (ret) items.push({ text: `Send a corrected figure for ${monthName(ret.period)}`, sub: `${o.title}. Returned by Esther Banda.`, obj: o.id, period: ret.period });
+    else if (last && !all.some((u) => u.period === last)) items.push({ text: `Report progress for ${monthName(last)}`, sub: `${o.title}. ${monthName(last)} ended on ${dLong(last)}.`, obj: o.id, period: last });
+  });
+  return items;
+}
+
+/* ── Sending: arrival checks, in the order saved (OP-5, OP-4, K1) ── */
+const FAIL = {
+  contract: 'Your 2026 contract is no longer signed, so this figure can’t be added to it. Ask Esther Banda.',
+  objective: 'This objective is no longer in your contract. Ask Esther Banda.',
+  year: 'This period is outside the 2026 financial year.',
+  position: 'You did not hold Meter Reader, Zone B on 30 September 2026, so this figure can’t be added to that contract.',
+};
+function sendMary() {
+  const queue = S.updates.filter((u) => u.where === 'device' && !u.fail).sort((a, b) => a.captured.at.localeCompare(b.captured.at) || a.seq - b.seq);
+  if (!queue.length) return;
+  let sent = 0, failed = 0;
+  queue.forEach((u) => {
+    tick();
+    const failMode = document.getElementById('pFail').value;
+    if (failMode) {
+      u.fail = FAIL[failMode]; failed++;
+      document.getElementById('pFail').value = '';
+      log(`An update for ${monthName(u.period)} (${n(u.qty)} ${objOf(u.obj).unit}) was not accepted on arrival. It stays on Mary’s phone.`);
+      return;
+    }
+    u.synced = nowIso(); u.where = 'server'; sent++;
+    serverUpd(u.obj).filter((x) => x !== u && x.period === u.period && !x.verified).forEach((x) => {
+      x.replaced = true;
+      log(`Mary Chileshe’s earlier unverified figure for ${monthName(x.period)} (${n(x.qty)}) was replaced by the new one and kept in this trail (OP-5).`);
+    });
+    const corr = serverUpd(u.obj).some((x) => x !== u && x.period === u.period && x.verified);
+    log(`Mary Chileshe’s update for ${monthName(u.period)} arrived: ${n(u.qty)} ${objOf(u.obj).unit}${u.captured.offline ? `, saved offline at ${tLong(u.captured.at)}` : ''}.${corr ? ' It corrects a verified figure; the verified one counts until this is verified (OP-4).' : ''}`);
+  });
+  say(failed && !sent ? 'An update couldn’t be sent. It is still on your phone.' : `${sent} ${sent === 1 ? 'update' : 'updates'} sent to Esther Banda to verify.${failed ? ' One couldn’t be sent.' : ''}`);
+  S.steps[1] = S.steps[1] || sent > 0;
+}
+function sendEsther() {
+  const queue = S.decisions.filter((d) => !d.result);
+  queue.forEach((d) => {
+    tick();
+    const u = S.updates.find((x) => x.id === d.updateId);
+    if (!u || u.replaced || u.version !== d.version || u.verified || u.returned) {
+      d.result = 'not_applied';
+      const now = u && u.replaced ? S.updates.find((x) => x.obj === u.obj && x.period === u.period && x.where === 'server' && !x.replaced) : null;
+      S.notices.co.push(`Your decision on ${monthName(d.period)} (${n(d.qty)} ${objOf(d.obj).unit}) wasn’t applied: Mary Chileshe sent a new figure for that period after you decided.${now ? ` Check the new figure, ${n(now.qty)}, below.` : ''}`);
+      log(`Esther Banda’s decision on ${monthName(d.period)} (${n(d.qty)}) arrived after Mary Chileshe sent a new figure, so it was not applied.`);
+      return;
+    }
+    apply(u, d.decision, d.reason, d.at); d.result = 'applied';
+  });
+  if (queue.length) say(`${queue.length} ${queue.length === 1 ? 'decision' : 'decisions'} sent.`);
+}
+function apply(u, decision, reason, at) {
+  if (decision === 'verify') { u.verified = { at, by: 'co' }; log(`Esther Banda verified Mary Chileshe’s figure for ${monthName(u.period)}: ${n(u.qty)} ${objOf(u.obj).unit}.`); S.steps[2] = true; }
+  else { u.returned = { reason, by: { at, who: 'co' } }; log(`Esther Banda returned Mary Chileshe’s figure for ${monthName(u.period)} (${n(u.qty)}): “${reason}”`); S.steps[3] = true; }
+}
+
+/* ── Views ── */
+const workspaces = () => S.as === 'mrb' ? ['home', 'performance'] : ['home', 'cascade', 'performance'];
+const WS = { home: ['Home', ''], cascade: ['Cascade', 'c'], performance: ['Performance', 'f'] };
+const inPerf = () => S.route.startsWith('perf');
+const route = (r) => `#${r}`;
+function hasMine() { return S.as === 'mrb'; }
+function hasVerify() { return S.as === 'co'; }
+function progressRoute() { // opens on Mine when an update is due, otherwise on To verify
+  if (hasMine() && !hasVerify()) return 'perf/progress/mine';
+  if (hasVerify() && !hasMine()) return 'perf/progress/verify';
+  return dueItems().length ? 'perf/progress/mine' : 'perf/progress/verify';
+}
+
+function renderChrome() {
+  const p = PEOPLE[S.as], off = S.offline[S.as], w = waitingCount(S.as);
+  document.getElementById('frame').className = `frame ${S.frame === 'phone' ? 'phone' : ''}`;
+  const here = inPerf() ? 'performance' : S.route === 'cascade' ? 'cascade' : 'home';
+  const pr = progressRoute();
+  document.getElementById('sideNav').innerHTML = workspaces().map((k) => `<li><a href="${route(k === 'performance' ? 'perf' : k)}" class="${here === k ? 'here' : ''}"${here === k && !S.route.includes('progress') ? ' aria-current="page"' : ''}><span class="mark ${WS[k][1]}"></span>${WS[k][0]}</a>${k === 'performance' && here === 'performance' ? `<ul class="sub"><li><a href="${route(pr)}"${S.route.includes('progress') ? ' aria-current="page"' : ''} aria-describedby="tip-progress">Progress updates</a><span class="tip" role="tooltip" id="tip-progress">${esc(MENU_PURPOSE)}</span></li></ul>` : ''}</li>`).join('');
+  document.getElementById('bottom').innerHTML = workspaces().map((k) => `<a href="${route(k === 'performance' ? 'perf' : k)}" class="${here === k ? 'here' : ''}"${here === k ? ' aria-current="page"' : ''}><span class="mark ${WS[k][1]}"></span>${WS[k][0]}</a>`).join('');
+  document.getElementById('top').innerHTML = `
+    <label class="who">Viewing as (development)<select id="role" style="min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 8px;background:var(--white);margin-top:2px;max-width:100%">
+      <option value="mrb"${S.as === 'mrb' ? ' selected' : ''}>Employee: Mary Chileshe</option><option value="co"${S.as === 'co' ? ' selected' : ''}>Supervisor: Esther Banda</option></select></label>
+    ${w ? `<a class="waiting" href="${route(S.as === 'mrb' ? 'perf/progress/mine' : 'perf/progress/verify')}">${w} ${S.as === 'mrb' ? (w === 1 ? 'update' : 'updates') : (w === 1 ? 'decision' : 'decisions')} waiting to send</a>` : ''}
+    ${S.as === 'mrb' && S.updates.some((u) => u.fail) ? `<a class="waiting" style="background:var(--adv-b);border-color:var(--adv-r);color:var(--adv-t)" href="${route('perf/progress/mine')}">${S.updates.filter((u) => u.fail).length} couldn’t be sent</a>` : ''}
+    <button type="button" class="switch" role="switch" aria-checked="${off}" id="offSw"><span class="knob" aria-hidden="true"></span>Work offline</button>`;
+  document.getElementById('offbar').innerHTML = off ? `<div class="offbar" role="status">You’re offline. What you save waits on this phone and is sent when you’re back online.</div>` : '';
+}
+
+const MENU_PURPOSE = 'Report what you have done so far this year, and verify your team’s figures so they count.'; // proposed, for approval
+const PAGE_PURPOSE = { 'Progress updates': 'Report what you have done so far this year, and verify your team’s figures so they count.' };
+function header(title) {
+  return `<div class="wlabel"><i aria-hidden="true"></i>Performance <button type="button" class="linkish" id="cBtn" aria-expanded="${S.openHelp}">Controlling</button></div>
+    ${S.openHelp ? `<div class="book" id="cBook">${BOOK_CONTROLLING}<small>Business Beyond the Strategic Plan, page 106</small></div>` : ''}
+    <h1>${title}</h1><p class="lead">${PAGE_PURPOSE[title] || PURPOSE}</p>
+    <nav class="subrow" aria-label="Performance">
+      <a href="${route('perf')}"${S.route === 'perf' ? ' aria-current="page"' : ''}>Overview</a>
+      <a href="${route(progressRoute())}"${S.route.includes('progress') ? ' aria-current="page"' : ''}>Progress updates</a></nav>`;
+}
+
+function objView(o) {
+  const v = lastVerified(o.id), done = v ? v.qty : null, x = expected();
+  const st = done === null ? 'no_data' : statusFor(done / o.target, x);
+  const pending = S.updates.filter((u) => u.obj === o.id && !u.replaced && ['sent', 'waiting', 'returned', 'failed'].includes(stateOf(u)))
+    .sort((a, b) => b.period.localeCompare(a.period))[0];
+  return { v, done, st, x, pending };
+}
+function barHtml(o, done, st, x) {
+  const share = done === null ? null : done / o.target;
+  return `<div class="bar"><div class="track" role="img" aria-label="${esc(o.title)}: ${share === null ? 'No data' : pct(share)}, ${STATUS[st][0]}">${share === null ? '' : `<div class="fill" style="width:${Math.min(100, share * 100)}%"></div>`}<div class="exp" style="left:${x * 100}%" title="Expected by now: ${pct(x)}"></div></div>
+    <span class="num" style="min-width:3ch">${share === null ? '' : pct(share)}</span><span class="chip ${STATUS[st][1]}">${STATUS[st][0]}</span></div>`;
+}
+
+function viewHome() {
+  const items = S.as === 'mrb' ? dueItems().map((d) => ({ href: `perf/progress/mine/${d.obj}`, text: d.text, sub: d.sub }))
+    : (toVerify().length ? [{ href: 'perf/progress/verify', text: `Verify ${toVerify().length} progress ${toVerify().length === 1 ? 'update' : 'updates'}`, sub: 'Mary Chileshe, Meter Reader, Zone B' }] : []);
+  return `<div class="wlabel" style="color:var(--navy)">Home</div><h1>Good morning, ${PEOPLE[S.as].first}</h1>
+    <section class="card plain"><h2>Needs you</h2>${items.length ? `<ul class="needs">${items.map((i) => `<li><a href="${route(i.href)}">${esc(i.text)}<span>${esc(i.sub)}</span></a></li>`).join('')}</ul>` : '<p class="empty">Nothing needs you right now.</p>'}
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Prototype: only the progress items are shown here. The rest of Home is as in v0.17.0.</p></section>`;
+}
+
+function viewLanding() {
+  if (S.as === 'mrb') {
+    return header('Performance') + `<h2 class="sec">Your 2026 contract</h2><p class="muted" style="margin:-4px 0 10px">Meter Reader, Zone B. Signed on 2 February 2026. Figures count once Esther Banda verifies them.</p>` +
+      OBJS.map((o) => {
+        const { v, done, st, x, pending } = objView(o);
+        return `<section class="card"><h3>${esc(o.title)}</h3><p class="partof">Part of: <a href="#cascade">${esc(o.act)}</a></p>
+          <dl class="facts num"><dt>Your target</dt><dd>${n(o.target)} ${o.unit}</dd><dt>Verified</dt><dd>${done === null ? 'No verified figure yet' : `${n(done)} at ${dLong(v.period)}`}</dd></dl>
+          ${barHtml(o, done, st, x)}
+          ${pending ? `<p class="line"><span class="chip ${STATE[stateOf(pending)][1]}">${STATE[stateOf(pending)][0]}</span> ${n(pending.qty)} for ${monthName(pending.period)}${stateOf(pending) === 'sent' ? ', waiting for Esther Banda to verify' : ''}</p>` : ''}
+          <div class="btns"><a class="btn sec" style="display:inline-flex;align-items:center;text-decoration:none" href="${route(`perf/progress/mine/${o.id}`)}">Report progress</a></div></section>`;
+      }).join('');
+  }
+  const waiting = toVerify().length;
+  return header('Performance') + `<h2 class="sec">Your team</h2><section class="card plain"><table class="team"><tbody>${TEAM.map((t) => `<tr><td><b style="color:var(--navy)">${t.name}</b><br><span class="muted">${t.pos}</span></td>
+    <td style="text-align:right">${t.contract === 'signed' ? (waiting ? `<a href="${route('perf/progress/verify')}">${waiting} to verify</a>` : '<span class="muted">Nothing to verify</span>') : `<span class="muted">${t.contract === 'draft' ? 'Contract not yet issued' : 'No contract'}</span>`}</td></tr>`).join('')}</tbody></table></section>`;
+}
+
+function viewMine(focus) {
+  const due = dueItems();
+  const notices = S.notices.mrb.map((t) => `<div class="notice">${esc(t)}</div>`).join('');
+  return header('Progress updates') + tabs('mine') + notices +
+    OBJS.map((o) => {
+      const d = due.find((x) => x.obj === o.id);
+      const open = focus === o.id || (!focus && !!d) || (S.edit && S.edit.obj === o.id) || S.open.includes(o.id);
+      return open ? formCard(o, focus === o.id, d) : foldedCard(o);
+    }).join('') +
+    `<h2 class="sec">Your updates</h2><section class="card plain">${myList()}</section>`;
+}
+function tabs(on) {
+  const t = [];
+  if (hasMine()) t.push(['mine', 'Mine']);
+  if (hasVerify()) t.push(['verify', 'To verify', toVerify().length]);
+  if (t.length < 2) return '';
+  return `<div class="tabs" role="tablist">${t.map(([k, l, c]) => `<a role="tab" href="${route(`perf/progress/${k}`)}" aria-selected="${on === k}">${l}${c ? `<span class="count">${c}</span>` : ''}</a>`).join('')}</div>`;
+}
+function foldedCard(o) {
+  const v = lastVerified(o.id);
+  return `<section class="card"><h3>${esc(o.title)}</h3><p class="partof">Part of: ${esc(o.act)}</p>
+    <dl class="facts num"><dt>Your target</dt><dd>${n(o.target)} ${o.unit}</dd><dt>Last verified</dt><dd>${v ? `${n(v.qty)} at ${dLong(v.period)}` : 'None yet'}</dd></dl>
+    <div class="btns"><button class="btn sec" type="button" data-open="${o.id}">Report progress</button></div></section>`;
+}
+function formCard(o, focused, due) {
+  const ed = S.edit && S.edit.obj === o.id ? S.edit : null;
+  const ended = endedPeriods(o.freq);
+  const period = ed ? ed.period : (due ? due.period : ended[ended.length - 1]);
+  const v = lastVerified(o.id);
+  const existing = S.updates.find((u) => u.obj === o.id && u.period === period && !u.replaced && u.where === 'server' && !u.verified && (!ed || u.id !== ed.id));
+  const verifiedSame = S.updates.find((u) => u.obj === o.id && u.period === period && u.verified && !u.replaced);
+  const ret = S.updates.find((u) => u.obj === o.id && u.period === period && stateOf(u) === 'returned' && !u.replaced);
+  return `<section class="card" id="card-${o.id}"${focused ? ' data-focus="1"' : ''}><h3>${esc(o.title)}</h3><p class="partof">Part of: ${esc(o.act)}</p>
+    <dl class="facts num"><dt>Your target</dt><dd>${n(o.target)} ${o.unit}</dd><dt>Last verified</dt><dd>${v ? `${n(v.qty)} at ${dLong(v.period)}` : 'None yet'}</dd></dl>
+    ${ret ? `<div class="flag"><b>Returned by Esther Banda</b>${esc(ret.returned.reason)}</div>` : ''}
+    <form data-obj="${o.id}" novalidate>
+      <div class="field"><label for="per-${o.id}">Period</label><select id="per-${o.id}" name="period">${ended.slice().reverse().map((e) => `<option value="${e}"${e === period ? ' selected' : ''}>${monthName(e)} ${e.slice(0, 4)} (to ${dLong(e)})</option>`).join('')}</select></div>
+      ${existing && !ret ? `<p class="line muted">You sent ${n(existing.qty)} for ${monthName(period)}. A new figure replaces it until it is verified.</p>` : ''}
+      ${verifiedSame ? `<p class="line muted">${n(verifiedSame.qty)} for ${monthName(period)} is verified. A new figure is a correction: it counts once Esther Banda verifies it.</p>` : ''}
+      <div class="field"><label for="q-${o.id}">${o.unit[0].toUpperCase() + o.unit.slice(1)} done so far this year</label><span class="hint">The total since 1 January, not just this month.</span>
+        <input class="big num" id="q-${o.id}" name="qty" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${ed ? ed.qty : ''}"></div>
+      <div class="lowflag" aria-live="polite"></div>
+      <div class="field"><label for="n-${o.id}" class="nlabel">Note (optional)</label><textarea id="n-${o.id}" name="note">${ed ? esc(ed.note) : ''}</textarea></div>
+      <div class="field"><label for="e-${o.id}">Evidence (optional)</label><span class="hint">For example, a route sheet number.</span><input id="e-${o.id}" name="evidence" value="${ed ? esc(ed.evidence) : ''}"></div>
+      <p class="err" aria-live="polite"></p>
+      <div class="btns"><button class="btn" type="submit">${ed ? 'Save changes' : 'Save'}</button>${ed ? '<button class="btn sec" type="button" data-cancel="1">Cancel</button>' : ''}</div>
+    </form></section>`;
+}
+function myList() {
+  const rows = S.updates.filter((u) => !u.replaced).sort((a, b) => b.period.localeCompare(a.period) || (b.synced || b.captured.at).localeCompare(a.synced || a.captured.at));
+  if (!rows.length) return '<p class="empty">No updates yet.</p>';
+  return rows.map((u) => {
+    const o = objOf(u.obj), st = stateOf(u);
+    const detail = ({
+      waiting: () => `Saved ${u.captured.offline ? 'offline ' : ''}at ${tLong(u.captured.at)}. It is sent when you’re back online.`,
+      sent: () => `Sent ${tLong(u.synced)}. Waiting for Esther Banda to verify.`,
+      verified: () => `Verified by Esther Banda on ${dLong(u.verified.at)}.${S.updates.some((x) => x !== u && x.obj === u.obj && x.period === u.period && x.verified && x.verified.at > u.verified.at && !x.replaced) ? ' Replaced by a later correction.' : ''}`,
+      returned: () => `Returned by Esther Banda on ${dLong(u.returned.by.at)}.`,
+      failed: () => u.fail,
+    })[st]();
+    return `<div class="upd"><div class="head"><div><span class="fig num">${n(u.qty)} ${o.unit}</span> <span class="muted">for ${monthName(u.period)}</span><div class="muted" style="font-size:13px">${esc(o.title)}</div></div><span class="chip ${STATE[st][1]}">${STATE[st][0]}</span></div>
+      <p class="line ${st === 'failed' ? '' : 'muted'}">${esc(detail)}</p>
+      ${st === 'returned' ? `<p class="quote">${esc(u.returned.reason)}</p><div class="btns"><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="${route(`perf/progress/mine/${u.obj}`)}" data-correct="${u.period}">Send a corrected figure</a></div>` : ''}
+      ${st === 'waiting' ? `<div class="btns"><button class="btn sec" type="button" data-edit="${u.id}">Edit</button><button class="btn sec" type="button" data-del="${u.id}">Delete</button></div>` : ''}
+      ${st === 'failed' ? `<div class="btns"><button class="btn sec" type="button" data-retry="${u.id}">Try again</button><button class="btn sec" type="button" data-del="${u.id}">Delete</button></div>` : ''}</div>`;
+  }).join('');
+}
+
+function viewVerify() {
+  const list = toVerify().sort((a, b) => a.synced.localeCompare(b.synced));
+  const queued = S.decisions.filter((d) => !d.result);
+  const notices = S.notices.co.map((t, i) => `<div class="notice" role="status">${esc(t)}<div class="btns"><button class="btn sec" type="button" data-dismiss="${i}">Got it</button></div></div>`).join('');
+  return header('Progress updates') + tabs('verify') + notices +
+    (queued.length ? `<section class="card plain"><h3>Waiting to send</h3>${queued.map((d) => `<p class="line"><span class="chip info">Waiting to send</span> ${d.decision === 'verify' ? 'Verify' : 'Return'}: ${n(d.qty)} ${objOf(d.obj).unit} for ${monthName(d.period)}</p>`).join('')}<p class="line muted">Sent when you’re back online.</p></section>` : '') +
+    (list.length ? list.map(verifyCard).join('') : '<section class="card plain"><p class="empty">Nothing to verify. Updates appear here when your team sends them.</p></section>');
+}
+function verifyCard(u) {
+  const o = objOf(u.obj), p = prevVerifiedFor(u), marks = marksOf(u), queued = S.decisions.find((d) => d.updateId === u.id && !d.result);
+  const ret = S.returning === u.id;
+  return `<section class="card"><div class="upd head" style="padding:0;border:0"><div><h3>Mary Chileshe</h3><p class="partof" style="margin:0">Meter Reader, Zone B</p></div><span class="chip info">Sent</span></div>
+    <p class="line" style="margin-top:8px"><b>${esc(o.title)}</b></p>
+    <dl class="facts num"><dt>Period</dt><dd>${monthName(u.period)} 2026 (to ${dLong(u.period)})</dd>
+      <dt>Figure</dt><dd><b style="color:var(--navy);font-size:16px">${n(u.qty)} ${o.unit}</b></dd>
+      <dt>Last verified</dt><dd>${p ? `${n(p.qty)} at ${dLong(p.period)}` : 'None'}</dd>
+      <dt>Target</dt><dd>${n(o.target)} ${o.unit}</dd>
+      <dt>Note</dt><dd>${u.note ? esc(u.note) : '<span class="muted">None</span>'}</dd>
+      <dt>Evidence</dt><dd>${u.evidence ? esc(u.evidence) : '<span class="muted">None</span>'}</dd>
+      <dt>Saved</dt><dd>${tLong(u.captured.at)}${u.captured.offline ? ', offline' : ''}</dd><dt>Arrived</dt><dd>${tLong(u.synced)}</dd></dl>
+    ${marks.map(([t, d]) => `<div class="flag"><b>Worth checking: ${t}</b>${esc(d)}</div>`).join('')}
+    ${queued ? `<p class="line"><span class="chip info">Waiting to send</span> Your decision: ${queued.decision === 'verify' ? 'verify' : 'return'}.</p>` : ret ? `
+      <form data-return="${u.id}" novalidate><div class="field"><label for="r-${u.id}">Why are you returning it?</label><span class="hint">Mary sees this and sends a corrected figure.</span><textarea id="r-${u.id}" name="reason"></textarea></div><p class="err" aria-live="polite"></p>
+      <div class="btns"><button class="btn" type="submit">Return to Mary</button><button class="btn sec" type="button" data-cancelret="1">Cancel</button></div></form>` : `
+      <div class="btns"><button class="btn" type="button" data-verify="${u.id}">Verify</button><button class="btn sec" type="button" data-ret="${u.id}">Return</button></div>`}
+  </section>`;
+}
+
+function stepsHtml() {
+  const t = [
+    'As Mary, turn on “Work offline”. Open “Report progress for September” in Needs you, enter a figure for readings (try 2,150 to see “Lower than last time”), and save.',
+    'Turn “Work offline” off. The update is sent by itself, in the order saved.',
+    'Switch to Esther. Verify the 260 meters for September: Mary’s bar moves to 65%, At risk.',
+    'Return the readings update with a reason.',
+    'Back as Mary: “Returned” shows the reason and Needs you asks for a corrected figure. Send it.',
+  ];
+  return t.map((x, i) => `<li class="${S.steps[i] ? 'done' : ''}">${x}</li>`).join('') +
+    '<li>Also try: Esther offline verifies, Mary sends a new figure for the same period, Esther goes online. Or set “Next arrival check” to see “Couldn’t be sent”.</li>';
+}
+
+function render() {
+  renderChrome();
+  const r = S.route, body = document.getElementById('body');
+  let html;
+  if (r === 'home') html = viewHome();
+  else if (r === 'cascade') html = `<div class="wlabel" style="color:#4A2D8F">Cascade</div><h1>Cascade</h1><p class="lead">As in v0.17.0. Not part of this prototype.</p>`;
+  else if (r === 'perf') html = viewLanding();
+  else if (r.startsWith('perf/progress/mine') && hasMine()) html = viewMine(r.split('/')[3]);
+  else if (r.startsWith('perf/progress/verify') && hasVerify()) html = viewVerify();
+  else { S.route = progressRoute(); return render(); }
+  body.innerHTML = html + (S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : '');
+  document.getElementById('steps').innerHTML = stepsHtml();
+  document.getElementById('audit').innerHTML = S.audit.map((a) => `<li><time>${tLong(a.at)}</time>${esc(a.text)}</li>`).join('');
+  bind();
+  const f = body.querySelector('[data-focus]');
+  if (f) { f.scrollIntoView({ block: 'start' }); const q = f.querySelector('input[name=qty]'); if (q) q.focus({ preventScroll: true }); }
+}
+
+function bind() {
+  const $ = (s) => document.querySelectorAll(s);
+  document.getElementById('role').onchange = (e) => { S.as = e.target.value; S.edit = null; S.returning = null; S.toast = null; S.route = 'home'; location.hash = '#home'; render(); };
+  document.getElementById('offSw').onclick = () => {
+    const was = S.offline[S.as]; S.offline[S.as] = !was; S.toast = null;
+    if (was) { if (S.as === 'mrb') sendMary(); else sendEsther(); }
+    render();
+  };
+  const cb = document.getElementById('cBtn'); if (cb) cb.onclick = () => { S.openHelp = !S.openHelp; render(); };
+  $('form[data-obj]').forEach((f) => {
+    const o = objOf(f.dataset.obj), q = f.qty, lab = f.querySelector('.nlabel'), low = f.querySelector('.lowflag');
+    const check = () => {
+      const val = Number(q.value.replace(/[^0-9]/g, '')), v = lastVerified(o.id);
+      const lower = q.value !== '' && v && val < v.qty;
+      low.innerHTML = lower ? `<div class="flag"><b>Lower than last time</b>The last verified figure is ${n(v.qty)} at ${dLong(v.period)}. You can still save it: say why in the note, and Esther Banda will check it.</div>` : '';
+      lab.textContent = lower ? 'Why is it lower? (needed)' : 'Note (optional)';
+      return lower;
+    };
+    q.oninput = check; check();
+    f.period.onchange = () => { S.edit = { ...(S.edit && S.edit.obj === o.id ? S.edit : { obj: o.id, qty: q.value, note: f.note.value, evidence: f.evidence.value }), period: f.period.value }; render(); };
+    const c = f.querySelector('[data-cancel]'); if (c) c.onclick = () => { S.edit = null; render(); };
+    f.onsubmit = (e) => {
+      e.preventDefault();
+      const err = f.querySelector('.err'), raw = q.value.replace(/[^0-9]/g, '');
+      if (raw === '') { err.textContent = `Enter the ${o.unit} done so far this year.`; q.focus(); return; }
+      if (check() && !f.note.value.trim()) { err.textContent = 'Say why the figure is lower than last time.'; f.note.focus(); return; }
+      tick();
+      const off = S.offline.mrb, fast = document.getElementById('pClock').value === 'fast';
+      const at = fast ? new Date(S.clock + 2 * 36e5 + DAY).toISOString().slice(0, 16) : nowIso();
+      const rec = { obj: o.id, period: f.period.value, qty: Number(raw), note: f.note.value.trim(), evidence: f.evidence.value.trim() };
+      if (S.edit && S.edit.id) {
+        const u = S.updates.find((x) => x.id === S.edit.id); Object.assign(u, rec); u.captured.at = at;
+        log(`Mary Chileshe changed an unsent update on her phone (${monthName(u.period)}, now ${n(u.qty)}).`);
+        say('Changes saved on this phone.');
+      } else {
+        S.updates.push({ id: `pu-new-${S.seq}`, seq: S.seq++, ...rec, where: 'device', version: 1, verified: null, returned: null, captured: { offline: off, at }, synced: null, replaced: false });
+        S.steps[0] = S.steps[0] || off;
+        if (off) say('Saved on this phone. It is sent when you’re back online.');
+      }
+      S.edit = null; S.open = S.open.filter((x) => x !== o.id);
+      if (!off) sendMary();
+      if (S.updates.some((u) => u.obj === o.id && u.period === rec.period && u.where === 'server' && !u.replaced && u.qty === rec.qty && !u.verified) && S.steps[3]) S.steps[4] = true;
+      S.route = 'perf/progress/mine'; history.replaceState(null, '', '#perf/progress/mine'); render(); // keeps the confirmation on screen
+    };
+  });
+  $('[data-open]').forEach((b) => b.onclick = () => { S.open.push(b.dataset.open); render(); const q = document.getElementById(`q-${b.dataset.open}`); if (q) q.focus(); });
+  $('[data-edit]').forEach((b) => b.onclick = () => { const u = S.updates.find((x) => x.id === b.dataset.edit); S.edit = { id: u.id, obj: u.obj, period: u.period, qty: String(u.qty), note: u.note, evidence: u.evidence }; S.route = `perf/progress/mine/${u.obj}`; location.hash = `#${S.route}`; render(); });
+  $('[data-del]').forEach((b) => b.onclick = () => { if (!confirm('Delete this update from your phone? It has not been sent.')) return; const u = S.updates.find((x) => x.id === b.dataset.del); S.updates = S.updates.filter((x) => x !== u); log(`Mary Chileshe deleted an unsent update (${monthName(u.period)}, ${n(u.qty)}) from her phone. Nothing reached the server.`); say('Deleted from this phone.'); render(); });
+  $('[data-retry]').forEach((b) => b.onclick = () => { const u = S.updates.find((x) => x.id === b.dataset.retry); delete u.fail; if (!S.offline.mrb) sendMary(); else say('It is sent when you’re back online.'); render(); });
+  $('[data-correct]').forEach((a) => a.onclick = () => { const u = S.updates.find((x) => x.obj === a.getAttribute('href').split('/').pop() && stateOf(x) === 'returned'); if (u) S.edit = { obj: u.obj, period: u.period, qty: '', note: '', evidence: u.evidence }; });
+  $('[data-verify]').forEach((b) => b.onclick = () => decide(b.dataset.verify, 'verify', ''));
+  $('[data-ret]').forEach((b) => b.onclick = () => { S.returning = b.dataset.ret; render(); const t = document.querySelector('form[data-return] textarea'); if (t) t.focus(); });
+  $('[data-cancelret]').forEach((b) => b.onclick = () => { S.returning = null; render(); });
+  $('form[data-return]').forEach((f) => f.onsubmit = (e) => { e.preventDefault(); const r = f.reason.value.trim(); if (!r) { f.querySelector('.err').textContent = 'Give a reason. Mary sees it.'; f.reason.focus(); return; } decide(f.dataset.return, 'return', r); });
+  $('[data-dismiss]').forEach((b) => b.onclick = () => { S.notices.co.splice(Number(b.dataset.dismiss), 1); render(); });
+}
+function decide(id, decision, reason) {
+  tick();
+  const u = S.updates.find((x) => x.id === id);
+  S.returning = null;
+  if (S.offline.co) {
+    S.decisions.push({ updateId: id, version: u.version, decision, reason, at: nowIso(), obj: u.obj, period: u.period, qty: u.qty });
+    log(`Esther Banda ${decision === 'verify' ? 'verified' : 'returned'} ${monthName(u.period)} (${n(u.qty)}) on her phone, offline. Waiting to send.`);
+    say('Saved on this phone. It is sent when you’re back online.');
+  } else { apply(u, decision, reason, nowIso()); say(decision === 'verify' ? `Verified. ${n(u.qty)} ${objOf(u.obj).unit} now counts.` : 'Returned to Mary with your reason.'); }
+  render();
+}
+
+function go() { S.route = (location.hash || '#home').slice(1) || 'home'; S.toast = null; S.open = []; render(); }
+window.addEventListener('hashchange', go);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.tip').forEach((t) => t.classList.add('closed')); });
+document.addEventListener('focusin', () => document.querySelectorAll('.tip.closed').forEach((t) => t.classList.remove('closed')));
+document.getElementById('pFrame').onchange = (e) => { S.frame = e.target.value; render(); };
+document.getElementById('pReset').onclick = () => { const fr = S.frame; S = fresh(); S.frame = fr; location.hash = '#home'; render(); };
+S = fresh(); go();
+</script>
+</body></html>

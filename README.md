@@ -1,9 +1,9 @@
 # CASPA™ frontend
 
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
-store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` (v1.1,
-with decisions to 2 November 2026 (navigation in section 37), including the clarity decisions in section 20, Conception in section 31,
-Consultation and Confirmation in section 32 and framework explanations in section 33, Composition in section 34, the plan document and first year in section 35, Communication in section 36) first. The data contract is v1.9.
+store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` first (standing
+rules and the open slice), then `NEXT.md` (work in progress). Earlier decisions are in `DECISIONS-ARCHIVE.md`,
+with their section numbers unchanged. The data contract is v1.10.
 
 ## Run
 
@@ -35,7 +35,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
     11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication — done (v0.16.0)
 12. Navigation: sidebar sub-menus (Navigation Specification v1.1; NV-1 to NV-9, BUILD-BRIEF section 37) — done (v0.17.0)
-13. Offline progress capture — scheduled after navigation (v0.18.0); order after it proposed in section 37
+13. Offline progress capture — specification v1.0 confirmed (OP-1 to OP-12, BUILD-BRIEF section 39); prototype, then build as v0.18.0, in the next chat
+14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
@@ -50,6 +51,12 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+
+## Next chat: offline progress capture (v0.18.0)
+
+- Start from this zip: `npm install`, `npm run verify`, then read BUILD-BRIEF section 39 and the CASPA™ Offline Progress
+  Capture Specification v1.0 (a doc in the Project's chats). Order: the prototype for Elijah's approval
+  (`reference/caspa-progress-prototype.html`), then contract v1.10, rules, data access, screens, tests, delivery.
 
 ## Navigation: sidebar sub-menus (v0.17.0)
 
