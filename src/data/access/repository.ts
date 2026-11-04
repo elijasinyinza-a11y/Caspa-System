@@ -178,7 +178,7 @@ export interface Repository {
   /** One cascade-node page, with every panel already restricted to what this viewer may see. Null if not found here. */
   node(kind: NodeKind, id: string): NodeView | null;
   /** Display settings the screens need: currency, year start, perspective and term labels. */
-  settings(): { baseCurrency: string; financialYearStartMonth: number; termLabels: Store['organisation']['termLabels'] };
+  settings(): { baseCurrency: string; financialYearStartMonth: number; timeZone: string; termLabels: Store['organisation']['termLabels'] };
   /** The consolidated budget, its next gate and its history. */
   budget(): BudgetPage;
   /** Activities an orphan line may be linked to, the holder unit's own first. Empty if this viewer may not link it. */
@@ -716,6 +716,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     settings: () => ({
       baseCurrency: s.organisation.baseCurrency,
       financialYearStartMonth: s.organisation.financialYearStartMonth,
+      timeZone: s.organisation.timeZone,
       termLabels: s.organisation.termLabels,
     }),
     budget: budgetPage,

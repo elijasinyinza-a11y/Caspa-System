@@ -13,6 +13,7 @@ import type { NodeKind, NodeRef, NodeView, PlanGroup, PlanLine } from '../select
 import { en, type WorkspaceKey } from '../strings/en';
 import { nodeHref } from './router';
 import { ActivityLevel, MapSummary } from './DecisionMap';
+import { RecordFigure } from '../components/RecordFigure';
 import { GoalRecordSection } from './Communication';
 
 type Panel = 'strategy' | 'cascade' | 'plan' | 'performance';
@@ -301,6 +302,7 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
             <Field label={en.node.frequency}>{en.frequency[c.frequency]}</Field>
             <Field label={en.node.unit}>{c.unit}</Field>
           </dl>
+          <RecordFigure kind="kpi" id={n.ref.id} aggregation={en.aggregation[c.aggregation]} />
           <div>
             <h3 className="text-14 font-semibold text-navy">{labels.activity}</h3>
             {c.children.length === 0 ? (
@@ -369,6 +371,7 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
               <p className="mt-1 text-12 text-muted">{en.node.completionNote}</p>
             </div>
           )}
+          <RecordFigure kind="activity" id={n.ref.id} />
           <div className="border-t border-border pt-3">
             <h3 className="text-14 font-semibold text-navy">{en.node.parentKpi(kpiSingular)}</h3>
             <NodeLink r={c.kpi.ref} />

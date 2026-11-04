@@ -29,3 +29,17 @@ describe('addresses under their workspace (NV-5)', () => {
     expect(parseRoute('#/strategy/forming/nowhere')).toEqual({ kind: 'strategy', entry: 'forming', stage: undefined, tab: undefined });
   });
 });
+
+describe('Progress updates addresses (v0.18.0, NV-8)', () => {
+  it('round-trips the page, its tabs and one objective on Mine', () => {
+    round({ kind: 'progress', tab: undefined, objectiveId: undefined });
+    round({ kind: 'progress', tab: 'mine', objectiveId: undefined });
+    round({ kind: 'progress', tab: 'mine', objectiveId: 'co-b-2' });
+    round({ kind: 'progress', tab: 'verify', objectiveId: undefined });
+    expect(hrefFor({ kind: 'progress', tab: 'mine', objectiveId: 'co-b-2' })).toBe('#/performance/progress/mine/co-b-2');
+    expect(hrefFor({ kind: 'progress', tab: 'verify', objectiveId: 'co-b-2' })).toBe('#/performance/progress/verify');
+  });
+  it('keeps the Performance landing at #/performance', () => {
+    expect(parseRoute('#/performance')).toEqual({ kind: 'workspace', w: 'performance' });
+  });
+});

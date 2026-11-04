@@ -3,7 +3,7 @@ import { AppContext, type DevRole } from '../components/AppContext';
 import { BottomBar } from '../components/BottomBar';
 import { IntegrityDrawer } from '../components/IntegrityDrawer';
 import { Sidebar } from '../components/Sidebar';
-import { TopBar } from '../components/TopBar';
+import { OfflineBar, TopBar } from '../components/TopBar';
 import { createMemoryRepository, sampleClock } from '../data/access/repository';
 import { createDevice } from '../data/access/device';
 import { ALL_DEV_ROLES } from '../data/sample/all';
@@ -26,12 +26,13 @@ import { DecisionMapPage } from './DecisionMap';
 import { Home } from './Home';
 import { NodePage } from './NodePage';
 import { hrefFor, useRoute } from './router';
-import { Workspace } from './Workspace';
+import { PerformanceLanding, ProgressUpdates } from './Performance';
 
 export function App() {
   const [orgs] = useState(createReviewOrgs);
   // Slice 13 (OP-7): one device for the session, so what waits to send survives role switches; resets on reload.
   const [device] = useState(createDevice);
+  const [toast, setToast] = useState<string | null>(null);
   const [orgId, setOrgIdState] = useState(orgs[0]!.orgId);
   const [role, setRole] = useState<DevRole>('executive');
   const [route, navigate] = useRoute();
@@ -76,11 +77,14 @@ export function App() {
   // A person never lands on a workspace their roles do not include. Node pages are open to all members.
   useEffect(() => {
     if (route.kind === 'workspace' && !repo.workspaces().includes(route.w)) navigate({ kind: 'workspace', w: 'home' });
-    if (route.kind === 'progress' && !repo.workspaces().includes('performance')) navigate({ kind: 'workspace', w: 'home' });
+    // Progress updates is guarded like a workspace: only for people its page holds something for (N-4).
+    if (route.kind === 'progress' && !repo.menu().performance.some((e) => e.entry === 'progress')) navigate({ kind: 'workspace', w: repo.workspaces().includes('performance') ? 'performance' : 'home' });
     // An organisation that has not confirmed its structure opens on Organisation, where its setup is (D7-13).
     if (route.kind === 'workspace' && route.w === 'home' && !repo.structureConfirmed()) navigate({ kind: 'org' });
   }, [repo, route, navigate]);
   useEffect(() => { scroller.current?.scrollTo({ top: 0 }); }, [route]);
+  // A confirmation belongs to the page it was given on.
+  useEffect(() => { const clear = () => setToast(null); window.addEventListener('hashchange', clear); return () => window.removeEventListener('hashchange', clear); }, []);
 
   const page =
     route.kind === 'org' && route.handover ? <HandoverPage key={`${org.orgId}:${viewing}:${route.handover}`} positionId={route.handover} />
@@ -89,22 +93,25 @@ export function App() {
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'strategy' ? <StrategyEntryPage key={`${org.orgId}:${viewing}:${hrefFor(route)}`} entry={route.entry} stage={route.stage} tab={route.tab} goalId={route.goalId} />
     : route.kind === 'boardPaper' ? <BoardPaperPrint key={`${org.orgId}:${viewing}:${route.goalId}`} goalId={route.goalId} />
-    : route.kind === 'progress' ? <Workspace key={`${org.orgId}:${viewing}:progress`} w="performance" />
+    : route.kind === 'progress' ? <ProgressUpdates key={`${org.orgId}:${viewing}`} tab={route.tab} objectiveId={route.objectiveId} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />
     : route.w === 'plan' ? <Budget key={`${org.orgId}:${viewing}`} />
     : route.w === 'strategy' ? <Strategy key={`${org.orgId}:${viewing}`} />
-    : <Workspace w={route.w} />;
+    : <PerformanceLanding key={`${org.orgId}:${viewing}`} />;
 
   return (
-    <AppContext.Provider value={{ repo, role: viewing, setRole, orgId: org.orgId, setOrgId, dev: { orgs: orgs.map((o) => ({ id: o.orgId, name: o.store.organisation.name })), roles, dates: DEV_DATES }, now, setNow, base, year, setYear, nextYear, preview: showsNext, route, navigate, openFindings: () => setDrawer(true) }}>
+    <AppContext.Provider value={{ repo, role: viewing, setRole, orgId: org.orgId, setOrgId, dev: { orgs: orgs.map((o) => ({ id: o.orgId, name: o.store.organisation.name })), roles, dates: DEV_DATES }, now, setNow, base, year, setYear, nextYear, preview: showsNext, route, navigate, openFindings: () => setDrawer(true), toast, say: setToast }}>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">{en.skipToContent}</a>
       <div className="flex h-full">
         <div data-chrome className="contents"><Sidebar /></div>
         <div ref={scroller} className="print-flow flex min-w-0 flex-1 flex-col overflow-y-auto">
-          <div data-chrome className="contents"><TopBar /></div>
+          <div data-chrome className="contents"><TopBar /><OfflineBar /></div>
           <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1100px] flex-1 px-4 pb-28 pt-6 outline-none md:px-8 md:pb-10 md:pt-8">
+            <div role="status" aria-live="polite">
+              {toast && <p className="mb-4 rounded-lg border border-complete-border bg-complete-bg px-3 py-2 text-14 text-complete-text">{toast}</p>}
+            </div>
             {page}
           </main>
         </div>
