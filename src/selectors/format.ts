@@ -44,6 +44,13 @@ export const formatDate = (d: ISODate): string => {
 export const dateInZone = (at: string, timeZone: string): ISODate =>
   new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at)) as ISODate;
 
+/** An instant as 18 October 2026, 14:03, in the organisation's time zone (display only). */
+export const formatDateTime = (at: string, timeZone: string): string => {
+  const d = new Date(at);
+  const time = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
+  return `${formatDate(dateInZone(at, timeZone))}, ${time}`;
+};
+
 /** A rating score to two decimals, rounded half up for display only: 1.5 shows as 1.50. */
 export const formatScore = (score: number): string =>
   new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(roundHalfUp(score, 2));

@@ -29,6 +29,9 @@ export interface AppState {
   route: Route;
   navigate: (r: Route) => void;
   openFindings: () => void;
+  /** A short confirmation read out to screen readers and shown under the top bar until the next page (v0.18.0). */
+  toast: string | null;
+  say: (message: string | null) => void;
 }
 
 export const AppContext = createContext<AppState | null>(null);

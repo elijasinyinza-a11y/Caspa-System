@@ -1,4 +1,4 @@
-import { nodeHref } from "../routes/router";
+import { hrefFor, nodeHref } from "../routes/router";
 import { en } from "../strings/en";
 import { useApp, workspaceOf } from "./AppContext";
 import { IntegrityPill } from "./IntegrityPill";
@@ -22,7 +22,7 @@ export function TopBar() {
   const terms = repo.settings().termLabels;
   const label = (r: { code: string; title: string }) => (codes ? r.code : short(r.title));
   return (
-    <header className="sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b border-border bg-white px-4 md:px-8">
+    <header className="sticky top-0 z-20 flex min-h-16 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-white px-4 py-2 md:flex-nowrap md:px-8 md:py-0">
       {!n && (
         <div className="md:hidden">
           <div className="text-16 font-bold text-navy">{en.product}</div>
@@ -94,6 +94,12 @@ export function TopBar() {
                   {en.menu.entry[repo.menu().strategy.find((e) => e.entry === route.entry)?.label ?? route.entry] ?? en.nav.strategy}
                 </li>
               </>
+            ) : route.kind === "progress" ? (
+              <>
+                <li><a href="#/performance" className="inline-flex min-h-11 items-center text-muted hover:text-navy hover:underline">{en.nav.performance}</a></li>
+                <li aria-hidden="true" className="text-muted">›</li>
+                <li aria-current="page" className="font-semibold text-navy">{en.menu.entry.progress}</li>
+              </>
             ) : (
               <li aria-current="page" className="font-semibold text-navy">
                 {en.nav[workspaceOf(route) ?? "home"]}
@@ -123,8 +129,86 @@ export function TopBar() {
           </svg>
           <span className="sr-only">{en.setup.nav}</span>
         </a>
+        <WaitingLinks />
+      </div>
+      {/* Development controls: on a phone they take their own row, so nothing is cut off at 390px. */}
+      <div className="flex w-full min-w-0 items-center justify-end gap-2 md:w-auto md:shrink-0">
         <RoleSwitcher />
+        <WorkOffline />
       </div>
     </header>
+  );
+}
+
+/** What waits on this device, and what couldn't be sent, linking to where it is shown (slice 13). */
+function WaitingLinks() {
+  const { repo } = useApp();
+  if (!repo.menu().performance.some((e) => e.entry === "progress")) return null;
+  const w = repo.progress.waiting();
+  const n = w.updates + w.decisions;
+  const link = "inline-flex min-h-11 items-center rounded-full border px-3 text-13 font-semibold";
+  return (
+    <>
+      {n > 0 && (
+        <a href={hrefFor({ kind: "progress", tab: w.updates ? "mine" : "verify" })} className={`${link} border-info-border bg-info-bg text-info-text`}>
+          <span className="hidden sm:inline">{w.updates && w.decisions ? en.capture.waitingBoth(n) : en.capture.waitingTop(n, !w.updates)}</span>
+          <span className="sm:hidden" aria-hidden="true">{n}</span>
+          <span className="sr-only sm:hidden">{w.updates && w.decisions ? en.capture.waitingBoth(n) : en.capture.waitingTop(n, !w.updates)}</span>
+        </a>
+      )}
+      {w.failed > 0 && (
+        <a href={hrefFor({ kind: "progress", tab: "mine" })} className={`${link} border-advisory-border bg-advisory-bg text-advisory-text`}>
+          {en.capture.failedTop(w.failed)}
+        </a>
+      )}
+    </>
+  );
+}
+
+/**
+ * Development switch "Work offline" (OP-7), beside the role switcher: acts as if this device had no connection.
+ * Turning it off sends what waits, in the order saved, and says what happened.
+ */
+function WorkOffline() {
+  const { repo, say } = useApp();
+  const off = repo.progress.offline();
+  const toggle = () => {
+    const sent = repo.progress.setOffline(!off);
+    if (!sent) return say(null);
+    const who = repo.progress.page().mine?.verifier ?? en.capture.yourSupervisor;
+    const parts: string[] = [];
+    if (sent.sent && sent.failed) parts.push(en.capture.toasts.sentSome(sent.sent, sent.failed));
+    else if (sent.sent) parts.push(en.capture.toasts.sent(sent.sent, who));
+    else if (sent.failed) parts.push(en.capture.toasts.failed);
+    if (sent.decisions) parts.push(en.capture.toasts.decisionsSent(sent.decisions));
+    say(parts.length ? parts.join(" ") : null);
+  };
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={off}
+      onClick={toggle}
+      title={en.capture.workOfflineHint}
+      className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-dashed border-control bg-white px-2 text-13 font-semibold text-navy"
+    >
+      <span aria-hidden="true" className={`relative h-5 w-9 rounded-full border border-control ${off ? "bg-navy" : "bg-info-bg"}`}>
+        <span className={`absolute top-0.5 h-3.5 w-3.5 rounded-full ${off ? "left-4 bg-white" : "left-0.5 bg-muted"}`} />
+      </span>
+      {/* The label shows where there is room; elsewhere it is read out and shown on pointing. */}
+      <span className="hidden xl:inline">{en.capture.workOffline}</span>
+      <span className="sr-only xl:hidden">{en.capture.workOffline}</span>
+    </button>
+  );
+}
+
+/** Shown under the top bar while this device is offline (OP-7). */
+export function OfflineBar() {
+  const { repo } = useApp();
+  if (!repo.progress.offline()) return null;
+  return (
+    <div role="status" className="border-b border-advisory-border bg-advisory-bg px-4 py-2 text-14 text-advisory-text md:px-8">
+      {en.capture.offlineBar}
+    </div>
   );
 }
