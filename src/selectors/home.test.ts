@@ -34,11 +34,15 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
     expect(queue('supervisor')).toEqual([
       ['deadline', 'Issue the contract for Daniel Sakala, Meter Reader, Zone C', '2026-01-31', 260],
       ['deadline', 'Complete Mary Chileshe’s mid-year review', '2027-01-15', -89],
+      ['approval', 'Verify 1 progress update', null, null], // v0.18.0: the OP-11 update, undated (OP-10)
     ]);
   });
 
-  it('Employee: the self-assessment has no due date, so it comes last', () => {
-    expect(queue('employee')).toEqual([['deadline', 'Submit your self-assessment for the mid-year review', null, null]]);
+  it('Employee: undated items, by title: September readings (OP-10) and the self-assessment', () => {
+    expect(queue('employee')).toEqual([
+      ['deadline', 'Report progress for September', null, null],
+      ['deadline', 'Submit your self-assessment for the mid-year review', null, null],
+    ]);
   });
 
   it('linking the orphan line clears the blocker from the Finance item at once', () => {

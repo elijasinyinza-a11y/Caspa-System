@@ -5,6 +5,7 @@ import { IntegrityDrawer } from '../components/IntegrityDrawer';
 import { Sidebar } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
 import { createMemoryRepository, sampleClock } from '../data/access/repository';
+import { createDevice } from '../data/access/device';
 import { ALL_DEV_ROLES } from '../data/sample/all';
 import { createReviewOrgs, devMembership } from '../data/sample/review';
 import { asIfActive } from '../rules/onboarding';
@@ -29,6 +30,8 @@ import { Workspace } from './Workspace';
 
 export function App() {
   const [orgs] = useState(createReviewOrgs);
+  // Slice 13 (OP-7): one device for the session, so what waits to send survives role switches; resets on reload.
+  const [device] = useState(createDevice);
   const [orgId, setOrgIdState] = useState(orgs[0]!.orgId);
   const [role, setRole] = useState<DevRole>('executive');
   const [route, navigate] = useRoute();
@@ -47,9 +50,9 @@ export function App() {
   // Keep the role actually shown, so a confirmation that adds roles does not switch the person away.
   useEffect(() => { if (viewing !== role) setRole(viewing); }, [viewing, role]);
   const base = useMemo(
-    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, devMembership(org, viewing, now)!, now, { clock, onChange: () => setRevision((r) => r + 1) }),
+    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, devMembership(org, viewing, now)!, now, { clock, device, onChange: () => setRevision((r) => r + 1) }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- revision is the signal that the store changed
-    [orgs, org, viewing, clock, revision, now],
+    [orgs, org, viewing, clock, revision, now, device],
   );
   // D15-7: next year's draft. Cascade and record pages read a view of the records in which the confirmed plan counts
   // as active, dated at the start of its first year; the view shares the record lists, so changes are kept.
@@ -61,7 +64,7 @@ export function App() {
     const start = `${next.financialYear}-${String(org.store.organisation.financialYearStartMonth).padStart(2, '0')}-01` as ISODate;
     const at = now > start ? now : start;
     const view = asIfActive(org.store, next.planId);
-    return createMemoryRepository(orgs.map((o) => (o.orgId === org.orgId ? view : o.store)), org.orgId, devMembership(org, viewing, now)!, at, { clock, onChange: () => setRevision((r) => r + 1) });
+    return createMemoryRepository(orgs.map((o) => (o.orgId === org.orgId ? view : o.store)), org.orgId, devMembership(org, viewing, now)!, at, { clock, device, onChange: () => setRevision((r) => r + 1) });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- base changes with every stored change
   }, [base, showsNext]);
   const closeDrawer = useCallback(() => setDrawer(false), []);
@@ -73,6 +76,7 @@ export function App() {
   // A person never lands on a workspace their roles do not include. Node pages are open to all members.
   useEffect(() => {
     if (route.kind === 'workspace' && !repo.workspaces().includes(route.w)) navigate({ kind: 'workspace', w: 'home' });
+    if (route.kind === 'progress' && !repo.workspaces().includes('performance')) navigate({ kind: 'workspace', w: 'home' });
     // An organisation that has not confirmed its structure opens on Organisation, where its setup is (D7-13).
     if (route.kind === 'workspace' && route.w === 'home' && !repo.structureConfirmed()) navigate({ kind: 'org' });
   }, [repo, route, navigate]);
@@ -85,6 +89,7 @@ export function App() {
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'strategy' ? <StrategyEntryPage key={`${org.orgId}:${viewing}:${hrefFor(route)}`} entry={route.entry} stage={route.stage} tab={route.tab} goalId={route.goalId} />
     : route.kind === 'boardPaper' ? <BoardPaperPrint key={`${org.orgId}:${viewing}:${route.goalId}`} goalId={route.goalId} />
+    : route.kind === 'progress' ? <Workspace key={`${org.orgId}:${viewing}:progress`} w="performance" />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />

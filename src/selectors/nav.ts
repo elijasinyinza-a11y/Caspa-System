@@ -33,6 +33,7 @@ export type FormingStage = 'overview' | 'conception' | 'consultation' | 'composi
 export const FORMING_STAGES: FormingStage[] = ['overview', 'conception', 'consultation', 'composition'];
 export type RegisterTab = 'baselines' | 'compliance';
 export type OrganisationEntry = 'vacancies' | 'people';
+export type PerformanceEntry = 'progress';
 
 export interface StrategyMenuInput {
   /** The plan being formed, as this person may work on it; null when nothing is being formed or nothing is theirs. */
@@ -50,7 +51,8 @@ export interface StrategyMenuInput {
 
 export type MenuEntry =
   | { w: 'strategy'; entry: StrategyEntry; label: 'forming' | 'say' | 'registers' | 'plan-document' | 'communication' }
-  | { w: 'organisation'; entry: OrganisationEntry; label: OrganisationEntry };
+  | { w: 'organisation'; entry: OrganisationEntry; label: OrganisationEntry }
+  | { w: 'performance'; entry: PerformanceEntry; label: PerformanceEntry };
 
 /** Strategy's entries, in fixed places (C-2): the temporary work first, then the lasting ones. */
 export function strategyMenu(i: StrategyMenuInput): MenuEntry[] {
@@ -68,6 +70,14 @@ export function organisationMenu(i: { vacancies: boolean; people: boolean }): Me
   if (i.vacancies) out.push({ w: 'organisation', entry: 'vacancies', label: 'vacancies' });
   if (i.people) out.push({ w: 'organisation', entry: 'people', label: 'people' });
   return out;
+}
+
+/**
+ * Performance's entries (v0.18.0, NV-8): Progress updates, for people with a signed contract this year and for those
+ * who verify someone's updates (N-4). One entry now; Reviews (v0.19.0) makes two.
+ */
+export function performanceMenu(i: { progress: boolean }): MenuEntry[] {
+  return i.progress ? [{ w: 'performance', entry: 'progress', label: 'progress' }] : [];
 }
 
 /** The furthest open stage among those shown (Composition, then Consultation, then Conception), else the overview. */

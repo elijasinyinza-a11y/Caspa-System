@@ -1,4 +1,5 @@
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
+import { EntryRow } from '../components/SubMenu';
 import { identity } from '../components/identity';
 import { en, type WorkspaceKey } from '../strings/en';
 
@@ -6,6 +7,7 @@ export function Workspace({ w }: { w: Exclude<WorkspaceKey, 'home' | 'cascade' |
   return (
     <>
       <WorkspaceHeader w={w} title={en.nav[w]} intro={en.workspaceIntro[w]} />
+      {w === 'performance' && <EntryRow w="performance" />}
       <div className={`rounded-xl border border-border border-t-4 bg-white p-5 ${identity[w].edge}`}>
         <p className="text-14 text-muted">{en.notBuilt}</p>
       </div>

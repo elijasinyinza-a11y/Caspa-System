@@ -25,7 +25,9 @@ import { holderOf } from './node';
 export type NeedsYouKind = 'deadline' | 'decision_action' | 'finding' | 'approval';
 /** A Strategy sub-menu page (v0.17.0, C-4): "Needs you" opens the exact entry, stage and tab. */
 export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string };
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | null;
+/** Performance › Progress updates (v0.18.0): a tab, and on Mine the objective whose form opens. */
+export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {

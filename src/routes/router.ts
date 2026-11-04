@@ -29,13 +29,20 @@ export type Route =
    */
   | { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string; goalId?: string }
   /** A goal's board version printed as a short board paper, #/board-paper/<goalId> (D16-7). */
-  | { kind: 'boardPaper'; goalId: string };
+  | { kind: 'boardPaper'; goalId: string }
+  /**
+   * Performance › Progress updates (v0.18.0, section 39): #/performance/progress opens where the work is; the tabs
+   * have their own addresses, #/performance/progress/mine (optionally /<contractObjectiveId>, whose form opens) and
+   * #/performance/progress/verify.
+   */
+  | { kind: 'progress'; tab?: 'mine' | 'verify'; objectiveId?: string };
 
 export const hrefFor = (r: Route): string =>
   r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
+  : r.kind === 'progress' ? ['#/performance/progress', r.tab, r.tab === 'mine' && r.objectiveId ? encodeURIComponent(r.objectiveId) : null].filter(Boolean).join('/')
   : r.kind === 'workspace' ? `#/${r.w}`
   : r.kind === 'map' ? `#/map/${encodeURIComponent(r.objectiveId)}${r.deficiencyId ? `/${encodeURIComponent(r.deficiencyId)}` : ''}`
   : `#/node/${r.node}/${encodeURIComponent(r.id)}${r.from ? `~${r.from}` : ''}`;
@@ -73,6 +80,10 @@ export const parseRoute = (hash: string): Route => {
       const stage = FORMING_STAGES.includes(parts[2] as FormingStage) ? (parts[2] as FormingStage) : undefined;
       return { kind: 'strategy', entry, stage, tab: stage ? parts[3] || undefined : undefined };
     }
+  }
+  if (parts[0] === 'performance' && parts[1] === 'progress') {
+    const tab = parts[2] === 'mine' || parts[2] === 'verify' ? parts[2] : undefined;
+    return { kind: 'progress', tab, objectiveId: tab === 'mine' && parts[3] ? decodeURIComponent(parts[3]) : undefined };
   }
   if (parts[0] === 'board-paper' && parts[1]) return { kind: 'boardPaper', goalId: decodeURIComponent(parts[1]) };
   if (parts[0] === 'organisation') {

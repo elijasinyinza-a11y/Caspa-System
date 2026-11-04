@@ -99,10 +99,11 @@ export function Sidebar() {
           {repo.workspaces().map((w) => (
             <li key={w} className="list-none">
               <ul>
-                <NavItem w={w} active={route.kind === "workspace" && route.w === w || (workspaceOf(route) === w && !(w === "strategy" && menu.strategy.some((e) => isCurrentEntry(route, e))))}
+                <NavItem w={w} active={route.kind === "workspace" && route.w === w || (workspaceOf(route) === w && !((w === "strategy" ? menu.strategy : w === "performance" ? menu.performance : []).some((e) => isCurrentEntry(route, e))))}
                   go={() => navigate({ kind: "workspace", w })} />
               </ul>
               {w === "strategy" && workspaceOf(route) === "strategy" && <SubList entries={menu.strategy} mark={identity.strategy.mark} />}
+              {w === "performance" && workspaceOf(route) === "performance" && <SubList entries={menu.performance} mark={identity.performance.mark} />}
             </li>
           ))}
         </ul>

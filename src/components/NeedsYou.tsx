@@ -60,7 +60,9 @@ export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
     }
     if (link.kind === "workspace" && !reachable.includes(link.w)) return null;
     if (link.kind === "strategy" && !reachable.includes("strategy")) return null;
-    const href = link.kind === "communication" ? hrefFor({ kind: "strategy", entry: "communication", goalId: link.goalId })
+    if (link.kind === "progress" && !reachable.includes("performance")) return null;
+    const href = link.kind === "progress" ? hrefFor({ kind: "progress", tab: link.tab, objectiveId: link.objectiveId })
+      : link.kind === "communication" ? hrefFor({ kind: "strategy", entry: "communication", goalId: link.goalId })
       : link.kind === "strategy" ? hrefFor({ kind: "strategy", entry: link.entry, stage: link.stage, tab: link.tab }) : fixHref(link);
     return (
       <a href={href} className={cls}>

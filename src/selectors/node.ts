@@ -8,6 +8,7 @@ import {
   SIX_P_SCOPE, type Activity, type FourQCell, type Goal, type ISODate, type Kpi, type Money, type Objective,
   type SixPLevel, type SystemTerm,
 } from '../contract/caspa-data-contract';
+import { latestVerified } from '../rules/progress';
 import type { Store } from '../data/access/store';
 import { computeFindings } from '../rules/integrity';
 import { goalProgress, kpiProgress, objectiveProgress, type KpiProgress, type ProgressContext, type RollUp } from '../rules/kpi-progress';
@@ -332,9 +333,7 @@ export function nodeView(s: Store, kind: NodeKind, id: string, ctx: ProgressCont
     const target = co.snapshot ? co.snapshot.quantityTarget : co.quantityTarget;
     if (access.canView({ type: 'ContractObjective', id: co.id })) {
       // Verified updates only count (R6); quantities are cumulative to the period end, so the latest one stands.
-      const verified = s.progressUpdates
-        .filter((u) => u.contractObjectiveId === co.id && u.verified && u.periodEnd <= ctx.now)
-        .sort((x, y) => (x.periodEnd < y.periodEnd ? 1 : x.periodEnd > y.periodEnd ? -1 : 0))[0];
+      const verified = latestVerified(s.progressUpdates, co.id, ctx.now);
       performance.objectives.push({
         id: co.id,
         person: s.people.find((p) => p.id === c.personId)?.fullName ?? '',
