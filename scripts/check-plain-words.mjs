@@ -11,6 +11,8 @@ const FORBIDDEN = [
   /\bstaging\b/i, /\bmemberships?\b/i, /\baccountable positions?\b/i, /\bsubstantive\b/i,
   // Vacancies and handover (BUILD-BRIEF section 26): the view states facts, never a rating.
   /\brisk score\b/i, /\bsuccession\b/i, /\bcriticality\b/i,
+  // Offline progress capture (BUILD-BRIEF section 39): "Waiting to send", "Sent", never the system terms.
+  /\bsync(ed|ing|s|hroni[sz]e[ds]?)?\b/i, /\boutbox\b/i,
 ];
 const PLACEHOLDER = /\[from the book\]/i;
 const pilot = process.env.CASPA_PILOT === '1';

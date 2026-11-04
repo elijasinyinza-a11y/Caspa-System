@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36 and 38 of the Build Brief, moved here unchanged on 4 November 2026 so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Sections 37 and 39 stay in `BUILD-BRIEF.md`.
+Sections 13 to 36, 38 and 39 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -341,3 +341,26 @@ Confirmed by Elijah on 2 November 2026. Direction only: nothing is specified or 
 - **Left out of the first version:** objectivity, honesty and inclusiveness, since measuring them means staff rating how managers communicate. The survey never assesses individual or manager performance, culture or leadership, and its results never feed checks, gates or ratings.
 - **Rules carried into the specification:** survey wording that names the three faces or the principles uses lines Elijah confirms, as `en.book` does; answers are anonymous by design (the small-group rule applies to results); scored answers store only the unit and the result.
 - **Open, for the specification:** anonymity design (answers not linked to a person; a separate response receipt), whether department heads see their own unit's results, how often it runs (after Communication and at mid-year), the open-question wording, the coverage view comparing logged meetings with staff answers, reuse of offline capture for field staff, and the contract revision (survey, anonymous response, response receipt).
+
+## 39. Decisions on offline progress capture, slice 13 (2 November 2026)
+
+Source: the *CASPA™ Offline Progress Capture Specification v1.0* (a doc in the Project's chats), decisions OP-1 to OP-12 confirmed as recommended by Elijah, including the OP-11 sample figures. Contract v1.10 covers OP-2 and OP-3 only. Build as v0.18.0, after a prototype for approval (`reference/caspa-progress-prototype.html`).
+
+- **OP-1, scope:** employee progress updates on their own contract objectives, capturable offline; supervisor verification and return; the Performance landing (`#/performance`: the employee's contract objectives; a supervisor's team with updates waiting); online recording of activity figures ("Record progress" under "How it's done" on an activity page, for its owner) and KPI readings ("Record a reading" on a KPI page, for its owner), each with an audit entry.
+- **OP-2, contract v1.10 field:** `ProgressUpdate.returned: { reason: string; by: Stamp } | null`. A return needs a reason; the employee sees "Returned" with it and gets a "Needs you" item to send a corrected figure.
+- **OP-3, contract v1.10 rows:** `ProgressUpdate` (view self, supervisor, next-level reviewer, HR; draft self; approve supervisor, meaning verify or return), `ActivityProgress` (view all members; draft owner), `KpiActual` (view all members; draft owner). No other field changes; `verified` and `sync` (K1) unchanged; P1–P10 and R1–R10 unchanged (only verified updates count, R6).
+- **OP-4, corrections:** a verified update is locked; a new update for the same period, once verified, supersedes it; both are kept.
+- **OP-5, same period before verification:** the later update replaces the earlier; the earlier stays in the audit trail.
+- **OP-6, who verifies:** the holder or acting holder of the position the employee's position reports to; if vacant, or if that holder is the employee, the next position up the reporting line. Nobody verifies their own update.
+- **OP-7, offline in the review build:** a development switch "Work offline" beside the role switcher; the outbox and sending run in memory through the data-access layer the backend will replace. Device storage and the server's arrival checks come with the backend. Unsent updates belong to the person who saved them; shared-device sign-out is decided with sign-in at pilot go-live.
+- **OP-8, evidence:** text only (for example a route sheet number); photos later, with file storage.
+- **OP-9, lower figure than last time:** allowed with a reason; marked "worth checking" for the supervisor. A saved time later than arrival is marked "Saved time looks wrong"; marks never block.
+- **OP-10, reminders:** "Needs you" for an employee once a period has ended with no update ("Report progress for September"), and for a supervisor ("Verify 3 progress updates"). No escalation in this slice.
+- **OP-11, sample data:** Sample Water Utility gains one unverified update for the Meter Reader, Zone B, on "Replace 400 faulty meters on route": 260 meters at 30 September 2026, saved offline, waiting for the Commercial Officer.
+- **OP-12, activity figures:** the activity page shows the verified total of the contract objectives drawn from it, for reference; the owner enters the activity's own figure; nothing is copied automatically.
+- **Arrival checks:** the contract is still signed, the objective still exists, the period is within the financial year, and the person held the position at the period's end. A failure stays on the device as "Couldn't be sent" with the reason; nothing is lost silently.
+- **Periods:** from the source activity's reporting frequency and the financial year start; figures are cumulative to date.
+- **Navigation (NV-8):** Performance › Progress updates (`#/performance/progress`), passing N-1 to N-6, with tabs Mine and To verify (supervisors), opening on Mine when an update is due, otherwise To verify. Shown to people with a signed contract and to supervisors with someone to verify.
+- **Plain words:** "Waiting to send", "Sent", "Verified", "Returned", "Couldn't be sent", "Work offline"; `check-plain-words` also rejects "sync" and "outbox" in user-facing strings.
+- **Code plan:** rules in `src/rules/progress.ts` (periods, due and missing, marks, arrival checks, who verifies, superseding); tests across January, April and July year starts, offline ordering, arrival failures, verification rights (vacant and acting), R6 unchanged, the menu for every role in all five sample organisations, and 390px.
+- **Delivered:** built as v0.18.0 (4 November 2026); moved here from the brief on delivery.

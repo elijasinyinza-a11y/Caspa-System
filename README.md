@@ -35,7 +35,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 11. Strategy formation (BUILD-BRIEF section 30), in five parts: 11a calendar and sessions — done (v0.11.0); 11b Conception — done (v0.12.0);
     11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication — done (v0.16.0)
 12. Navigation: sidebar sub-menus (Navigation Specification v1.1; NV-1 to NV-9, BUILD-BRIEF section 37) — done (v0.17.0)
-13. Offline progress capture — specification v1.0 confirmed (OP-1 to OP-12, BUILD-BRIEF section 39); prototype, then build as v0.18.0, in the next chat
+13. Offline progress capture (Offline Progress Capture Specification v1.0; OP-1 to OP-12, BUILD-BRIEF section 39, now in the archive) — done (v0.18.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -52,11 +52,30 @@ The development role switcher has six roles: Executive, Strategy office, Finance
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
-## Next chat: offline progress capture (v0.18.0)
+## Next chat: staff voice (slice 14)
 
-- Start from this zip: `npm install`, `npm run verify`, then read BUILD-BRIEF section 39 and the CASPA™ Offline Progress
-  Capture Specification v1.0 (a doc in the Project's chats). Order: the prototype for Elijah's approval
-  (`reference/caspa-progress-prototype.html`), then contract v1.10, rules, data access, screens, tests, delivery.
+- Start from this zip: `npm install`, `npm run verify` (687 tests). Then specify staff voice from BUILD-BRIEF section 38
+  (in `DECISIONS-ARCHIVE.md`): specification for Elijah's confirmation, then prototype, then build as v0.19.0.
+  See `NEXT.md`.
+
+## Offline progress capture (v0.18.0)
+
+- BUILD-BRIEF section 39 (now in `DECISIONS-ARCHIVE.md`); Offline Progress Capture Specification v1.0, OP-1 to OP-12;
+  prototype approved (`reference/caspa-progress-prototype.html`). Contract v1.10 (`ProgressUpdate.returned`; rows
+  ProgressUpdate, ActivityProgress, KpiActual). 687 tests (21 in `src/rules/progress.test.ts`, plus menu, route and
+  "Needs you" tests).
+- Code: rules in `src/rules/progress.ts`; the device and sending in `src/data/access/device.ts` and `progress.ts`
+  (`repo.progress`); screens in `src/routes/Performance.tsx` (landing, Progress updates with Mine and To verify) and
+  `src/components/RecordFigure.tsx` (Record progress, Record a reading); "Work offline", waiting counts and the
+  offline bar in `src/components/TopBar.tsx`. `check-plain-words` rejects "sync" and "outbox".
+- Try it on Sample Water Utility: as Employee, open "Report progress for September" in Needs you, turn on
+  "Work offline", enter 2,150 readings (it asks why it is lower), save, then turn "Work offline" off: it is sent to
+  Esther Banda. As Supervisor, verify the 260 meters: the employee's bar moves to 65%, At risk. Return the readings
+  update with a reason; as Employee, "Returned" shows the reason and Needs you asks for a corrected figure. As
+  Supervisor, open "Complete monthly meter-reading routes" and use "Record progress".
+- Display details settled in the build (no decision changed): on a phone the development controls take a second row
+  of the top bar; "Record progress" and "Record a reading" open on the latest period that has ended; confirmations
+  show under the top bar until the next page. Unsent updates and every change reset on reload.
 
 ## Navigation: sidebar sub-menus (v0.17.0)
 
