@@ -36,6 +36,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
     11c Consultation and Confirmation — done (v0.13.0); 11d Composition — composer done (v0.14.0), plan document and first year's cascade done (v0.15.0); 11e Communication — done (v0.16.0)
 12. Navigation: sidebar sub-menus (Navigation Specification v1.1; NV-1 to NV-9, BUILD-BRIEF section 37) — done (v0.17.0)
 13. Offline progress capture (Offline Progress Capture Specification v1.0; OP-1 to OP-12, BUILD-BRIEF section 39, now in the archive) — done (v0.18.0)
+14. Staff survey (Staff Voice Specification v0.1; SV-1 to SV-14, BUILD-BRIEF section 40, in the archive) — done (v0.19.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -52,11 +53,26 @@ The development role switcher has six roles: Executive, Strategy office, Finance
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
-## Next chat: staff voice (slice 14)
+## Next chat: Performance › Reviews (v0.20.0)
 
-- Start from this zip: `npm install`, `npm run verify` (687 tests). Then specify staff voice from BUILD-BRIEF section 38
-  (in `DECISIONS-ARCHIVE.md`): specification for Elijah's confirmation, then prototype, then build as v0.19.0.
-  See `NEXT.md`.
+- Start from this zip: `npm install`, `npm run verify` (705 tests). Specify Performance › Reviews for Elijah's
+  confirmation, then prototype, then build as v0.20.0. See `NEXT.md`.
+
+## Staff survey (v0.19.0)
+
+- BUILD-BRIEF section 40 (in `DECISIONS-ARCHIVE.md`); Staff Voice Specification v0.1, SV-1 to SV-14; prototype
+  approved (`reference/caspa-staff-voice-prototype.html`). Contract v1.11: SurveyRound, SurveyResponse, SurveyReceipt.
+  705 tests (17 in `src/data/access/survey.test.ts`, plus route tests).
+- Code: rules in `src/rules/survey.ts`; data access in `src/data/access/survey.ts` (`repo.survey`); screens in
+  `src/routes/Survey.tsx`; test-organisation rounds in `src/data/sample/survey-samples.ts`. `check-plain-words`
+  rejects "respondent" and "anonymised".
+- Try it on Sample Water Utility: as Employee, open "Answer the staff survey (optional)" in Needs you (or use
+  "Not this time"), answer, and send; try "Work offline" first. Open "See what everyone said in Start of year, 2026"
+  on Home. As Strategy office, open Strategy › Communication › Staff survey: the open round shows only how many have
+  answered; the closed one has key facts, the comparison by unit, comments, a summary to draft and accept, and
+  "What we're doing about it". As Executive, see counts and the accepted summary; as the Head of Operations (not a
+  development role; use the tests), "Too few answers to show".
+- The "Why we ask" lines show `[from the book]` until Elijah confirms them; a pilot build refuses them.
 
 ## Offline progress capture (v0.18.0)
 

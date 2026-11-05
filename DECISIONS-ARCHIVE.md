@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36, 38 and 39 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36 and 38 to 40 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -364,3 +364,20 @@ Source: the *CASPA™ Offline Progress Capture Specification v1.0* (a doc in the
 - **Plain words:** "Waiting to send", "Sent", "Verified", "Returned", "Couldn't be sent", "Work offline"; `check-plain-words` also rejects "sync" and "outbox" in user-facing strings.
 - **Code plan:** rules in `src/rules/progress.ts` (periods, due and missing, marks, arrival checks, who verifies, superseding); tests across January, April and July year starts, offline ordering, arrival failures, verification rights (vacant and acting), R6 unchanged, the menu for every role in all five sample organisations, and 390px.
 - **Delivered:** built as v0.18.0 (4 November 2026); moved here from the brief on delivery.
+
+## 40. Decisions on the staff survey, slice 14 (5 November 2026)
+
+Source: the *CASPA™ Staff Voice Specification v0.1* (a doc in the Project's chats), SV-1 to SV-14, accepted as recommended by Elijah on 5 November 2026, with his later changes below. Contract v1.11. Prototype approved: `reference/caspa-staff-voice-prototype.html`.
+
+- **Question set (SV-1):** two questions per goal (which goal a "What changes" describes; why we are working on it), then the goal the person's own work supports, what the plan means for their work, three about talking about the plan, an optional comment, and, when the round asks it, whether they were told of plan changes. Plain words; the "Why we ask" lines show `[from the book]` until Elijah confirms them from chapter 4, section 5 and chapter 12.
+- **Anonymity (SV-2):** a response stores a group-sized unit (the lowest unit with at least the small-group size of people asked; Zone B is stored as Commercial) and results only; a separate receipt records that a person answered or declined. No author stamps on a response; its audit entry names the round and unit, at the start of the day, with the round's opener as actor.
+- **Optional, on demand (SV-4, Elijah, 5 November 2026):** a round exists only when the Strategy office starts one; nothing prompts it to. Names are free text ("Start of year", "Mid-year" suggested); a tick box adds the change question. Staff see "Answer the staff survey (optional)" with "Not this time".
+- **Goals and window (SV-3):** two to five goals with a communication record holding what and why; at most 28 days. Worth checking: a "What changes" that repeats its goal's title.
+- **Results (SV-5 to SV-7, SV-14):** shown once a round closes, sentence first for everyone: three key facts by a fixed rule, one sentence per question with every answer under its own word. Seniors also get a comparison table by area and unit group and the meetings-and-answers table. Groups below the small-group size fold into the unit above. Comments are read by the Strategy office only; the Executive reads the summary once the Strategy office accepts an AI draft. Department heads see their own department when it reaches the group size.
+- **Closing note (SV-13):** "What we're doing about it", written by the Strategy office, shown first to everyone.
+- **Offline (SV-8):** answers wait on the device and are sent with progress updates when back online; a refused answer stays as "couldn't be sent".
+- **Navigation (SV-10):** no new menu entry: answering from Home (`#/survey/<id>`), results for everyone at `#/survey/<id>/results`, and a Staff survey tab on Strategy › Communication (`#/strategy/communication/survey`).
+- **Contract v1.11 (SV-12):** SurveyRound, SurveyResponse (no stamps, by design), SurveyReceipt; three permission rows. The build added `SurveyRound.concernSummary`, the store for SV-7's accepted summary, which the specification implied but did not list.
+- **Sample data (approved 5 November 2026):** new G1 wording and a G2 record, dated 2 February 2026; "Start of year, 2026" closed with 12 of 13 answers and 3 comments; "Mid-year, 2026" open. The NGO has a round with too few answers; the scale organisation one answered by all; the packaging manufacturer none.
+- **Later refinement (Elijah, 5 November 2026):** the survey tool will be refined in a later slice: comparing rounds over time, questions an organisation adds or words itself, survey languages, and the confirmed book lines.
+- **Delivered:** built as v0.19.0 (5 November 2026).

@@ -1,19 +1,16 @@
-# Next session: staff voice (slice 14)
+# Next session: Performance › Reviews (v0.20.0)
 
-v0.18.0 (offline progress capture) delivered 4 November 2026: `npm run verify` clean, 687 tests. Section 39 is now in
-`DECISIONS-ARCHIVE.md`.
+v0.19.0 (staff survey) delivered 5 November 2026: `npm run verify` clean, 705 tests. Decisions in BUILD-BRIEF section
+40, in `DECISIONS-ARCHIVE.md`.
 
 ## Next, in order
-1. Read BUILD-BRIEF section 38 in `DECISIONS-ARCHIVE.md` (staff voice: a survey staff answer directly, assessing
-   measures traced to the book's three faces of communicating change, plus interaction and continuity/consistency).
-2. Draft the Staff Voice Specification for Elijah's confirmation: questions and their book references (no invented
-   framework wording; `[from the book]` where wording is not yet confirmed), who answers and when, anonymity and
-   small-group rules, what managers see, pages against N-1 to N-6 (NV-8), any contract revision.
-3. Prototype for approval, then build as v0.19.0.
+1. Specify Performance › Reviews (NV-8) for Elijah's confirmation: the mid-year and year-end review screens over the
+   existing Review record and ratings (R1–R10), pages against N-1 to N-6, any contract revision.
+2. Prototype for approval, then build as v0.20.0.
 
 ## Carried open items
+- Staff survey: the "Why we ask" book lines (chapter 4, section 5, pp. 98–102; chapter 12, p. 258) await Elijah;
+  the survey tool is to be refined in a later slice (section 40).
 - Lower-is-better contract objectives: achievement rule still "not confirmed".
 - Decision-log actions have no completion field, so they stay in "Needs you".
 - Spending-against-results rule awaits Elijah's thresholds (file-exchange slice).
-- NV-8 proposed order after v0.18.0: Performance › Reviews, Plan › File exchange, Strategy › Plan revisions; staff
-  voice was confirmed to follow v0.18.0 — confirm the order with Elijah when specifying.

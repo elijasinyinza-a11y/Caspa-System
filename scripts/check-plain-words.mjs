@@ -13,6 +13,8 @@ const FORBIDDEN = [
   /\brisk score\b/i, /\bsuccession\b/i, /\bcriticality\b/i,
   // Offline progress capture (BUILD-BRIEF section 39): "Waiting to send", "Sent", never the system terms.
   /\bsync(ed|ing|s|hroni[sz]e[ds]?)?\b/i, /\boutbox\b/i,
+  // Staff survey (SV-11): "people who answered", "anonymous".
+  /\brespondents?\b/i, /\banonymi[sz]ed\b/i,
 ];
 const PLACEHOLDER = /\[from the book\]/i;
 const pilot = process.env.CASPA_PILOT === '1';

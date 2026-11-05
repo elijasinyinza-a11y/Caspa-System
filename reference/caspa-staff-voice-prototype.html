@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: staff survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only.
+   Staff Voice Specification v0.1, SV-1 to SV-12. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--info-t:#0D1B2A;--info-b:#EDECEA;--info-r:#D5D2CA;
+--c:#7C5CBF;--f:#C2417A;--f-t:#9B2C63;--f-tint:#FBEAF2;--bar:#BAB7AF;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* Prototype controls, outside the product */
+.proto{background:var(--white);border-bottom:1px dashed var(--control);padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.proto label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.proto select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white)}
+.proto .pbtn{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;background:var(--white);cursor:pointer}
+.proto .note{font-size:12px;color:var(--muted);flex:1 1 260px}
+.layout{display:flex;gap:16px;justify-content:center;padding:16px;align-items:flex-start;flex-wrap:wrap}
+.side-notes{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.panel h2{font-size:16px;color:var(--navy);margin:0 0 6px}
+.panel ol{margin:0;padding-left:20px}
+.panel li{margin:4px 0}
+.panel .done{color:var(--muted);text-decoration:line-through}
+.audit{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+.audit li{border-top:1px solid var(--border);padding:6px 0;font-size:12px}
+.audit time{display:block;color:var(--muted)}
+/* The frame */
+.frame{display:flex;background:var(--cream);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:1040px;height:780px}
+.frame.phone{max-width:390px;flex-direction:column}
+.sidebar{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:2px;flex-shrink:0;overflow:auto}
+.phone .sidebar{display:none}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav,.sub{list-style:none;margin:0;padding:0}
+.nav>li>a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav>li>a.here{background:rgba(255,255,255,.15)}
+.nav .mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.nav .mark.f{background:var(--f)}.nav .mark.c{background:var(--c)}
+.sub{margin:2px 0 6px 14px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px}
+.sub a{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,.85);text-decoration:none;gap:8px}
+.sub a[aria-current=page]{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.sub li{position:relative}
+.tip{position:absolute;left:0;top:100%;z-index:5;width:220px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:400;visibility:hidden;opacity:0}
+.sub li:hover .tip,.sub a:focus-visible+.tip{visibility:visible;opacity:1;transition:opacity .1s .4s,visibility 0s .4s}
+.tip.closed{visibility:hidden!important}
+.sub a[aria-current=page]::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--f)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.top .who{font-size:12px;color:var(--muted);flex:1;min-width:120px}
+.top .who b{display:block;color:var(--navy);font-size:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 10px;background:var(--white);cursor:pointer;font-size:13px}
+.switch .knob{width:32px;height:18px;border-radius:9px;background:var(--info-b);border:1px solid var(--control);position:relative;flex-shrink:0}
+.switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--control)}
+.switch[aria-checked=true] .knob{background:var(--navy);border-color:var(--navy)}
+.switch[aria-checked=true] .knob::after{left:16px;background:var(--white)}
+.waiting{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;background:var(--info-b);border:1px solid var(--info-r);color:var(--info-t);text-decoration:none}
+.offbar{background:var(--info-b);border-bottom:1px solid var(--border);padding:8px 12px;font-size:13px;color:var(--navy)}
+.body{flex:1;overflow:auto;padding:20px 24px}
+.phone .body{padding:14px}
+.bottom{display:none;background:var(--navy);padding:4px 6px}
+.phone .bottom{display:flex}
+.bottom a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;border-radius:8px;gap:4px}
+.bottom a .mark{width:18px;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.bottom a.here{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.bottom a.here .mark.f{background:var(--f)}.bottom a.here .mark.c{background:var(--c)}
+/* Workspace header */
+.wlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--f-t);font-weight:600;flex-wrap:wrap}
+.wlabel i{width:10px;height:10px;border-radius:2px;background:var(--f)}
+.linkish{background:none;border:0;padding:0;min-height:44px;color:var(--muted);font-weight:400;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+.book{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;margin:4px 0 8px}
+.book small{display:block;color:var(--muted);margin-top:2px}
+h1{font-size:28px;color:var(--navy);margin:2px 0 4px}
+.phone h1{font-size:22px}
+.lead{color:var(--muted);margin:0 0 10px;max-width:62ch}
+.subrow{display:none;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin:0 0 12px}
+.phone .subrow{display:flex}
+.subrow a{flex-shrink:0;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px}
+.subrow a[aria-current=page]{color:var(--navy);font-weight:700;border-bottom-color:var(--f)}
+.tabs{display:flex;gap:8px;margin:4px 0 12px}
+.tabs a{min-height:44px;display:inline-flex;align-items:center;border-radius:8px;padding:0 14px;border:1px solid var(--control);background:var(--white);color:var(--navy);font-weight:600;text-decoration:none}
+.tabs a[aria-selected=true]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.tabs .count{margin-left:6px;font-weight:500}
+/* Content */
+.card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--f);border-radius:12px;padding:14px;margin-bottom:12px}
+.card.plain{border-top-width:1px;border-top-color:var(--border)}
+.card h2,.card h3{font-size:16px;color:var(--navy);margin:0 0 2px}
+.partof{font-size:13px;color:var(--muted);margin:0 0 8px}
+.partof a{color:var(--muted)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0;font-size:13px}
+.facts dt{color:var(--muted)}.facts dd{margin:0}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0}
+.track{position:relative;height:8px;flex:1;min-width:64px;border-radius:999px;background:var(--info-b)}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--navy)}
+.exp{position:absolute;top:-3px;width:2px;height:14px;background:var(--muted)}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid;white-space:nowrap}
+.chip.ok{background:var(--ok-b);color:var(--ok-t);border-color:var(--ok-r)}
+.chip.adv{background:var(--adv-b);color:var(--adv-t);border-color:var(--adv-r)}
+.chip.info{background:var(--info-b);color:var(--info-t);border-color:var(--info-r)}
+.line{font-size:13px;margin:4px 0}
+.muted{color:var(--muted)}
+.needs{list-style:none;margin:0;padding:0}
+.needs li{border-top:1px solid var(--border)}
+.needs li:first-child{border-top:0}
+.needs a{display:flex;flex-direction:column;justify-content:center;min-height:56px;padding:6px 0;color:var(--navy);font-weight:600;text-decoration:none}
+.needs a span{font-weight:400;color:var(--muted);font-size:13px}
+h2.sec{font-size:18px;color:var(--navy);margin:16px 0 8px}
+form{margin:0}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.field label{font-weight:600;font-size:13px;color:var(--navy)}
+.field .hint{font-size:12px;color:var(--muted)}
+.field input,.field select,.field textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white);width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.field input.big{font-size:22px;font-weight:600}
+.flag{border:1px solid var(--adv-r);background:var(--adv-b);color:var(--adv-t);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.flag b{display:block}
+.err{color:var(--adv-t);font-size:13px;font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{min-height:44px;border-radius:8px;padding:0 16px;border:1px solid var(--navy);background:var(--navy);color:var(--white);font-weight:600;cursor:pointer}
+.btn.sec{background:var(--white);color:var(--navy);border-color:var(--control)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.upd{border-top:1px solid var(--border);padding:10px 0}
+.upd:first-child{border-top:0}
+.upd .head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.upd .fig{font-weight:600;color:var(--navy)}
+.quote{border-left:3px solid var(--adv-r);padding:2px 0 2px 8px;margin:6px 0;font-size:13px}
+.notice{border:1px solid var(--info-r);background:var(--info-b);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px}
+.team{width:100%;border-collapse:collapse}
+.team td{border-top:1px solid var(--border);padding:8px 4px;vertical-align:middle}
+.team tr:first-child td{border-top:0}
+.team a{color:var(--navy);font-weight:600}
+.empty{color:var(--muted);font-size:13px}
+.live{position:absolute;left:-9999px}
+.toast{position:sticky;bottom:0;margin-top:12px;background:var(--navy);color:var(--white);border-radius:8px;padding:10px 12px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+:root{--s:#378ADD;--s-t:#1A5A9E;--s-tint:#EBF3FC}
+.wlabel.s{color:var(--s-t)}.wlabel.s i{background:var(--s)}
+.wlabel.h{color:var(--navy)}.wlabel.h i{background:var(--navy)}
+.card.s{border-top-color:var(--s)}.card.h{border-top-color:var(--navy)}
+.nav .mark.s{background:var(--s)}.bottom a.here .mark.s{background:var(--s)}
+.sub a[aria-current=page].s::before{background:var(--s)}
+.q{font-size:18px;color:var(--navy);font-weight:700;margin:6px 0 10px}
+.phone .q{font-size:16px}
+.quoteblock{background:var(--s-tint);border-radius:8px;padding:10px 12px;margin:6px 0 12px;font-size:15px;color:var(--navy)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:10px;min-height:52px;border:1px solid var(--control);border-radius:10px;padding:8px 12px;background:var(--white);cursor:pointer;text-align:left;width:100%}
+.opt[aria-pressed=true]{border:2px solid var(--navy);background:var(--info-b);font-weight:600}
+.progress{font-size:13px;color:var(--muted);margin:0 0 4px}
+.ptrack{height:6px;border-radius:999px;background:var(--info-b);margin-bottom:12px}
+.pfill{height:6px;border-radius:999px;background:var(--navy)}
+.anon{display:flex;gap:8px;align-items:flex-start;background:var(--info-b);border-radius:8px;padding:8px 10px;font-size:13px;margin:0 0 12px}
+.why{font-size:12px;color:var(--muted);margin-top:10px}
+.res{width:100%;border-collapse:collapse;font-size:13px}
+.res th{text-align:left;font-weight:600;color:var(--muted);padding:6px 4px;border-bottom:1px solid var(--border)}
+.res td{padding:6px 4px;border-top:1px solid var(--border);vertical-align:middle}
+.res td.n{text-align:right;white-space:nowrap}
+.scroll{overflow-x:auto}
+.stack{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--info-b);min-width:90px}
+.stack span{display:block;height:10px}
+.k1{background:var(--navy)}.k2{background:var(--muted)}.k3{background:var(--bar)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:4px 0 8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.mustfix{border:1px solid #B42318;background:#FEF3F2;color:#B42318;border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.mustfix b{display:block}
+.check{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:6px 0}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--navy)}
+.rec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:var(--cream);border-radius:6px;padding:6px;white-space:pre-wrap;margin-top:4px}
+
+h4.area{font-size:15px;color:var(--navy);margin:16px 0 6px}
+.facts3{margin:0 0 4px;padding-left:20px;font-size:15px}.facts3 li{margin:4px 0}
+.ans{border-top:1px solid var(--border);padding:8px 0}.ans p{margin:0}
+.ans .bar{margin:6px 0 2px}.ans .words{font-size:13px;color:var(--muted)}
+.cmp td,.cmp th{padding:8px 6px}
+.more summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:var(--navy)}
+.card.note{border-top-color:var(--navy)}
+</style></head>
+<body>
+<div class="proto" role="region" aria-label="Prototype controls (not part of the product)">
+  <label>Screen<select id="pFrame"><option value="phone">Phone, 390px</option><option value="wide">Computer</option></select></label>
+  <label>Next arrival check<select id="pFail"><option value="">Passes</option><option value="closed">Round closed before arrival</option></select></label>
+  <button class="pbtn" id="pReset" type="button">Start again</button>
+  <p class="note">Prototype only, for the Staff Voice Specification v0.1 (SV-1 to SV-12). Date: 18 October 2026. Marked for approval: the proposed G1 and G2 communication record wording, and the 12 seeded answers and 3 comments of the “Start of year, 2026” round. “Why we ask” lines stay “[from the book]” until confirmed. Nothing is stored.</p>
+</div>
+<div class="layout">
+  <div class="frame phone" id="frame">
+    <nav class="sidebar" aria-label="Main"><div class="brand">CASPA™</div><ul class="nav" id="sideNav"></ul></nav>
+    <div class="main">
+      <div class="top" id="top"></div>
+      <div id="offbar"></div>
+      <main class="body" id="body" tabindex="-1"></main>
+      <nav class="bottom" id="bottom" aria-label="Workspaces"></nav>
+    </div>
+  </div>
+  <aside class="side-notes" aria-label="Prototype notes">
+    <div class="panel"><h2>Try it</h2><ol id="steps"></ol></div>
+    <div class="panel"><h2>What is recorded</h2><p class="muted" style="margin:0 0 6px;font-size:12px">Prototype aid: the records the build would write, newest first.</p><ul class="audit" id="audit"></ul></div>
+  </aside>
+</div>
+<div class="live" aria-live="polite" id="live"></div>
+<script>
+'use strict';
+/* ── Fixed records, from the v0.18.0 seed for Sample Water Utility, plus the additions proposed for approval ── */
+const TODAY = '2026-10-18';
+const MIN_GROUP = 5; // consultationMinGroupSize, default five (SV-5)
+const UNITS = { 'u-org': { name: 'Sample Water Utility', parent: null }, 'u-fin': { name: 'Finance', parent: 'u-org' }, 'u-ops': { name: 'Operations', parent: 'u-org' },
+  'u-com': { name: 'Commercial', parent: 'u-org' }, 'u-zone-a': { name: 'Zone A', parent: 'u-com' }, 'u-zone-b': { name: 'Zone B', parent: 'u-com' }, 'u-zone-c': { name: 'Zone C', parent: 'u-com' } };
+// People holding a position on 18 October 2026 (the Head of Commercial post is vacant): everyone asked.
+const STAFF = [
+  ['md', 'Chanda Mulenga', 'Managing Director', 'u-org'], ['hof', 'Ruth Phiri', 'Head of Finance', 'u-fin'], ['hrm', 'Natasha Kabwe', 'Human Resources Manager', 'u-org'],
+  ['spm', 'Bwalya Musonda', 'Strategy and Planning Manager', 'u-org'], ['lco', 'Lillian Siame', 'Legal and Compliance Officer', 'u-org'], ['hoo', 'Joseph Tembo', 'Head of Operations', 'u-ops'],
+  ['cm', 'Peter Mwansa', 'Commercial Manager', 'u-com'], ['co', 'Esther Banda', 'Commercial Officer', 'u-com'], ['mra', 'Moses Lungu', 'Meter Reader, Zone A', 'u-zone-a'],
+  ['mrb', 'Mary Chileshe', 'Meter Reader, Zone B', 'u-zone-b'], ['mrc', 'Daniel Sakala', 'Meter Reader, Zone C', 'u-zone-c'], ['bc', 'Agnes Mumba', 'Billing Clerk', 'u-com'],
+].map(([key, name, title, unit]) => ({ key, name, title, unit }));
+const ROLES = {
+  mrb: { label: 'Employee: Mary Chileshe', ws: ['home', 'performance'], own: ['g1'] },           // contract objectives from A1.2.1.3 and A1.1.1.1, both under G1
+  spm: { label: 'Strategy office: Bwalya Musonda', ws: ['home', 'strategy', 'cascade', 'plan', 'performance'], own: [] },
+  md: { label: 'Executive: Chanda Mulenga', ws: ['home', 'strategy', 'cascade', 'plan', 'performance'], own: ['g4'] },
+  hoo: { label: 'Department head: Joseph Tembo', ws: ['home', 'strategy', 'cascade'], own: ['g1', 'g2'], heads: 'u-ops' },
+};
+const GOALS = [
+  { id: 'g1', code: 'G1', title: 'Improve financial sustainability' },
+  { id: 'g2', code: 'G2', title: 'Provide reliable water supply' },
+  { id: 'g3', code: 'G3', title: 'Expand access to sanitation' },
+  { id: 'g4', code: 'G4', title: 'Strengthen institutional capacity' },
+];
+/* Communication records. FOR APPROVAL: the seed's G1 record uses the template ("We will improve financial sustainability
+   over FY2022–FY2026." / "This is what the 4Q review found."), which names the goal and is the same "why" for every
+   goal, so it cannot be scored. Proposed wording below; each "why" repeats the goal's approved 4Q reason. */
+const RECORDS = {
+  g1: { what: 'Every customer is billed for what they actually use, and more of what we bill is collected.', why: 'Billed revenue has not covered operating and maintenance costs.' },
+  g2: { what: 'Fewer and shorter interruptions to supply, as ageing pumps are renewed on a plan.', why: 'Ageing pumping equipment causes frequent supply interruptions.' },
+};
+const MEETINGS = [{ unit: 'u-com', on: '2026-10-15' }]; // from the seed's G1 record
+const BOOK = { // FOR CONFIRMATION: lines from the book are not quoted until Elijah confirms them (rule 6).
+  content: '[from the book]', context: '[from the book]', concept: '[from the book]', interaction: '[from the book]', continuity: '[from the book]',
+};
+const AREA = { content: 'What is changing', context: 'Why it is changing', concept: 'Your part in it', interaction: 'Talking about the plan', continuity: 'Keeping you informed' };
+
+/* ── The question set (Staff Voice Specification, section 2) ── */
+function questionsFor(round) {
+  const q = [];
+  round.goals.forEach((g) => q.push({ key: 'content', goal: g, area: 'content' }));
+  round.goals.forEach((g) => q.push({ key: 'context', goal: g, area: 'context' }));
+  q.push({ key: 'own_goal', area: 'concept' }, { key: 'own_role', area: 'concept' },
+    { key: 'team_met', area: 'interaction' }, { key: 'raise_concerns', area: 'interaction' }, { key: 'views_passed_on', area: 'interaction' },
+    { key: 'concern', area: 'interaction' });
+  if (round.kind === 'mid_year') q.push({ key: 'told_of_change', area: 'continuity' });
+  return q;
+}
+const YN = [['yes', 'Yes'], ['no', 'No'], ['not_sure', 'Not sure']];
+const TEXT = {
+  own_goal: 'Which goal does your own work support most?',
+  own_role: 'I know what the plan means for my own work.',
+  team_met: 'My team has met to talk about the plan.',
+  raise_concerns: 'I could raise concerns about the plan.',
+  views_passed_on: 'I believe my views were recorded and passed on.',
+  concern: 'Is there anything about the plan that concerns you?',
+  told_of_change: 'When the plan changed this year, were you told?',
+};
+const CHOICES = {
+  own_role: [['agree', 'Agree'], ['partly', 'Partly'], ['disagree', 'Disagree']],
+  team_met: YN, raise_concerns: YN, views_passed_on: YN,
+  told_of_change: [['yes', 'Yes'], ['no', 'No'], ['no_change', 'I don’t know of a change']],
+};
+// A fixed shuffle per round and question, computed, never stored.
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const shuffled = (items, seed) => items.map((x) => [hash(seed + JSON.stringify(x)), x]).sort((a, b) => a[0] - b[0]).map((p) => p[1]);
+function optionsFor(round, q) {
+  if (q.key === 'content' || q.key === 'own_goal') return [...shuffled(GOALS.map((g) => [g.id, g.title]), round.id + q.key + (q.goal || '')), ['dont_know', 'I don’t know']];
+  if (q.key === 'context') return [...shuffled(round.goals.map((g) => [g, RECORDS[g].why]), round.id + 'ctx' + q.goal), ['dont_know', 'I don’t know']];
+  return CHOICES[q.key];
+}
+// Scoring (rules): questions 1 to 3 keep the result only, never the choice.
+function score(q, choice, who) {
+  if (choice === 'dont_know') return 'dont_know';
+  if (q.key === 'content' || q.key === 'context') return choice === q.goal ? 'right' : 'wrong';
+  if (q.key === 'own_goal') { const own = ROLES[who] ? ROLES[who].own : []; return own.length ? (own.includes(choice) ? 'right' : 'wrong') : 'not_linked'; }
+  return choice;
+}
+
+/** The unit a response stores: the lowest unit on the person's chain holding at least MIN_GROUP people asked, so no stored unit is smaller than a group (SV-2). */
+const headcount = (u) => STAFF.filter((p) => chain(p.unit).includes(u)).length;
+const storedUnit = (unit) => chain(unit).find((u) => headcount(u) >= MIN_GROUP) || 'u-org';
+
+/* ── Seeded answers for the closed round. FOR APPROVAL. 12 of the 12 people asked on 9 February answered.
+   Order: content G1, content G2, context G1, context G2, own goal, own role, team met, raise concerns, views passed on. ── */
+const R = (unit, v, concern = null) => ({ unit: storedUnit(unit), concern, results: ['content:g1', 'content:g2', 'context:g1', 'context:g2', 'own_goal', 'own_role', 'team_met', 'raise_concerns', 'views_passed_on'].map((k, i) => ({ k, v: v[i] })) });
+const SEEDED = [
+  R('u-zone-a', ['right', 'right', 'right', 'wrong', 'right', 'agree', 'yes', 'yes', 'no'], 'Meter readers heard about the new meter targets but not why tariffs are under review.'),
+  R('u-zone-b', ['right', 'wrong', 'right', 'right', 'right', 'agree', 'yes', 'yes', 'not_sure']),
+  R('u-zone-c', ['right', 'right', 'dont_know', 'right', 'right', 'partly', 'yes', 'not_sure', 'no']),
+  R('u-com', ['wrong', 'right', 'right', 'right', 'wrong', 'partly', 'yes', 'yes', 'yes']),
+  R('u-com', ['right', 'right', 'right', 'dont_know', 'right', 'agree', 'no', 'no', 'no'], 'Our section has not had a meeting about the plan yet.'),
+  R('u-com', ['right', 'dont_know', 'wrong', 'right', 'dont_know', 'disagree', 'yes', 'yes', 'not_sure']),
+  R('u-org', ['right', 'right', 'right', 'right', 'right', 'agree', 'yes', 'yes', 'yes']),
+  R('u-org', ['right', 'right', 'right', 'right', 'not_linked', 'agree', 'yes', 'yes', 'yes']),
+  R('u-org', ['right', 'wrong', 'right', 'right', 'right', 'agree', 'no', 'yes', 'not_sure']),
+  R('u-org', ['right', 'right', 'right', 'wrong', 'right', 'partly', 'no', 'not_sure', 'no'], 'The plan was emailed to us, but nobody explained it.'),
+  R('u-fin', ['dont_know', 'right', 'right', 'right', 'dont_know', 'partly', 'no', 'yes', 'not_sure']),
+  R('u-ops', ['right', 'right', 'dont_know', 'right', 'right', 'agree', 'yes', 'yes', 'yes']),
+];
+
+/* ── Formatting ── */
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const dLong = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const goal = (id) => GOALS.find((g) => g.id === id);
+const pct = (a, b) => (b ? `${Math.floor((a / b) * 100 + 0.5)}%` : '—');
+const days = (a, b) => Math.round((Date.UTC(...b.split('-').map((x, i) => i === 1 ? x - 1 : +x)) - Date.UTC(...a.split('-').map((x, i) => i === 1 ? x - 1 : +x))) / 864e5);
+
+/* ── State ── */
+let S;
+function fresh() {
+  return {
+    as: 'mrb', frame: 'phone', route: 'home', toast: null,
+    offline: {},                     // per person (OP-7)
+    device: {},                      // per person: answers saved offline, waiting to send
+    draft: null,                     // answers being given
+    rounds: [
+      { id: 'sr-2026-comm', title: 'Start of year, 2026', kind: 'start_of_year', goals: ['g1', 'g2'], opens: '2026-02-09', closes: '2026-03-06', status: 'closed' },
+      { id: 'sr-2026-mid', title: 'Mid-year, 2026', kind: 'mid_year', goals: ['g1', 'g2'], opens: '2026-10-12', closes: '2026-11-08', status: 'open' },
+    ],
+    responses: SEEDED.map((r, i) => ({ id: `rs-${i + 1}`, round: 'sr-2026-comm', ...r })),
+    receipts: STAFF.map((p) => ({ round: 'sr-2026-comm', who: p.key, on: '2026-02-' + String(9 + (hash(p.key) % 9)).padStart(2, '0') })),
+    summary: { 'sr-2026-comm': null },  // AI draft of concern themes, until accepted
+    newRound: null,
+    log: [],
+  };
+}
+const me = () => STAFF.find((p) => p.key === S.as);
+const round = (id) => S.rounds.find((r) => r.id === id);
+const openRound = () => S.rounds.find((r) => r.status === 'open');
+const answered = (rid, who) => S.receipts.some((x) => x.round === rid && x.who === who) || (S.device[who] || []).some((x) => x.round === rid);
+const log = (title, rec) => S.log.unshift({ title, rec });
+const say = (m) => { S.toast = m; document.getElementById('live').textContent = m; };
+
+/* ── Results (selectors): counts, never stored; small groups fold into the unit above (SV-5) ── */
+function chain(unit) { const out = []; for (let u = unit; u; u = UNITS[u].parent) out.push(u); return out; }
+/** Each response's display unit: the lowest unit on its chain with at least MIN_GROUP responses in its subtree; never a unit smaller than that. */
+function folded(rid) {
+  const rs = S.responses.filter((r) => r.round === rid);
+  const under = (u) => rs.filter((r) => chain(r.unit).includes(u)).length;
+  return rs.map((r) => ({ r, shown: chain(r.unit).find((u) => under(u) >= MIN_GROUP && (u !== 'u-org' || true)) || null }));
+}
+function groups(rid) {
+  const map = new Map();
+  for (const { r, shown } of folded(rid)) {
+    const k = shown === 'u-org' ? 'u-org' : shown;
+    if (!k) continue;
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(r);
+  }
+  return [...map].map(([unit, rs]) => ({ unit, name: unit === 'u-org' ? 'Other units, shown together' : UNITS[unit].name, rs }))
+    .sort((a, b) => (a.unit === 'u-org') - (b.unit === 'u-org'));
+}
+const count = (rs, k, v) => rs.filter((r) => r.results.some((x) => x.k === k && x.v === v)).length;
+const asked = (rid) => STAFF.length; // everyone holding a position on the opening date
+
+/* ── Sending (offline reuses v0.18.0: waits on the device, sent in the order saved, arrival checks) ── */
+function arrive(item) {
+  const r = round(item.round);
+  const fail = document.getElementById('pFail').value;
+  if (fail === 'closed' || r.status !== 'open') return 'The round closed before your answers arrived, so they could not be counted.';
+  if (S.receipts.some((x) => x.round === item.round && x.who === item.who)) return 'You have already answered this round.';
+  S.receipts.push({ round: item.round, who: item.who, on: TODAY });
+  const rec = { id: `rs-${S.responses.length + 1}`, round: item.round, unit: item.unit, results: item.results, concern: item.concern };
+  S.responses.push(rec);
+  log('Response receipt written', { round: item.round, membership: `m-${item.who}`, answeredOn: TODAY });
+  log('Survey response written (no person, no time)', { round: rec.round, unit: rec.unit, results: rec.results.map((x) => `${x.k} = ${x.v}`), concern: rec.concern });
+  log('Audit entry', { action: 'create', entity: 'SurveyResponse', round: rec.round, unit: rec.unit, by: '(none, by design)' });
+  return null;
+}
+function sendWaiting(who) {
+  const items = S.device[who] || [];
+  let sent = 0, failed = 0;
+  for (const it of items) { if (it.fail) continue; const f = arrive(it); if (f) { it.fail = f; failed++; } else { it.sent = true; sent++; } }
+  S.device[who] = items.filter((x) => !x.sent);
+  document.getElementById('pFail').value = '';
+  if (sent) say('Your answers were sent. Thank you.');
+  else if (failed) say('Your answers couldn’t be sent. They are still on this device.');
+}
+
+/* ── Views ── */
+const route = (r) => `#${r}`;
+function chrome() {
+  const role = ROLES[S.as], off = !!S.offline[S.as], w = (S.device[S.as] || []).filter((x) => !x.fail).length, f = (S.device[S.as] || []).filter((x) => x.fail).length;
+  document.getElementById('frame').className = `frame ${S.frame === 'phone' ? 'phone' : ''}`;
+  const here = S.route.startsWith('strategy') ? 'strategy' : 'home';
+  const name = { home: 'Home', strategy: 'Strategy', cascade: 'Cascade', plan: 'Plan', performance: 'Performance' };
+  const mark = { home: '', strategy: 's', cascade: 'c', plan: '', performance: 'f' };
+  const href = (k) => route(k === 'strategy' ? 'strategy/communication/survey' : k === 'home' ? 'home' : `other/${k}`);
+  document.getElementById('sideNav').innerHTML = role.ws.map((k) => `<li><a href="${href(k)}" class="${here === k ? 'here' : ''}"><span class="mark ${mark[k]}"></span>${name[k]}</a>${k === 'strategy' && here === 'strategy' ? `<ul class="sub"><li><a class="s" aria-current="page" href="${route('strategy/communication/survey')}">Communication</a></li></ul>` : ''}</li>`).join('');
+  document.getElementById('bottom').innerHTML = role.ws.slice(0, 4).map((k) => `<a href="${href(k)}" class="${here === k ? 'here' : ''}"${here === k ? ' aria-current="page"' : ''}><span class="mark ${mark[k]}"></span>${name[k]}</a>`).join('');
+  document.getElementById('top').innerHTML = `
+    <label class="who">Viewing as (development)<select id="role" style="min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 8px;background:var(--white);margin-top:2px;max-width:100%">
+      ${Object.entries(ROLES).map(([k, r]) => `<option value="${k}"${S.as === k ? ' selected' : ''}>${r.label}</option>`).join('')}</select></label>
+    ${w ? `<span class="waiting">${w} waiting to send</span>` : ''}${f ? `<span class="waiting" style="background:var(--adv-b);border-color:var(--adv-r);color:var(--adv-t)">${f} couldn’t be sent</span>` : ''}
+    <button type="button" class="switch" role="switch" aria-checked="${off}" id="offSw"><span class="knob" aria-hidden="true"></span>Work offline</button>`;
+  document.getElementById('offbar').innerHTML = off ? '<div class="offbar" role="status">You’re offline. What you save waits on this device and is sent when you’re back online.</div>' : '';
+}
+
+function viewHome() {
+  const r = openRound(), p = me(), done = r && answered(r.id, p.key);
+  const closed = S.rounds.filter((x) => x.status === 'closed');
+  const items = r && !done ? [`<li><a href="${route(`survey/${r.id}`)}">Answer the staff survey<span>${esc(r.title)}. About 5 minutes. Due ${dLong(r.closes)}.</span></a></li>`] : [];
+  return `<div class="wlabel h"><i aria-hidden="true"></i>Home</div><h1>Good morning, ${esc(p.name.split(' ')[0])}</h1>
+    <section class="card plain"><h2>Needs you</h2>${items.length ? `<ul class="needs">${items.join('')}</ul>` : '<p class="empty">Nothing needs you right now.</p>'}
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Prototype: only the survey item is shown. The rest of Home is as in v0.18.0.</p></section>
+    <section class="card h"><h2>Staff survey</h2>
+      ${r ? `<p class="line">${esc(r.title)}: ${done ? `you answered. Results show here once it closes on ${dLong(r.closes)}.` : `open until ${dLong(r.closes)}.`}</p>` : ''}
+      ${closed.map((c) => `<p class="line"><a href="${route(`survey/${c.id}/results`)}" style="color:var(--navy);font-weight:600">See what everyone said in ${esc(c.title)}</a></p>`).join('')}
+      <p class="line muted">Your answers are anonymous. Nobody, including your manager, can see what you said.</p></section>`;
+}
+
+function viewAnswer(rid) {
+  const r = round(rid), p = me();
+  if (!r || r.status !== 'open') return `<h1>Staff survey</h1><p class="empty">This round is not open.</p>`;
+  if (answered(rid, p.key) && !(S.draft && S.draft.done)) return `<h1>Staff survey</h1><section class="card h"><p class="line">You have answered ${esc(r.title)}. Thank you.</p><p class="line muted">Results show on Home once it closes on ${dLong(r.closes)}.</p></section>`;
+  if (!S.draft || S.draft.round !== rid) S.draft = { round: rid, i: -1, choices: {}, concern: '' };
+  const qs = questionsFor(r), d = S.draft;
+  if (d.done) {
+    const waiting = (S.device[p.key] || []).some((x) => x.round === rid && !x.fail);
+    return `<h1>Thank you</h1><section class="card h"><p class="line">${waiting ? 'Your answers are saved on this device. They are sent when you’re back online.' : 'Your answers were sent.'}</p>
+      <p class="line muted">They are stored with a group of at least ${MIN_GROUP} people, such as your department, never with your name. A separate note records that you answered, so you are not asked again.</p>
+      <div class="btns"><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="${route('home')}" data-finish="1">Back to Home</a></div></section>`;
+  }
+  if (d.i === -1) {
+    return `<div class="wlabel h"><i aria-hidden="true"></i>Staff survey</div><h1>${esc(r.title)}</h1>
+      <p class="lead">${qs.length} short questions about the plan: what is changing, why, and your part in it. About 5 minutes.</p>
+      <div class="anon"><b aria-hidden="true">●</b><span><b>Your answer is anonymous.</b> It is stored with a group of at least ${MIN_GROUP} people, such as your department, never with your name, and nobody can link it to you. Results are shown only for groups of ${MIN_GROUP} or more people.</span></div>
+      <div class="btns"><button class="btn" type="button" data-start="1">Start</button></div>`;
+  }
+  if (d.i >= qs.length) {
+    return `<div class="wlabel h"><i aria-hidden="true"></i>Staff survey</div><h1>Ready to send</h1>
+      <p class="lead">You answered ${Object.keys(d.choices).length} of ${qs.length - 1} questions${d.concern ? ' and wrote a comment' : ''}. Once sent, answers can’t be changed, because nothing links them back to you.</p>
+      <div class="btns"><button class="btn" type="button" data-send="1">Send my answers</button><button class="btn sec" type="button" data-back="1">Back</button></div>`;
+  }
+  const q = qs[d.i], key = q.key + (q.goal || ''), pick = d.choices[key];
+  const head = `<p class="progress">Question ${d.i + 1} of ${qs.length} · ${AREA[q.area]}</p><div class="ptrack"><div class="pfill" style="width:${Math.round(((d.i) / qs.length) * 100)}%"></div></div>`;
+  let body;
+  if (q.key === 'content') body = `<p class="q" id="ql">Which goal is this?</p><div class="quoteblock">${esc(RECORDS[q.goal].what)}</div>`;
+  else if (q.key === 'context') body = `<p class="q" id="ql">Why are we working on “${esc(goal(q.goal).title)}”?</p>`;
+  else body = `<p class="q" id="ql">${esc(TEXT[q.key])}</p>`;
+  if (q.key === 'concern') {
+    body += `<div class="field"><label for="cn">Your comment (optional)</label><span class="hint">Please don’t name people. Read by the strategy office only, shown with your department or a larger group.</span>
+      <textarea id="cn" maxlength="500">${esc(d.concern)}</textarea><span class="hint num" id="cnc">${d.concern.length} of 500 characters</span></div>`;
+  } else {
+    body += `<div class="opts" role="group" aria-labelledby="ql">${optionsFor(r, q).map(([v, label]) => `<button type="button" class="opt" aria-pressed="${pick === v}" data-pick="${esc(v)}">${esc(label)}</button>`).join('')}</div>`;
+  }
+  return `<div class="wlabel h"><i aria-hidden="true"></i>Staff survey</div>${head}${body}
+    <p class="why">Why we ask: ${esc(BOOK[q.area])}</p>
+    <div class="btns"><button class="btn" type="button" data-next="1">${q.key === 'concern' ? 'Next' : pick ? 'Next' : 'Skip'}</button>${d.i > 0 ? '<button class="btn sec" type="button" data-prev="1">Back</button>' : ''}</div>`;
+}
+
+/* Results, as each role may see them (SV-14): sentences first, every answer under its own word. */
+const QDEF = {
+  content: { area: 'content', pos: 'right', words: [['right', 'Recognised'], ['wrong', 'Didn’t recognise'], ['dont_know', 'Not sure']], say: (n, of, g) => `${n} of ${of} recognised what is changing under “${goal(g).title}”.` },
+  context: { area: 'context', pos: 'right', words: [['right', 'Recognised'], ['wrong', 'Didn’t recognise'], ['dont_know', 'Not sure']], say: (n, of, g) => `${n} of ${of} recognised why we are working on “${goal(g).title}”.` },
+  own_goal: { area: 'concept', pos: 'right', words: [['right', 'Named it'], ['wrong', 'Named another goal'], ['dont_know', 'Not sure']], say: (n, of) => `${n} of ${of} named a goal their own work supports.` },
+  own_role: { area: 'concept', pos: 'agree', words: [['agree', 'Agree'], ['partly', 'Partly'], ['disagree', 'Disagree']], say: (n, of) => `${n} of ${of} know what the plan means for their own work.` },
+  team_met: { area: 'interaction', pos: 'yes', words: YN, say: (n, of) => `${n} of ${of} said their team has met to talk about the plan.` },
+  raise_concerns: { area: 'interaction', pos: 'yes', words: YN, say: (n, of) => `${n} of ${of} said they could raise concerns about the plan.` },
+  views_passed_on: { area: 'interaction', pos: 'yes', words: YN, say: (n, of) => `${n} of ${of} believe their views were recorded and passed on.` },
+  told_of_change: { area: 'continuity', pos: 'yes', words: [['yes', 'Yes'], ['no', 'No'], ['no_change', 'Knew of no change']], say: (n, of) => `${n} of ${of} were told when the plan changed.` },
+};
+const AREAS = ['content', 'context', 'concept', 'interaction', 'continuity'];
+/** Every question line for a set of responses: counts per answer, the positive count, and who answered it ("not scored" left out). */
+function lines(rid, rs) {
+  const r = round(rid), keys = [];
+  r.goals.forEach((g) => keys.push(['content', g])); r.goals.forEach((g) => keys.push(['context', g]));
+  keys.push(['own_goal'], ['own_role'], ['team_met'], ['raise_concerns'], ['views_passed_on']);
+  if (r.kind === 'mid_year') keys.push(['told_of_change']);
+  return keys.map(([q, g]) => {
+    const k = g ? `${q}:${g}` : q, d = QDEF[q];
+    const counts = d.words.map(([v, w]) => [w, count(rs, k, v)]);
+    const of = counts.reduce((a, [, n]) => a + n, 0);
+    return { q, g, area: d.area, text: d.say(count(rs, k, d.pos), of, g), pos: count(rs, k, d.pos), of, counts };
+  });
+}
+/** Per area: positive answers over all answers to that area's questions (fixed rule, no judgement). */
+function areaShares(ls) {
+  return AREAS.map((a) => { const x = ls.filter((l) => l.area === a); return { a, pos: x.reduce((s, l) => s + l.pos, 0), of: x.reduce((s, l) => s + l.of, 0) }; }).filter((x) => x.of > 0);
+}
+function keyFacts(rid, rs) {
+  const sh = areaShares(lines(rid, rs)), share = (x) => x.pos / x.of;
+  const hi = sh.reduce((b, x) => (share(x) > share(b) ? x : b)), lo = sh.reduce((b, x) => (share(x) < share(b) ? x : b));
+  return `<ol class="facts3">
+    <li><b>${rs.length} of ${asked(rid)}</b> people answered.</li>
+    <li>Strongest: <b>${AREA[hi.a].toLowerCase()}</b>, where ${pct(hi.pos, hi.of)} of answers were positive.</li>
+    <li>Weakest: <b>${AREA[lo.a].toLowerCase()}</b>, where ${pct(lo.pos, lo.of)} of answers were positive.</li></ol>
+    <p class="line muted">“Positive” means recognised, named their goal, agree or yes. Each area has more than one question, so these shares count answers, not people.</p>`;
+}
+function sentences(rid, rs) {
+  const ls = lines(rid, rs);
+  return AREAS.filter((a) => ls.some((l) => l.area === a)).map((a) => `<h4 class="area">${AREA[a]}</h4>
+    ${ls.filter((l) => l.area === a).map((l) => `<div class="ans"><p>${esc(l.text)}</p>
+      <div class="bar"><div class="track" aria-hidden="true"><div class="fill" style="width:${l.of ? (l.pos / l.of) * 100 : 0}%"></div></div><span class="num">${pct(l.pos, l.of)}</span></div>
+      <p class="words num">${l.counts.map(([w, n]) => `${w} ${n}`).join(' · ')}</p></div>`).join('')}`).join('')
+    + (count(rs, 'own_goal', 'not_linked') ? `<p class="line muted">${count(rs, 'own_goal', 'not_linked')} ${count(rs, 'own_goal', 'not_linked') === 1 ? 'person has' : 'people have'} no records or commitments of their own in the plan, so “${AREA.concept}” left them out of the goal question.</p>` : '');
+}
+function closingNote(r, editable) {
+  const n = r.note;
+  if (n) return `<section class="card h note"><h3>What we’re doing about it</h3><p class="line">${esc(n.text)}</p><p class="line muted">Strategy office, ${dLong(n.on)}</p></section>`;
+  if (!editable) return '';
+  return `<section class="card plain"><form data-note="${r.id}" novalidate><div class="field"><label for="nt-${r.id}">What we’re doing about it (optional)</label>
+    <span class="hint">Shown first to everyone who was asked, once saved. Say what will change because of these answers.</span><textarea id="nt-${r.id}" maxlength="1000"></textarea></div>
+    <div class="btns"><button class="btn" type="submit">Save note</button></div></form></section>`;
+}
+function viewOrgResults(rid) {
+  const r = round(rid), rs = S.responses.filter((x) => x.round === rid);
+  return `<div class="wlabel h"><i aria-hidden="true"></i>Staff survey</div><h1>${esc(r.title)}: what we said</h1>
+    <p class="lead">${dLong(r.opens)} to ${dLong(r.closes)}. Answers are anonymous; these are totals for the whole organisation.</p>
+    ${closingNote(r, false)}
+    ${rs.length >= MIN_GROUP ? `<section class="card h"><h3>Key facts</h3>${keyFacts(rid, rs)}</section><section class="card h">${sentences(rid, rs)}</section>` : '<p class="empty">Too few answers to show.</p>'}`;
+}
+/** Seniors' comparison: areas down, unit groups across; each cell positive share with its count. No colour, no ranking. */
+function compareTable(rid) {
+  const gs = groups(rid), all = S.responses.filter((x) => x.round === rid);
+  const cols = [{ name: 'Whole organisation', rs: all }, ...gs.map((g) => ({ name: g.name, rs: g.rs }))];
+  const shares = cols.map((c) => areaShares(lines(rid, c.rs)));
+  return `<div class="scroll"><table class="res cmp"><caption class="line muted" style="text-align:left;caption-side:top">Positive answers by area: recognised, named their goal, agree or yes.</caption>
+    <thead><tr><th scope="col">Area</th>${cols.map((c) => `<th scope="col" class="n">${esc(c.name)}<br><span class="muted" style="font-weight:400">${c.rs.length} answered</span></th>`).join('')}</tr></thead>
+    <tbody>${shares[0].map((s, i) => `<tr><th scope="row" style="font-weight:600;text-align:left">${AREA[s.a]}</th>${shares.map((col) => `<td class="n num"><b>${pct(col[i].pos, col[i].of)}</b><br><span class="muted">${col[i].pos} of ${col[i].of}</span></td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function header(title, lead) {
+  return `<div class="wlabel s"><i aria-hidden="true"></i>Strategy <span class="muted" style="font-weight:400;text-decoration:underline dotted;text-underline-offset:3px">Conception to Communication</span></div>
+    <h1>${title}</h1><p class="lead">${lead}</p>
+    <div class="tabs" role="tablist"><a role="tab" href="${route('strategy/communication/survey')}" aria-selected="false" onclick="return false" style="opacity:.6">Goals</a><a role="tab" aria-selected="true" href="${route('strategy/communication/survey')}">Staff survey</a></div>`;
+}
+function viewSurveyTab() {
+  const role = ROLES[S.as];
+  if (S.newRound) return viewNewRound();
+  const isSO = S.as === 'spm', isExec = S.as === 'md', head = role.heads;
+  let html = header('Communication', 'What each goal changes, why, and how it will be delivered, for every audience.');
+  if (isSO) html += `<div class="btns" style="margin:0 0 12px"><button class="btn sec" type="button" data-new="1">New round</button></div>`;
+  for (const r of [...S.rounds].reverse()) {
+    const rcpt = S.receipts.filter((x) => x.round === r.id);
+    html += `<section class="card s"><h3>${esc(r.title)}</h3><p class="partof">${r.goals.map((g) => goal(g).code).join(', ')} · ${dLong(r.opens)} to ${dLong(r.closes)} · <span class="chip ${r.status === 'open' ? 'info' : r.status === 'closed' ? 'ok' : 'info'}">${r.status === 'open' ? 'Open' : r.status === 'closed' ? 'Closed' : 'Draft'}</span></p>`;
+    if (r.status === 'draft') {
+      html += isSO ? `<div class="btns"><button class="btn" type="button" data-open="${r.id}">Open the round</button></div>` : '';
+    } else if (r.status === 'open') {
+      // SV-6: while open, only how many have answered, by unit, folded the same way.
+      const byUnit = new Map();
+      for (const x of rcpt) { const p = STAFF.find((s) => s.key === x.who); const u = chain(p.unit).includes('u-com') ? 'Commercial' : 'Other units'; byUnit.set(u, (byUnit.get(u) || 0) + 1); }
+      html += `<p class="line">${rcpt.length} of ${asked(r.id)} have answered. Answers show when it closes.</p>${isSO && rcpt.length ? `<p class="line muted">${[...byUnit].map(([u, n]) => `${u}: ${n}`).join(' · ')}</p>` : ''}
+        ${isSO ? `<div class="btns"><button class="btn sec" type="button" data-close="${r.id}">Close now</button></div>` : ''}`;
+    } else html += resultsBody(r, { isSO, isExec, head });
+    html += `</section>`;
+  }
+  return html;
+}
+function resultsBody(r, { isSO, isExec, head }) {
+  const rs = S.responses.filter((x) => x.round === r.id);
+  if (head) {
+    const mine = rs.filter((x) => chain(x.unit).includes(head));
+    return `${closingNote(r, false)}<h4 class="area">${UNITS[head].name}</h4>${mine.length >= MIN_GROUP ? keyFacts(r.id, mine) + sentences(r.id, mine)
+      : `<p class="empty">Too few answers to show. A unit’s results appear once at least ${MIN_GROUP} people in it answer. The whole organisation’s results are on Home.</p>`}`;
+  }
+  let h = closingNote(r, isSO);
+  h += `<h4 class="area">Key facts</h4>${keyFacts(r.id, rs)}`;
+  h += `<h4 class="area">By unit</h4>${compareTable(r.id)}<p class="line muted">Units with fewer than ${MIN_GROUP} answers are counted with the unit above them.</p>`;
+  h += `<details class="more"><summary>Every question, in full</summary>${sentences(r.id, rs)}</details>`;
+  // Coverage view (SV-9): facts side by side, no ranking, no colour, no check.
+  h += `<h4 class="area">Meetings logged and what staff said</h4><div class="scroll"><table class="res"><thead><tr><th>Unit</th><th>Meetings logged this year</th><th>Said their team met</th></tr></thead><tbody>
+    ${groups(r.id).map((g) => { const m = MEETINGS.filter((x) => (g.unit === 'u-org' ? !chain(x.unit).some((u) => groups(r.id).some((gg) => gg.unit === u && u !== 'u-org')) : chain(x.unit).includes(g.unit))); return `<tr><td>${esc(g.name)}</td><td class="num">${m.length}${m.length ? ` (${m.map((x) => dLong(x.on)).join(', ')})` : ''}</td><td class="num">${count(g.rs, 'team_met', 'yes')} of ${g.rs.length}</td></tr>`; }).join('')}</tbody></table></div>
+    <p class="line muted">For following up where meetings and answers differ. Not a score for any unit or manager.</p>`;
+  const concerns = rs.filter((x) => x.concern);
+  if (isSO) {
+    const gs = new Map(); folded(r.id).forEach(({ r: x, shown }) => gs.set(x.id, shown === 'u-org' ? 'Other units' : UNITS[shown].name));
+    h += `<h4 class="area">Concerns (${concerns.length})</h4><p class="line muted">Only the strategy office reads these. Units below ${MIN_GROUP} answers are counted with the unit above.</p>
+      ${concerns.map((x) => `<p class="quote">${esc(x.concern)}<br><span class="muted">${esc(gs.get(x.id))}</span></p>`).join('')}`;
+    const s = S.summary[r.id];
+    h += s && s.accepted ? `<p class="line"><span class="chip ok">Summary accepted</span> The Executive sees it.</p><p class="quote">${esc(s.text)}</p>`
+      : s ? `<div class="flag" style="background:var(--info-b);border-color:var(--info-r);color:var(--navy)"><b>AI draft</b>${esc(s.text)}</div><div class="btns"><button class="btn" type="button" data-accept="${r.id}">Accept summary</button><button class="btn sec" type="button" data-discard="${r.id}">Discard</button></div>`
+      : `<div class="btns"><button class="btn sec" type="button" data-draft="${r.id}">Draft a summary of themes</button></div>`;
+  } else if (isExec) {
+    const s = S.summary[r.id];
+    h += `<h4 class="area">Concerns</h4>${s && s.accepted ? `<p class="quote">${esc(s.text)}</p><p class="line muted">A summary of ${concerns.length} comments, accepted by the strategy office. The comments stay with the strategy office.</p>` : `<p class="empty">${concerns.length} comments. A summary shows here once the strategy office accepts one.</p>`}`;
+  }
+  return h;
+}
+function viewNewRound() {
+  const n = S.newRound;
+  const issues = [];
+  if (n.goals.length < 2) issues.push(['Must fix before opening the round', 'Choose at least two goals, so “Which goal is this?” has a real choice.']);
+  if (n.goals.length > 5) issues.push(['Must fix before opening the round', 'Choose at most five goals.']);
+  const len = days(n.opens, n.closes);
+  if (len < 0) issues.push(['Must fix before opening the round', 'The closing date is before the opening date.']);
+  else if (len > 28) issues.push(['Must fix before opening the round', 'A round can be open for at most 28 days.']);
+  return header('New round', 'Choose the goals staff are asked about and when the round is open.') + `
+    <section class="card s"><form id="nr" novalidate>
+      <div class="field"><label for="nrt">Name</label><input id="nrt" value="${esc(n.title)}"></div>
+      <div class="field"><label for="nrk">When in the year</label><select id="nrk"><option value="start_of_year"${n.kind === 'start_of_year' ? ' selected' : ''}>Start of year</option><option value="mid_year"${n.kind === 'mid_year' ? ' selected' : ''}>Mid-year (adds “Were you told when the plan changed?”)</option></select></div>
+      <fieldset style="border:0;padding:0;margin:8px 0"><legend style="font-weight:600;font-size:13px;color:var(--navy)">Goals (two to five)</legend>
+        ${GOALS.map((g) => { const ok = !!RECORDS[g.id]; return `<label class="check"><input type="checkbox" data-goal="${g.id}"${n.goals.includes(g.id) ? ' checked' : ''}${ok ? '' : ' disabled'}><span><b style="color:var(--navy)">${g.code} ${esc(g.title)}</b>${ok ? '' : '<br><span class="muted">No communication record yet, so it can’t be asked about. Write its record on the Goals tab first.</span>'}</span></label>`; }).join('')}
+      </fieldset>
+      <div class="field"><label for="nro">Opens on</label><input id="nro" type="date" value="${n.opens}"></div>
+      <div class="field"><label for="nrc">Closes on</label><input id="nrc" type="date" value="${n.closes}"><span class="hint">At most 28 days. Everyone holding a position on the opening date is asked.</span></div>
+      ${issues.map(([t, d]) => `<div class="mustfix"><b>${t}</b>${d}</div>`).join('')}
+      <div class="btns"><button class="btn" type="submit"${issues.length ? ' aria-disabled="true"' : ''}>Save as draft</button><button class="btn sec" type="button" data-cancelnew="1">Cancel</button></div>
+    </form></section>`;
+}
+function viewOther(w) { return `<h1>${w.charAt(0).toUpperCase() + w.slice(1)}</h1><p class="lead">As in v0.18.0. Not part of this prototype.</p>`; }
+
+function stepsHtml() {
+  return ['As Mary, open “Answer the staff survey” from Needs you and answer it. Try “Work offline” first, then go back online to send.',
+    'Watch “What is recorded”: the response has a unit but no person or time; the receipt has the person but no answers.',
+    'As Bwalya (Strategy office), open Strategy › Communication › Staff survey. The open round shows only how many have answered. Expand the closed round’s results by unit: Zones A–C fold into Commercial.',
+    'Draft and accept the summary of concerns. Then switch to Chanda (Executive): counts and the summary, never the comments.',
+    'As Joseph (Head of Operations), see “Too few answers to show” for Operations.',
+    'As Bwalya, write “What we’re doing about it” on the closed round, then see it first as Mary (Home › See what everyone said).',
+    'As Bwalya, start a new round: G3 and G4 can’t be chosen; one goal or 30 days must be fixed.',
+  ].map((t) => `<li>${t}</li>`).join('');
+}
+
+function render() {
+  chrome();
+  const r = S.route, body = document.getElementById('body');
+  let html;
+  if (r === 'home') html = viewHome();
+  else if (/^survey\/[^/]+\/results$/.test(r)) html = viewOrgResults(r.split('/')[1]);
+  else if (r.startsWith('survey/')) html = viewAnswer(r.split('/')[1]);
+  else if (r.startsWith('strategy') && ROLES[S.as].ws.includes('strategy')) html = viewSurveyTab();
+  else if (r.startsWith('other/')) html = viewOther(r.split('/')[1]);
+  else { S.route = 'home'; return render(); }
+  body.innerHTML = html + (S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : '');
+  document.getElementById('steps').innerHTML = stepsHtml();
+  document.getElementById('audit').innerHTML = S.log.length ? S.log.map((a) => `<li>${esc(a.title)}<div class="rec">${esc(JSON.stringify(a.rec, null, 1))}</div></li>`).join('') : '<li class="muted">Nothing written yet.</li>';
+  bind();
+}
+function bind() {
+  const $ = (s) => document.querySelectorAll(s);
+  document.getElementById('role').onchange = (e) => { S.as = e.target.value; S.draft = null; S.newRound = null; S.toast = null; location.hash = '#home'; S.route = 'home'; render(); };
+  document.getElementById('offSw').onclick = () => { const was = !!S.offline[S.as]; S.offline[S.as] = !was; S.toast = null; if (was) sendWaiting(S.as); render(); };
+  const d = S.draft;
+  $('[data-start]').forEach((b) => b.onclick = () => { d.i = 0; render(); });
+  $('[data-pick]').forEach((b) => b.onclick = () => { const qs = questionsFor(round(d.round)), q = qs[d.i]; d.choices[q.key + (q.goal || '')] = b.dataset.pick; render(); });
+  const cn = document.getElementById('cn'); if (cn) cn.oninput = () => { d.concern = cn.value; document.getElementById('cnc').textContent = `${cn.value.length} of 500 characters`; };
+  $('[data-next]').forEach((b) => b.onclick = () => { d.i++; S.toast = null; render(); document.getElementById('body').scrollTop = 0; });
+  $('[data-prev]').forEach((b) => b.onclick = () => { d.i--; render(); });
+  $('[data-back]').forEach((b) => b.onclick = () => { d.i--; render(); });
+  $('[data-send]').forEach((b) => b.onclick = () => {
+    const r = round(d.round), p = me();
+    const results = questionsFor(r).filter((q) => q.key !== 'concern' && d.choices[q.key + (q.goal || '')]).map((q) => ({ k: q.key + (q.goal ? `:${q.goal}` : ''), v: score(q, d.choices[q.key + (q.goal || '')], p.key) }));
+    const item = { round: r.id, who: p.key, unit: storedUnit(p.unit), results, concern: d.concern.trim() || null };
+    (S.device[p.key] = S.device[p.key] || []).push(item);
+    d.done = true;
+    if (!S.offline[p.key]) sendWaiting(p.key); else say('Saved on this device. It is sent when you’re back online.');
+    render();
+  });
+  $('[data-finish]').forEach((a) => a.onclick = () => { S.draft = null; });
+  $('[data-new]').forEach((b) => b.onclick = () => { S.newRound = { title: 'Start of year, 2027', kind: 'start_of_year', goals: ['g1'], opens: '2027-02-01', closes: '2027-03-05' }; render(); });
+  $('[data-cancelnew]').forEach((b) => b.onclick = () => { S.newRound = null; render(); });
+  const nr = document.getElementById('nr');
+  if (nr) {
+    const n = S.newRound;
+    document.getElementById('nrt').oninput = (e) => { n.title = e.target.value; };
+    document.getElementById('nrk').onchange = (e) => { n.kind = e.target.value; render(); };
+    document.getElementById('nro').onchange = (e) => { n.opens = e.target.value; render(); };
+    document.getElementById('nrc').onchange = (e) => { n.closes = e.target.value; render(); };
+    $('[data-goal]').forEach((c) => c.onchange = () => { n.goals = c.checked ? [...n.goals, c.dataset.goal] : n.goals.filter((g) => g !== c.dataset.goal); render(); });
+    nr.onsubmit = (e) => {
+      e.preventDefault();
+      if (nr.querySelector('[aria-disabled=true]')) { say('Fix what is marked before saving.'); render(); return; }
+      const rec = { id: `sr-new-${S.rounds.length}`, title: n.title, kind: n.kind, goals: n.goals, opens: n.opens, closes: n.closes, status: 'draft' };
+      S.rounds.push(rec); S.newRound = null; log('Survey round saved as draft', rec); say('Saved as a draft round.'); render();
+    };
+  }
+  $('[data-open]').forEach((b) => b.onclick = () => { const r = round(b.dataset.open); r.status = 'open'; log('Round opened (a recorded action, not a gate)', { round: r.id, by: 'm-spm' }); say('Round opened. Everyone asked gets “Answer the staff survey”.'); render(); });
+  $('[data-close]').forEach((b) => b.onclick = () => { const r = round(b.dataset.close); r.status = 'closed'; r.closes = TODAY; S.summary[r.id] = null; log('Round closed early', { round: r.id, by: 'm-spm' }); say('Round closed. Results now show.'); render(); });
+  $('[data-note]').forEach((f) => f.onsubmit = (e) => { e.preventDefault(); const r = round(f.dataset.note), v = f.querySelector('textarea').value.trim(); if (!v) return; r.note = { text: v, on: TODAY }; log('Closing note saved on the round', { round: r.id, closingNote: { text: v, written: { at: TODAY, by: 'm-spm' } } }); say('Saved. Everyone asked sees it first.'); render(); });
+  $('[data-draft]').forEach((b) => b.onclick = () => { S.summary[b.dataset.draft] = { text: 'Two themes: some teams have not met to discuss the plan, and some staff know the targets but not the reasons behind them.', accepted: false }; render(); });
+  $('[data-accept]').forEach((b) => b.onclick = () => { S.summary[b.dataset.accept].accepted = true; log('Concern summary accepted', { round: b.dataset.accept, by: 'm-spm', provenance: 'AI draft, accepted' }); render(); });
+  $('[data-discard]').forEach((b) => b.onclick = () => { S.summary[b.dataset.discard] = null; render(); });
+}
+function go() { S.route = (location.hash || '#home').slice(1) || 'home'; S.toast = null; render(); }
+document.getElementById('pFrame').onchange = (e) => { S.frame = e.target.value; render(); };
+document.getElementById('pReset').onclick = () => { S = fresh(); location.hash = '#home'; go(); };
+window.addEventListener('hashchange', go);
+S = fresh(); go();
+</script></body></html>

@@ -1,8 +1,8 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. It holds the standing rules (sections 1 to 12) and the navigation rule (section 37). No slice is open: the next one, staff voice (direction in archive section 38), is specified next. Section 12 says which source wins when sources disagree.
+Read this whole file before writing any code. It holds the standing rules (sections 1 to 12) and the navigation rule (section 37). No slice is open: staff voice (v0.19.0) is built; the next one, Performance › Reviews (v0.20.0), is specified next. Section 12 says which source wins when sources disagree.
 
-**Decision archive.** The decisions behind slices already built, sections 13 to 36 and 39, and the staff-voice direction in section 38, are in `DECISIONS-ARCHIVE.md`, with their numbers unchanged: a reference to "BUILD-BRIEF section N" in code, tests or documents finds section N there. Search the archive when a question needs an earlier decision; it does not need to be read in full. When a slice is delivered, its section moves from this file to the archive (split agreed by Elijah on 4 November 2026; no decision changed).
+**Decision archive.** The decisions behind slices already built, sections 13 to 36 and 38 to 40, are in `DECISIONS-ARCHIVE.md`, with their numbers unchanged: a reference to "BUILD-BRIEF section N" in code, tests or documents finds section N there. Search the archive when a question needs an earlier decision; it does not need to be read in full. When a slice is delivered, its section moves from this file to the archive (split agreed by Elijah on 4 November 2026; no decision changed).
 
 **Current state.** Data contract v1.10 (`src/contract/caspa-data-contract.ts`, whose header lists every revision). Slices and versions are listed in `README.md`; work in progress, and what comes next, is in `NEXT.md`.
 
