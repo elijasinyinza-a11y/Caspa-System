@@ -43,3 +43,13 @@ describe('Progress updates addresses (v0.18.0, NV-8)', () => {
     expect(parseRoute('#/performance')).toEqual({ kind: 'workspace', w: 'performance' });
   });
 });
+
+describe('staff survey addresses (v0.19.0)', () => {
+  it('round-trips answering, results and the Communication tab', () => {
+    round({ kind: 'survey', roundId: 'sr-2026-mid', results: undefined });
+    round({ kind: 'survey', roundId: 'sr-2026-start', results: true });
+    expect(hrefFor({ kind: 'strategy', entry: 'communication', tab: 'survey' })).toBe('#/strategy/communication/survey');
+    expect(parseRoute('#/strategy/communication/survey')).toEqual({ kind: 'strategy', entry: 'communication', tab: 'survey' });
+    expect(parseRoute('#/strategy/communication/g1')).toMatchObject({ kind: 'strategy', entry: 'communication', goalId: 'g1' });
+  });
+});

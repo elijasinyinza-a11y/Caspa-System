@@ -13,6 +13,7 @@ import { formatDate } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, Chip, input, label, link, plural, primary } from './organisation/ui';
 import { hrefFor, nodeHref } from './router';
+import { SurveyTab } from './Survey';
 
 const C = en.communication;
 const AUDIENCES: Audience[] = ['board', 'managers', 'staff'];
@@ -41,12 +42,25 @@ export function CommunicationCard() {
 
 /* ───────── #/communication ───────── */
 
-export function CommunicationPage({ goalId, embedded = false }: { goalId?: string; embedded?: boolean }) {
+export function CommunicationPage({ goalId, embedded = false, tab }: { goalId?: string; embedded?: boolean; tab?: string }) {
   const { repo } = useApp();
   const page = repo.communication.page();
   const terms = repo.settings().termLabels;
+  // v0.19.0: the Staff survey tab, for the Strategy office, the Executive and department heads.
+  const survey = repo.survey.tab() !== null;
+  const onSurvey = survey && tab === 'survey';
+  const tabs = survey && (
+    <nav aria-label={en.survey.tab} className="mb-4 flex gap-1 border-b border-border">
+      {([['goals', en.survey.goalsTab, hrefFor({ kind: 'strategy', entry: 'communication' })], ['survey', en.survey.tab, hrefFor({ kind: 'strategy', entry: 'communication', tab: 'survey' })]] as const).map(([k, l, h]) => {
+        const here = (k === 'survey') === onSurvey;
+        return <a key={k} href={h} aria-current={here ? 'page' : undefined} className={`-mb-px inline-flex min-h-11 items-center border-b-4 px-3 text-14 ${here ? 'border-navy font-bold text-navy' : 'border-transparent text-muted hover:text-navy'}`}>{l}</a>;
+      })}
+    </nav>
+  );
+  if (onSurvey) return <>{tabs}<SurveyTab /></>;
   return (
     <>
+      {tabs}
       {!embedded && <WorkspaceHeader w="strategy" title={C.title} intro={C.intro} />}
       {embedded && <p className="mb-2 max-w-3xl text-14 text-muted">{C.intro}</p>}
       {!page.plans.length && <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{C.none}</p>}

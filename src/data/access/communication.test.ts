@@ -28,22 +28,24 @@ describe('which goals can have a record (D16-3, D16-4)', () => {
     const page = f.as('employee').communication.page();
     expect(page.plans).toHaveLength(1);
     expect(page.plans[0]!.goals.map((g) => g.code)).toEqual(['G1', 'G2', 'G3', 'G4']);
-    expect(page.plans[0]).toMatchObject({ complete: 1, period: 'FY2022–FY2026' });
+    expect(page.plans[0]).toMatchObject({ complete: 2, period: 'FY2022–FY2026' });
   });
   it('shows G1 as complete and the rest as "No context yet" (D16-9: status, not a check)', () => {
     const f = fresh();
     const g = f.as('employee').communication.page().plans[0]!.goals;
-    expect(g.map((x) => x.status)).toEqual(['complete', 'no_context', 'no_context', 'no_context']);
+    expect(g.map((x) => x.status)).toEqual(['complete', 'complete', 'no_context', 'no_context']);
     expect(recordStatus(null)).toBe('no_context');
   });
 });
 
+// v0.19.0 (approved 5 November 2026): G1's record rewritten in plain words and dated 2 February 2026, and a G2 record
+// added, so the staff survey can ask about both. Writing tests now use G3, which still has no record.
 describe('the seeded G1 record (D16-11, wording approved)', () => {
   it('reads in the approved wording, with the meeting on 15 October 2026 shown as Commercial', () => {
     const g = fresh().as('employee').communication.goal('g1')!;
     expect(g.record).toMatchObject({
-      what: 'We will improve financial sustainability over FY2022–FY2026.',
-      why: 'This is what the 4Q review found.',
+      what: 'Every customer is billed for what they actually use, and more of what we bill is collected.',
+      why: 'Billed revenue has not covered operating and maintenance costs.',
       how: 'Each department turns this goal into yearly activities, budgets and individual objectives in CASPA™.',
     });
     expect(g.meetings).toEqual([{ unit: 'Commercial', heldOn: '2026-10-15', feedbackSummary: 'Meter readers asked how the new targets affect their routes' }]);
@@ -56,7 +58,7 @@ describe('the seeded G1 record (D16-11, wording approved)', () => {
     expect(f.as('employee').communication.goal('g1')!.versions.map((v) => v.audience)).toEqual(['board', 'managers', 'staff']);
     expect(firstAudience({ roles: [], isSupervisor: false, headsDepartment: true })).toBe('managers');
     const staff = f.as('employee').communication.goal('g1')!.versions.find((v) => v.audience === 'staff')!;
-    expect(staff.text).toBe('What is changing: We will improve financial sustainability over FY2022–FY2026. Why it matters: This is what the 4Q review found. What it means for you: your objectives will show how your work connects to this goal.');
+    expect(staff.text).toBe('What is changing: Every customer is billed for what they actually use, and more of what we bill is collected. Why it matters: Billed revenue has not covered operating and maintenance costs. What it means for you: your objectives will show how your work connects to this goal.');
   });
   it('shows the linked 4Q points live: text for the Executive, a count for staff (D16-6, point 10)', () => {
     const f = fresh();
@@ -72,8 +74,8 @@ describe('the seeded G1 record (D16-11, wording approved)', () => {
   });
   it('prints the accepted board version as a board paper', () => {
     const p = fresh().as('employee').communication.boardPaper('g1')!;
-    expect(p.text).toMatch(/^What changes: We will improve financial sustainability/);
-    expect(p.acceptedBy).toMatchObject({ by: 'Bwalya Musonda', on: '2026-10-12' });
+    expect(p.text).toMatch(/^What changes: Every customer is billed for what they actually use/);
+    expect(p.acceptedBy).toMatchObject({ by: 'Bwalya Musonda', on: '2026-02-02' });
   });
 });
 
@@ -81,17 +83,17 @@ describe('who writes (D16-5, points 3 to 7)', () => {
   it('lets the Strategy office write a record only with all three parts, and the AI suggest them', async () => {
     const f = fresh();
     const so = f.as('strategy').communication;
-    expect(so.save('g2', { ...fields, how: ' ' })).toEqual({ ok: false, error: 'required' });
-    const s = await so.suggest('g2');
-    expect(s).toEqual({ ok: true, fields: { what: 'We will provide reliable water supply over FY2022–FY2026.', why: 'This is what the 4Q review found.', how: expect.stringMatching(/^Each department/) } });
-    expect(f.store.communicationRecords.some((r) => r.goalId === 'g2')).toBe(false); // nothing stored until saved
-    expect(so.save('g2', fields)).toEqual({ ok: true });
-    expect(so.goal('g2')!.status).toBe('complete');
+    expect(so.save('g3', { ...fields, how: ' ' })).toEqual({ ok: false, error: 'required' });
+    const s = await so.suggest('g3');
+    expect(s).toEqual({ ok: true, fields: { what: 'We will expand access to sanitation over FY2022–FY2026.', why: 'This is what the 4Q review found.', how: expect.stringMatching(/^Each department/) } });
+    expect(f.store.communicationRecords.some((r) => r.goalId === 'g3')).toBe(false); // nothing stored until saved
+    expect(so.save('g3', fields)).toEqual({ ok: true });
+    expect(so.goal('g3')!.status).toBe('complete');
     expect(f.store.auditEntries[f.store.auditEntries.length - 1]).toMatchObject({ action: 'create', entity: { type: 'CommunicationRecord' } });
   });
   it('lets the Executive read but not write, except as G4’s owner', () => {
     const ex = fresh().as('executive').communication;
-    expect(ex.save('g2', fields)).toEqual({ ok: false, error: 'not_allowed' });
+    expect(ex.save('g3', fields)).toEqual({ ok: false, error: 'not_allowed' });
     expect(ex.goal('g4')!.can.write).toBe(true);
     expect(ex.save('g4', fields)).toEqual({ ok: true });
   });
@@ -100,26 +102,26 @@ describe('who writes (D16-5, points 3 to 7)', () => {
     expect(f.by('m-hoo').communication.save('g3', fields)).toEqual({ ok: true });
     expect(f.as('employee').communication.save('g3', fields)).toEqual({ ok: false, error: 'not_allowed' });
     expect(f.as('finance').communication.goal('g1')!.can.write).toBe(true); // Head of Finance owns G1
-    expect(f.as('finance').communication.save('g2', fields)).toEqual({ ok: false, error: 'not_allowed' });
+    expect(f.as('finance').communication.save('g3', fields)).toEqual({ ok: false, error: 'not_allowed' });
   });
   it('drafts versions on request; only the Strategy office or the owner edits and accepts; readers see accepted ones only', async () => {
     const f = fresh();
     const so = f.as('strategy').communication;
-    expect(await so.draftVersions('g2')).toEqual({ ok: false, error: 'no_record' });
-    so.save('g2', fields);
-    expect(await so.draftVersions('g2')).toEqual({ ok: true });
-    expect(so.goal('g2')!.versions.map((v) => v.state)).toEqual(['ai_draft', 'ai_draft', 'ai_draft']);
-    expect(so.goal('g2')!.versions[0]!.text).toBe('What changes: We will widen supply. Why: This is what the 4Q review found. How it will be delivered: Departments plan the yearly work.');
-    expect(f.as('employee').communication.goal('g2')!.versions).toEqual([]);
-    expect(f.as('executive').communication.acceptVersion('g2', 'board')).toEqual({ ok: false, error: 'not_allowed' });
-    expect(so.acceptVersion('g2', 'board')).toEqual({ ok: true });
-    expect(so.editVersion('g2', 'staff', 'Plain words for staff.')).toEqual({ ok: true });
-    expect(so.goal('g2')!.versions.map((v) => v.state)).toEqual(['accepted', 'ai_draft', 'edited']);
-    expect(f.as('employee').communication.goal('g2')!.versions.map((v) => v.audience)).toEqual(['board']);
+    expect(await so.draftVersions('g3')).toEqual({ ok: false, error: 'no_record' });
+    so.save('g3', fields);
+    expect(await so.draftVersions('g3')).toEqual({ ok: true });
+    expect(so.goal('g3')!.versions.map((v) => v.state)).toEqual(['ai_draft', 'ai_draft', 'ai_draft']);
+    expect(so.goal('g3')!.versions[0]!.text).toBe('What changes: We will widen supply. Why: This is what the 4Q review found. How it will be delivered: Departments plan the yearly work.');
+    expect(f.as('employee').communication.goal('g3')!.versions).toEqual([]);
+    expect(f.as('executive').communication.acceptVersion('g3', 'board')).toEqual({ ok: false, error: 'not_allowed' });
+    expect(so.acceptVersion('g3', 'board')).toEqual({ ok: true });
+    expect(so.editVersion('g3', 'staff', 'Plain words for staff.')).toEqual({ ok: true });
+    expect(so.goal('g3')!.versions.map((v) => v.state)).toEqual(['accepted', 'ai_draft', 'edited']);
+    expect(f.as('employee').communication.goal('g3')!.versions.map((v) => v.audience)).toEqual(['board']);
     // Drafting again replaces only what is not accepted.
-    await so.draftVersions('g2');
-    expect(so.goal('g2')!.versions.map((v) => v.state)).toEqual(['accepted', 'ai_draft', 'ai_draft']);
-    expect(f.store.aiTasks.filter((t) => t.inputRefs.some((r) => r.id === 'g2'))).toHaveLength(2);
+    await so.draftVersions('g3');
+    expect(so.goal('g3')!.versions.map((v) => v.state)).toEqual(['accepted', 'ai_draft', 'ai_draft']);
+    expect(f.store.aiTasks.filter((t) => t.inputRefs.some((r) => r.id === 'g3'))).toHaveLength(2);
   });
 });
 
@@ -148,15 +150,15 @@ describe('meetings (D16-8, point 6)', () => {
 describe('"Needs you" and reaching the page (D16-10, point 4)', () => {
   it('asks the Strategy office for every goal without a record, and an owner for their own', () => {
     const f = fresh();
-    expect(goalsNeedingRecord(f.store).map((g) => g.code)).toEqual(['G2', 'G3', 'G4']);
+    expect(goalsNeedingRecord(f.store).map((g) => g.code)).toEqual(['G3', 'G4']);
     const items = (r: ReturnType<typeof f.as>) => r.home().needsYou.filter((i) => i.key.startsWith('communication:')).map((i) => i.title);
-    expect(items(f.as('strategy'))).toEqual(['Write the communication record for G2 Provide reliable water supply', 'Write the communication record for G3 Expand access to sanitation', 'Write the communication record for G4 Strengthen institutional capacity']);
+    expect(items(f.as('strategy'))).toEqual(['Write the communication record for G3 Expand access to sanitation', 'Write the communication record for G4 Strengthen institutional capacity']);
     expect(items(f.as('executive'))).toEqual(['Write the communication record for G4 Strengthen institutional capacity']);
-    expect(items(f.by('m-hoo'))).toHaveLength(2);
+    expect(items(f.by('m-hoo'))).toHaveLength(1);
     expect(items(f.as('employee'))).toEqual([]);
-    f.as('strategy').communication.save('g2', fields);
-    expect(items(f.as('strategy'))).toHaveLength(2);
-    expect(f.as('strategy').home().needsYou.find((i) => i.key === 'communication:write:g3')!).toMatchObject({ due: null, link: { kind: 'communication', goalId: 'g3' } });
+    f.as('strategy').communication.save('g3', fields);
+    expect(items(f.as('strategy'))).toHaveLength(1);
+    expect(f.as('strategy').home().needsYou.find((i) => i.key === 'communication:write:g4')!).toMatchObject({ due: null, link: { kind: 'communication', goalId: 'g4' } });
   });
   it('gives goal owners and department heads the Strategy workspace', () => {
     const f = fresh();

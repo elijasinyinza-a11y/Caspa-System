@@ -66,7 +66,7 @@ export function StrategyEntryPage({ entry, stage, tab, goalId }: { entry: Strate
       ) : entry === 'forming' ? <FormingPage stage={stage} tab={tab} />
         : entry === 'registers' ? <RegistersPage tab={tab} />
         : entry === 'plan-document' ? <PlanDocumentEntry />
-        : <CommunicationPage goalId={goalId} embedded />}
+        : <CommunicationPage goalId={goalId} embedded tab={tab} />}
     </>
   );
 }

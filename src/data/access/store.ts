@@ -3,7 +3,7 @@ import type {
   Acknowledgement, CommunicationRecord, Activity, AiTask, AuditEntry, ComplianceItem, ConsultationInput, ConsultationRound, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review, Theme, IndicativeCost, PlanDocument,
-  SourceDocument, StrategicPlan, VisionStatement, Workshop,
+  SourceDocument, StrategicPlan, SurveyReceipt, SurveyResponse, SurveyRound, VisionStatement, Workshop,
 } from '../../contract/caspa-data-contract';
 
 export interface Store {
@@ -29,6 +29,10 @@ export interface Store {
   planDocuments: PlanDocument[];
   /** v0.16.0 (part 11e): communication records, one per goal (D16-3). */
   communicationRecords: CommunicationRecord[];
+  /** v0.19.0 (contract v1.11): staff survey rounds, responses (no person) and receipts (no answers), kept apart. */
+  surveyRounds: SurveyRound[];
+  surveyResponses: SurveyResponse[];
+  surveyReceipts: SurveyReceipt[];
   activities: Activity[];
   activityProgress: ActivityProgress[];
   deficiencies: Deficiency[];

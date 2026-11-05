@@ -7,6 +7,7 @@ import {
   type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
   type AiTask, type CommunicationRecord, type SourceDocument, type BaselineMeasure, type ComplianceItem, type ProgressUpdate,
+  type SurveyAnswerValue, type SurveyQuestionKey, type SurveyReceipt, type SurveyResponse, type SurveyRound,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
@@ -290,7 +291,7 @@ function seedStore(): Store {
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords,
+    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts,
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [
@@ -369,18 +370,76 @@ function seedStore(): Store {
  * lies before both review-build dates).
  */
 const COMM_AI = id<'AiTask'>('ai-comm-g1');
-const commStamp: Stamp = { at: dt('2026-10-12T10:00:00+02:00'), byMembershipId: id('m-spm') };
-const commAccepted: Stamp = { at: dt('2026-10-12T10:30:00+02:00'), byMembershipId: id('m-spm') };
+// v0.19.0 (approved 5 November 2026): G1's record and a new G2 record, each "why" repeating the goal's approved 4Q
+// reason, written in plain words that do not name the goal, so the staff survey can ask about them. Both are dated
+// 2 February 2026, so the "Start of year, 2026" survey round could have run.
+const commStamp: Stamp = { at: dt('2026-02-02T10:00:00+02:00'), byMembershipId: id('m-spm') };
+const commAccepted: Stamp = { at: dt('2026-02-02T10:30:00+02:00'), byMembershipId: id('m-spm') };
 const T = en.communication.template;
-const g1What = T.what('improve financial sustainability', 'FY2022–FY2026');
-const communicationRecords: CommunicationRecord[] = [{
-  orgId, id: id('cr-g1'), goalId: id('g1'), created: commStamp, updated: commAccepted,
-  content: g1What, context: T.why, concept: T.how,
-  audienceVersions: ([
-    ['board', T.board(g1What, T.why, T.how)], ['managers', T.managers(g1What, T.why)], ['staff', T.staff(g1What, T.why)],
-  ] as const).map(([audience, text]) => ({ audience, text, draft: { state: 'accepted' as const, provenance: { kind: 'ai_suggestion' as const, aiTaskId: COMM_AI }, decided: commAccepted } })),
-  meetings: [{ unitId: id('u-com'), heldOn: d('2026-10-15'), feedbackSummary: 'Meter readers asked how the new targets affect their routes' }],
-}];
+const COMM = {
+  g1: { what: 'Every customer is billed for what they actually use, and more of what we bill is collected.', why: 'Billed revenue has not covered operating and maintenance costs.' },
+  g2: { what: 'Fewer and shorter interruptions to supply, as ageing pumps are renewed on a plan.', why: 'Ageing pumping equipment causes frequent supply interruptions.' },
+};
+const record = (goal: 'g1' | 'g2', meetings: CommunicationRecord['meetings']): CommunicationRecord => {
+  const { what, why } = COMM[goal];
+  return {
+    orgId, id: id(`cr-${goal}`), goalId: id(goal), created: commStamp, updated: commAccepted,
+    content: what, context: why, concept: T.how,
+    audienceVersions: ([
+      ['board', T.board(what, why, T.how)], ['managers', T.managers(what, why)], ['staff', T.staff(what, why)],
+    ] as const).map(([audience, text]) => ({ audience, text, draft: { state: 'accepted' as const, provenance: { kind: 'ai_suggestion' as const, aiTaskId: COMM_AI }, decided: commAccepted } })),
+    meetings,
+  };
+};
+const communicationRecords: CommunicationRecord[] = [
+  record('g1', [{ unitId: id('u-com'), heldOn: d('2026-10-15'), feedbackSummary: 'Meter readers asked how the new targets affect their routes' }]),
+  record('g2', []),
+];
+
+/**
+ * Staff survey (v0.19.0; approved 5 November 2026). "Start of year, 2026" closed with 12 answers from the 13 people
+ * asked on 9 February (the Head of Commercial did not answer). Six are stored under Commercial; the other six
+ * (head office, Finance and Operations, each under five people) under the organisation. "Mid-year, 2026" is open,
+ * asks about plan changes, and has no answers yet.
+ */
+const surveyStamp = (on: string): Stamp => ({ at: dt(`${on}T08:00:00+02:00`), byMembershipId: id('m-spm') });
+const surveyRounds: SurveyRound[] = [
+  {
+    orgId, id: id('sr-2026-start'), planId: PLAN, title: 'Start of year, 2026', asksAboutChanges: false, goalIds: [id('g1'), id('g2')],
+    opensOn: d('2026-02-09'), closesOn: d('2026-03-06'), status: 'closed', openedBy: surveyStamp('2026-02-09'), closedBy: surveyStamp('2026-03-06'), closingNote: null, concernSummary: null,
+    created: surveyStamp('2026-02-03'), updated: surveyStamp('2026-03-06'),
+  },
+  {
+    orgId, id: id('sr-2026-mid'), planId: PLAN, title: 'Mid-year, 2026', asksAboutChanges: true, goalIds: [id('g1'), id('g2')],
+    opensOn: d('2026-10-12'), closesOn: d('2026-11-08'), status: 'open', openedBy: surveyStamp('2026-10-12'), closedBy: null, closingNote: null, concernSummary: null,
+    created: surveyStamp('2026-10-09'), updated: surveyStamp('2026-10-12'),
+  },
+];
+const SURVEY_KEYS: [SurveyQuestionKey, string | null][] = [['content', 'g1'], ['content', 'g2'], ['context', 'g1'], ['context', 'g2'], ['own_goal', null], ['own_role', null], ['team_met', null], ['raise_concerns', null], ['views_passed_on', null]];
+const answers = (unit: string, v: SurveyAnswerValue[], concern: string | null = null) => ({ unit, v, concern });
+const SEEDED_ANSWERS = [
+  answers('u-com', ['right', 'right', 'right', 'wrong', 'right', 'agree', 'yes', 'yes', 'no'], 'Meter readers heard about the new meter targets but not why tariffs are under review.'),
+  answers('u-com', ['right', 'wrong', 'right', 'right', 'right', 'agree', 'yes', 'yes', 'not_sure']),
+  answers('u-com', ['right', 'right', 'dont_know', 'right', 'right', 'partly', 'yes', 'not_sure', 'no']),
+  answers('u-com', ['wrong', 'right', 'right', 'right', 'wrong', 'partly', 'yes', 'yes', 'yes']),
+  answers('u-com', ['right', 'right', 'right', 'dont_know', 'right', 'agree', 'no', 'no', 'no'], 'Our section has not had a meeting about the plan yet.'),
+  answers('u-com', ['right', 'dont_know', 'wrong', 'right', 'dont_know', 'disagree', 'yes', 'yes', 'not_sure']),
+  answers('u-org', ['right', 'right', 'right', 'right', 'right', 'agree', 'yes', 'yes', 'yes']),
+  answers('u-org', ['right', 'right', 'right', 'right', 'not_linked', 'agree', 'yes', 'yes', 'yes']),
+  answers('u-org', ['right', 'wrong', 'right', 'right', 'right', 'agree', 'no', 'yes', 'not_sure']),
+  answers('u-org', ['right', 'right', 'right', 'wrong', 'right', 'partly', 'no', 'not_sure', 'no'], 'The plan was emailed to us, but nobody explained it.'),
+  answers('u-org', ['dont_know', 'right', 'right', 'right', 'dont_know', 'partly', 'no', 'yes', 'not_sure']),
+  answers('u-org', ['right', 'right', 'dont_know', 'right', 'right', 'agree', 'yes', 'yes', 'yes']),
+];
+// Responses are listed in a computed order, never in the order they arrived (SV-2); ids carry no link to receipts.
+const surveyResponses: SurveyResponse[] = SEEDED_ANSWERS.map((a, i) => ({
+  orgId, id: id(`rs-start-${String(i + 1).padStart(2, '0')}`), roundId: id('sr-2026-start'), unitId: id(a.unit),
+  results: SURVEY_KEYS.map(([question, goalId], k) => ({ question, goalId: goalId ? id(goalId) : null, value: a.v[k]! })), concern: a.concern,
+}));
+const surveyReceipts: SurveyReceipt[] = PEOPLE.filter((p) => p.key !== 'hoc').map((p, i) => ({
+  orgId, id: id(`srr-start-${p.key}`), roundId: id('sr-2026-start'), membershipId: id(`m-${p.key}`), outcome: 'answered', on: d(`2026-02-${String(9 + (i % 9)).padStart(2, '0')}`),
+}));
+
 const communicationAi: AiTask = {
   orgId, id: COMM_AI, kind: 'draft', requested: commStamp, inputRefs: [{ type: 'Goal', id: 'g1' }], outputRefs: [{ type: 'CommunicationRecord', id: 'cr-g1' }], model: 'stub',
 };

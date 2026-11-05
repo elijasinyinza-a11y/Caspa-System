@@ -37,6 +37,7 @@ import { createCommunicationAccess, type CommunicationAccess } from './communica
 import { menuFor, type Menu } from './menu';
 import { createDevice, type Device } from './device';
 import { createProgressAccess, type ProgressAccess } from './progress';
+import { createSurveyAccess, type SurveyAccess } from './survey';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
@@ -226,6 +227,8 @@ export interface Repository {
   firstYear: FirstYearAccess;
   /** Progress capture (v0.18.0, section 39): the Performance landing, progress updates, activity and KPI figures. */
   progress: ProgressAccess;
+  /** Staff survey (v0.19.0; contract v1.11). */
+  survey: SurveyAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
   structureConfirmed(): { by: string; on: ISODate } | null;
 }
@@ -610,6 +613,8 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     return { ok: true };
   };
 
+  // One device for progress and the survey: going back online sends what waits for both (OP-7, SV-8).
+  const device = options.device ?? createDevice();
   const repo: Repository = {
     viewer,
     financialYear,
@@ -622,7 +627,8 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     planDocument: createPlanDocumentAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     communication: createCommunicationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     menu: () => menuFor(repo, s),
-    progress: createProgressAccess({ s, viewer, now, financialYear, clock, audit, device: options.device ?? createDevice(), changed: () => options.onChange?.() }),
+    progress: createProgressAccess({ s, viewer, now, financialYear, clock, audit, device, changed: () => options.onChange?.() }),
+    survey: createSurveyAccess({ s, viewer, now, clock, device, changed: () => options.onChange?.() }),
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);
@@ -748,7 +754,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
         expected: expectedToDate(financialYear, s.organisation.financialYearStartMonth, now),
         homes,
         // v0.18.0: progress items (OP-10) merged in, soonest first as ever.
-        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs()]),
+        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs(), ...repo.survey.needs()]),
         goalHealth: has('executive') || has('strategy_office') || has('member') ? goalHealth(s, ctx) : null,
         finance: has('finance') ? financeSummary(s, financialYear, access) : null,
         hr: has('hr') ? hrSummary(s, ctx, access) : null,
@@ -757,6 +763,9 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
       };
     },
   };
+  // Going back online sends survey answers waiting on this device too (SV-8); progress reports its own result.
+  const setOffline = repo.progress.setOffline;
+  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) repo.survey.sendWaiting(); return r; };
   return repo;
 }
 

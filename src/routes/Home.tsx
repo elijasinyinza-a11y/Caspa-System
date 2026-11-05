@@ -1,3 +1,4 @@
+import { SurveyHomeCard } from './Survey';
 import { useState, type ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
 import { NeedsYou } from '../components/NeedsYou';
@@ -385,6 +386,8 @@ export function Home() {
       <NeedsYou items={h.needsYou} />
       {/* D16-2: information, not a "Needs you" item. */}
       <OurPlanCard />
+      {/* v0.19.0: the staff survey, optional (SV-4); results once a round closes. */}
+      <SurveyHomeCard />
       <Onboarding />
       {view}
       {(repo.viewer.roles.includes('executive') || repo.viewer.roles.includes('hr')) && <StructureNotice />}

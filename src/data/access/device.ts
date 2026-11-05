@@ -6,7 +6,8 @@
  *
  * Unsent items belong to the person who saved them (keyed by membership) and are never shown to anyone else.
  */
-import type { ISODate, ISODateTime } from '../../contract/caspa-data-contract';
+import type { ISODate, ISODateTime, SurveyResponse } from '../../contract/caspa-data-contract';
+import type { ArrivalFailure } from '../../rules/survey';
 import type { ArrivalError } from '../../rules/progress';
 
 /** A progress update saved on the device and not yet accepted. */
@@ -50,11 +51,27 @@ export interface DeviceNotice {
   personName: string;
 }
 
+/**
+ * Staff survey answers saved on the device (v0.19.0, SV-8). Already scored and given their group unit, so nothing on
+ * arrival needs to know who answered beyond the receipt. Kept apart from the progress outbox.
+ */
+export interface DeviceSurvey {
+  id: string;
+  membershipId: string;
+  roundId: string;
+  unitId: string;
+  results: SurveyResponse['results'];
+  concern: string | null;
+  /** Set when the server refused it on arrival; it stays here as "Couldn't be sent". */
+  failure: ArrivalFailure | null;
+}
+
 export interface Device {
   offline: Record<string, boolean>;
   outbox: (DeviceUpdate | DeviceDecision)[];
   notices: DeviceNotice[];
+  survey: DeviceSurvey[];
   seq: number;
 }
 
-export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], seq: 1 });
+export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], seq: 1 });

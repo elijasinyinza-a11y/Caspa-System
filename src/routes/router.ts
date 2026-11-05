@@ -35,13 +35,16 @@ export type Route =
    * have their own addresses, #/performance/progress/mine (optionally /<contractObjectiveId>, whose form opens) and
    * #/performance/progress/verify.
    */
-  | { kind: 'progress'; tab?: 'mine' | 'verify'; objectiveId?: string };
+  | { kind: 'progress'; tab?: 'mine' | 'verify'; objectiveId?: string }
+  /** Staff survey (v0.19.0): answering, #/survey/<roundId>, and the organisation's results, #/survey/<roundId>/results. */
+  | { kind: 'survey'; roundId: string; results?: boolean };
 
 export const hrefFor = (r: Route): string =>
   r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
+  : r.kind === 'survey' ? `#/survey/${encodeURIComponent(r.roundId)}${r.results ? '/results' : ''}`
   : r.kind === 'progress' ? ['#/performance/progress', r.tab, r.tab === 'mine' && r.objectiveId ? encodeURIComponent(r.objectiveId) : null].filter(Boolean).join('/')
   : r.kind === 'workspace' ? `#/${r.w}`
   : r.kind === 'map' ? `#/map/${encodeURIComponent(r.objectiveId)}${r.deficiencyId ? `/${encodeURIComponent(r.deficiencyId)}` : ''}`
@@ -49,7 +52,7 @@ export const hrefFor = (r: Route): string =>
 function strategyHref(r: Extract<Route, { kind: 'strategy' }>): string {
   const tail = r.entry === 'forming' ? [r.stage, r.stage && r.tab].filter(Boolean)
     : r.entry === 'registers' ? [r.tab]
-    : r.entry === 'communication' ? [r.goalId && encodeURIComponent(r.goalId)] : [];
+    : r.entry === 'communication' ? [r.tab === 'survey' ? 'survey' : r.goalId && encodeURIComponent(r.goalId)] : [];
   return ['#/strategy', r.entry, ...tail.filter((x): x is string => !!x)].join('/');
 }
 export const mapHref = (objectiveId: string, deficiencyId?: string) => hrefFor({ kind: 'map', objectiveId, deficiencyId });
@@ -74,13 +77,14 @@ export const parseRoute = (hash: string): Route => {
   if (parts[0] === 'strategy' && parts[1]) {
     const entry = parts[1] as StrategyEntry;
     if (entry === 'plan-document') return parts[2] === 'print' ? { kind: 'planDocument' } : { kind: 'strategy', entry };
-    if (entry === 'communication') return { kind: 'strategy', entry, goalId: parts[2] ? decodeURIComponent(parts[2]) : undefined };
+    if (entry === 'communication') return parts[2] === 'survey' ? { kind: 'strategy', entry, tab: 'survey' } : { kind: 'strategy', entry, goalId: parts[2] ? decodeURIComponent(parts[2]) : undefined };
     if (entry === 'registers') return { kind: 'strategy', entry, tab: parts[2] || undefined };
     if (entry === 'forming') {
       const stage = FORMING_STAGES.includes(parts[2] as FormingStage) ? (parts[2] as FormingStage) : undefined;
       return { kind: 'strategy', entry, stage, tab: stage ? parts[3] || undefined : undefined };
     }
   }
+  if (parts[0] === 'survey' && parts[1]) return { kind: 'survey', roundId: decodeURIComponent(parts[1]), results: parts[2] === 'results' ? true : undefined };
   if (parts[0] === 'performance' && parts[1] === 'progress') {
     const tab = parts[2] === 'mine' || parts[2] === 'verify' ? parts[2] : undefined;
     return { kind: 'progress', tab, objectiveId: tab === 'mine' && parts[3] ? decodeURIComponent(parts[3]) : undefined };

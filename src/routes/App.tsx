@@ -27,6 +27,7 @@ import { Home } from './Home';
 import { NodePage } from './NodePage';
 import { hrefFor, useRoute } from './router';
 import { PerformanceLanding, ProgressUpdates } from './Performance';
+import { SurveyAnswer, SurveyStaffResults } from './Survey';
 
 export function App() {
   const [orgs] = useState(createReviewOrgs);
@@ -93,6 +94,7 @@ export function App() {
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'strategy' ? <StrategyEntryPage key={`${org.orgId}:${viewing}:${hrefFor(route)}`} entry={route.entry} stage={route.stage} tab={route.tab} goalId={route.goalId} />
     : route.kind === 'boardPaper' ? <BoardPaperPrint key={`${org.orgId}:${viewing}:${route.goalId}`} goalId={route.goalId} />
+    : route.kind === 'survey' ? (route.results ? <SurveyStaffResults key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} /> : <SurveyAnswer key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} />)
     : route.kind === 'progress' ? <ProgressUpdates key={`${org.orgId}:${viewing}`} tab={route.tab} objectiveId={route.objectiveId} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
