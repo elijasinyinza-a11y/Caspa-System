@@ -27,7 +27,7 @@ export type NeedsYouKind = 'deadline' | 'decision_action' | 'finding' | 'approva
 export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string };
 /** Performance › Progress updates (v0.18.0): a tab, and on Mine the objective whose form opens. */
 export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | null;
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {

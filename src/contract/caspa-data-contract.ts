@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.10
+ * CASPA™ data contract — v1.11
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,22 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.11 (5 November 2026, Elijah; Staff Voice Specification v0.1, SV-1 to SV-14): three records and three permission
+ *     rows. No existing field changes.
+ *     - SurveyRound: a staff survey round, started by the Strategy office only when it needs one (no schedule).
+ *       Free-text title, two to five goals, a window of at most 28 days, whether it asks about plan changes, and an
+ *       optional closing note, "What we're doing about it" (SV-13), and the summary of comments the Executive reads
+ *       once the Strategy office accepts it (SV-7).
+ *     - SurveyResponse: one person's answers, stored apart from who gave them (SV-2). It holds the round, a unit
+ *       with at least the small-group size of people asked (never smaller), each question's result and an optional
+ *       comment. It is the one record without created/updated stamps, by design; its audit entry names the round and
+ *       unit only, and its actor is the round's opener, never the person who answered.
+ *     - SurveyReceipt: that a person answered or declined ("Not this time"), with the date. Never any answer, and
+ *       no id shared with a response.
+ *     - Rows: SurveyRound seen by all members, drafted by the Strategy office. SurveyResponse seen by the Strategy
+ *       office; the Executive and department heads ("owner", for their own unit and below) see counts only,
+ *       never comments, enforced in the data-access layer; drafted by self, once, while the round is open.
+ *       SurveyReceipt seen by self, with the Strategy office seeing counts only; written by the system on arrival.
  * v1.10 (2 November 2026, Elijah; Offline Progress Capture Specification v1.0, OP-2 and OP-3): one field and three
  *     permission rows. No other field changes; verified and sync (K1) are unchanged, and so are P1–P10 and R1–R10.
  *     - ProgressUpdate.returned: a supervisor's return, with its reason and who returned it, or null. A returned
@@ -443,6 +459,57 @@ export interface ResourceEnvelope extends OrgScoped, Audited {
   goalId: Id<'Goal'> | null; // null = whole plan
   financialYear: FinancialYear;
   amount: Money;
+}
+
+/* ───────────────────────── Staff survey (v1.11) ───────────────────────── */
+
+/** The fixed question set (Staff Voice Specification, section 2). */
+export type SurveyQuestionKey =
+  | 'content' // "Which goal is this?", per goal
+  | 'context' // "Why are we working on …?", per goal
+  | 'own_goal' // "Which goal does your own work support most?"
+  | 'own_role'
+  | 'team_met'
+  | 'raise_concerns'
+  | 'views_passed_on'
+  | 'told_of_change'; // only when the round asks about plan changes
+
+export type SurveyAnswerValue =
+  | 'right' | 'wrong' | 'dont_know' | 'not_linked' // scored questions keep the result only, never the choice
+  | 'agree' | 'partly' | 'disagree'
+  | 'yes' | 'no' | 'not_sure' | 'no_change';
+
+export interface SurveyRound extends OrgScoped, Audited {
+  id: Id<'SurveyRound'>;
+  planId: Id<'StrategicPlan'>;
+  title: string; // free text; "Start of year, 2027" and "Mid-year, 2027" are suggested
+  asksAboutChanges: boolean; // adds "When the plan changed this year, were you told?"
+  goalIds: Id<'Goal'>[]; // two to five, each with a communication record
+  opensOn: ISODate;
+  closesOn: ISODate; // at most 28 days after opensOn
+  status: 'draft' | 'open' | 'closed';
+  openedBy: Stamp | null;
+  closedBy: Stamp | null;
+  closingNote: { text: string; written: Stamp } | null; // SV-13, at most 1,000 characters
+  concernSummary: { text: string; draft: DraftMeta } | null; // SV-7: the AI-drafted summary of comments, accepted or edited by the Strategy office
+}
+
+/** One person's answers. OrgScoped only: no created/updated stamps, by design (SV-2). */
+export interface SurveyResponse extends OrgScoped {
+  id: Id<'SurveyResponse'>;
+  roundId: Id<'SurveyRound'>;
+  unitId: Id<'OrgUnit'>; // never a unit with fewer people asked than the small-group size
+  results: { question: SurveyQuestionKey; goalId: Id<'Goal'> | null; value: SurveyAnswerValue }[];
+  concern: string | null; // at most 500 characters; read by the Strategy office only
+}
+
+/** That a person answered or declined. Never any answer. */
+export interface SurveyReceipt extends OrgScoped {
+  id: Id<'SurveyReceipt'>;
+  roundId: Id<'SurveyRound'>;
+  membershipId: Id<'Membership'>;
+  outcome: 'answered' | 'declined';
+  on: ISODate;
 }
 
 export interface CommunicationRecord extends OrgScoped, Audited {
@@ -863,6 +930,12 @@ export const PERMISSIONS: PermissionMatrix = {
   // PlanDocument view widens to all members once status is 'final'.
   // v1.9 (D16-5): facilitators draft too. "owner" is the goal's owner, and department heads for meetings in their own unit.
   CommunicationRecord: { view: ['all_members'], draft: ['strategy_office', 'owner', 'facilitator'] },
+  // v1.11: staff survey. Rounds are started by the Strategy office only when it needs one. Responses: the Executive
+  // and department heads ("owner", own unit and below) see counts only, never comments; enforced in the data-access
+  // layer. Receipts: the Strategy office sees counts only.
+  SurveyRound: { view: ['all_members'], draft: ['strategy_office'] },
+  SurveyResponse: { view: ['strategy_office', 'executive', 'owner'], draft: ['self'] },
+  SurveyReceipt: { view: ['self', 'strategy_office'], draft: ['self'] },
   Workshop: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
   FormationDeadline: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
   // Calendar edits are further limited to the assigned preparer (StrategicPlan.calendar.preparerMembershipId).

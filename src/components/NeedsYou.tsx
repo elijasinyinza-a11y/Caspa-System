@@ -44,7 +44,7 @@ function Kind({ item }: { item: NeedsYouItem }) {
 
 /** "Needs you": first on every home, merged across the person's roles, soonest first. */
 export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
-  const { repo, openFindings } = useApp();
+  const { repo, openFindings, say } = useApp();
   const reachable = repo.workspaces();
   const action = (item: NeedsYouItem) => {
     const link = item.link;
@@ -61,6 +61,15 @@ export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
     if (link.kind === "workspace" && !reachable.includes(link.w)) return null;
     if (link.kind === "strategy" && !reachable.includes("strategy")) return null;
     if (link.kind === "progress" && !reachable.includes("performance")) return null;
+    if (link.kind === "survey") {
+      // Optional (SV-4): "Not this time" removes it on every device.
+      return (
+        <span className="flex flex-wrap gap-2">
+          <a href={hrefFor({ kind: "survey", roundId: link.roundId })} className={cls}>{en.needsYou.open}<span className="sr-only">: {item.title}</span></a>
+          <button type="button" className={cls} onClick={() => { if (repo.survey.decline(link.roundId).ok) say(en.survey.toasts.declined); }}>{en.survey.needs.decline}</button>
+        </span>
+      );
+    }
     const href = link.kind === "progress" ? hrefFor({ kind: "progress", tab: link.tab, objectiveId: link.objectiveId })
       : link.kind === "communication" ? hrefFor({ kind: "strategy", entry: "communication", goalId: link.goalId })
       : link.kind === "strategy" ? hrefFor({ kind: "strategy", entry: link.entry, stage: link.stage, tab: link.tab }) : fixHref(link);

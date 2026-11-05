@@ -88,6 +88,12 @@ export interface AiService {
   draftCommunication(input: { goalTitle: string; planPeriod: string }): Promise<CommunicationDraft>;
   /** Draft the board, managers and staff versions from the three parts (D16-7). A person edits and accepts each. */
   draftAudienceVersions(input: { what: string; why: string; how: string }): Promise<AudienceVersionsDraft>;
+  /**
+   * Summarise staff survey comments into themes for the Executive (SV-7). Only the text is sent, never units. It sorts,
+   * scores and flags nothing; the Strategy office accepts, edits or discards the draft. The review build's stub
+   * returns the same draft whatever the comments say, and says so.
+   */
+  summariseConcerns(comments: string[]): Promise<AiDraft>;
 }
 
 export interface CommunicationDraft { label: "AI draft"; what: string; why: string; how: string }
@@ -412,6 +418,9 @@ export const aiStub: AiService = {
     // 4Q points, shown live, never copied (D16-6).
     const T = en.communication.template;
     return { label: "AI draft", what: T.what(inSentence(input.goalTitle), input.planPeriod), why: T.why, how: T.how };
+  },
+  async summariseConcerns(comments) {
+    return { label: "AI draft", text: en.survey.ai.summary(comments.length) };
   },
   async draftAudienceVersions(input) {
     const T = en.communication.template;

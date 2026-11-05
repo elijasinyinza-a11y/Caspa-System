@@ -6,7 +6,10 @@ import { sortQueue, type NeedsYouItem } from './needs-you';
 
 const NOW = '2026-10-18' as ISODate;
 const repo = (role: keyof typeof DEV_ROLE_MEMBERSHIPS, s = createSeed(), now = NOW) => createMemoryRepository([s], ORG, DEV_ROLE_MEMBERSHIPS[role], now);
-const queue = (role: keyof typeof DEV_ROLE_MEMBERSHIPS, s = createSeed()) => repo(role, s).home().needsYou.map((i) => [i.kind, i.title, i.due, i.daysOverdue]);
+// v0.19.0: the optional staff survey reaches everyone asked; its item is tested in src/data/access/survey.test.ts and
+// left out here so these queues keep showing each role's own work.
+const needs = (role: keyof typeof DEV_ROLE_MEMBERSHIPS, s = createSeed()) => repo(role, s).home().needsYou.filter((i) => !i.key.startsWith('survey:'));
+const queue = (role: keyof typeof DEV_ROLE_MEMBERSHIPS, s = createSeed()) => needs(role, s).map((i) => [i.kind, i.title, i.due, i.daysOverdue]);
 
 describe('role homes for Sample Water Utility at 18 October 2026', () => {
   it('each role gets its fixed home; the Executive also supervises, so has a team view', () => {
@@ -19,7 +22,7 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
   });
 
   it('Finance: submit the consolidated budget by 6 November, with the orphan line blocking it', () => {
-    const items = repo('finance').home().needsYou;
+    const items = needs('finance');
     expect(items.map((i) => [i.title, i.due, i.detail])).toEqual([
       ['Submit the consolidated budget', '2026-11-06', '1 item must be fixed before this step.'],
     ]);
@@ -48,13 +51,13 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
   it('linking the orphan line clears the blocker from the Finance item at once', () => {
     const s = createSeed();
     s.budgetLines.find((l) => l.id === 'bl-5')!.activityId = s.activities[0]!.id;
-    expect(repo('finance', s).home().needsYou[0]!.detail).toBe('Nothing stops this step now.');
+    expect(needs('finance', s)[0]!.detail).toBe('Nothing stops this step now.');
   });
 
   it('findings routed to a position appear in that person’s queue with the blocked step’s due date', () => {
     const s = createSeed();
     s.budgetLines.find((l) => l.id === 'bl-5')!.holderUnitId = 'u-zone-b' as never; // accountable: Meter Reader, Zone B
-    const f = repo('employee', s).home().needsYou.find((i) => i.kind === 'finding')!;
+    const f = needs('employee', s).find((i) => i.kind === 'finding')!;
     expect([f.severity, f.due]).toEqual(['blocking', '2026-11-06']);
   });
 
@@ -65,16 +68,16 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
       id: 'ge-1' as never, orgId: ORG, gate: 'budget.submit_consolidated', subject: { type: 'BudgetVersion', id: 'bv-2026-1' },
       attempted: { at: '2026-11-02T09:00:00Z' as never, byMembershipId: 'm-hof' as never }, outcome: 'passed', blockingFindingKeys: [], advisoryAtGate: [],
     });
-    expect(repo('executive', s).home().needsYou.map((i) => [i.kind, i.detail])).toEqual([['approval', 'Submitted by Ruth Phiri. Whoever submits a step cannot approve it.'], ['deadline', 'Strategic Plan 2022–2026']]);
-    expect(repo('finance', s).home().needsYou).toEqual([]);
+    expect(needs('executive', s).map((i) => [i.kind, i.detail])).toEqual([['approval', 'Submitted by Ruth Phiri. Whoever submits a step cannot approve it.'], ['deadline', 'Strategic Plan 2022–2026']]);
+    expect(needs('finance', s)).toEqual([]);
   });
 
   it('rating flags reach the next-level reviewer only', () => {
     const s = createSeed();
-    const cm = createMemoryRepository([s], ORG, 'm-cm', NOW).home().needsYou;
+    const cm = createMemoryRepository([s], ORG, 'm-cm', NOW).home().needsYou.filter((i) => !i.key.startsWith('survey:'));
     expect(cm.map((i) => [i.kind, i.severity, i.title])).toEqual([['finding', 'advisory', 'Mary Chileshe: “Replace 400 faulty meters on route” scores 1 on verified progress']]);
     for (const r of ['executive', 'finance', 'strategy', 'supervisor', 'employee', 'hr'] as const) {
-      expect(repo(r, s).home().needsYou.some((i) => i.key.startsWith('rating:'))).toBe(false);
+      expect(needs(r, s).some((i) => i.key.startsWith('rating:'))).toBe(false);
     }
   });
 
