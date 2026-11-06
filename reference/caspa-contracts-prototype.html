@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: Performance › Contracts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only.
+   Staff Voice Specification v0.1, SV-1 to SV-12. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--info-t:#0D1B2A;--info-b:#EDECEA;--info-r:#D5D2CA;
+--c:#7C5CBF;--f:#C2417A;--f-t:#9B2C63;--f-tint:#FBEAF2;--bar:#BAB7AF;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* Prototype controls, outside the product */
+.proto{background:var(--white);border-bottom:1px dashed var(--control);padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.proto label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.proto select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white)}
+.proto .pbtn{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;background:var(--white);cursor:pointer}
+.proto .note{font-size:12px;color:var(--muted);flex:1 1 260px}
+.layout{display:flex;gap:16px;justify-content:center;padding:16px;align-items:flex-start;flex-wrap:wrap}
+.side-notes{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.panel h2{font-size:16px;color:var(--navy);margin:0 0 6px}
+.panel ol{margin:0;padding-left:20px}
+.panel li{margin:4px 0}
+.panel .done{color:var(--muted);text-decoration:line-through}
+.audit{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+.audit li{border-top:1px solid var(--border);padding:6px 0;font-size:12px}
+.audit time{display:block;color:var(--muted)}
+/* The frame */
+.frame{display:flex;background:var(--cream);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:1040px;height:780px}
+.frame.phone{max-width:390px;flex-direction:column}
+.sidebar{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:2px;flex-shrink:0;overflow:auto}
+.phone .sidebar{display:none}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav,.sub{list-style:none;margin:0;padding:0}
+.nav>li>a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav>li>a.here{background:rgba(255,255,255,.15)}
+.nav .mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.nav .mark.f{background:var(--f)}.nav .mark.c{background:var(--c)}
+.sub{margin:2px 0 6px 14px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px}
+.sub a{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,.85);text-decoration:none;gap:8px}
+.sub a[aria-current=page]{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.sub li{position:relative}
+.tip{position:absolute;left:0;top:100%;z-index:5;width:220px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:400;visibility:hidden;opacity:0}
+.sub li:hover .tip,.sub a:focus-visible+.tip{visibility:visible;opacity:1;transition:opacity .1s .4s,visibility 0s .4s}
+.tip.closed{visibility:hidden!important}
+.sub a[aria-current=page]::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--f)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.top .who{font-size:12px;color:var(--muted);flex:1;min-width:120px}
+.top .who b{display:block;color:var(--navy);font-size:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 10px;background:var(--white);cursor:pointer;font-size:13px}
+.switch .knob{width:32px;height:18px;border-radius:9px;background:var(--info-b);border:1px solid var(--control);position:relative;flex-shrink:0}
+.switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--control)}
+.switch[aria-checked=true] .knob{background:var(--navy);border-color:var(--navy)}
+.switch[aria-checked=true] .knob::after{left:16px;background:var(--white)}
+.waiting{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;background:var(--info-b);border:1px solid var(--info-r);color:var(--info-t);text-decoration:none}
+.offbar{background:var(--info-b);border-bottom:1px solid var(--border);padding:8px 12px;font-size:13px;color:var(--navy)}
+.body{flex:1;overflow:auto;padding:20px 24px}
+.phone .body{padding:14px}
+.bottom{display:none;background:var(--navy);padding:4px 6px}
+.phone .bottom{display:flex}
+.bottom a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;border-radius:8px;gap:4px}
+.bottom a .mark{width:18px;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.bottom a.here{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.bottom a.here .mark.f{background:var(--f)}.bottom a.here .mark.c{background:var(--c)}
+/* Workspace header */
+.wlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--f-t);font-weight:600;flex-wrap:wrap}
+.wlabel i{width:10px;height:10px;border-radius:2px;background:var(--f)}
+.linkish{background:none;border:0;padding:0;min-height:44px;color:var(--muted);font-weight:400;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+.book{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;margin:4px 0 8px}
+.book small{display:block;color:var(--muted);margin-top:2px}
+h1{font-size:28px;color:var(--navy);margin:2px 0 4px}
+.phone h1{font-size:22px}
+.lead{color:var(--muted);margin:0 0 10px;max-width:62ch}
+.subrow{display:none;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin:0 0 12px}
+.phone .subrow{display:flex}
+.subrow a{flex-shrink:0;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px}
+.subrow a[aria-current=page]{color:var(--navy);font-weight:700;border-bottom-color:var(--f)}
+.tabs{display:flex;gap:8px;margin:4px 0 12px}
+.tabs a{min-height:44px;display:inline-flex;align-items:center;border-radius:8px;padding:0 14px;border:1px solid var(--control);background:var(--white);color:var(--navy);font-weight:600;text-decoration:none}
+.tabs a[aria-selected=true]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.tabs .count{margin-left:6px;font-weight:500}
+/* Content */
+.card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--f);border-radius:12px;padding:14px;margin-bottom:12px}
+.card.plain{border-top-width:1px;border-top-color:var(--border)}
+.card h2,.card h3{font-size:16px;color:var(--navy);margin:0 0 2px}
+.partof{font-size:13px;color:var(--muted);margin:0 0 8px}
+.partof a{color:var(--muted)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0;font-size:13px}
+.facts dt{color:var(--muted)}.facts dd{margin:0}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0}
+.track{position:relative;height:8px;flex:1;min-width:64px;border-radius:999px;background:var(--info-b)}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--navy)}
+.exp{position:absolute;top:-3px;width:2px;height:14px;background:var(--muted)}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid;white-space:nowrap}
+.chip.ok{background:var(--ok-b);color:var(--ok-t);border-color:var(--ok-r)}
+.chip.adv{background:var(--adv-b);color:var(--adv-t);border-color:var(--adv-r)}
+.chip.info{background:var(--info-b);color:var(--info-t);border-color:var(--info-r)}
+.line{font-size:13px;margin:4px 0}
+.muted{color:var(--muted)}
+.needs{list-style:none;margin:0;padding:0}
+.needs li{border-top:1px solid var(--border)}
+.needs li:first-child{border-top:0}
+.needs a{display:flex;flex-direction:column;justify-content:center;min-height:56px;padding:6px 0;color:var(--navy);font-weight:600;text-decoration:none}
+.needs a span{font-weight:400;color:var(--muted);font-size:13px}
+h2.sec{font-size:18px;color:var(--navy);margin:16px 0 8px}
+form{margin:0}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.field label{font-weight:600;font-size:13px;color:var(--navy)}
+.field .hint{font-size:12px;color:var(--muted)}
+.field input,.field select,.field textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white);width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.field input.big{font-size:22px;font-weight:600}
+.flag{border:1px solid var(--adv-r);background:var(--adv-b);color:var(--adv-t);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.flag b{display:block}
+.err{color:var(--adv-t);font-size:13px;font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{min-height:44px;border-radius:8px;padding:0 16px;border:1px solid var(--navy);background:var(--navy);color:var(--white);font-weight:600;cursor:pointer}
+.btn.sec{background:var(--white);color:var(--navy);border-color:var(--control)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.upd{border-top:1px solid var(--border);padding:10px 0}
+.upd:first-child{border-top:0}
+.upd .head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.upd .fig{font-weight:600;color:var(--navy)}
+.quote{border-left:3px solid var(--adv-r);padding:2px 0 2px 8px;margin:6px 0;font-size:13px}
+.notice{border:1px solid var(--info-r);background:var(--info-b);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px}
+.team{width:100%;border-collapse:collapse}
+.team td{border-top:1px solid var(--border);padding:8px 4px;vertical-align:middle}
+.team tr:first-child td{border-top:0}
+.team a{color:var(--navy);font-weight:600}
+.empty{color:var(--muted);font-size:13px}
+.live{position:absolute;left:-9999px}
+.toast{position:sticky;bottom:0;margin-top:12px;background:var(--navy);color:var(--white);border-radius:8px;padding:10px 12px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+.objs{list-style:none;padding:0;margin:8px 0}
+.objline{border-top:1px solid var(--border);padding:10px 0}
+.q2{font-weight:700;color:var(--navy);margin:0 0 2px}
+.overall{font-size:16px;margin:10px 0 2px}
+.ctl summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:var(--navy)}
+.mustfix{border:1px solid #B42318;background:#FEF3F2;color:#B42318;border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.mustfix b{display:block}
+.rows{list-style:none;padding:0;margin:0}
+.rowbtn{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;width:100%;min-height:56px;text-align:left;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer}
+.linkbtn{background:none;border:0;color:var(--navy);font-weight:600;min-height:44px;cursor:pointer;padding:0;text-decoration:underline}
+.tabone{font-weight:700;color:var(--navy);border-bottom:4px solid var(--navy);display:inline-block;padding:0 4px 6px;margin:4px 0 12px}
+.res{width:100%;border-collapse:collapse;font-size:13px}.res th{text-align:left;color:var(--muted);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--border)}.res td{padding:6px 4px;border-top:1px solid var(--border)}.res .n{text-align:right}
+.ans{border-top:1px solid var(--border);padding:8px 0}.ans p{margin:0 0 4px}
+.rec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:var(--cream);border-radius:6px;padding:6px;white-space:pre-wrap;margin-top:4px}
+.scroll{overflow-x:auto}
+.code{font-weight:400;font-size:13px}
+.shares{list-style:none;padding:0;margin:0}
+.share{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:0 0 8px}
+.shead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.linkbtn{background:none;border:0;color:var(--navy);font-weight:600;min-height:44px;cursor:pointer;padding:0;text-decoration:underline;text-align:left}
+.linkbtn.big{font-size:16px}
+.big1{font-size:18px;margin:0 0 4px;color:var(--navy)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mustfix{border:1px solid #B42318;background:#FEF3F2;color:#B42318;border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.mustfix b{display:block}
+.chip.blk{background:#FEF3F2;border:1px solid #B42318;color:#B42318}
+.chip.adv{background:var(--adv-b);border:1px solid var(--adv-r);color:var(--adv-t)}
+.check{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:6px 0}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--navy)}
+.flabel{font-weight:600;font-size:13px;color:var(--navy)}
+.ctl summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:var(--navy)}
+.rec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:var(--cream);border-radius:6px;padding:6px;white-space:pre-wrap;margin-top:4px}
+.obj{border-top:1px solid var(--border);padding:10px 0;list-style:none}
+.dep{background:var(--cream);border-radius:8px;padding:8px 10px;margin:6px 0;font-size:13px}
+.advt{color:var(--adv-t);font-weight:600}
+.inner{margin-top:8px}
+</style></head><body>
+<div class="proto" role="region" aria-label="Prototype controls (not part of the product)">
+  <label>Screen<select id="pFrame"><option value="phone">Phone, 390px</option><option value="wide">Computer</option></select></label>
+  <button class="pbtn" id="pReset" type="button">Start again</button>
+  <p class="note">Prototype only, for the Contracts Specification v0.1 (CT-1 to CT-10, accepted as recommended). Sample Water Utility at 18 October 2026: Esther Banda’s FY2026 contract, drafted by Peter Mwansa. Quantities are illustrative. Nothing is stored.</p>
+</div>
+<div class="layout">
+  <div class="frame phone" id="frame">
+    <nav class="sidebar" aria-label="Main"><div class="brand">CASPA™</div><ul class="nav" id="sideNav"></ul></nav>
+    <div class="main"><div class="top" id="top"></div><main class="body" id="body" tabindex="-1"></main><nav class="bottom" id="bottom" aria-label="Workspaces"></nav></div>
+  </div>
+  <aside class="side-notes" aria-label="Prototype notes">
+    <div class="panel"><h2>Try it</h2><ol>
+      <li>As Peter, open Esther’s draft. Weights total 110% and standing duties carry 30%, over the 20% limit: both must be fixed. Set the report to 20% and save.</li>
+      <li>Her readings objective would take the meter-reading routes past their 2,400 total, and the briefings depend on a policy revision that nobody carries, at Policy level, already late. Both are worth checking.</li>
+      <li>Add a dependency to an objective, or add an objective: choose where it comes from first.</li>
+      <li>Issue it. Because a dependency is worth checking, it goes to Chanda first (the Head of Commercial post is vacant). As Chanda, clear it or send it back.</li>
+      <li>As Peter, issue it. As Esther, read it, record a constraint if you like, and sign; then Peter signs and it is fixed.</li>
+      <li>As Peter, draft version 2 of the signed contract. As Natasha (HR), set the limits.</li>
+    </ol></div>
+    <div class="panel"><h2>What is recorded</h2><p class="muted" style="margin:0 0 6px;font-size:12px">Prototype aid: the records the build would write, newest first.</p><ul class="audit" id="audit"></ul></div>
+  </aside>
+</div>
+<div class="live" aria-live="polite" id="live"></div>
+<script>
+'use strict';
+/* Contracts prototype (Contracts Specification v0.1, CT-1 to CT-10). Sample Water Utility at 18 October 2026; Esther
+   Banda's FY2026 contract, drafted by Peter Mwansa. Illustrative quantities for judging the screens. Nothing is stored. */
+const TODAY = '2026-10-18';
+const ROLES = { cm: 'Supervisor: Peter Mwansa, Commercial Manager', co: 'Employee: Esther Banda, Commercial Officer', md: 'Next-level reviewer: Chanda Mulenga, Managing Director', hrm: 'HR: Natasha Kabwe' };
+const ACTIVITIES = [
+  { id: 'a1.2.1.4', code: 'A1.2.1.4', title: 'Introduce daily route briefing and check-in procedure', level: 'Procedure', owner: 'Commercial Officer', total: 240, unit: 'briefings', carried: 0 },
+  { id: 'a1.1.1.1', code: 'A1.1.1.1', title: 'Complete monthly meter-reading routes', level: 'Procedure', owner: 'Commercial Officer', total: 2400, unit: 'readings', carried: 2400 },
+  { id: 'a1.2.1.3', code: 'A1.2.1.3', title: 'Replace faulty customer meters', level: 'Process', owner: 'Commercial Manager', total: 1800, unit: 'meters', carried: 400 },
+  { id: 'a1.2.1.2', code: 'A1.2.1.2', title: 'Revise meter management policy', level: 'Policy', owner: 'Head of Commercial (vacant)', total: 1, unit: 'policy', carried: 0, done: false },
+];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const dLong = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => Number(n).toLocaleString('en-GB');
+const act = (id) => ACTIVITIES.find((a) => a.id === id);
+let S;
+function fresh() {
+  return {
+    as: 'cm', frame: 'phone', open: false, adding: null, depFor: null, log: [], toast: null, limits: { standing: 20, single: null, showDraft: false },
+    c: {
+      status: 'draft', version: 1, check: null, note: null, signedE: false, signedS: false, history: [],
+      objectives: [
+        { id: 'o1', source: 'activity', act: 'a1.2.1.4', title: 'Run daily route briefings for the meter readers', qty: 240, unit: 'briefings', weight: 40,
+          deps: [{ on: 'a1.2.1.2', by: '2026-02-28', note: 'The revised policy sets the check-in rules the briefings teach.' }] },
+        { id: 'o2', source: 'activity', act: 'a1.1.1.1', title: 'Complete monthly meter-reading routes in Zones A to C', qty: 2400, unit: 'readings', weight: 40, deps: [] },
+        { id: 'o3', source: 'duty', title: 'Submit the monthly commercial report by the 12th', qty: 12, unit: 'reports', weight: 30, deps: [] },
+      ],
+    },
+  };
+}
+const log = (t, r) => S.log.unshift({ t, r });
+const say = (m) => { S.toast = m; document.getElementById('live').textContent = m; };
+
+/* ── checks (rules engine in the build) ── */
+function checks() {
+  const o = S.c.objectives, must = [], worth = [];
+  const total = o.reduce((a, x) => a + Number(x.weight), 0);
+  if (total !== 100) must.push(`Weights total ${total}%. They must total 100%.`);
+  o.filter((x) => !(Number(x.qty) > 0)).forEach((x) => must.push(`“${x.title}” has no quantity.`));
+  const duty = o.filter((x) => x.source === 'duty').reduce((a, x) => a + Number(x.weight), 0);
+  if (duty > S.limits.standing) must.push(`Standing duties carry ${duty}%, over HR’s limit of ${S.limits.standing}%.`);
+  if (S.limits.single) o.filter((x) => Number(x.weight) > S.limits.single).forEach((x) => must.push(`“${x.title}” carries ${x.weight}%, over HR’s limit of ${S.limits.single}% for one objective.`));
+  o.filter((x) => x.source === 'activity').forEach((x) => { const a = act(x.act); if (a.carried + Number(x.qty) > a.total) worth.push(`${a.code}: personal quantities across contracts would total ${fmt(a.carried + Number(x.qty))} ${a.unit}, more than the activity’s ${fmt(a.total)}.`); });
+  o.forEach((x) => x.deps.forEach((d) => { const a = act(d.on); const flags = depFlags(d); if (flags.length) worth.push(`“${x.title}” depends on ${a.code} ${a.title}: ${flags.join('; ')}.`); }));
+  return { must, worth, fairness: worth.some((w) => w.includes('depends on')) };
+}
+function depFlags(d) {
+  const a = act(d.on), f = [];
+  if (!a.carried) f.push('in nobody’s contract');
+  if (d.by < TODAY && !a.done) f.push(`needed by ${dLong(d.by)}, not done`);
+  if (['Principle', 'Policy'].includes(a.level)) f.push(`decided at ${a.level} level`);
+  return f;
+}
+const statusText = () => ({ draft: S.c.check === 'waiting' ? 'Draft, with Chanda Mulenga to check' : S.c.check === 'sent_back' ? 'Draft, sent back' : 'Draft', issued: 'Issued, waiting for signatures', signed: 'Signed' }[S.c.status]);
+
+/* ── views ── */
+function objectiveRows(editable) {
+  return S.c.objectives.map((x) => {
+    const a = x.source === 'activity' ? act(x.act) : null;
+    const src = x.source === 'duty' ? '<span class="chip info">Standing duty, not part of the plan</span>' : `<span class="muted">From ${a.code} ${esc(a.title)} · ${a.level}</span>`;
+    const deps = x.deps.map((d, i) => { const da = act(d.on), fl = depFlags(d); return `<div class="dep"><b>Depends on:</b> ${da.code} ${esc(da.title)}, ${esc(da.owner)} (${da.level} level), needed by ${dLong(d.by)}${fl.length ? `<br><span class="advt">Worth checking: ${fl.join('; ')}</span>` : ''}${d.note ? `<br><span class="muted">${esc(d.note)}</span>` : ''}${editable ? ` <button class="linkbtn" data-deldep="${x.id}:${i}">Remove</button>` : ''}</div>`; }).join('');
+    return `<li class="obj"><p class="q2">${esc(x.title)}</p><p class="line">${src}</p>
+      ${editable ? `<div class="grid2"><div class="field"><label for="q-${x.id}">Quantity (${esc(x.unit)})</label><input id="q-${x.id}" inputmode="numeric" value="${x.qty}"></div><div class="field"><label for="w-${x.id}">Weight (%)</label><input id="w-${x.id}" inputmode="numeric" value="${x.weight}"></div></div>`
+        : `<p class="line num">${fmt(x.qty)} ${esc(x.unit)} · weight ${x.weight}%</p>`}
+      ${deps}${editable ? `<div class="btns"><button class="btn sec" data-adddep="${x.id}">Add a dependency</button><button class="btn sec" data-delobj="${x.id}">Remove objective</button></div>` : ''}${S.depFor === x.id ? depForm() : ''}</li>`;
+  }).join('');
+}
+function depForm() {
+  return `<div class="card plain inner"><div class="field"><label for="don">Depends on</label><select id="don">${ACTIVITIES.map((a) => `<option value="${a.id}">${a.code} ${esc(a.title)} (${esc(a.owner)})</option>`).join('')}</select></div>
+    <div class="field"><label for="dby">Needed by</label><input id="dby" type="date" value="2026-12-31"></div>
+    <div class="field"><label for="dnote">Why (optional)</label><input id="dnote"></div>
+    <div class="btns"><button class="btn" data-savedep="1">Add</button><button class="btn sec" data-canceldep="1">Cancel</button></div></div>`;
+}
+function addForm() {
+  const a = S.adding;
+  return `<section class="card plain"><h3>Add an objective</h3>
+    <fieldset style="border:0;padding:0;margin:0 0 8px"><legend class="flabel">Where it comes from</legend>
+    ${[['activity', 'An activity in Cascade'], ['share', 'A share you own in Targets'], ['combined', 'A combined figure of a KPI you own'], ['duty', 'A standing duty, not part of the plan']].map(([k, l]) => `<label class="check"><input type="radio" name="src" value="${k}"${a.source === k ? ' checked' : ''}${k === 'share' || k === 'combined' ? ' disabled' : ''}><span>${l}${k === 'share' || k === 'combined' ? '<br><span class="muted">Esther owns no share in Targets.</span>' : ''}</span></label>`).join('')}</fieldset>
+    ${a.source === 'activity' ? `<div class="field"><label for="na">Activity</label><select id="na">${ACTIVITIES.filter((x) => x.id !== 'a1.2.1.2').map((x) => `<option value="${x.id}">${x.code} ${esc(x.title)} · ${fmt(x.total - x.carried)} of ${fmt(x.total)} ${x.unit} not yet in a contract</option>`).join('')}</select></div>` : ''}
+    <div class="field"><label for="nt">Title</label><input id="nt"></div>
+    <div class="grid2"><div class="field"><label for="nq">Quantity</label><input id="nq" inputmode="numeric"></div><div class="field"><label for="nw">Weight (%)</label><input id="nw" inputmode="numeric"></div></div>
+    <div class="btns"><button class="btn" data-saveobj="1">Add</button><button class="btn sec" data-cancelobj="1">Cancel</button></div></section>`;
+}
+function viewTeam() {
+  const c = S.c;
+  if (!S.open) return `<section class="card plain"><h2>Your team’s contracts, FY2026</h2><ul class="rows">
+    <li><button class="rowbtn" data-opencon="1"><span><b>Esther Banda</b><br><span class="muted">Commercial Officer</span></span><span class="chip info">${statusText()}</span></button></li>
+    <li><div class="rowbtn" style="cursor:default"><span><b>Agnes Mumba</b><br><span class="muted">Billing Clerk</span></span><span class="muted">No contract yet</span></div></li></ul>
+    <p class="line muted">Issue due 31 January 2026, overdue. Prototype: only Esther’s contract opens.</p></section>`;
+  const ch = checks(), edit = c.status === 'draft' && c.check !== 'waiting';
+  const total = c.objectives.reduce((a, x) => a + Number(x.weight), 0);
+  let h = `<p><button class="linkbtn" data-closecon="1">‹ Your team’s contracts</button></p>
+    <section class="card f"><h2>Esther Banda, FY2026${c.version > 1 ? `, version ${c.version}` : ''}</h2><p class="line"><span class="chip info">${statusText()}</span></p>
+    ${c.check === 'sent_back' ? `<div class="flag"><b>Sent back by Chanda Mulenga</b>${esc(S.c.checkReason)}</div>` : ''}
+    <ul class="objs">${objectiveRows(edit)}</ul>
+    <p class="line"><b>Weights: ${total}%</b> of 100%</p>
+    ${edit ? `<div class="btns"><button class="btn sec" data-saveweights="1">Save changes</button><button class="btn sec" data-addobj="1">Add an objective</button></div>` : ''}</section>
+    ${S.adding ? addForm() : ''}
+    ${(ch.must.length || ch.worth.length) ? `<section class="card plain"><h3>Checks</h3>${ch.must.map((m) => `<div class="mustfix"><b>Must fix before issuing</b>${esc(m)}</div>`).join('')}${ch.worth.map((w) => `<div class="flag"><b>Worth checking</b>${esc(w)}</div>`).join('')}</section>` : ''}`;
+  if (c.status === 'draft' && c.check !== 'waiting') {
+    const label = ch.fairness && c.check !== 'cleared' ? 'Send to Chanda Mulenga to check, then issue' : 'Issue the contract';
+    h += `<div class="btns"><button class="btn" data-issue="1"${ch.must.length ? ' aria-disabled="true"' : ''}>${label}</button></div>${ch.fairness && c.check !== 'cleared' ? '<p class="line muted">Because a dependency is worth checking, the next-level reviewer sees it first. The Head of Commercial post is vacant, so it goes to the Managing Director.</p>' : ''}`;
+  }
+  if (c.status === 'issued' && !c.signedS) h += `<div class="btns"><button class="btn" data-signs="1">Sign as supervisor</button></div>`;
+  if (c.status === 'signed') h += `<section class="card plain"><h3>Revise the contract</h3><p class="line">If a constraint is known early, agree a change with Esther and draft a new version. Both sign again; this version is kept.</p><div class="btns"><button class="btn sec" data-revise="1">Draft version ${c.version + 1}</button></div></section>`;
+  if (c.history.length) h += `<p class="line muted">Earlier versions: ${c.history.map((v) => `version ${v.version}, signed ${dLong(v.on)}`).join('; ')}.</p>`;
+  return h;
+}
+function viewMine() {
+  const c = S.c;
+  if (c.status === 'draft') return `<section class="card plain"><h2>Your FY2026 contract</h2><p class="empty">Your supervisor is drafting it. You’ll see it once it is issued.</p><p class="line muted">HR can let staff see drafts first; it’s off here.</p></section>`;
+  let h = `<section class="card f"><h2>Your FY2026 contract${c.version > 1 ? `, version ${c.version}` : ''}</h2><p class="line muted">Commercial Officer · supervisor Peter Mwansa</p><p class="line"><span class="chip info">${statusText()}</span></p><ul class="objs">${objectiveRows(false)}</ul></section>`;
+  if (c.status === 'issued' && !c.signedE) h += `<section class="card plain"><h2>Sign your contract</h2>
+    <div class="field"><label for="enote">Anything you want recorded (optional)</label><span class="hint">For example a constraint you can’t control, or that you disagree. It is kept with the contract and shown again at your reviews. You still sign.</span><textarea id="enote"></textarea></div>
+    <div class="btns"><button class="btn" data-signe="1">Sign</button></div></section>`;
+  if (c.note) h += `<p class="line"><b>Your note:</b> “${esc(c.note)}”</p>`;
+  if (c.status === 'signed') h += `<p class="line"><span class="chip ok">Signed by you and Peter Mwansa</span> Titles, quantities and weights are now fixed for the year.</p>`;
+  return h;
+}
+function viewCheck() {
+  const c = S.c, ch = checks();
+  if (c.check !== 'waiting') return `<section class="card plain"><h2>Contracts to check before issue</h2><p class="empty">Nothing to check. Contracts come here when a dependency is worth checking.</p></section>`;
+  return `<section class="card f"><h2>Esther Banda, FY2026</h2><p class="line muted">Drafted by Peter Mwansa, Commercial Manager. The Head of Commercial post is vacant, so it comes to you.</p>
+    ${ch.worth.map((w) => `<div class="flag"><b>Worth checking</b>${esc(w)}</div>`).join('')}<ul class="objs">${objectiveRows(false)}</ul>
+    <div class="btns"><button class="btn" data-clear="1">It’s fair: let it be issued</button></div>
+    <details class="ctl"><summary>Send it back to Peter Mwansa</summary><div class="field"><label for="sbr">Reason (needed)</label><textarea id="sbr"></textarea></div><div class="btns"><button class="btn sec" data-sendback="1">Send back</button></div></details></section>`;
+}
+function viewOverview() {
+  return `<section class="card f"><h2>Contracts, FY2026</h2><div class="scroll"><table class="res"><thead><tr><th>Status</th><th class="n">Contracts</th></tr></thead><tbody>
+    <tr><td>No contract yet</td><td class="n">9</td></tr><tr><td>Draft</td><td class="n">${S.c.status === 'draft' ? 1 : 0}</td></tr><tr><td>Issued, waiting for signatures</td><td class="n">${S.c.status === 'issued' ? 1 : 0}</td></tr><tr><td>Signed</td><td class="n">${1 + (S.c.status === 'signed' ? 1 : 0)}</td></tr></tbody></table></div>
+    <p class="line muted">Prototype counts for Sample Water Utility’s 12 positions held.</p></section>
+    <section class="card plain"><h3>Limits</h3>
+      <div class="field"><label for="ls">Most of a contract standing duties may carry (%)</label><input id="ls" inputmode="numeric" value="${S.limits.standing}"></div>
+      <div class="field"><label for="l1">Most one objective may carry (%)</label><span class="hint">Leave empty for no limit.</span><input id="l1" inputmode="numeric" value="${S.limits.single ?? ''}"></div>
+      <label class="check"><input type="checkbox" id="ld"${S.limits.showDraft ? ' checked' : ''}><span>Let staff see their draft before it is issued</span></label>
+      <div class="btns"><button class="btn" data-savelimits="1">Save</button></div></section>`;
+}
+const TABS = { cm: ['team', 'My team'], co: ['mine', 'Mine'], md: ['check', 'To check'], hrm: ['overview', 'Overview'] };
+function needs() {
+  const c = S.c, out = [];
+  if (S.as === 'cm' && c.status === 'draft' && c.check !== 'waiting') out.push('Issue Esther Banda’s contract (overdue since 31 January 2026)');
+  if (S.as === 'cm' && c.status === 'issued' && !c.signedS) out.push('Sign Esther Banda’s contract');
+  if (S.as === 'md' && c.check === 'waiting') out.push('Check 1 contract before it is issued');
+  if (S.as === 'co' && c.status === 'issued' && !c.signedE) out.push('Sign your contract');
+  return out;
+}
+function render() {
+  document.getElementById('frame').className = `frame ${S.frame === 'phone' ? 'phone' : ''}`;
+  document.getElementById('top').innerHTML = `<label class="who">Viewing as (development)<select id="role" style="min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 8px;background:var(--white);margin-top:2px;max-width:100%">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}"${S.as === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>`;
+  document.getElementById('sideNav').innerHTML = `<li><a href="#"><span class="mark"></span>Home</a></li><li><a href="#" class="here"><span class="mark f"></span>Performance</a><ul class="sub"><li><a href="#" style="opacity:.7">Progress updates</a></li><li><a href="#" style="opacity:.7">Reviews</a></li><li><a href="#" style="opacity:.7">Targets</a></li><li><a href="#" aria-current="page">Contracts</a></li></ul></li>`;
+  document.getElementById('bottom').innerHTML = `<a href="#"><span class="mark"></span>Home</a><a href="#" class="here" aria-current="page"><span class="mark f"></span>Performance</a>`;
+  const [tab, name] = TABS[S.as], n = needs();
+  const v = { team: viewTeam, mine: viewMine, check: viewCheck, overview: viewOverview }[tab]();
+  document.getElementById('body').innerHTML = `<div class="wlabel"><i aria-hidden="true"></i>Performance <span class="muted" style="font-weight:400;text-decoration:underline dotted;text-underline-offset:3px">Controlling</span></div>
+    <h1>Contracts</h1><p class="lead">What each person has agreed to deliver this year, where each part comes from, and what it depends on.</p>
+    ${n.length ? `<section class="card plain"><h2>Needs you</h2><ul class="needs">${n.map((t) => `<li><a href="#">${esc(t)}</a></li>`).join('')}</ul><p class="line muted" style="font-size:12px">Prototype: shown here; in the build these sit on Home.</p></section>` : ''}
+    <p class="tabone">${name}</p>${v}${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+  document.getElementById('audit').innerHTML = S.log.length ? S.log.map((a) => `<li>${esc(a.t)}<div class="rec">${esc(JSON.stringify(a.r, null, 1))}</div></li>`).join('') : '<li class="muted">Nothing written yet.</li>';
+  bind();
+}
+const val = (id) => (document.getElementById(id) || {}).value ?? '';
+function readEdits() { S.c.objectives.forEach((x) => { if (document.getElementById(`q-${x.id}`)) { x.qty = Number(val(`q-${x.id}`).replace(/[ ,]/g, '')) || 0; x.weight = Number(val(`w-${x.id}`)) || 0; } }); }
+function bind() {
+  const $ = (q) => document.querySelectorAll(q), c = S.c;
+  document.getElementById('role').onchange = (e) => { S.as = e.target.value; S.toast = null; S.adding = null; S.depFor = null; render(); };
+  $('[data-opencon]').forEach((b) => b.onclick = () => { S.open = true; render(); });
+  $('[data-closecon]').forEach((b) => b.onclick = () => { S.open = false; render(); });
+  $('[data-saveweights]').forEach((b) => b.onclick = () => { readEdits(); log('Draft saved', c.objectives.map((x) => ({ objective: x.title, quantity: x.qty, weightPct: x.weight }))); say('Saved.'); render(); });
+  $('[data-addobj]').forEach((b) => b.onclick = () => { readEdits(); S.adding = { source: 'activity' }; render(); });
+  $('input[name=src]').forEach((r) => r.onchange = () => { S.adding.source = r.value; render(); });
+  $('[data-cancelobj]').forEach((b) => b.onclick = () => { S.adding = null; render(); });
+  $('[data-saveobj]').forEach((b) => b.onclick = () => {
+    const t = val('nt').trim(); if (!t) { say('Give it a title.'); return render(); }
+    const o = { id: `o${Date.now()}`, source: S.adding.source, title: t, qty: Number(val('nq')) || 0, weight: Number(val('nw')) || 0, deps: [] };
+    if (o.source === 'activity') { o.act = val('na'); o.unit = act(o.act).unit; } else o.unit = 'times';
+    c.objectives.push(o); log('Objective added', { source: o.source === 'duty' ? { standingDuty: t } : { sourceActivityId: o.act }, quantity: o.qty, weightPct: o.weight }); S.adding = null; say('Added.'); render();
+  });
+  $('[data-delobj]').forEach((b) => b.onclick = () => { readEdits(); c.objectives = c.objectives.filter((x) => x.id !== b.dataset.delobj); render(); });
+  $('[data-adddep]').forEach((b) => b.onclick = () => { readEdits(); S.depFor = b.dataset.adddep; render(); });
+  $('[data-canceldep]').forEach((b) => b.onclick = () => { S.depFor = null; render(); });
+  $('[data-savedep]').forEach((b) => b.onclick = () => {
+    const o = c.objectives.find((x) => x.id === S.depFor), on = val('don');
+    if (o.source === 'activity' && o.act === on) { say('An objective can’t depend on its own activity.'); return render(); }
+    if (on === 'a1.2.1.4' && c.objectives.some((x) => x.act === on && x.deps.some((d) => d.on === o.act))) { say('Refused: that would make a circle of dependencies.'); return render(); }
+    o.deps.push({ on, by: val('dby'), note: val('dnote').trim() }); log('Dependency added', { from: { contractObjective: o.title }, on: { activityId: on }, neededBy: val('dby') }); S.depFor = null; say('Dependency added.'); render();
+  });
+  $('[data-deldep]').forEach((b) => b.onclick = () => { const [oid, i] = b.dataset.deldep.split(':'); c.objectives.find((x) => x.id === oid).deps.splice(Number(i), 1); render(); });
+  $('[data-issue]').forEach((b) => b.onclick = () => {
+    readEdits(); const ch = checks();
+    if (ch.must.length) { say('Fix what is marked before issuing.'); return render(); }
+    if (ch.fairness && c.check !== 'cleared') { c.check = 'waiting'; log('Sent for the check before issue (CT-5)', { to: 'Managing Director', reasons: ch.worth }); say('Sent to Chanda Mulenga to check first.'); return render(); }
+    c.status = 'issued'; log('Gate contract.issue passed', { contract: 'pc-co-2026', version: c.version }); say('Issued. Esther can now read and sign it.'); render();
+  });
+  $('[data-clear]').forEach((b) => b.onclick = () => { c.check = 'cleared'; log('Check before issue: cleared', { preIssueCheck: { outcome: 'cleared', by: 'm-md' } }); say('Cleared. Peter can issue it.'); render(); });
+  $('[data-sendback]').forEach((b) => b.onclick = () => { const r = val('sbr').trim(); if (!r) { say('Give a reason.'); return render(); } c.check = 'sent_back'; c.checkReason = r; log('Check before issue: sent back', { preIssueCheck: { outcome: 'sent_back', reason: r, by: 'm-md' } }); say('Sent back to Peter Mwansa.'); render(); });
+  $('[data-signe]').forEach((b) => b.onclick = () => { c.signedE = true; c.note = val('enote').trim() || null; log('Gate contract.sign: employee', { employeeNote: c.note }); if (c.signedS) { c.status = 'signed'; } say('Signed.'); render(); });
+  $('[data-signs]').forEach((b) => b.onclick = () => { c.signedS = true; log('Gate contract.sign: supervisor', {}); if (c.signedE) { c.status = 'signed'; log('Snapshot frozen at signature', c.objectives.map((x) => ({ title: x.title, quantity: x.qty, weightPct: x.weight }))); } say(c.signedE ? 'Signed by both. Fixed for the year.' : 'Signed. Waiting for Esther.'); render(); });
+  $('[data-revise]').forEach((b) => b.onclick = () => { c.history.push({ version: c.version, on: TODAY }); c.version++; c.status = 'draft'; c.check = null; c.signedE = c.signedS = false; c.note = null; log('Version drafted (CT-8)', { version: c.version, previousVersion: c.version - 1 }); say(`Version ${c.version} drafted. Version ${c.version - 1} stays in force until both sign.`); render(); });
+  $('[data-savelimits]').forEach((b) => b.onclick = () => { S.limits.standing = Number(val('ls')) || 20; S.limits.single = val('l1').trim() ? Number(val('l1')) : null; S.limits.showDraft = document.getElementById('ld').checked; log('Limits saved', S.limits); say('Saved.'); render(); });
+}
+document.getElementById('pFrame').onchange = (e) => { S.frame = e.target.value; render(); };
+document.getElementById('pReset').onclick = () => { S = fresh(); render(); };
+S = fresh(); render();
+</script></body></html>

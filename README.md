@@ -39,6 +39,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 14. Staff survey (Staff Voice Specification v0.1; SV-1 to SV-14, BUILD-BRIEF section 40, in the archive) — done (v0.19.0)
 15. Reviews (Reviews Specification v0.1; RV-1 to RV-13, BUILD-BRIEF section 41, in the archive) — done (v0.20.0)
 16. Targets: KPI shares, combining rule, standing duties, quarterly reviews (BUILD-BRIEF sections 42–43, in the archive) — done (v0.21.0)
+17. Contracts: drafting, issuing, signing, revising, dependencies (BUILD-BRIEF sections 44 and 46, in the archive) — done (v0.22.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -57,8 +58,20 @@ and a consultant. In the NGO one person holds both Finance and HR, so its queue 
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (735 tests). Choose the next slice with Elijah; `NEXT.md` lists the
-  candidates, including the parts of Targets not yet built.
+- Start from this zip: `npm install`, `npm run verify` (744 tests). Choose the next slice with Elijah; `NEXT.md` lists the
+  candidates.
+
+## Contracts (v0.22.0)
+
+- BUILD-BRIEF sections 44 and 46 (in `DECISIONS-ARCHIVE.md`); Contracts Specification v0.1, CT-1 to CT-10. Contract
+  v1.14: Dependency; contract version, employee note and check before issue; HR limits. 744 tests (8 in
+  `src/data/access/contracts.test.ts`).
+- Code: rules `src/rules/contracts.ts`; data access `src/data/access/contracts.ts` (`repo.contracts`); screen
+  `src/routes/Contracts.tsx`; dependencies and the employee's request shown in Reviews.
+- Try it on Sample Water Utility: as Next-level reviewer (Peter Mwansa), Performance › Contracts › My team › Esther
+  Banda: weights total 110% and the monthly report is over the standing-duty limit; fix them, issue; the policy
+  dependency sends it to the Executive (Chanda Mulenga) to check; clear it, issue, sign as Supervisor (Esther) and as
+  Next-level reviewer (Peter). Then draft version 2. As HR, set the limits.
 
 ## Targets (v0.21.0)
 

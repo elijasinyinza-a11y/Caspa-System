@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36 and 38 to 43 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36, 38 to 44 and 46 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -421,3 +421,28 @@ Source: the *CASPA™ Targets Specification v0.1* (a doc in the Project's chats)
 - **Built differently, to settle with Elijah:** a share's score uses the reading against its target (direction-aware, as R1 and RV-1), not KPI progress (P1), because shares hold no baseline; share readings are verified from the share's page and "Needs you", not inside Progress updates › To verify.
 - **Not built in v0.21.0:** TG-4 (Cascade's corporate reading computed from the shares; Cascade shows the one line and the combined figure, but KPI progress still uses its own readings); TG-9 (proposing an activity into Cascade: there is no existing propose-and-confirm route for activities, so it needs its own short specification); the standing-duty limit as a screen check (the rule is built and tested, but CASPA™ has no contract-drafting screen yet).
 - **Delivered:** built as v0.21.0 (6 November 2026).
+
+## 44. Decisions for the next slice: contract drafting and dependencies (6 November 2026)
+
+Agreed with Elijah on 6 November 2026. A specification follows.
+
+- **Next slice:** drafting, issuing and signing contracts: each objective's source (activity, share, combined figure, standing duty), weights, the standing-duty limit on screen, and the protections discussed on 5 November where they can be built without new framework content.
+- **Dependencies:** a target may depend on another piece of work owned by someone else, by a date. A dependency is a link held in Performance, from a share or a contract objective to a Cascade activity or another share, with a "needed by" date and a note. The responsible officer's target uses the existing route: the activity they own goes into their contract. Work not yet in Cascade is proposed into it (TG-9).
+- **Checks:** a dependency nobody carries (worth checking), a dependency past its "needed by" date and not complete (worth checking, to both people), and a circle of dependencies (refused).
+- **At review:** the dependent person's review shows the dependency beside the affected objective, as evidence for a band move or "Can't be assessed"; the responsible officer's own score reflects their own late work. The activity's 6P level shows where a target depends on a higher decision level.
+- **Scope:** dependencies attach to shares and contract objectives only, never to corporate KPIs, so Cascade is not crowded; Cascade's activities under each KPI already say what a corporate KPI relies on.
+
+## 46. Decisions on Performance › Contracts, slice 17 (6 November 2026)
+
+Source: the *CASPA™ Contracts Specification v0.1* (a doc in the Project's chats), CT-1 to CT-10, accepted by Elijah on 6 November 2026, with the prototype (`reference/caspa-contracts-prototype.html`). Contract v1.14.
+
+- **CT-1 to CT-3:** the position's supervisor drafts; each objective is added by choosing its source first (an activity, a share, a combined figure or a standing duty); weights must total 100%, every objective needs a quantity, and standing duties stay within HR's limit before a contract can be issued.
+- **CT-4, CT-7:** HR sets the standing-duty limit, an optional single-objective limit, and whether staff see drafts before issue (off by default).
+- **CT-5:** where a dependency is worth checking, issuing first sends the contract to the next-level reviewer, who clears it or sends it back with a reason; the supervisor cannot clear their own. A vacant post passes the check further up (the Head of Commercial's goes to the Managing Director); this also corrected the next-level reviewer for reviews.
+- **CT-6:** the employee may record a constraint or disagreement when signing, and still signs; on both signatures titles, quantities and weights are frozen.
+- **CT-8:** a signed contract is revised as a new version, signed again by both; the earlier version stays in force until then and is then closed. Reviews already opened stay on the version they were opened for.
+- **CT-9:** the employee as well as the supervisor may ask HR to accept "Can't be assessed".
+- **Dependencies (section 44):** a contract objective depends on a Cascade activity by a date, with a note; checks for work in nobody's contract, work past its date and not done, and work decided at Principle or Policy level (shown as a fact); circles are refused. Reviews show each dependency beside its objective.
+- **Sample data:** Esther Banda's FY2026 draft, drafted by the Commercial Manager, with the problems the checks catch and a dependency on the meter management policy.
+- **Not built in v0.22.0:** dependencies from a share (the record allows them; only contract objectives have a screen), and choosing a share as the thing depended on.
+- **Delivered:** built as v0.22.0 (6 November 2026).
