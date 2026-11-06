@@ -3,6 +3,7 @@
  * Scores are computed live and shown as provisional until a review's final result is frozen at appraisal.close.
  * Nothing here is stored. Achievement and overall scores are never rounded here; only the label rounds (half up).
  */
+import { objectiveBasis } from './targets';
 import {
   RATING_PRESETS, type ContractObjective, type ISODate, type PerformanceContract, type RatingScheme, type Review,
 } from '../contract/caspa-data-contract';
@@ -101,15 +102,17 @@ export const nextLevelPositionOf = (s: Store, c: PerformanceContract): string | 
 };
 
 export function rateObjective(s: Store, co: ContractObjective, review: Review | undefined, ctx: RatingContext, bands: Bands): ObjectiveRating {
-  const target = (co.snapshot?.quantityTarget ?? co.quantityTarget)?.value ?? null;
-  const done = verifiedDone(s, co, ctx.now);
+  // v0.21.0 (TG-5): a share, a breakdown's combined figure, a standing duty or an activity, each from verified figures.
+  const basis = objectiveBasis(s, co, ctx.now, () => verifiedDone(s, co, ctx.now));
+  const target = basis.target;
+  const done = basis.done;
   const base = { contractObjectiveId: co.id, weightPct: co.weightPct, target, done, achievement: null, bandScore: null, adjustment: null, score: null };
   if (review?.notAssessable.some((n) => n.contractObjectiveId === co.id && n.hrApproval !== null)) return { ...base, basis: 'not_assessable' };
   if (target === null || target <= 0) return { ...base, basis: 'no_quantity' };
   if (done === null) return { ...base, basis: 'not_verified' };
   // RV-1 (Elijah, 5 November 2026): where lower is better, achievement is target ÷ verified figure, so 16 recorded
   // against at most 20 is 125%; a verified figure of 0 scores the top band.
-  const achievement = co.direction === 'lower_is_better' ? (done === 0 ? Number.POSITIVE_INFINITY : target / done) : done / target;
+  const achievement = basis.lower ? (done === 0 ? Number.POSITIVE_INFINITY : target / done) : done / target;
   const bandScore = bandFor(achievement, bands);
   // R7: the latest adjustment with a written reason; one band only, kept within the scale.
   const adj = last(review?.adjustments.filter((a) => a.contractObjectiveId === co.id && a.reason.trim() !== '') ?? []);

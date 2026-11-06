@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.12
+ * CASPA™ data contract — v1.13
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,13 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.13 (6 November 2026, Elijah; Targets Specification v0.1, TG-1 to TG-11): Performance › Targets.
+ *     - KpiBreakdown, KpiShare, ShareReading: a Cascade KPI broken down into unit shares for a year, combined by one
+ *       rule ('sum' | 'weighted' | 'none'); share readings are verified by the share owner's supervisor (TG-3).
+ *     - ContractObjective: sourceActivityId becomes nullable; sourceShareId, sourceBreakdownId and standingDuty added
+ *       (exactly one source set); servesShareId links activity work to the share it moves ("Work behind this share").
+ *     - Organisation.settings.standingDutyLimitPct (default 20, TG-6). Review.periodEnd: the quarter a quarterly
+ *       review covers (TG-11; the existing reviewModel setting chooses the pattern).
  * v1.12 (5 November 2026, Elijah; Reviews Specification v0.1, RV-3): one field. Review.reviewerCheck records that the
  *     next-level reviewer accepted a flagged review, so "Check 1 flagged review" can leave "Needs you". No other change.
  * v1.11 (5 November 2026, Elijah; Staff Voice Specification v0.1, SV-1 to SV-14): three records and three permission
@@ -232,7 +239,8 @@ export interface Organisation extends Audited {
   perspectives: Perspective[] | null; // null = scorecard not used
   settings: {
     overdueEscalationDays: number; // default 7 (C7)
-    reviewModel: 'mid_year_and_annual' | 'quarterly'; // C4
+    reviewModel: 'mid_year_and_annual' | 'quarterly'; // C4; v1.13: quarterly = three provisional quarters plus the year-end review (TG-11)
+    standingDutyLimitPct: number; // v1.13: most of a contract's weight standing duties may carry, default 20 (TG-6)
     kpiStatus: { onTrackAt: number; atRiskAt: number }; // share of expected-to-date, defaults 0.9 / 0.7 (P10)
     ratingSchemeId: Id<'RatingScheme'>; // R1
     aiEnabled: boolean; // organisation may switch AI assistance off
@@ -494,6 +502,37 @@ export interface SurveyRound extends OrgScoped, Audited {
   closedBy: Stamp | null;
   closingNote: { text: string; written: Stamp } | null; // SV-13, at most 1,000 characters
   concernSummary: { text: string; draft: DraftMeta } | null; // SV-7: the AI-drafted summary of comments, accepted or edited by the Strategy office
+}
+
+/* ───────────────────────── Targets (v1.13) ───────────────────────── */
+
+/** A Cascade KPI broken down into unit shares for one financial year (TG-1). */
+export interface KpiBreakdown extends OrgScoped, Audited {
+  id: Id<'KpiBreakdown'>;
+  kpiId: Id<'Kpi'>;
+  financialYear: FinancialYear;
+  combine: 'sum' | 'weighted' | 'none';
+  weightLabel: string; // what units are weighted by, in the organisation's words
+}
+
+export interface KpiShare extends OrgScoped, Audited {
+  id: Id<'KpiShare'>;
+  breakdownId: Id<'KpiBreakdown'>;
+  unitId: Id<'OrgUnit'>;
+  ownerPositionId: Id<'Position'> | null;
+  target: number;
+  weight: number | null; // for 'weighted'; planned, set with the breakdown (TG-2)
+}
+
+/** A share's reading for a period; counts only once verified by the owner's supervisor (TG-3). */
+export interface ShareReading extends OrgScoped, Audited {
+  id: Id<'ShareReading'>;
+  shareId: Id<'KpiShare'>;
+  periodEnd: ISODate;
+  value: number;
+  savedOffline: boolean;
+  verified: { by: Stamp } | null;
+  returned: { reason: string; by: Stamp } | null;
 }
 
 /** One person's answers. OrgScoped only: no created/updated stamps, by design (SV-2). */
@@ -766,7 +805,11 @@ export interface PerformanceContract extends OrgScoped, Audited {
 export interface ContractObjective extends OrgScoped, Audited {
   id: Id<'ContractObjective'>;
   contractId: Id<'PerformanceContract'>;
-  sourceActivityId: Id<'Activity'>;
+  sourceActivityId: Id<'Activity'> | null; // v1.13: null when the objective comes from a share, a breakdown or a standing duty
+  sourceShareId?: Id<'KpiShare'> | null; // v1.13: the share's owner, scored from its verified readings
+  sourceBreakdownId?: Id<'KpiBreakdown'> | null; // v1.13: the breakdown's combined figure
+  standingDuty?: { description: string } | null; // v1.13: recurring work not in the plan, labelled as such
+  servesShareId?: Id<'KpiShare'> | null; // v1.13: activity work linked to the share it moves
   /** v1.1: the employee's share of the activity, set by the supervisor; editable until signature. */
   title: string;
   quantityTarget: { value: number; unit: string } | null; // e.g. 400 of the activity's 1,800 meters
@@ -803,6 +846,7 @@ export interface Review extends OrgScoped, Audited {
   notAssessable: { contractObjectiveId: Id<'ContractObjective'>; reason: string; hrApproval: Stamp | null }[]; // R9
   competencyRatings: { label: string; score: 1 | 2 | 3 | 4 | 5; justification: string }[]; // R5, if enabled
   returnedByReviewer: { reason: string; by: Stamp } | null; // R8
+  periodEnd?: ISODate | null; // v1.13: the quarter a quarterly review covers (TG-11)
   reviewerCheck: { by: Stamp } | null; // v1.12 (RV-3): the next-level reviewer accepted the flagged review
   employeeAcknowledgement: { at: ISODateTime; disagreement: string | null } | null; // R8
   /** Frozen at appraisal.close; until then scores are computed live and shown as provisional (R9). */
@@ -937,6 +981,10 @@ export const PERMISSIONS: PermissionMatrix = {
   // and department heads ("owner", own unit and below) see counts only, never comments; enforced in the data-access
   // layer. Receipts: the Strategy office sees counts only.
   SurveyRound: { view: ['all_members'], draft: ['strategy_office'] },
+  // v1.13: Targets. Readings are drafted by the share's owner and verified by their supervisor (data-access layer).
+  KpiBreakdown: { view: ['all_members'], draft: ['owner', 'strategy_office'] },
+  KpiShare: { view: ['all_members'], draft: ['owner', 'strategy_office'] },
+  ShareReading: { view: ['all_members'], draft: ['owner'], approve: ['supervisor'] },
   SurveyResponse: { view: ['strategy_office', 'executive', 'owner'], draft: ['self'] },
   SurveyReceipt: { view: ['self', 'strategy_office'], draft: ['self'] },
   Workshop: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
