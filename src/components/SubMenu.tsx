@@ -8,7 +8,7 @@ import { hrefFor, type Route } from "../routes/router";
 import { useApp } from "./AppContext";
 
 export const entryHref = (e: MenuEntry): string =>
-  e.w === "strategy" ? hrefFor({ kind: "strategy", entry: e.entry }) : e.w === "performance" ? hrefFor(e.entry === "reviews" ? { kind: "reviews" } : e.entry === "targets" ? { kind: "targets" } : { kind: "progress" }) : hrefFor({ kind: "org", tab: e.entry });
+  e.w === "strategy" ? hrefFor({ kind: "strategy", entry: e.entry }) : e.w === "performance" ? hrefFor(e.entry === "reviews" ? { kind: "reviews" } : e.entry === "targets" ? { kind: "targets" } : e.entry === "contracts" ? { kind: "contracts" } : { kind: "progress" }) : hrefFor({ kind: "org", tab: e.entry });
 
 export const isCurrentEntry = (r: Route, e: MenuEntry): boolean =>
   e.w === "strategy"

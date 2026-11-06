@@ -29,7 +29,7 @@ export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: For
 export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
 /** v0.20.0: Performance › Reviews, at one review or a tab. */
 export type ReviewsLink = { kind: 'reviews'; reviewId?: string; tab?: 'mine' | 'team' | 'check' | 'round' };
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | null;
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | { kind: 'contracts'; contractId?: string; tab?: 'mine' | 'team' | 'check' | 'overview' } | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {
@@ -137,7 +137,6 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
 
   /* Contracts: issue drafts (supervisor), sign issued ones (employee and supervisor). */
   for (const c of s.contracts.filter((x) => x.financialYear === fy)) {
-    const performance: FixTarget = { kind: 'workspace', w: 'performance' };
     const position = s.positions.find((p) => p.id === c.positionId);
     const supervises = mine(position?.reportsToPositionId);
     const person = s.people.find((p) => p.id === c.personId)?.fullName ?? null;
@@ -145,13 +144,13 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
       add({
         key: `gate:contract.issue:${c.id}`, kind: 'deadline',
         title: person ? en.needsYou.issueContract(person, position?.title ?? '') : en.needsYou.issueContractVacant(position?.title ?? ''),
-        detail: en.needsYou.contractDraft, due: gateDueDate(s, 'contract.issue', fy), severity: null, as: 'supervisor', link: performance,
+        detail: en.needsYou.contractDraft, due: gateDueDate(s, 'contract.issue', fy), severity: null, as: 'supervisor', link: { kind: 'contracts', contractId: c.id },
       });
     }
     if (c.status === 'issued') {
       const due = gateDueDate(s, 'contract.sign', fy);
-      if (c.personId === v.personId && !c.signedByEmployee) add({ key: `gate:contract.sign:self:${c.id}`, kind: 'deadline', title: en.needsYou.signContract, detail: null, due, severity: null, as: 'employee', link: performance });
-      if (supervises && !c.signedBySupervisor && person) add({ key: `gate:contract.sign:sup:${c.id}`, kind: 'deadline', title: en.needsYou.signContractFor(person), detail: null, due, severity: null, as: 'supervisor', link: performance });
+      if (c.personId === v.personId && !c.signedByEmployee) add({ key: `gate:contract.sign:self:${c.id}`, kind: 'deadline', title: en.needsYou.signContract, detail: null, due, severity: null, as: 'employee', link: { kind: 'contracts', contractId: c.id } });
+      if (supervises && !c.signedBySupervisor && person) add({ key: `gate:contract.sign:sup:${c.id}`, kind: 'deadline', title: en.needsYou.signContractFor(person), detail: null, due, severity: null, as: 'supervisor', link: { kind: 'contracts', contractId: c.id } });
     }
   }
 

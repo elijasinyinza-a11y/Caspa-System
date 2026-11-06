@@ -48,11 +48,11 @@ export function ReviewsPage({ tab, reviewId }: { tab?: ReviewTab; reviewId?: str
   );
 }
 
-function Lines({ r, share, supervise }: { r: ReviewView; share: number; supervise: boolean }) {
+function Lines({ r, share, supervise, employeeAsk = false }: { r: ReviewView; share: number; supervise: boolean; employeeAsk?: boolean }) {
   return (
     <>
       <ul className="mt-2">
-        {r.objectives.map((o) => <Line key={o.id} o={o} reviewId={r.id} supervise={supervise} />)}
+        {r.objectives.map((o) => <Line key={o.id} o={o} reviewId={r.id} supervise={supervise} employeeAsk={employeeAsk} />)}
       </ul>
       {r.overall ? (
         <>
@@ -65,7 +65,7 @@ function Lines({ r, share, supervise }: { r: ReviewView; share: number; supervis
   );
 }
 
-function Line({ o, reviewId, supervise }: { o: ObjectiveLine; reviewId: string; supervise: boolean }) {
+function Line({ o, reviewId, supervise, employeeAsk }: { o: ObjectiveLine; reviewId: string; supervise: boolean; employeeAsk: boolean }) {
   const { repo, say } = useApp();
   const id = useId();
   const [delta, setDelta] = useState<-1 | 0 | 1>(o.adjustment?.delta ?? 0);
@@ -84,7 +84,16 @@ function Line({ o, reviewId, supervise }: { o: ObjectiveLine; reviewId: string; 
       {o.adjustment && <p className="text-13 text-muted">{O.moved(o.adjustment.delta > 0 ? 'up' : 'down', o.adjustment.by, o.adjustment.reason)}</p>}
       {o.cantAssess && !o.cantAssess.accepted && <p className="text-13 text-muted">{O.cantAssessAsked(o.cantAssess.reason)}</p>}
       {o.lower && <p className="text-13 text-muted">{O.lowerNote}</p>}
+      {o.depends.map((d) => <p key={d} className="mt-1 rounded-lg bg-cream px-3 py-2 text-13">{d}</p>)}
       <p className="text-13 text-muted">{O.verifiedAt(o.verifiedOn ? formatDate(o.verifiedOn) : '', o.weightPct)}</p>
+      {employeeAsk && !o.cantAssess && (
+        <details className="mt-1">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-navy">{R.sup.askHr}</summary>
+          <label htmlFor={`${id}-er`} className={label}>{R.sup.reason}</label>
+          <textarea id={`${id}-er`} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} className={`${input} py-2`} />
+          <div className="mt-2"><button type="button" className={btn} onClick={() => act(repo.reviews.askCantAssess(reviewId, o.id, reason), R.toasts.askedHr)}>{R.sup.askHr}</button></div>
+        </details>
+      )}
       {supervise && o.bandScore !== null && !o.cantAssess?.accepted && (
         <details className="mt-1">
           <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-navy">{R.sup.change}</summary>
@@ -130,7 +139,7 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
         <p className="text-13 text-muted">{R.meta(r.position, r.supervisor || '—', r.due ? formatDate(r.due) : '—')}</p>
         <p className="mt-1"><Chip tone={stepTone}>{R.step[r.step]}</Chip></p>
         {as === 'reviewer' && r.flags.map((f, i) => <p key={i} className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text"><b>{R.check.flag[f.kind]}</b> {f.title}</p>)}
-        <Lines r={r} share={share} supervise={r.can.supervise} />
+        <Lines r={r} share={share} supervise={r.can.supervise} employeeAsk={as === 'employee' && (r.step === 'awaiting_self' || r.step === 'awaiting_supervisor')} />
         {r.history.length > 0 && <p className="tabular mt-2 text-13 text-muted">{R.history} {r.history.map((h) => R.historyItem(kindLabel(h.kind, h.periodEnd), h.score === null ? '—' : h.score.toFixed(2))).join(' · ')}</p>}
       </div>
 

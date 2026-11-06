@@ -41,13 +41,16 @@ export type Route =
   /** Performance › Reviews (v0.20.0): #/performance/reviews, a tab (/mine, /team, /check, /round), or one review (/r/<id>). */
   | { kind: 'reviews'; tab?: 'mine' | 'team' | 'check' | 'round'; reviewId?: string }
   /** Performance › Targets (v0.21.0): the list, one breakdown (/b/<id>), or one share (/s/<id>). */
-  | { kind: 'targets'; breakdownId?: string; shareId?: string; setup?: string };
+  | { kind: 'targets'; breakdownId?: string; shareId?: string; setup?: string }
+  /** Performance › Contracts (v0.22.0): a tab, or one contract (/c/<id>). */
+  | { kind: 'contracts'; tab?: 'mine' | 'team' | 'check' | 'overview'; contractId?: string };
 
 export const hrefFor = (r: Route): string =>
   r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
+  : r.kind === 'contracts' ? (r.contractId ? `#/performance/contracts/c/${encodeURIComponent(r.contractId)}` : `#/performance/contracts${r.tab ? `/${r.tab}` : ''}`)
   : r.kind === 'targets' ? (r.shareId ? `#/performance/targets/s/${encodeURIComponent(r.shareId)}` : r.breakdownId ? `#/performance/targets/b/${encodeURIComponent(r.breakdownId)}` : r.setup ? `#/performance/targets/new/${encodeURIComponent(r.setup)}` : '#/performance/targets')
   : r.kind === 'reviews' ? (r.reviewId ? `#/performance/reviews/r/${encodeURIComponent(r.reviewId)}` : `#/performance/reviews${r.tab ? `/${r.tab}` : ''}`)
   : r.kind === 'survey' ? `#/survey/${encodeURIComponent(r.roundId)}${r.results ? '/results' : ''}`
@@ -89,6 +92,11 @@ export const parseRoute = (hash: string): Route => {
       const stage = FORMING_STAGES.includes(parts[2] as FormingStage) ? (parts[2] as FormingStage) : undefined;
       return { kind: 'strategy', entry, stage, tab: stage ? parts[3] || undefined : undefined };
     }
+  }
+  if (parts[0] === 'performance' && parts[1] === 'contracts') {
+    if (parts[2] === 'c' && parts[3]) return { kind: 'contracts', contractId: decodeURIComponent(parts[3]) };
+    const tab = (['mine', 'team', 'check', 'overview'] as const).find((x) => x === parts[2]);
+    return tab ? { kind: 'contracts', tab } : { kind: 'contracts' };
   }
   if (parts[0] === 'performance' && parts[1] === 'targets') {
     const id = parts[3] ? decodeURIComponent(parts[3]) : undefined;

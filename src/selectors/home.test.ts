@@ -17,7 +17,8 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
     expect(repo('strategy').home().homes).toEqual(['strategy_office']);
     expect(repo('finance').home().homes).toEqual(['finance']);
     expect(repo('hr').home().homes).toEqual(['hr']);
-    expect(repo('supervisor').home().homes).toEqual(['supervisor']);
+    // v0.22.0: the Commercial Officer now has a draft contract of her own (sample approved 6 November 2026).
+    expect(repo('supervisor').home().homes).toEqual(['supervisor', 'employee']);
     expect(repo('employee').home().homes).toEqual(['employee']);
   });
 
@@ -74,7 +75,8 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
 
   it('rating flags reach the next-level reviewer only', () => {
     const s = createSeed();
-    const cm = createMemoryRepository([s], ORG, 'm-cm', NOW).home().needsYou.filter((i) => !i.key.startsWith('survey:'));
+    // v0.22.0: the Commercial Manager also has Esther Banda's draft contract to issue; filtered out here.
+    const cm = createMemoryRepository([s], ORG, 'm-cm', NOW).home().needsYou.filter((i) => !i.key.startsWith('survey:') && !i.key.startsWith('gate:contract'));
     expect(cm.map((i) => [i.kind, i.severity, i.title])).toEqual([['finding', 'advisory', 'Mary Chileshe: “Replace 400 faulty meters on route” scores 1 on verified progress']]);
     for (const r of ['executive', 'finance', 'strategy', 'supervisor', 'employee', 'hr'] as const) {
       expect(needs(r, s).some((i) => i.key.startsWith('rating:'))).toBe(false);
@@ -118,7 +120,7 @@ describe('role homes for Sample Water Utility at 18 October 2026', () => {
 
   it('HR sees contract coverage and the provisional score', () => {
     const hr = repo('hr').home().hr!;
-    expect(hr.contracts).toEqual({ signed: 1, issued: 0, draft: 1, none: 10 }); // the vacant Head of Commercial post has nobody to contract (H2)
+    expect(hr.contracts).toEqual({ signed: 1, issued: 0, draft: 2, none: 9 }); // the vacant Head of Commercial post has nobody to contract (H2)
     expect(hr.scored.map((x) => [x.person, x.rating.label, x.rating.flags])).toEqual([['Mary Chileshe', 'Partly meets', 1]]);
   });
 });

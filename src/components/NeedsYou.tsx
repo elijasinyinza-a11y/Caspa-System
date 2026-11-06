@@ -61,6 +61,10 @@ export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
     if (link.kind === "workspace" && !reachable.includes(link.w)) return null;
     if (link.kind === "strategy" && !reachable.includes("strategy")) return null;
     if (link.kind === "progress" && !reachable.includes("performance")) return null;
+    if (link.kind === "contracts") {
+      if (!reachable.includes("performance")) return null;
+      return <a href={hrefFor(link)} className={cls}>{en.needsYou.open}<span className="sr-only">: {item.title}</span></a>;
+    }
     if (link.kind === "targets") {
       if (!reachable.includes("performance")) return null;
       return <a href={hrefFor(link)} className={cls}>{en.needsYou.open}<span className="sr-only">: {item.title}</span></a>;

@@ -71,3 +71,11 @@ describe('targets addresses (v0.21.0)', () => {
     round({ kind: 'targets', setup: 'k-mfg-K2.1.1' });
   });
 });
+
+describe('contracts addresses (v0.22.0)', () => {
+  it('round-trips the page, its tabs and one contract', () => {
+    round({ kind: 'contracts' });
+    round({ kind: 'contracts', tab: 'overview' });
+    round({ kind: 'contracts', contractId: 'pc-co-2026' });
+  });
+});
