@@ -62,9 +62,12 @@ describe('Sample Water Utility at 18 October 2026', () => {
   });
   it('gives Progress updates to the Meter Reader, Zone B and the Commercial Officer only (v0.18.0)', () => {
     const perf = (r: Parameters<typeof devMembership>[1]) => as(r).menu().performance.map((e) => e.label);
-    expect(perf('employee')).toEqual(['progress']);
-    expect(perf('supervisor')).toEqual(['progress']);
-    for (const r of ['executive', 'strategy', 'finance', 'hr'] as const) expect(perf(r)).toEqual([]);
+    // v0.20.0 (RV-5): Reviews joins for the employee, the supervisor, the next-level reviewer and HR.
+    expect(perf('employee')).toEqual(['progress', 'reviews']);
+    expect(perf('supervisor')).toEqual(['progress', 'reviews']);
+    expect(perf('reviewer')).toEqual(['reviews']);
+    expect(perf('hr')).toEqual(['reviews']);
+    for (const r of ['executive', 'strategy', 'finance'] as const) expect(perf(r)).toEqual([]);
   });
   it('opens Registers on Compliance for the compliance officer (NV-3)', () => {
     expect(as('compliance').menu().registers[0]).toBe('compliance');

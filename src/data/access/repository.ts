@@ -38,6 +38,7 @@ import { menuFor, type Menu } from './menu';
 import { createDevice, type Device } from './device';
 import { createProgressAccess, type ProgressAccess } from './progress';
 import { createSurveyAccess, type SurveyAccess } from './survey';
+import { createReviewsAccess, type ReviewsAccess } from './reviews';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
@@ -229,6 +230,8 @@ export interface Repository {
   progress: ProgressAccess;
   /** Staff survey (v0.19.0; contract v1.11). */
   survey: SurveyAccess;
+  /** Performance › Reviews (v0.20.0; contract v1.12). */
+  reviews: ReviewsAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
   structureConfirmed(): { by: string; on: ISODate } | null;
 }
@@ -629,6 +632,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     menu: () => menuFor(repo, s),
     progress: createProgressAccess({ s, viewer, now, financialYear, clock, audit, device, changed: () => options.onChange?.() }),
     survey: createSurveyAccess({ s, viewer, now, clock, device, changed: () => options.onChange?.() }),
+    reviews: createReviewsAccess({ s, viewer, now, financialYear, clock, device, changed: () => options.onChange?.() }),
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);
@@ -754,7 +758,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
         expected: expectedToDate(financialYear, s.organisation.financialYearStartMonth, now),
         homes,
         // v0.18.0: progress items (OP-10) merged in, soonest first as ever.
-        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs(), ...repo.survey.needs()]),
+        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs(), ...repo.survey.needs(), ...repo.reviews.needs()]),
         goalHealth: has('executive') || has('strategy_office') || has('member') ? goalHealth(s, ctx) : null,
         finance: has('finance') ? financeSummary(s, financialYear, access) : null,
         hr: has('hr') ? hrSummary(s, ctx, access) : null,
@@ -765,7 +769,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   };
   // Going back online sends survey answers waiting on this device too (SV-8); progress reports its own result.
   const setOffline = repo.progress.setOffline;
-  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) repo.survey.sendWaiting(); return r; };
+  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) { repo.survey.sendWaiting(); repo.reviews.sendWaiting(); } return r; };
   return repo;
 }
 

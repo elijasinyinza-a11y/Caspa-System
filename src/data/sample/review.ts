@@ -5,6 +5,7 @@
 import type { Store } from '../access/store';
 import { createSampleOrgs, type DevRole } from './all';
 import { createNewOrganisation } from './new-org';
+import { reviewerPositionOf } from '../../rules/review';
 
 export interface ReviewOrg { orgId: string; store: Store; devRoles: Partial<Record<DevRole, string>> }
 
@@ -29,6 +30,15 @@ export function devMembership(org: ReviewOrg, role: DevRole, now: string): strin
     case 'admin': return byRole('org_admin')?.id ?? null;
     case 'compliance': return byRole('compliance')?.id ?? null;
     case 'consultant': return active.find((m) => m.roles.includes('org_admin') && held(m.personId).length === 0 && m.endsOn)?.id ?? null;
+    case 'reviewer': {
+      // v0.20.0 (RV-8): whoever checks the employee role's flagged reviews, from the employee's contract.
+      const emp = devMembership(org, 'employee', now);
+      const person = s.memberships.find((m) => m.id === emp)?.personId;
+      const c = s.contracts.find((x) => x.personId === person && x.status === 'signed');
+      const pos = c ? reviewerPositionOf(s, c, now as never) : null;
+      const holder = s.assignments.find((a) => a.positionId === pos && a.from <= now && (a.to === null || a.to >= now));
+      return holder ? (active.find((m) => m.personId === holder.personId)?.id ?? null) : null;
+    }
     case 'supervisor':
     case 'employee': {
       const managers = new Set(s.positions.flatMap((p) => (p.reportsToPositionId ? [p.reportsToPositionId as string] : [])));

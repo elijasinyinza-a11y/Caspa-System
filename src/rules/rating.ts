@@ -105,10 +105,11 @@ export function rateObjective(s: Store, co: ContractObjective, review: Review | 
   const done = verifiedDone(s, co, ctx.now);
   const base = { contractObjectiveId: co.id, weightPct: co.weightPct, target, done, achievement: null, bandScore: null, adjustment: null, score: null };
   if (review?.notAssessable.some((n) => n.contractObjectiveId === co.id && n.hrApproval !== null)) return { ...base, basis: 'not_assessable' };
-  if (co.direction === 'lower_is_better') return { ...base, basis: 'direction_unconfirmed' };
   if (target === null || target <= 0) return { ...base, basis: 'no_quantity' };
   if (done === null) return { ...base, basis: 'not_verified' };
-  const achievement = done / target;
+  // RV-1 (Elijah, 5 November 2026): where lower is better, achievement is target ÷ verified figure, so 16 recorded
+  // against at most 20 is 125%; a verified figure of 0 scores the top band.
+  const achievement = co.direction === 'lower_is_better' ? (done === 0 ? Number.POSITIVE_INFINITY : target / done) : done / target;
   const bandScore = bandFor(achievement, bands);
   // R7: the latest adjustment with a written reason; one band only, kept within the scale.
   const adj = last(review?.adjustments.filter((a) => a.contractObjectiveId === co.id && a.reason.trim() !== '') ?? []);

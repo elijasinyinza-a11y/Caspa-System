@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.11
+ * CASPA™ data contract — v1.12
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,8 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.12 (5 November 2026, Elijah; Reviews Specification v0.1, RV-3): one field. Review.reviewerCheck records that the
+ *     next-level reviewer accepted a flagged review, so "Check 1 flagged review" can leave "Needs you". No other change.
  * v1.11 (5 November 2026, Elijah; Staff Voice Specification v0.1, SV-1 to SV-14): three records and three permission
  *     rows. No existing field changes.
  *     - SurveyRound: a staff survey round, started by the Strategy office only when it needs one (no schedule).
@@ -801,6 +803,7 @@ export interface Review extends OrgScoped, Audited {
   notAssessable: { contractObjectiveId: Id<'ContractObjective'>; reason: string; hrApproval: Stamp | null }[]; // R9
   competencyRatings: { label: string; score: 1 | 2 | 3 | 4 | 5; justification: string }[]; // R5, if enabled
   returnedByReviewer: { reason: string; by: Stamp } | null; // R8
+  reviewerCheck: { by: Stamp } | null; // v1.12 (RV-3): the next-level reviewer accepted the flagged review
   employeeAcknowledgement: { at: ISODateTime; disagreement: string | null } | null; // R8
   /** Frozen at appraisal.close; until then scores are computed live and shown as provisional (R9). */
   finalResult: { overallScore: number; label: string; schemeId: Id<'RatingScheme'>; frozenAt: ISODateTime } | null;

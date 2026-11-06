@@ -343,7 +343,7 @@ function seedStore(): Store {
     // One open mid-year review for the Zone B contract (approved 23 October 2026). Scores are computed, never stored here.
     reviews: [{
       ...base, id: id('rv-mrb-2026-mid'), contractId: id('pc-mrb-2026'), kind: 'mid_year', selfAssessment: null, supervisorAssessment: null,
-      status: 'open', adjustments: [], notAssessable: [], competencyRatings: [], returnedByReviewer: null, employeeAcknowledgement: null, finalResult: null,
+      status: 'open', adjustments: [], notAssessable: [], competencyRatings: [], returnedByReviewer: null, reviewerCheck: null, employeeAcknowledgement: null, finalResult: null,
     }],
     // R1: preset A with the safeguards at their defaults; locked while the appraisal round is open.
     ratingSchemes: [{
