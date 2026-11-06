@@ -1,16 +1,20 @@
-# Next session: Performance › Reviews (v0.20.0)
+# Next session: Performance › Targets (v0.21.0)
 
-v0.19.0 (staff survey) delivered 5 November 2026: `npm run verify` clean, 705 tests. Decisions in BUILD-BRIEF section
-40, in `DECISIONS-ARCHIVE.md`.
+v0.20.0 (Reviews) delivered 5 November 2026: `npm run verify` clean, 721 tests. Decisions in BUILD-BRIEF section 41
+(archive); the Targets decisions are BUILD-BRIEF section 42.
 
 ## Next, in order
-1. Specify Performance › Reviews (NV-8) for Elijah's confirmation: the mid-year and year-end review screens over the
-   existing Review record and ratings (R1–R10), pages against N-1 to N-6, any contract revision.
-2. Prototype for approval, then build as v0.20.0.
+1. Write the Targets specification from section 42: the KPI share record and its readings, the combining rule
+   (add up, weighted average, not combined), contract objectives from a share, a breakdown's combined figure or a
+   standing duty, the four checks, the one line in Cascade, proposing new activities into Cascade, HR's cap on standing
+   duties, sample data (the sample has zones, not districts), and the contract revision (v1.13).
+2. Elijah has seen the screens (`reference/caspa-targets-prototype.html`); confirm the specification, then build.
 
 ## Carried open items
-- Staff survey: the "Why we ask" book lines (chapter 4, section 5, pp. 98–102; chapter 12, p. 258) await Elijah;
-  the survey tool is to be refined in a later slice (section 40).
-- Lower-is-better contract objectives: achievement rule still "not confirmed".
+- Staff survey: "Why we ask" book lines (chapter 4, section 5; chapter 12) await Elijah; the survey tool is to be
+  refined later.
+- Protections against people set up to fail through weights (authority check by 6P level, second-person sight of
+  flagged contracts, HR weight limits, constraint notes at signing, employee-raised "Can't be assessed", HR pattern
+  view): discussed 5 November 2026, not adopted yet. The level-to-position mapping must come from the book or Elijah.
 - Decision-log actions have no completion field, so they stay in "Needs you".
 - Spending-against-results rule awaits Elijah's thresholds (file-exchange slice).

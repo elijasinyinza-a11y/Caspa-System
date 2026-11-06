@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36 and 38 to 40 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36 and 38 to 41 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -381,3 +381,16 @@ Source: the *CASPA™ Staff Voice Specification v0.1* (a doc in the Project's ch
 - **Sample data (approved 5 November 2026):** new G1 wording and a G2 record, dated 2 February 2026; "Start of year, 2026" closed with 12 of 13 answers and 3 comments; "Mid-year, 2026" open. The NGO has a round with too few answers; the scale organisation one answered by all; the packaging manufacturer none.
 - **Later refinement (Elijah, 5 November 2026):** the survey tool will be refined in a later slice: comparing rounds over time, questions an organisation adds or words itself, survey languages, and the confirmed book lines.
 - **Delivered:** built as v0.19.0 (5 November 2026).
+
+## 41. Decisions on Performance › Reviews, slice 15 (5 November 2026)
+
+Source: the *CASPA™ Reviews Specification v0.1* (a doc in the Project's chats), RV-1 to RV-13, accepted by Elijah on 5 November 2026. Contract v1.12. Prototype approved: `reference/caspa-reviews-prototype.html`.
+
+- **RV-1, lower-is-better objectives:** achievement is target ÷ verified figure (16 recorded against at most 20 is 125%); a verified 0 scores the top band. Closes the item open since 23 October.
+- **RV-2, one journey:** HR opens; the employee writes and sends a self-assessment (`review.submit_self`); the supervisor completes (`review.complete`), moving a score one band with a reason (R7) or asking HR to accept "Can't be assessed" (R9); a flagged review (scored 1, or above 150%) goes to the next-level reviewer, who accepts or returns it (R8); the employee confirms they've read it, with any disagreement; at year-end HR closes the year's reviews (`appraisal.close`), freezing final scores. Mid-year is never closed. Flags follow the score after any move, as the rating rules already did.
+- **RV-3, contract v1.12:** `Review.reviewerCheck`. A supervisor sending a self-assessment back reopens it and keeps the reason in the audit entry.
+- **RV-4 to RV-8:** sending back allowed with a reason; Performance › Reviews with tabs Mine, My team, To check, Round; scores read as sentences, with the mid-year basis explained; self-assessments can be written offline; a "Next-level reviewer" development role (the employee's supervisor's supervisor).
+- **RV-9, plain words:** "Score", "Moved up one band", "Can't be assessed", "Sent back", "I've read it", "the year's reviews". `check-plain-words` rejects "rating", "adjustment", "not assessable" and "appraisal"; ten existing lines were reworded. "Acknowledge" was already reserved for findings, so the employee's last step reads "Confirm you've read your review".
+- **RV-10:** HR opens rounds, one kind at a time.
+- **RV-11 to RV-13 (weights and constraints):** answered by what exists: weights are set by the supervisor while drafting, signed by both, and frozen at signature; a constraint found late is handled by "Can't be assessed" with HR's acceptance, which leaves the objective out and re-spreads its weight, or by a one-band move with a reason.
+- **Delivered:** built as v0.20.0 (5 November 2026).

@@ -37,6 +37,8 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 12. Navigation: sidebar sub-menus (Navigation Specification v1.1; NV-1 to NV-9, BUILD-BRIEF section 37) — done (v0.17.0)
 13. Offline progress capture (Offline Progress Capture Specification v1.0; OP-1 to OP-12, BUILD-BRIEF section 39, now in the archive) — done (v0.18.0)
 14. Staff survey (Staff Voice Specification v0.1; SV-1 to SV-14, BUILD-BRIEF section 40, in the archive) — done (v0.19.0)
+15. Reviews (Reviews Specification v0.1; RV-1 to RV-13, BUILD-BRIEF section 41, in the archive) — done (v0.20.0)
+16. Targets: KPI shares, combining rule, standing duties (BUILD-BRIEF section 42) — specify, then build as v0.21.0
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -53,10 +55,25 @@ The development role switcher has six roles: Executive, Strategy office, Finance
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
-## Next chat: Performance › Reviews (v0.20.0)
+## Next chat: Performance › Targets (v0.21.0)
 
-- Start from this zip: `npm install`, `npm run verify` (705 tests). Specify Performance › Reviews for Elijah's
-  confirmation, then prototype, then build as v0.20.0. See `NEXT.md`.
+- Start from this zip: `npm install`, `npm run verify` (721 tests). Write the Targets specification from BUILD-BRIEF
+  section 42 for Elijah's confirmation (prototype already shown: `reference/caspa-targets-prototype.html`), then build
+  as v0.21.0. See `NEXT.md`.
+
+## Reviews (v0.20.0)
+
+- BUILD-BRIEF section 41 (in `DECISIONS-ARCHIVE.md`); Reviews Specification v0.1, RV-1 to RV-13; prototype approved
+  (`reference/caspa-reviews-prototype.html`). Contract v1.12: `Review.reviewerCheck`. 721 tests (10 in
+  `src/data/access/reviews.test.ts`, plus menu and route tests).
+- Code: journey rules in `src/rules/review.ts`; RV-1 in `src/rules/rating.ts`; data access in
+  `src/data/access/reviews.ts` (`repo.reviews`); screen in `src/routes/Reviews.tsx`; a "Next-level reviewer"
+  development role. `check-plain-words` rejects "rating", "adjustment", "not assessable" and "appraisal".
+- Try it on Sample Water Utility: as Employee, Performance › Reviews, write and send the self-assessment (try
+  "Work offline"). As Supervisor, open Mary's review: move a score one band with a reason, ask HR to accept
+  "Can't be assessed", send the self-assessment back, or complete. The meters score is 1, so as Next-level reviewer,
+  accept or return it. As Employee, "I've read it", with any disagreement. As HR, follow the round, accept or refuse
+  "Can't be assessed", and once mid-year is done, open year-end reviews and close the year.
 
 ## Staff survey (v0.19.0)
 

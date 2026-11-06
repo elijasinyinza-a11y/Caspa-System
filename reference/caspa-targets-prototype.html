@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: Performance › Targets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only.
+   Staff Voice Specification v0.1, SV-1 to SV-12. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--info-t:#0D1B2A;--info-b:#EDECEA;--info-r:#D5D2CA;
+--c:#7C5CBF;--f:#C2417A;--f-t:#9B2C63;--f-tint:#FBEAF2;--bar:#BAB7AF;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* Prototype controls, outside the product */
+.proto{background:var(--white);border-bottom:1px dashed var(--control);padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.proto label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.proto select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white)}
+.proto .pbtn{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;background:var(--white);cursor:pointer}
+.proto .note{font-size:12px;color:var(--muted);flex:1 1 260px}
+.layout{display:flex;gap:16px;justify-content:center;padding:16px;align-items:flex-start;flex-wrap:wrap}
+.side-notes{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.panel h2{font-size:16px;color:var(--navy);margin:0 0 6px}
+.panel ol{margin:0;padding-left:20px}
+.panel li{margin:4px 0}
+.panel .done{color:var(--muted);text-decoration:line-through}
+.audit{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+.audit li{border-top:1px solid var(--border);padding:6px 0;font-size:12px}
+.audit time{display:block;color:var(--muted)}
+/* The frame */
+.frame{display:flex;background:var(--cream);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:1040px;height:780px}
+.frame.phone{max-width:390px;flex-direction:column}
+.sidebar{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:2px;flex-shrink:0;overflow:auto}
+.phone .sidebar{display:none}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav,.sub{list-style:none;margin:0;padding:0}
+.nav>li>a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav>li>a.here{background:rgba(255,255,255,.15)}
+.nav .mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.nav .mark.f{background:var(--f)}.nav .mark.c{background:var(--c)}
+.sub{margin:2px 0 6px 14px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px}
+.sub a{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,.85);text-decoration:none;gap:8px}
+.sub a[aria-current=page]{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.sub li{position:relative}
+.tip{position:absolute;left:0;top:100%;z-index:5;width:220px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:400;visibility:hidden;opacity:0}
+.sub li:hover .tip,.sub a:focus-visible+.tip{visibility:visible;opacity:1;transition:opacity .1s .4s,visibility 0s .4s}
+.tip.closed{visibility:hidden!important}
+.sub a[aria-current=page]::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--f)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.top .who{font-size:12px;color:var(--muted);flex:1;min-width:120px}
+.top .who b{display:block;color:var(--navy);font-size:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 10px;background:var(--white);cursor:pointer;font-size:13px}
+.switch .knob{width:32px;height:18px;border-radius:9px;background:var(--info-b);border:1px solid var(--control);position:relative;flex-shrink:0}
+.switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--control)}
+.switch[aria-checked=true] .knob{background:var(--navy);border-color:var(--navy)}
+.switch[aria-checked=true] .knob::after{left:16px;background:var(--white)}
+.waiting{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;background:var(--info-b);border:1px solid var(--info-r);color:var(--info-t);text-decoration:none}
+.offbar{background:var(--info-b);border-bottom:1px solid var(--border);padding:8px 12px;font-size:13px;color:var(--navy)}
+.body{flex:1;overflow:auto;padding:20px 24px}
+.phone .body{padding:14px}
+.bottom{display:none;background:var(--navy);padding:4px 6px}
+.phone .bottom{display:flex}
+.bottom a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;border-radius:8px;gap:4px}
+.bottom a .mark{width:18px;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.bottom a.here{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.bottom a.here .mark.f{background:var(--f)}.bottom a.here .mark.c{background:var(--c)}
+/* Workspace header */
+.wlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--f-t);font-weight:600;flex-wrap:wrap}
+.wlabel i{width:10px;height:10px;border-radius:2px;background:var(--f)}
+.linkish{background:none;border:0;padding:0;min-height:44px;color:var(--muted);font-weight:400;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+.book{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;margin:4px 0 8px}
+.book small{display:block;color:var(--muted);margin-top:2px}
+h1{font-size:28px;color:var(--navy);margin:2px 0 4px}
+.phone h1{font-size:22px}
+.lead{color:var(--muted);margin:0 0 10px;max-width:62ch}
+.subrow{display:none;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin:0 0 12px}
+.phone .subrow{display:flex}
+.subrow a{flex-shrink:0;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px}
+.subrow a[aria-current=page]{color:var(--navy);font-weight:700;border-bottom-color:var(--f)}
+.tabs{display:flex;gap:8px;margin:4px 0 12px}
+.tabs a{min-height:44px;display:inline-flex;align-items:center;border-radius:8px;padding:0 14px;border:1px solid var(--control);background:var(--white);color:var(--navy);font-weight:600;text-decoration:none}
+.tabs a[aria-selected=true]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.tabs .count{margin-left:6px;font-weight:500}
+/* Content */
+.card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--f);border-radius:12px;padding:14px;margin-bottom:12px}
+.card.plain{border-top-width:1px;border-top-color:var(--border)}
+.card h2,.card h3{font-size:16px;color:var(--navy);margin:0 0 2px}
+.partof{font-size:13px;color:var(--muted);margin:0 0 8px}
+.partof a{color:var(--muted)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0;font-size:13px}
+.facts dt{color:var(--muted)}.facts dd{margin:0}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0}
+.track{position:relative;height:8px;flex:1;min-width:64px;border-radius:999px;background:var(--info-b)}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--navy)}
+.exp{position:absolute;top:-3px;width:2px;height:14px;background:var(--muted)}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid;white-space:nowrap}
+.chip.ok{background:var(--ok-b);color:var(--ok-t);border-color:var(--ok-r)}
+.chip.adv{background:var(--adv-b);color:var(--adv-t);border-color:var(--adv-r)}
+.chip.info{background:var(--info-b);color:var(--info-t);border-color:var(--info-r)}
+.line{font-size:13px;margin:4px 0}
+.muted{color:var(--muted)}
+.needs{list-style:none;margin:0;padding:0}
+.needs li{border-top:1px solid var(--border)}
+.needs li:first-child{border-top:0}
+.needs a{display:flex;flex-direction:column;justify-content:center;min-height:56px;padding:6px 0;color:var(--navy);font-weight:600;text-decoration:none}
+.needs a span{font-weight:400;color:var(--muted);font-size:13px}
+h2.sec{font-size:18px;color:var(--navy);margin:16px 0 8px}
+form{margin:0}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.field label{font-weight:600;font-size:13px;color:var(--navy)}
+.field .hint{font-size:12px;color:var(--muted)}
+.field input,.field select,.field textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white);width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.field input.big{font-size:22px;font-weight:600}
+.flag{border:1px solid var(--adv-r);background:var(--adv-b);color:var(--adv-t);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.flag b{display:block}
+.err{color:var(--adv-t);font-size:13px;font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{min-height:44px;border-radius:8px;padding:0 16px;border:1px solid var(--navy);background:var(--navy);color:var(--white);font-weight:600;cursor:pointer}
+.btn.sec{background:var(--white);color:var(--navy);border-color:var(--control)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.upd{border-top:1px solid var(--border);padding:10px 0}
+.upd:first-child{border-top:0}
+.upd .head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.upd .fig{font-weight:600;color:var(--navy)}
+.quote{border-left:3px solid var(--adv-r);padding:2px 0 2px 8px;margin:6px 0;font-size:13px}
+.notice{border:1px solid var(--info-r);background:var(--info-b);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px}
+.team{width:100%;border-collapse:collapse}
+.team td{border-top:1px solid var(--border);padding:8px 4px;vertical-align:middle}
+.team tr:first-child td{border-top:0}
+.team a{color:var(--navy);font-weight:600}
+.empty{color:var(--muted);font-size:13px}
+.live{position:absolute;left:-9999px}
+.toast{position:sticky;bottom:0;margin-top:12px;background:var(--navy);color:var(--white);border-radius:8px;padding:10px 12px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+.code{font-weight:400;font-size:13px}
+.shares{list-style:none;padding:0;margin:0}
+.share{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:0 0 8px}
+.shead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.linkbtn{background:none;border:0;color:var(--navy);font-weight:600;min-height:44px;cursor:pointer;padding:0;text-decoration:underline;text-align:left}
+.linkbtn.big{font-size:16px}
+.big1{font-size:18px;margin:0 0 4px;color:var(--navy)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mustfix{border:1px solid #B42318;background:#FEF3F2;color:#B42318;border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.mustfix b{display:block}
+.chip.blk{background:#FEF3F2;border:1px solid #B42318;color:#B42318}
+.chip.adv{background:var(--adv-b);border:1px solid var(--adv-r);color:var(--adv-t)}
+.check{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:6px 0}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--navy)}
+.flabel{font-weight:600;font-size:13px;color:var(--navy)}
+.ctl summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:var(--navy)}
+.rec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:var(--cream);border-radius:6px;padding:6px;white-space:pre-wrap;margin-top:4px}
+</style></head><body>
+<div class="proto" role="region" aria-label="Prototype controls (not part of the product)">
+  <label>Screen<select id="pFrame"><option value="phone">Phone, 390px</option><option value="wide">Computer</option></select></label>
+  <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pSet" style="width:20px;height:20px">Start before it is broken down</label>
+  <button class="pbtn" id="pReset" type="button">Start again</button>
+  <p class="note">Prototype only, for the lean target breakdown agreed on 5 November 2026: KPI shares by unit, one combining rule, three checks. The five districts, their people and figures are illustrative, for judging the screens; real sample data comes with the specification. 18 October 2026. Nothing is stored.</p>
+</div>
+<div class="layout">
+  <div class="frame phone" id="frame">
+    <nav class="sidebar" aria-label="Main"><div class="brand">CASPA™</div><ul class="nav" id="sideNav"></ul></nav>
+    <div class="main"><div class="top" id="top"></div><main class="body" id="body" tabindex="-1"></main><nav class="bottom" id="bottom" aria-label="Workspaces"></nav></div>
+  </div>
+  <aside class="side-notes" aria-label="Prototype notes">
+    <div class="panel"><h2>Try it</h2><ol>
+      <li>As Joseph (Technical Manager), open “Billing efficiency”. The five district targets combine to 79.5%, short of the 80% set in Cascade, so it must be fixed.</li>
+      <li>Choose “Change targets and weights” and raise East from 75 to 79. Districts now combine to 80.1% and the check clears.</li>
+      <li>West has no owner, and East has no work linked: one must be fixed, the other is worth checking.</li>
+      <li>Open a district to see its share, its readings and the work behind it.</li>
+      <li>Switch to Grace (District Manager, North): see the share in her contract, and link her team’s work to it.</li>
+      <li>Tick “Start before it is broken down” to see setting up a breakdown: choose units, how figures combine, and what each unit is weighted by.</li>
+    </ol></div>
+    <div class="panel"><h2>What is recorded</h2><p class="muted" style="margin:0 0 6px;font-size:12px">Prototype aid: the records the build would write, newest first.</p><ul class="audit" id="audit"></ul></div>
+  </aside>
+</div>
+<div class="live" aria-live="polite" id="live"></div>
+<script>
+'use strict';
+/* Performance › Targets prototype (lean breakdown: KPI shares, one combining rule, three checks). Illustrative
+   districts and people for judging the screens only; nothing is stored. */
+const CORP = { code: 'K1.1.2', name: 'Billing efficiency', unit: '%', target: 80, partOf: ['G1 Improve financial sustainability', 'O1.1 Increase collection efficiency'], owner: 'Technical Manager', ownerName: 'Joseph Tembo', freq: 'Monthly', higher: true };
+const METHODS = { weighted: 'Weighted average', sum: 'Add up', none: 'Not combined' };
+const PEOPLE = { tm: 'Joseph Tembo, Technical Manager', dmn: 'Grace Mwila, District Manager, North', dms: 'Brian Phiri, District Manager, South', hr: 'Strategy office: Bwalya Musonda' };
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const fmt = (n) => n.toLocaleString('en-GB');
+const one = (n) => (Math.round(n * 10) / 10).toFixed(1);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let S;
+function fresh() {
+  return {
+    as: 'tm', frame: 'phone', view: 'list', district: null, editing: false, set: true, log: [], toast: null,
+    method: 'weighted', weightLabel: 'Water into supply (m³ a year)',
+    shares: [
+      { id: 'n', unit: 'North District', owner: 'Grace Mwila', weight: 2400000, target: 78, latest: 76, work: [['Meter readers (4)', 'Complete scheduled meter readings', '9,600 readings'], ['Billing officer', 'Issue bills by the 5th of each month', '12 months']] },
+      { id: 's', unit: 'South District', owner: 'Brian Phiri', weight: 1800000, target: 82, latest: 80, work: [['Meter readers (3)', 'Complete scheduled meter readings', '7,200 readings']] },
+      { id: 'e', unit: 'East District', owner: 'Ruth Banda', weight: 1200000, target: 75, latest: 70, work: [] },
+      { id: 'w', unit: 'West District', owner: null, weight: 900000, target: 80, latest: 79, work: [['Plumbers (2)', 'Replace faulty customer meters', '600 meters']] },
+      { id: 'c', unit: 'Central District', owner: 'Peter Sakala', weight: 3000000, target: 81, latest: 79, work: [['Meter readers (5)', 'Complete scheduled meter readings', '12,000 readings'], ['Billing officer', 'Clear billing exceptions within 10 days', '90%']] },
+    ],
+    teamWork: [['Meter readers (4)', 'Reduce estimated bills on routes', '95% actual reads'], ['Billing officer', 'Clear billing exceptions within 10 days', '90%']],
+  };
+}
+/* The one combining rule (rules engine in the build). */
+function combine(field) {
+  const sh = S.shares;
+  if (S.method === 'sum') return sh.reduce((a, x) => a + x[field], 0);
+  if (S.method === 'none') return null;
+  const w = sh.reduce((a, x) => a + x.weight, 0);
+  return sh.reduce((a, x) => a + x.weight * x[field], 0) / w;
+}
+const YEAR = 0.79; // share of the year elapsed (P10)
+function status(latest, target, base = 70) { const p = (latest - base) / (target - base); const r = p / YEAR; return r >= 0.9 ? ['On track', 'ok'] : r >= 0.7 ? ['At risk', 'adv'] : ['Behind', 'blk']; }
+function checks() {
+  const out = [];
+  const c = combine('target');
+  if (c !== null && c + 1e-9 < CORP.target) out.push(['must', `The district targets combine to ${one(c)}%, ${one(CORP.target - c)} points short of the ${CORP.target}% corporate target.`, 'Raise one or more district targets, or ask the KPI’s owner to review the corporate target in Cascade.']);
+  S.shares.filter((x) => !x.owner).forEach((x) => out.push(['must', `${x.unit} has no owner.`, 'Choose the position that holds this district’s share.']));
+  S.shares.filter((x) => !x.work.length).forEach((x) => out.push(['worth', `No one’s work is linked to ${x.unit}’s share.`, 'The district manager links the team’s contract objectives that move it.']));
+  return out;
+}
+const say = (m) => { S.toast = m; document.getElementById('live').textContent = m; };
+const log = (t, r) => S.log.unshift({ t, r });
+
+function bar(v, max = 100) { return `<div class="track" aria-hidden="true"><div class="fill" style="width:${Math.max(0, Math.min(100, (v / max) * 100))}%"></div></div>`; }
+function chipStatus([t, k]) { return `<span class="chip ${k === 'ok' ? 'ok' : k === 'adv' ? 'adv' : 'blk'}">${t}</span>`; }
+
+function viewList() {
+  const c = combine('target'), l = combine('latest'), ch = checks();
+  return `<p class="lead">Break a KPI from Cascade down into shares for units, and see what they add up to. Cascade keeps the corporate KPI; the detail lives here.</p>
+    <section class="card f"><p class="partof">${esc(CORP.partOf.join(' › '))}</p><h2>${CORP.name} <span class="muted code">${CORP.code}</span></h2>
+      ${S.set ? `<p class="line">Broken down by ${S.shares.length} districts · ${METHODS[S.method].toLowerCase()}</p>
+      <p class="line">Districts combine to <b>${one(c)}%</b> against the corporate target of <b>${CORP.target}%</b>. Latest: ${one(l)}% at 30 September.</p>
+      ${ch.length ? `<p class="line"><span class="chip blk">${ch.filter((x) => x[0] === 'must').length} must fix</span> <span class="chip adv">${ch.filter((x) => x[0] === 'worth').length} to check</span></p>` : '<p class="line"><span class="chip ok">All checks clear</span></p>'}
+      <div class="btns"><button class="btn" data-open="1">Open the breakdown</button></div>`
+      : `<p class="line">Not broken down yet. The corporate target is ${CORP.target}%.</p><div class="btns"><button class="btn" data-setup="1">Break it down by unit</button></div>`}</section>
+    <section class="card plain"><h3>Collection efficiency <span class="muted code">K1.1.1</span></h3><p class="line muted">Not broken down. Only its owner can break it down, and it has no owner yet.</p></section>`;
+}
+function viewSetup() {
+  return `<p><button class="linkbtn" data-back="list">‹ Targets</button></p><h2>Break down ${CORP.name}</h2>
+    <section class="card f"><div class="field"><label for="units">Break down by</label><select id="units"><option>The 5 districts under Technical Services</option><option>The 3 commercial zones</option></select></div>
+    <fieldset style="border:0;padding:0;margin:8px 0"><legend class="flabel">How district figures combine</legend>
+      ${Object.entries(METHODS).map(([k, v]) => `<label class="check"><input type="radio" name="m" value="${k}"${S.method === k ? ' checked' : ''}><span><b>${v}</b><br><span class="muted">${k === 'weighted' ? 'For percentages and levels, such as billing efficiency or hours of supply. Each district counts in proportion to its weight.' : k === 'sum' ? 'For counts, such as connections made or revenue.' : 'Where adding up would be wrong, such as a median. Each district has its own target; the corporate figure is measured on its own.'}</span></span></label>`).join('')}
+    </fieldset>
+    <div class="field"><label for="wl">What each district is weighted by</label><input id="wl" value="${esc(S.weightLabel)}"><span class="hint">For billing efficiency: the water each district puts into supply.</span></div>
+    <div class="btns"><button class="btn" data-dosetup="1">Create the 5 shares</button><button class="btn sec" data-back="list">Cancel</button></div></section>`;
+}
+function viewBreakdown() {
+  const c = combine('target'), l = combine('latest'), ch = checks(), tm = S.as === 'tm';
+  const rows = S.shares.map((x) => {
+    const st = status(x.latest, x.target);
+    return `<li class="share">
+      <div class="shead"><button class="linkbtn big" data-district="${x.id}">${esc(x.unit)}</button>${chipStatus(st)}</div>
+      <p class="line muted">${x.owner ? `Owner: ${esc(x.owner)}` : '<span class="chip blk">No owner</span>'} · weight ${fmt(x.weight)} m³ (${Math.round((x.weight / S.shares.reduce((a, y) => a + y.weight, 0)) * 100)}%)</p>
+      ${S.editing && tm ? `<div class="grid2"><div class="field"><label for="t-${x.id}">Target (%)</label><input id="t-${x.id}" inputmode="decimal" value="${x.target}"></div><div class="field"><label for="w-${x.id}">Weight (m³)</label><input id="w-${x.id}" inputmode="numeric" value="${x.weight}"></div></div>`
+        : `<p class="line">Target <b>${x.target}%</b> · latest <b>${x.latest}%</b> at 30 September</p><div class="bar">${bar(x.latest)}<span class="num">${x.latest}%</span></div>`}
+      <p class="line muted">${x.work.length ? `${x.work.length} contract ${x.work.length === 1 ? 'objective' : 'objectives'} linked` : 'No work linked yet'}</p></li>`;
+  }).join('');
+  return `<p><button class="linkbtn" data-back="list">‹ Targets</button></p>
+    <p class="partof">${esc(CORP.partOf.join(' › '))} › ${CORP.name}</p><h2>${CORP.name} by district</h2>
+    <section class="card f summary"><p class="big1">Districts combine to <b>${one(c)}%</b></p><p class="line">Corporate target ${CORP.target}% (set in Cascade) · latest combined ${one(l)}% at 30 September</p>
+      <p class="line muted">${METHODS[S.method]}: each district counts in proportion to ${esc(S.weightLabel.toLowerCase())}. Computed, never typed in.</p></section>
+    ${ch.length ? `<section class="card plain"><h3>Checks</h3>${ch.map(([k, t, fix]) => `<div class="${k === 'must' ? 'mustfix' : 'flag'}"><b>${k === 'must' ? 'Must fix before contracts are issued' : 'Worth checking'}</b>${esc(t)}<br><span>${esc(fix)}</span></div>`).join('')}</section>` : ''}
+    ${tm ? `<div class="btns" style="margin:0 0 8px">${S.editing ? '<button class="btn" data-save="1">Save targets</button><button class="btn sec" data-cancel="1">Cancel</button>' : '<button class="btn sec" data-edit="1">Change targets and weights</button>'}</div>` : ''}
+    <ul class="shares">${rows}</ul>
+    <section class="card plain"><h3>How it shows in Cascade</h3><p class="line">On ${CORP.code}’s record page, under “How it’s done”, one line: <i>“Broken down by 5 districts in Performance. Latest combined: ${one(l)}%.”</i> with a link here. Nothing else is added to Cascade.</p></section>`;
+}
+function viewDistrict() {
+  const x = S.shares.find((y) => y.id === S.district), me = (S.as === 'dmn' && x.id === 'n') || (S.as === 'dms' && x.id === 's'), st = status(x.latest, x.target);
+  const linked = x.work.map(([who, what, qty], i) => `<li class="share"><b>${esc(what)}</b><br><span class="muted">${esc(who)} · ${esc(qty)}</span>${me ? `<div class="btns"><button class="btn sec" data-unlink="${i}">Remove link</button></div>` : ''}</li>`).join('');
+  const avail = S.teamWork.filter((w) => !x.work.some((y) => y[1] === w[1]));
+  return `<p><button class="linkbtn" data-back="breakdown">‹ ${CORP.name} by district</button></p>
+    <p class="partof">${CORP.name} › ${esc(x.unit)}</p><h2>${esc(x.unit)}’s share</h2>
+    <section class="card f"><p class="big1">Target <b>${x.target}%</b> · latest <b>${x.latest}%</b></p>${chipStatus(st)}<div class="bar">${bar(x.latest)}<span class="num">${x.latest}%</span></div>
+      <p class="line muted">Owner: ${x.owner ? esc(x.owner) : 'none'}. Readings are recorded monthly by the owner with “Record a reading”, as for any KPI.</p>
+      ${me ? '<p class="line"><b>In your contract:</b> “Billing efficiency, ' + esc(x.unit) + ': ' + x.target + '%”, scored from these readings by the KPI progress rule.</p>' : ''}</section>
+    <section class="card plain"><h3>Work behind this share</h3><p class="line muted">Your team’s contract objectives that move it. Their quantities are still set and verified as now; linking says what they serve.</p>
+      ${x.work.length ? `<ul class="shares">${linked}</ul>` : '<p class="empty">Nothing linked yet.</p>'}
+      ${me && avail.length ? `<details class="ctl"><summary>Link your team’s work</summary>${avail.map((w, i) => `<label class="check"><input type="checkbox" data-pick="${i}"><span><b>${esc(w[1])}</b><br><span class="muted">${esc(w[0])} · ${esc(w[2])}</span></span></label>`).join('')}<div class="btns"><button class="btn" data-link="1">Link</button></div></details>` : ''}
+      ${!me ? '<p class="line muted">Only the district’s owner links work.</p>' : ''}</section>`;
+}
+function render() {
+  document.getElementById('frame').className = `frame ${S.frame === 'phone' ? 'phone' : ''}`;
+  document.getElementById('top').innerHTML = `<label class="who">Viewing as (development)<select id="role" style="min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 8px;background:var(--white);margin-top:2px;max-width:100%">${Object.entries(PEOPLE).map(([k, v]) => `<option value="${k}"${S.as === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>`;
+  document.getElementById('sideNav').innerHTML = `<li><a href="#"><span class="mark"></span>Home</a></li><li><a href="#" class="here"><span class="mark f"></span>Performance</a><ul class="sub"><li><a href="#" style="opacity:.7">Progress updates</a></li><li><a href="#" style="opacity:.7">Reviews</a></li><li><a href="#" aria-current="page">Targets</a></li></ul></li>`;
+  document.getElementById('bottom').innerHTML = `<a href="#"><span class="mark"></span>Home</a><a href="#" class="here" aria-current="page"><span class="mark f"></span>Performance</a>`;
+  const v = { list: viewList, setup: viewSetup, breakdown: viewBreakdown, district: viewDistrict }[S.view]();
+  document.getElementById('body').innerHTML = `<div class="wlabel"><i aria-hidden="true"></i>Performance <span class="muted" style="font-weight:400;text-decoration:underline dotted;text-underline-offset:3px">Controlling</span></div><h1>Targets</h1>${v}${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+  document.getElementById('audit').innerHTML = S.log.length ? S.log.map((a) => `<li>${esc(a.t)}<div class="rec">${esc(JSON.stringify(a.r, null, 1))}</div></li>`).join('') : '<li class="muted">Nothing written yet.</li>';
+  bind();
+}
+function bind() {
+  const $ = (q) => document.querySelectorAll(q), go = (v) => { S.view = v; S.toast = null; render(); document.getElementById('body').scrollTop = 0; };
+  document.getElementById('role').onchange = (e) => { S.as = e.target.value; S.editing = false; S.toast = null; if (S.as === 'dmn') { S.view = 'district'; S.district = 'n'; } else if (S.as === 'dms') { S.view = 'district'; S.district = 's'; } else S.view = 'list'; render(); };
+  $('[data-open]').forEach((b) => b.onclick = () => go('breakdown'));
+  $('[data-back]').forEach((b) => b.onclick = () => go(b.dataset.back));
+  $('[data-setup]').forEach((b) => b.onclick = () => go('setup'));
+  $('[data-district]').forEach((b) => b.onclick = () => { S.district = b.dataset.district; go('district'); });
+  $('[data-dosetup]').forEach((b) => b.onclick = () => { S.method = document.querySelector('input[name=m]:checked').value; S.weightLabel = document.getElementById('wl').value; S.set = true; log('5 KPI shares created', { kpi: CORP.code, combine: S.method, weightedBy: S.weightLabel }); S.editing = true; S.view = 'breakdown'; say('Created. Set each district’s target and weight.'); render(); });
+  $('[data-edit]').forEach((b) => b.onclick = () => { S.editing = true; render(); });
+  $('[data-cancel]').forEach((b) => b.onclick = () => { S.editing = false; render(); });
+  $('[data-save]').forEach((b) => b.onclick = () => {
+    S.shares.forEach((x) => { const t = Number(document.getElementById(`t-${x.id}`).value), w = Number(String(document.getElementById(`w-${x.id}`).value).replace(/[ ,]/g, '')); if (Number.isFinite(t)) x.target = t; if (Number.isFinite(w) && w > 0) x.weight = w; });
+    S.editing = false; log('Share targets saved (audit entry)', S.shares.map((x) => ({ unit: x.unit, target: x.target, weight: x.weight })));
+    const c = combine('target'); say(c >= CORP.target ? `Saved. Districts now combine to ${one(c)}%, meeting the corporate target.` : `Saved. Districts combine to ${one(c)}%, still short of ${CORP.target}%.`); render();
+  });
+  $('[data-link]').forEach((b) => b.onclick = () => {
+    const x = S.shares.find((y) => y.id === S.district), avail = S.teamWork.filter((w) => !x.work.some((y) => y[1] === w[1]));
+    const picks = [...document.querySelectorAll('[data-pick]:checked')].map((c) => avail[Number(c.dataset.pick)]);
+    if (!picks.length) { say('Choose at least one.'); return render(); }
+    x.work.push(...picks); log('Contract objectives linked to the share', { share: x.unit, linked: picks.map((p) => p[1]) }); say('Linked.'); render();
+  });
+  $('[data-unlink]').forEach((b) => b.onclick = () => { const x = S.shares.find((y) => y.id === S.district); const [w] = x.work.splice(Number(b.dataset.unlink), 1); log('Link removed', { share: x.unit, objective: w[1] }); say('Link removed.'); render(); });
+}
+document.getElementById('pFrame').onchange = (e) => { S.frame = e.target.value; render(); };
+document.getElementById('pSet').onchange = (e) => { S.set = !e.target.checked; S.view = 'list'; render(); };
+document.getElementById('pReset').onclick = () => { S = fresh(); document.getElementById('pSet').checked = false; render(); };
+S = fresh(); render();
+</script></body></html>

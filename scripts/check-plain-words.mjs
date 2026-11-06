@@ -15,6 +15,8 @@ const FORBIDDEN = [
   /\bsync(ed|ing|s|hroni[sz]e[ds]?)?\b/i, /\boutbox\b/i,
   // Staff survey (SV-11): "people who answered", "anonymous".
   /\brespondents?\b/i, /\banonymi[sz]ed\b/i,
+  // Reviews (RV-9): "score", "moved one band", "can't be assessed", "the year's reviews".
+  /\bratings?\b/i, /\badjustments?\b/i, /\bnot assessable\b/i, /\bappraisals?\b/i,
 ];
 const PLACEHOLDER = /\[from the book\]/i;
 const pilot = process.env.CASPA_PILOT === '1';

@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: reviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Approved tokens only (BUILD-BRIEF section 5). Light mode only.
+   Reviews Specification v0.1, RV-1 to RV-10. */
+:root{--navy:#0D1B2A;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--white:#FFFFFF;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;
+--ok-t:#067647;--ok-b:#ECFDF3;--ok-r:#ABEFC6;--adv-t:#7A2E0E;--adv-b:#FFFAEB;--adv-r:#F5C26B;--info-t:#0D1B2A;--info-b:#EDECEA;--info-r:#D5D2CA;
+--c:#7C5CBF;--f:#C2417A;--f-t:#9B2C63;--f-tint:#FBEAF2;--bar:#BAB7AF;color-scheme:light}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0}
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:var(--text);background:var(--cream);line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* Prototype controls, outside the product */
+.proto{background:var(--white);border-bottom:1px dashed var(--control);padding:8px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.proto label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.proto select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white)}
+.proto .pbtn{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;background:var(--white);cursor:pointer}
+.proto .note{font-size:12px;color:var(--muted);flex:1 1 260px}
+.layout{display:flex;gap:16px;justify-content:center;padding:16px;align-items:flex-start;flex-wrap:wrap}
+.side-notes{width:320px;max-width:100%;display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.panel h2{font-size:16px;color:var(--navy);margin:0 0 6px}
+.panel ol{margin:0;padding-left:20px}
+.panel li{margin:4px 0}
+.panel .done{color:var(--muted);text-decoration:line-through}
+.audit{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+.audit li{border-top:1px solid var(--border);padding:6px 0;font-size:12px}
+.audit time{display:block;color:var(--muted)}
+/* The frame */
+.frame{display:flex;background:var(--cream);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:1040px;height:780px}
+.frame.phone{max-width:390px;flex-direction:column}
+.sidebar{width:232px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;padding:16px 12px;gap:2px;flex-shrink:0;overflow:auto}
+.phone .sidebar{display:none}
+.brand{font-size:18px;font-weight:700;padding:4px 10px 16px}
+.nav,.sub{list-style:none;margin:0;padding:0}
+.nav>li>a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:8px;color:var(--white);text-decoration:none;font-weight:500}
+.nav>li>a.here{background:rgba(255,255,255,.15)}
+.nav .mark{width:4px;height:18px;border-radius:2px;background:rgba(255,255,255,.35)}
+.nav .mark.f{background:var(--f)}.nav .mark.c{background:var(--c)}
+.sub{margin:2px 0 6px 14px;border-left:1px solid rgba(255,255,255,.2);padding-left:8px}
+.sub a{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,.85);text-decoration:none;gap:8px}
+.sub a[aria-current=page]{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.sub li{position:relative}
+.tip{position:absolute;left:0;top:100%;z-index:5;width:220px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:400;visibility:hidden;opacity:0}
+.sub li:hover .tip,.sub a:focus-visible+.tip{visibility:visible;opacity:1;transition:opacity .1s .4s,visibility 0s .4s}
+.tip.closed{visibility:hidden!important}
+.sub a[aria-current=page]::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--f)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.top .who{font-size:12px;color:var(--muted);flex:1;min-width:120px}
+.top .who b{display:block;color:var(--navy);font-size:14px}
+.switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 10px;background:var(--white);cursor:pointer;font-size:13px}
+.switch .knob{width:32px;height:18px;border-radius:9px;background:var(--info-b);border:1px solid var(--control);position:relative;flex-shrink:0}
+.switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--control)}
+.switch[aria-checked=true] .knob{background:var(--navy);border-color:var(--navy)}
+.switch[aria-checked=true] .knob::after{left:16px;background:var(--white)}
+.waiting{display:inline-flex;align-items:center;min-height:32px;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;background:var(--info-b);border:1px solid var(--info-r);color:var(--info-t);text-decoration:none}
+.offbar{background:var(--info-b);border-bottom:1px solid var(--border);padding:8px 12px;font-size:13px;color:var(--navy)}
+.body{flex:1;overflow:auto;padding:20px 24px}
+.phone .body{padding:14px}
+.bottom{display:none;background:var(--navy);padding:4px 6px}
+.phone .bottom{display:flex}
+.bottom a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;color:rgba(255,255,255,.85);text-decoration:none;font-size:12px;border-radius:8px;gap:4px}
+.bottom a .mark{width:18px;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.bottom a.here{background:rgba(255,255,255,.15);color:var(--white);font-weight:600}
+.bottom a.here .mark.f{background:var(--f)}.bottom a.here .mark.c{background:var(--c)}
+/* Workspace header */
+.wlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--f-t);font-weight:600;flex-wrap:wrap}
+.wlabel i{width:10px;height:10px;border-radius:2px;background:var(--f)}
+.linkish{background:none;border:0;padding:0;min-height:44px;color:var(--muted);font-weight:400;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}
+.book{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;margin:4px 0 8px}
+.book small{display:block;color:var(--muted);margin-top:2px}
+h1{font-size:28px;color:var(--navy);margin:2px 0 4px}
+.phone h1{font-size:22px}
+.lead{color:var(--muted);margin:0 0 10px;max-width:62ch}
+.subrow{display:none;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);margin:0 0 12px}
+.phone .subrow{display:flex}
+.subrow a{flex-shrink:0;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:var(--muted);text-decoration:none;font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px}
+.subrow a[aria-current=page]{color:var(--navy);font-weight:700;border-bottom-color:var(--f)}
+.tabs{display:flex;gap:8px;margin:4px 0 12px}
+.tabs a{min-height:44px;display:inline-flex;align-items:center;border-radius:8px;padding:0 14px;border:1px solid var(--control);background:var(--white);color:var(--navy);font-weight:600;text-decoration:none}
+.tabs a[aria-selected=true]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.tabs .count{margin-left:6px;font-weight:500}
+/* Content */
+.card{background:var(--white);border:1px solid var(--border);border-top:4px solid var(--f);border-radius:12px;padding:14px;margin-bottom:12px}
+.card.plain{border-top-width:1px;border-top-color:var(--border)}
+.card h2,.card h3{font-size:16px;color:var(--navy);margin:0 0 2px}
+.partof{font-size:13px;color:var(--muted);margin:0 0 8px}
+.partof a{color:var(--muted)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0;font-size:13px}
+.facts dt{color:var(--muted)}.facts dd{margin:0}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0}
+.track{position:relative;height:8px;flex:1;min-width:64px;border-radius:999px;background:var(--info-b)}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--navy)}
+.exp{position:absolute;top:-3px;width:2px;height:14px;background:var(--muted)}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid;white-space:nowrap}
+.chip.ok{background:var(--ok-b);color:var(--ok-t);border-color:var(--ok-r)}
+.chip.adv{background:var(--adv-b);color:var(--adv-t);border-color:var(--adv-r)}
+.chip.info{background:var(--info-b);color:var(--info-t);border-color:var(--info-r)}
+.line{font-size:13px;margin:4px 0}
+.muted{color:var(--muted)}
+.needs{list-style:none;margin:0;padding:0}
+.needs li{border-top:1px solid var(--border)}
+.needs li:first-child{border-top:0}
+.needs a{display:flex;flex-direction:column;justify-content:center;min-height:56px;padding:6px 0;color:var(--navy);font-weight:600;text-decoration:none}
+.needs a span{font-weight:400;color:var(--muted);font-size:13px}
+h2.sec{font-size:18px;color:var(--navy);margin:16px 0 8px}
+form{margin:0}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.field label{font-weight:600;font-size:13px;color:var(--navy)}
+.field .hint{font-size:12px;color:var(--muted)}
+.field input,.field select,.field textarea{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:var(--white);width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.field input.big{font-size:22px;font-weight:600}
+.flag{border:1px solid var(--adv-r);background:var(--adv-b);color:var(--adv-t);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.flag b{display:block}
+.err{color:var(--adv-t);font-size:13px;font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{min-height:44px;border-radius:8px;padding:0 16px;border:1px solid var(--navy);background:var(--navy);color:var(--white);font-weight:600;cursor:pointer}
+.btn.sec{background:var(--white);color:var(--navy);border-color:var(--control)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.upd{border-top:1px solid var(--border);padding:10px 0}
+.upd:first-child{border-top:0}
+.upd .head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.upd .fig{font-weight:600;color:var(--navy)}
+.quote{border-left:3px solid var(--adv-r);padding:2px 0 2px 8px;margin:6px 0;font-size:13px}
+.notice{border:1px solid var(--info-r);background:var(--info-b);border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px}
+.team{width:100%;border-collapse:collapse}
+.team td{border-top:1px solid var(--border);padding:8px 4px;vertical-align:middle}
+.team tr:first-child td{border-top:0}
+.team a{color:var(--navy);font-weight:600}
+.empty{color:var(--muted);font-size:13px}
+.live{position:absolute;left:-9999px}
+.toast{position:sticky;bottom:0;margin-top:12px;background:var(--navy);color:var(--white);border-radius:8px;padding:10px 12px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.toast{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+.objs{list-style:none;padding:0;margin:8px 0}
+.objline{border-top:1px solid var(--border);padding:10px 0}
+.q2{font-weight:700;color:var(--navy);margin:0 0 2px}
+.overall{font-size:16px;margin:10px 0 2px}
+.ctl summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:var(--navy)}
+.mustfix{border:1px solid #B42318;background:#FEF3F2;color:#B42318;border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.mustfix b{display:block}
+.rows{list-style:none;padding:0;margin:0}
+.rowbtn{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;width:100%;min-height:56px;text-align:left;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer}
+.linkbtn{background:none;border:0;color:var(--navy);font-weight:600;min-height:44px;cursor:pointer;padding:0;text-decoration:underline}
+.tabone{font-weight:700;color:var(--navy);border-bottom:4px solid var(--navy);display:inline-block;padding:0 4px 6px;margin:4px 0 12px}
+.res{width:100%;border-collapse:collapse;font-size:13px}.res th{text-align:left;color:var(--muted);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--border)}.res td{padding:6px 4px;border-top:1px solid var(--border)}.res .n{text-align:right}
+.ans{border-top:1px solid var(--border);padding:8px 0}.ans p{margin:0 0 4px}
+.rec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:var(--cream);border-radius:6px;padding:6px;white-space:pre-wrap;margin-top:4px}
+.scroll{overflow-x:auto}
+</style></head><body>
+<div class="proto" role="region" aria-label="Prototype controls (not part of the product)">
+  <label>Screen<select id="pFrame"><option value="phone">Phone, 390px</option><option value="wide">Computer</option></select></label>
+  <label>Round<select id="pKind"><option value="mid_year">Mid-year</option><option value="year_end">Year-end</option></select></label>
+  <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pLower" style="width:20px;height:20px">Add a lower-is-better objective (RV-1)</label>
+  <button class="pbtn" id="pReset" type="button">Start again</button>
+  <p class="note">Prototype only, for the Reviews Specification v0.1 (RV-1 to RV-10, accepted as recommended). Sample Water Utility at 18 October 2026: the open mid-year review for the Meter Reader, Zone B, nothing pre-filled. Scores from verified figures by the rating rules (preset A). Nothing is stored.</p>
+</div>
+<div class="layout">
+  <div class="frame phone" id="frame">
+    <nav class="sidebar" aria-label="Main"><div class="brand">CASPA™</div><ul class="nav" id="sideNav"></ul></nav>
+    <div class="main"><div class="top" id="top"></div><div id="offbar"></div><main class="body" id="body" tabindex="-1"></main><nav class="bottom" id="bottom" aria-label="Workspaces"></nav></div>
+  </div>
+  <aside class="side-notes" aria-label="Prototype notes">
+    <div class="panel"><h2>Try it</h2><ol>
+      <li>As Mary, write the self-assessment and send it. Try “Work offline” first, then go back online.</li>
+      <li>As Esther, open Mary’s review. Move a score one band with a reason, or ask HR to accept “Can’t be assessed”. Send the self-assessment back, or write your assessment and complete.</li>
+      <li>The meters objective scores 1, so the review goes to Peter, the next-level reviewer. Accept it, or return it to Esther with a reason.</li>
+      <li>As Mary, acknowledge the review, with “I disagree” if you like. It never changes a score.</li>
+      <li>As Natasha (HR), follow the round and accept or refuse “Can’t be assessed”. Switch Round to Year-end to close the year and freeze the scores.</li>
+      <li>Tick “Add a lower-is-better objective” to see RV-1: 16 complaints against at most 20 scores 125%.</li>
+    </ol></div>
+    <div class="panel"><h2>What is recorded</h2><p class="muted" style="margin:0 0 6px;font-size:12px">Prototype aid: the records the build would write, newest first.</p><ul class="audit" id="audit"></ul></div>
+  </aside>
+</div>
+<div class="live" aria-live="polite" id="live"></div>
+<script>
+'use strict';
+/* Reviews prototype (Reviews Specification v0.1, RV-1 to RV-10). Fixed records from the v0.19.0 seed; scores by the
+   rating rules R1-R10 (preset A), computed here only to show the behaviour. Nothing is stored. */
+const TODAY = '2026-10-18', YEAR_SHARE = 0.79; // share of FY2026 elapsed at 18 October (P10)
+const BANDS = [[5, 'Outstanding', 1.2], [4, 'Exceeds', 1.05], [3, 'Meets', 0.95], [2, 'Partly meets', 0.8], [1, 'Does not meet', null]];
+const PEOPLE = { mrb: 'Mary Chileshe', co: 'Esther Banda', cm: 'Peter Mwansa', hrm: 'Natasha Kabwe' };
+const ROLES = { mrb: 'Employee: Mary Chileshe', co: 'Supervisor: Esther Banda', cm: 'Next-level reviewer: Peter Mwansa', hrm: 'HR: Natasha Kabwe' };
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const dLong = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => n.toLocaleString('en-GB');
+const pct = (x) => `${Math.floor(x * 100 + 0.5)}%`;
+const half = (x) => Math.floor(x + 0.5);
+const bandOf = (a) => BANDS.find((b) => b[2] === null || a >= b[2]);
+const label = (s) => BANDS.find((b) => b[0] === s)[1];
+
+let S;
+function fresh() {
+  return {
+    as: 'mrb', frame: 'phone', tab: null, open: null, offline: {}, lower: false, kind: 'mid_year', log: [], toast: null,
+    review: { status: 'open', self: { text: '', waiting: false }, sentBack: null, sup: '', adj: {}, na: {}, reviewerCheck: false, returned: null, ack: null, final: null },
+    roundClosed: false,
+  };
+}
+function objectives() {
+  const o = [
+    { id: 'co-b-1', title: 'Replace 400 faulty meters on route', unit: 'meters', target: 400, done: 140, on: '2026-06-30', weight: S.lower ? 40 : 50, lower: false },
+    { id: 'co-b-2', title: 'Complete scheduled meter readings', unit: 'readings', target: 2400, done: 2210, on: '2026-06-30', weight: S.lower ? 40 : 50, lower: false },
+  ];
+  // RV-1, shown only when the prototype control adds it: a lower-is-better objective scored target ÷ verified figure.
+  if (S.lower) o.push({ id: 'co-b-3', title: 'Keep billing complaints on my route to 20 or fewer', unit: 'complaints', target: 20, done: 16, on: '2026-06-30', weight: 20, lower: true });
+  return o;
+}
+function scores() {
+  const r = S.review;
+  const rows = objectives().map((o) => {
+    const na = r.na[o.id];
+    if (na && na.approved) return { ...o, na, score: null };
+    const ach = o.lower ? (o.done === 0 ? Infinity : o.target / o.done) : o.done / o.target;
+    const band = bandOf(ach)[0];
+    const a = r.adj[o.id];
+    const score = Math.max(1, Math.min(5, band + (a ? a.delta : 0)));
+    return { ...o, ach, band, score, adj: a, na };
+  });
+  const scored = rows.filter((x) => x.score !== null);
+  const w = scored.reduce((s, x) => s + x.weight, 0);
+  const overall = w ? scored.reduce((s, x) => s + x.score * x.weight, 0) / w : null;
+  const flags = scored.filter((x) => x.score === 1 || x.ach > 1.5).map((x) => ({ id: x.id, title: x.title, why: x.score === 1 ? 'scored 1' : 'above 150%' }));
+  return { rows, overall, flags };
+}
+const step = () => {
+  const r = S.review;
+  if (r.ack) return 'Acknowledged';
+  if (r.status === 'completed') return r.reviewerCheck || !scores().flags.length ? 'Waiting for Mary to acknowledge' : 'Completed, being checked';
+  if (r.status === 'self_submitted') return r.returned ? 'Sent back by the next-level reviewer' : 'Waiting for the supervisor';
+  return r.self.waiting ? 'Self-assessment waiting to send' : 'Waiting for the self-assessment';
+};
+const log = (title, rec) => S.log.unshift({ title, rec });
+const say = (m) => { S.toast = m; document.getElementById('live').textContent = m; };
+
+/* ── shared pieces ── */
+function objectiveLines(sc, editable) {
+  return sc.rows.map((o) => {
+    let line;
+    if (o.score === null) line = `<b>Can’t be assessed</b>, approved by HR: ${esc(o.na.reason)}`;
+    else line = `${o.lower ? `${fmt(o.done)} recorded against at most ${fmt(o.target)}` : `${fmt(o.done)} of ${fmt(o.target)} verified`} (${pct(o.lower ? o.ach : o.ach)}). Score <b>${o.score}, ${label(o.score)}</b>.`;
+    const notes = [];
+    if (o.adj) notes.push(`Moved ${o.adj.delta > 0 ? 'up' : 'down'} one band by Esther Banda: ${esc(o.adj.reason)}`);
+    if (o.na && !o.na.approved) notes.push(`Asked HR to accept “Can’t be assessed”: ${esc(o.na.reason)}`);
+    if (o.lower) notes.push('Lower is better here, so 16 of at most 20 counts as 125% (RV-1).');
+    return `<li class="objline"><p class="q2">${esc(o.title)}</p><p class="line">${line}</p>${notes.map((n) => `<p class="line muted">${n}</p>`).join('')}
+      <p class="line muted">Verified at ${dLong(o.on)}. Weight ${o.weight}%.</p>${editable ? supControls(o) : ''}</li>`;
+  }).join('');
+}
+function overallLine(sc) {
+  if (sc.overall === null) return '<p class="line">Nothing can be scored yet.</p>';
+  const final = S.review.final;
+  return `<p class="overall">Overall <b>${sc.overall.toFixed(2)}, ${label(half(sc.overall))}</b>. ${final ? 'Final.' : 'Provisional until HR closes the year’s reviews.'}</p>
+    ${S.kind === 'mid_year' ? `<p class="line muted">Measured against the full-year target from verified figures only. ${pct(YEAR_SHARE)} of the year has passed, so about ${pct(YEAR_SHARE)} of each target would be on course by now.</p>` : ''}`;
+}
+function supControls(o) {
+  if (S.as !== 'co' || S.review.status !== 'self_submitted') return '';
+  return `<details class="ctl"><summary>Change this score</summary>
+    <div class="field"><label for="d-${o.id}">Move the score</label><select id="d-${o.id}"><option value="0">Keep ${o.band}, ${label(o.band)}</option>${o.band < 5 ? `<option value="1">Up one band, to ${o.band + 1}</option>` : ''}${o.band > 1 ? `<option value="-1">Down one band, to ${o.band - 1}</option>` : ''}</select></div>
+    <div class="field"><label for="r-${o.id}">Reason (needed)</label><textarea id="r-${o.id}"></textarea></div>
+    <div class="btns"><button class="btn sec" type="button" data-adj="${o.id}">Save</button><button class="btn sec" type="button" data-na="${o.id}">Ask HR: can’t be assessed</button></div></details>`;
+}
+
+/* ── tabs ── */
+function tabsFor() {
+  const t = [];
+  if (S.as === 'mrb') t.push('mine');
+  if (S.as === 'co') t.push('team');
+  if (S.as === 'cm') t.push('check');
+  if (S.as === 'hrm') t.push('round');
+  return t;
+}
+const TABNAME = { mine: 'Mine', team: 'My team', check: 'To check', round: 'Round' };
+
+function viewMine() {
+  const r = S.review, sc = scores();
+  let h = `<section class="card f"><h2>Your ${S.kind === 'mid_year' ? 'mid-year' : 'year-end'} review, FY2026</h2><p class="line muted">Meter Reader, Zone B · supervisor Esther Banda · due ${dLong('2027-01-15')}</p>
+    <p class="line"><span class="chip info">${esc(step())}</span></p><ul class="objs">${objectiveLines(sc, false)}</ul>${overallLine(sc)}</section>`;
+  if (r.status === 'open') {
+    h += `<section class="card plain"><h2>Self-assessment</h2>${r.sentBack ? `<div class="flag"><b>Sent back by Esther Banda</b>${esc(r.sentBack)}</div>` : ''}
+      ${r.self.waiting ? '<p class="line"><span class="chip info">Waiting to send</span> It is sent when you’re back online.</p>' : `
+      <div class="field"><label for="self">How has your year gone against these objectives?</label><span class="hint">Your supervisor reads this before completing your review. Once sent, only they can send it back.</span><textarea id="self" rows="5">${esc(r.self.text)}</textarea></div>
+      <div class="btns"><button class="btn" type="button" data-submitself="1">Send to Esther Banda</button><button class="btn sec" type="button" data-saveself="1">Save draft</button></div>`}</section>`;
+  } else {
+    h += `<section class="card plain"><h2>Self-assessment</h2><p class="quote">${esc(r.self.text)}</p></section>`;
+  }
+  if (r.status === 'completed') {
+    h += `<section class="card plain"><h2>Your supervisor’s assessment</h2><p class="quote">${esc(r.sup)}</p></section>`;
+    if (!r.ack && (r.reviewerCheck || !sc.flags.length)) {
+      h += `<section class="card plain"><h2>Acknowledge your review</h2><p class="line">Acknowledging says you have read it. It never changes a score.</p>
+        <div class="field"><label for="dis">I disagree (optional)</label><span class="hint">In your own words. It is kept with the review for HR and the next-level reviewer.</span><textarea id="dis"></textarea></div>
+        <div class="btns"><button class="btn" type="button" data-ack="1">Acknowledge</button></div></section>`;
+    } else if (r.ack) h += `<p class="line"><span class="chip ok">Acknowledged</span> ${r.ack.dis ? `with your note: “${esc(r.ack.dis)}”` : ''}</p>`;
+    else h += `<p class="line muted">Your review is with the next-level reviewer. You can acknowledge it once they have checked it.</p>`;
+  }
+  return h;
+}
+function viewTeam() {
+  const r = S.review;
+  if (!S.open) return `<section class="card plain"><h2>Your team’s reviews</h2><ul class="rows"><li><button type="button" class="rowbtn" data-openrev="1"><span><b>Mary Chileshe</b><br><span class="muted">Meter Reader, Zone B</span></span><span class="muted">${esc(step())} · due ${dLong('2027-01-15')}</span></button></li></ul>
+    <p class="line muted">Prototype: one team member. Moses Lungu, Daniel Sakala and Agnes Mumba have no signed contract this year, so no review.</p></section>`;
+  const sc = scores();
+  let h = `<p><button class="linkbtn" type="button" data-closerev="1">‹ Your team’s reviews</button></p><section class="card f"><h2>Mary Chileshe, ${S.kind === 'mid_year' ? 'mid-year' : 'year-end'} review</h2><p class="line"><span class="chip info">${esc(step())}</span></p>`;
+  if (r.status === 'open') return h + `<p class="line">Mary hasn’t sent her self-assessment yet. You can complete the review once she has.</p></section>`;
+  h += `<h3>Her self-assessment</h3><p class="quote">${esc(r.self.text)}</p>${r.returned ? `<div class="flag"><b>Sent back by Peter Mwansa</b>${esc(r.returned)}</div>` : ''}
+    <h3>Scores</h3><ul class="objs">${objectiveLines(sc, true)}</ul>${overallLine(sc)}</section>`;
+  if (r.status === 'self_submitted') {
+    const blocks = sc.rows.filter((o) => o.na && !o.na.approved).map((o) => `“${o.title}” is waiting for HR to accept “Can’t be assessed”.`);
+    h += `<section class="card plain"><h2>Your assessment</h2><div class="field"><label for="sup">What you want Mary to know</label><textarea id="sup" rows="5">${esc(r.sup)}</textarea></div>
+      ${blocks.map((b) => `<div class="mustfix"><b>Must fix before completing</b>${esc(b)}</div>`).join('')}
+      <div class="btns"><button class="btn" type="button" data-complete="1"${blocks.length ? ' aria-disabled="true"' : ''}>Complete the review</button></div>
+      <details class="ctl"><summary>Send her self-assessment back</summary><div class="field"><label for="sb">Reason (needed)</label><textarea id="sb"></textarea></div><div class="btns"><button class="btn sec" type="button" data-sendback="1">Send back to Mary</button></div></details></section>`;
+  } else h += `<section class="card plain"><h2>Your assessment</h2><p class="quote">${esc(r.sup)}</p></section>`;
+  return h;
+}
+function viewCheck() {
+  const r = S.review, sc = scores();
+  if (r.status !== 'completed' || r.reviewerCheck || !sc.flags.length) return `<section class="card plain"><h2>Flagged reviews</h2><p class="empty">${r.reviewerCheck ? 'Nothing to check. You accepted Mary Chileshe’s review.' : 'Nothing to check. Reviews from Esther Banda’s team come here once completed with a score of 1 or above 150%.'}</p></section>`;
+  return `<section class="card f"><h2>Mary Chileshe, ${S.kind === 'mid_year' ? 'mid-year' : 'year-end'} review</h2><p class="line muted">Completed by Esther Banda (Commercial Officer), who reports to you.</p>
+    ${sc.flags.map((f) => `<div class="flag"><b>Worth checking: ${f.why}</b>${esc(f.title)}</div>`).join('')}
+    <ul class="objs">${objectiveLines(sc, false)}</ul>${overallLine(sc)}<h3>Esther Banda’s assessment</h3><p class="quote">${esc(r.sup)}</p>
+    <div class="btns"><button class="btn" type="button" data-accept="1">Accept</button></div>
+    <details class="ctl"><summary>Return it to Esther Banda</summary><div class="field"><label for="rr">Reason (needed)</label><textarea id="rr"></textarea></div><div class="btns"><button class="btn sec" type="button" data-return="1">Return</button></div></details></section>`;
+}
+function viewRound() {
+  const r = S.review, sc = scores();
+  const pending = sc.rows.filter((o) => o.na && !o.na.approved);
+  const blocks = [];
+  if (r.status !== 'completed') blocks.push('1 review is not completed yet (Mary Chileshe).');
+  if (r.status === 'completed' && sc.flags.length && !r.reviewerCheck) blocks.push('1 completed review is still being checked.');
+  if (pending.length) blocks.push(`${pending.length} request to accept “Can’t be assessed” is waiting for you.`);
+  let h = `<section class="card f"><h2>${S.kind === 'mid_year' ? 'Mid-year' : 'Year-end'} reviews, FY2026</h2><p class="line muted">Opened by Natasha Kabwe · due ${dLong('2027-01-15')}</p>
+    <div class="scroll"><table class="res"><thead><tr><th>Step</th><th class="n">Reviews</th></tr></thead><tbody>
+    ${['Waiting for the self-assessment', 'Self-assessment waiting to send', 'Waiting for the supervisor', 'Sent back by the next-level reviewer', 'Completed, being checked', 'Waiting for Mary to acknowledge', 'Acknowledged'].map((s) => `<tr><td>${s.replace('Mary', 'the employee')}</td><td class="n num">${step() === s ? 1 : 0}</td></tr>`).join('')}</tbody></table></div>
+    <p class="line muted">Prototype: one signed contract this year, so one review.</p></section>`;
+  if (pending.length) h += `<section class="card plain"><h2>Waiting for you</h2>${pending.map((o) => `<div class="ans"><p><b>Can’t be assessed?</b> ${esc(o.title)}, Mary Chileshe</p><p class="quote">${esc(o.na.reason)}</p><p class="line muted">Asked by Esther Banda</p>
+      <div class="btns"><button class="btn" type="button" data-hrok="${o.id}">Accept</button><button class="btn sec" type="button" data-hrno="${o.id}">Refuse</button></div></div>`).join('')}</section>`;
+  if (S.kind === 'year_end') {
+    h += `<section class="card plain"><h2>Close the year’s reviews</h2><p class="line">Closing makes every score final. It can’t be undone.</p>
+      ${S.roundClosed ? '<p class="line"><span class="chip ok">Closed</span> Final scores are frozen.</p>' : `${blocks.map((b) => `<div class="mustfix"><b>Must fix before closing</b>${esc(b)}</div>`).join('')}<div class="btns"><button class="btn" type="button" data-closeround="1"${blocks.length ? ' aria-disabled="true"' : ''}>Close the year’s reviews</button></div>`}</section>`;
+  } else h += `<p class="line muted">Mid-year scores stay provisional; only the year-end round is closed.</p>`;
+  return h;
+}
+
+function needs() {
+  const r = S.review, sc = scores(), out = [];
+  if (S.as === 'mrb' && r.status === 'open' && !r.self.waiting) out.push([`Submit your self-assessment for the ${S.kind === 'mid_year' ? 'mid-year' : 'year-end'} review`, 'mine']);
+  if (S.as === 'mrb' && r.status === 'completed' && !r.ack && (r.reviewerCheck || !sc.flags.length)) out.push(['Acknowledge your review', 'mine']);
+  if (S.as === 'co' && r.status !== 'completed') out.push([`Complete Mary Chileshe’s ${S.kind === 'mid_year' ? 'mid-year' : 'year-end'} review`, 'team']);
+  if (S.as === 'cm' && r.status === 'completed' && sc.flags.length && !r.reviewerCheck) out.push(['Check 1 flagged review', 'check']);
+  if (S.as === 'hrm' && sc.rows.some((o) => o.na && !o.na.approved)) out.push(['Approve 1 request: can’t be assessed', 'round']);
+  if (S.as === 'hrm' && S.kind === 'year_end' && !S.roundClosed) out.push(['Close the year’s reviews', 'round']);
+  return out;
+}
+
+function render() {
+  const tabs = tabsFor();
+  if (!S.tab || !tabs.includes(S.tab)) S.tab = tabs[0];
+  document.getElementById('frame').className = `frame ${S.frame === 'phone' ? 'phone' : ''}`;
+  document.getElementById('top').innerHTML = `<label class="who">Viewing as (development)<select id="role" style="min-height:44px;border:1px dashed var(--control);border-radius:8px;padding:0 8px;background:var(--white);margin-top:2px;max-width:100%">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}"${S.as === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+    <button type="button" class="switch" role="switch" aria-checked="${!!S.offline[S.as]}" id="offSw"><span class="knob" aria-hidden="true"></span>Work offline</button>`;
+  document.getElementById('offbar').innerHTML = S.offline[S.as] ? '<div class="offbar" role="status">You’re offline. What you save waits on this device and is sent when you’re back online.</div>' : '';
+  document.getElementById('sideNav').innerHTML = `<li><a href="#" data-home="1"><span class="mark"></span>Home</a></li><li><a href="#" class="here"><span class="mark f"></span>Performance</a><ul class="sub"><li><a href="#" style="opacity:.7">Progress updates</a></li><li><a href="#" aria-current="page">Reviews</a></li></ul></li>`;
+  document.getElementById('bottom').innerHTML = `<a href="#"><span class="mark"></span>Home</a><a href="#" class="here" aria-current="page"><span class="mark f"></span>Performance</a>`;
+  const n = needs();
+  const view = { mine: viewMine, team: viewTeam, check: viewCheck, round: viewRound }[S.tab]();
+  document.getElementById('body').innerHTML = `
+    <div class="wlabel"><i aria-hidden="true"></i>Performance <span class="muted" style="font-weight:400;text-decoration:underline dotted;text-underline-offset:3px">Controlling</span></div>
+    <h1>Reviews</h1><p class="lead">Look back on the year’s contract with your supervisor: your self-assessment, their assessment, and scores computed from verified figures.</p>
+    ${n.length ? `<section class="card plain"><h2>Needs you</h2><ul class="needs">${n.map(([t, tab]) => `<li><a href="#" data-gotab="${tab}">${esc(t)}</a></li>`).join('')}</ul><p class="line muted" style="font-size:12px">Prototype: shown here; in the build these sit on Home.</p></section>` : ''}
+    ${tabs.length > 1 ? `<div class="tabs" role="tablist">${tabs.map((t) => `<a role="tab" href="#" aria-selected="${S.tab === t}" data-gotab="${t}">${TABNAME[t]}</a>`).join('')}</div>` : `<p class="tabone">${TABNAME[S.tab]}</p>`}
+    ${view}${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+  document.getElementById('audit').innerHTML = S.log.length ? S.log.map((a) => `<li>${esc(a.title)}<div class="rec">${esc(JSON.stringify(a.rec, null, 1))}</div></li>`).join('') : '<li class="muted">Nothing written yet.</li>';
+  bind();
+}
+const val = (id) => (document.getElementById(id) || {}).value || '';
+function bind() {
+  const $ = (q) => document.querySelectorAll(q), r = S.review;
+  document.getElementById('role').onchange = (e) => { S.as = e.target.value; S.tab = null; S.open = null; S.toast = null; render(); };
+  document.getElementById('offSw').onclick = () => {
+    const was = !!S.offline[S.as]; S.offline[S.as] = !was; S.toast = null;
+    if (was && S.as === 'mrb' && r.self.waiting) { r.self.waiting = false; r.status = 'self_submitted'; r.sentBack = null; log('Self-assessment sent (saved offline)', { review: 'rv-mrb-2026-mid', selfAssessment: { submitted: TODAY, capturedOffline: true } }); say('Your self-assessment was sent to Esther Banda.'); }
+    render();
+  };
+  $('[data-gotab]').forEach((a) => a.onclick = (e) => { e.preventDefault(); S.tab = a.dataset.gotab; if (S.tab === 'team') S.open = 1; S.toast = null; render(); });
+  $('[data-saveself]').forEach((b) => b.onclick = () => { r.self.text = val('self'); say('Draft saved.'); render(); });
+  $('[data-submitself]').forEach((b) => b.onclick = () => {
+    r.self.text = val('self').trim();
+    if (!r.self.text) { say('Write your self-assessment before sending it.'); return render(); }
+    if (S.offline.mrb) { r.self.waiting = true; say('Saved on this device. It is sent when you’re back online.'); return render(); }
+    r.status = 'self_submitted'; r.sentBack = null; log('Gate review.submit_self passed', { review: 'rv-mrb-2026-mid', by: 'm-mrb' }); say('Sent to Esther Banda.'); render();
+  });
+  $('[data-openrev]').forEach((b) => b.onclick = () => { S.open = 1; render(); });
+  $('[data-closerev]').forEach((b) => b.onclick = () => { S.open = null; render(); });
+  $('[data-adj]').forEach((b) => b.onclick = () => {
+    const id = b.dataset.adj, d = Number(val(`d-${id}`)), reason = val(`r-${id}`).trim();
+    if (d && !reason) { say('Give a reason for moving the score.'); return render(); }
+    if (d) { r.adj[id] = { delta: d, reason }; log('Score moved one band (R7)', { contractObjective: id, bandDelta: d, reason, by: 'm-co' }); } else delete r.adj[id];
+    say('Saved.'); render();
+  });
+  $('[data-na]').forEach((b) => b.onclick = () => {
+    const id = b.dataset.na, reason = val(`r-${id}`).trim();
+    if (!reason) { say('Give a reason why it can’t be assessed.'); return render(); }
+    r.na[id] = { reason, approved: false }; log('Asked HR: can’t be assessed (R9)', { contractObjective: id, reason }); say('Sent to HR to accept.'); render();
+  });
+  $('[data-sendback]').forEach((b) => b.onclick = () => {
+    const reason = val('sb').trim(); if (!reason) { say('Give a reason for sending it back.'); return render(); }
+    r.status = 'open'; r.sentBack = reason; log('Self-assessment sent back (audit entry)', { review: 'rv-mrb-2026-mid', status: 'open', reason }); say('Sent back to Mary.'); S.open = 1; render();
+  });
+  $('[data-complete]').forEach((b) => b.onclick = () => {
+    if (b.getAttribute('aria-disabled')) { say('Fix what is marked before completing.'); return render(); }
+    r.sup = val('sup').trim(); if (!r.sup) { say('Write your assessment before completing.'); return render(); }
+    r.status = 'completed'; r.returned = null; r.reviewerCheck = false;
+    log('Gate review.complete passed', { review: 'rv-mrb-2026-mid', by: 'm-co', flags: scores().flags.map((f) => f.why) });
+    say(scores().flags.length ? 'Completed. It goes to Peter Mwansa to check first, because a score is 1.' : 'Completed. Mary can now acknowledge it.'); render();
+  });
+  $('[data-accept]').forEach((b) => b.onclick = () => { r.reviewerCheck = true; log('Review.reviewerCheck set (contract v1.12)', { review: 'rv-mrb-2026-mid', by: 'm-cm' }); say('Accepted. Mary can now acknowledge her review.'); render(); });
+  $('[data-return]').forEach((b) => b.onclick = () => {
+    const reason = val('rr').trim(); if (!reason) { say('Give a reason for returning it.'); return render(); }
+    r.status = 'self_submitted'; r.returned = reason; log('Returned by the next-level reviewer (R8)', { returnedByReviewer: { reason, by: 'm-cm' } }); say('Returned to Esther Banda.'); render();
+  });
+  $('[data-ack]').forEach((b) => b.onclick = () => { r.ack = { dis: val('dis').trim() }; log('Employee acknowledgement (R8)', { at: TODAY, disagreement: r.ack.dis || null }); say('Acknowledged.'); render(); });
+  $('[data-hrok]').forEach((b) => b.onclick = () => { r.na[b.dataset.hrok].approved = true; log('HR accepted “can’t be assessed”', { contractObjective: b.dataset.hrok, hrApproval: { by: 'm-hrm' } }); say('Accepted. It is left out of the overall score.'); render(); });
+  $('[data-hrno]').forEach((b) => b.onclick = () => { delete r.na[b.dataset.hrno]; log('HR refused “can’t be assessed”', { contractObjective: b.dataset.hrno }); say('Refused. The objective is scored as usual.'); render(); });
+  $('[data-closeround]').forEach((b) => b.onclick = () => {
+    if (b.getAttribute('aria-disabled')) { say('Fix what is marked before closing.'); return render(); }
+    const sc = scores(); S.roundClosed = true; r.final = { overall: sc.overall, label: label(half(sc.overall)) };
+    log('Gate appraisal.close passed; final results frozen', { finalResult: { overallScore: Number(sc.overall.toFixed(2)), label: r.final.label } }); say('Closed. Scores are final.'); render();
+  });
+  $('[data-home]').forEach((a) => a.onclick = (e) => e.preventDefault());
+}
+document.getElementById('pFrame').onchange = (e) => { S.frame = e.target.value; render(); };
+document.getElementById('pKind').onchange = (e) => { S.kind = e.target.value; render(); };
+document.getElementById('pLower').onchange = (e) => { S.lower = e.target.checked; render(); };
+document.getElementById('pReset').onclick = () => { S = fresh(); document.getElementById('pKind').value = 'mid_year'; document.getElementById('pLower').checked = false; render(); };
+S = fresh(); render();
+</script></body></html>
