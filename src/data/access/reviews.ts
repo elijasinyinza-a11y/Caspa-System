@@ -6,6 +6,7 @@
 import type { FinancialYear, ISODate, ISODateTime, PerformanceContract, Review } from '../../contract/caspa-data-contract';
 import { rateContract, type ObjectiveRating } from '../../rules/rating';
 import { finalPeriodPending } from '../../rules/targets';
+import { dependencyFlags } from '../../rules/contracts';
 import { closeBlocks, completeBlocks, holdersOf, needsCheck, reviewerPositionOf, stepOf, supervisorPositionOf, type ReviewStep } from '../../rules/review';
 import type { NeedsYouItem } from '../../selectors/needs-you';
 import { formatDate } from '../../selectors/format';
@@ -43,6 +44,8 @@ export interface ObjectiveLine {
   adjustment: { delta: -1 | 1; reason: string; by: string } | null;
   cantAssess: { reason: string; accepted: boolean } | null;
   basis: ObjectiveRating['basis'];
+  /** v0.22.0: what this objective depends on, with any worth-checking flags, as evidence at review. */
+  depends: string[];
 }
 export interface ReviewView {
   id: string;
@@ -154,6 +157,14 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
   const scoreAt = (x: Review) => { const rt = rateContract(s, x.contractId, { now: x.periodEnd ?? now }); return rt?.overall ?? null; };
   const sharesIn = (contractIds: string[]) => s.contractObjectives.filter((co) => contractIds.includes(co.contractId) && co.sourceShareId).map((co) => co.sourceShareId as string);
   const pendingFor = (contractIds: string[]) => { const p = finalPeriodPending(s, contractIds, sharesIn(contractIds), fy); return p.updates.length + p.readings.length; };
+  const dependsOf = (coId: string) => s.dependencies.filter((d) => 'contractObjectiveId' in d.from && d.from.contractObjectiveId === coId).map((d) => {
+    const a = 'activityId' in d.on ? s.activities.find((x) => x.id === (d.on as { activityId: string }).activityId) : null;
+    const owner = a ? (s.positions.find((p) => p.id === a.ownerPositionId)?.title ?? '') : '';
+    const level = a?.decisionLevel ? (en.sixP as Record<string, string>)[a.decisionLevel] ?? '' : '';
+    const flags = dependencyFlags(s, d, fy, now).map((f) => (f === 'late' ? en.contracts.flags.late(formatDate(d.neededBy)) : en.contracts.flags[f]));
+    const text = a ? en.contracts.dependsOn(`${a.code} ${a.title}`, owner, level, formatDate(d.neededBy)) : en.contracts.dependsOnShare('', formatDate(d.neededBy));
+    return flags.length ? `${text} · ${flags.join('; ')}` : text;
+  });
   const view = (r: Review): ReviewView => {
     const ct = contractOf(r);
     const rating = rateContract(s, ct.id, { now });
@@ -171,6 +182,7 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
         label: o.score === null ? null : (s.ratingSchemes[0]?.bands.find((b) => b.score === o.score)?.label ?? null), verifiedOn: latest?.periodEnd ?? null,
         adjustment: adj ? { delta: adj.bandDelta, reason: adj.reason, by: personName(s.memberships.find((m) => m.id === adj.by.byMembershipId)?.personId ?? '') } : null,
         cantAssess: na ? { reason: na.reason, accepted: !!na.hrApproval } : null, basis: o.basis,
+        depends: dependsOf(co.id),
       };
     });
     const step = waiting ? 'waiting_to_send' : stepOf(s, r, now);
@@ -339,9 +351,13 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
     },
     askCantAssess(id, coId, reason) {
       const r = find(id);
-      if (!r || !roles(r).supervisor || r.status !== 'self_submitted') return deny('not_allowed');
+      // CT-9: the employee as well as the supervisor may ask HR; HR decides.
+      const w = r ? roles(r) : null;
+      const asSupervisor = !!w?.supervisor && r!.status === 'self_submitted';
+      const asEmployee = !!w?.employee && (r!.status === 'open' || r!.status === 'self_submitted');
+      if (!r || (!asSupervisor && !asEmployee)) return deny('not_allowed');
       if (!reason.trim()) return deny('reason_required');
-      r.notAssessable = [...r.notAssessable.filter((n) => n.contractObjectiveId !== coId), { contractObjectiveId: coId as never, reason: reason.trim(), hrApproval: null }];
+      r.notAssessable = [...r.notAssessable.filter((n) => n.contractObjectiveId !== coId), { contractObjectiveId: coId as never, reason: reason.trim(), hrApproval: null, askedBy: asSupervisor ? 'supervisor' : 'employee' }];
       audit('ask_cant_assess', r, null, { contractObjectiveId: coId, reason: reason.trim() });
       touch(r);
       return { ok: true };

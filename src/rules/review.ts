@@ -30,7 +30,8 @@ export function reviewerPositionOf(s: Store, c: PerformanceContract, now: ISODat
   let p = (s.positions.find((x) => x.id === sup)?.reportsToPositionId as string | null) ?? null;
   for (let i = 0; p && i < 32; i++) {
     const people = holdersOf(s, p, now);
-    if (!people.some((x) => supPeople.includes(x) || x === c.personId)) return p;
+    // A vacant post can't check anything, so the check passes further up (as the Head of Commercial's does).
+    if (people.length && !people.some((x) => supPeople.includes(x) || x === c.personId)) return p;
     p = (s.positions.find((x) => x.id === p)?.reportsToPositionId as string | null) ?? null;
   }
   return null;

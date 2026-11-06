@@ -7,7 +7,7 @@ import {
   type Goal, type Id, type ISODate, type ISODateTime, type Kpi, type Membership,
   type Objective, type OrgUnit, type Person, type Position, type PositionAssignment, type SixPLevel, type Stamp,
   type AiTask, type CommunicationRecord, type SourceDocument, type BaselineMeasure, type ComplianceItem, type ProgressUpdate,
-  type SurveyAnswerValue, type SurveyQuestionKey, type SurveyReceipt, type SurveyResponse, type SurveyRound,
+  type Dependency, type SurveyAnswerValue, type SurveyQuestionKey, type SurveyReceipt, type SurveyResponse, type SurveyRound,
 } from '../../contract/caspa-data-contract';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
@@ -220,6 +220,17 @@ const signed = (a: Activity, title: string, value: number, unit: string, weightP
   direction: 'higher_is_better', weightPct,
 });
 
+/** v0.22.0: an objective in a draft contract (no snapshot until signed). */
+const draftObjective = (n: string, activityId: Id<'Activity'> | null, duty: string | null, title: string, value: number, unit: string, weightPct: number): ContractObjective => ({
+  ...base, id: id(n), contractId: id('pc-co-2026'), sourceActivityId: activityId, standingDuty: duty ? { description: duty } : null,
+  title, quantityTarget: { value, unit }, snapshot: null, direction: 'higher_is_better', weightPct,
+});
+/** v0.22.0: the briefings depend on the meter management policy, owned by the vacant Head of Commercial post. */
+const draftDependencies: Dependency[] = [{
+  ...base, id: id('dep-co-1'), from: { contractObjectiveId: id('co-co-1') }, on: { activityId: id('a1.2.1.2') }, neededBy: d('2026-02-28'),
+  note: 'The revised policy sets the check-in rules the briefings teach.',
+}];
+
 export function createSeed(): Store {
   // A deep copy, so every store owns its records: slice 6 writes to activities, which are built once at module level.
   return structuredClone(seedStore());
@@ -246,7 +257,7 @@ function seedStore(): Store {
         { key: 'financial', label: 'Financial' },
       ],
       settings: {
-        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', standingDutyLimitPct: 20, kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 },
+        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', standingDutyLimitPct: 20, singleObjectiveLimitPct: null, showDraftToEmployee: false, kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 },
         ratingSchemeId: id('rs-a'), aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5, structureView: structuredClone(DEFAULT_STRUCTURE_VIEW),
       },
     },
@@ -291,7 +302,7 @@ function seedStore(): Store {
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts, kpiBreakdowns: [], kpiShares: [], shareReadings: [],
+    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts, kpiBreakdowns: [], kpiShares: [], shareReadings: [], dependencies: draftDependencies,
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [
@@ -321,10 +332,16 @@ function seedStore(): Store {
         signedByEmployee: { at: dt('2026-02-02T10:00:00+02:00'), byMembershipId: id('m-mrb') }, signedBySupervisor: { at: dt('2026-02-02T10:05:00+02:00'), byMembershipId: id('m-co') },
       },
       { ...base, id: id('pc-mrc-2026'), personId: per('mrc'), positionId: pos('mrc'), financialYear: FY, status: 'draft', signedByEmployee: null, signedBySupervisor: null },
+      // v0.22.0 (approved with the prototype, 6 November 2026): Esther Banda's FY2026 contract, drafted by the
+      // Commercial Manager, with the problems the checks are there to catch.
+      { ...base, id: id('pc-co-2026'), personId: per('co'), positionId: pos('co'), financialYear: FY, status: 'draft', signedByEmployee: null, signedBySupervisor: null, version: 1, previousVersionId: null, employeeNote: null, preIssueCheck: null },
     ],
     contractObjectives: [
       signed(act('1.2.1.3'), 'Replace 400 faulty meters on route', 400, 'meters', 50, 1),
       signed(act('1.1.1.1'), 'Complete scheduled meter readings', 2400, 'readings', 50, 2),
+      draftObjective('co-co-1', act('1.2.1.4').id, null, 'Run daily route briefings for the meter readers', 240, 'briefings', 40),
+      draftObjective('co-co-2', act('1.1.1.1').id, null, 'Complete monthly meter-reading routes in Zones A to C', 2400, 'readings', 40),
+      draftObjective('co-co-3', null, 'Monthly commercial report', 'Submit the monthly commercial report by the 12th', 12, 'reports', 30),
     ],
     progressUpdates: ([
       ['co-b-1', 140], ['co-b-2', 2210],

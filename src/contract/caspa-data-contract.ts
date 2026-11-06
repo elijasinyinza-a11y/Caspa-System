@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.13
+ * CASPA™ data contract — v1.14
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,11 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.14 (6 November 2026, Elijah; Contracts Specification v0.1, CT-1 to CT-10): drafting, issuing, signing, revising.
+ *     - Dependency: a contract objective or share depends on a Cascade activity or another share, by a date.
+ *     - PerformanceContract: version, previousVersionId, employeeNote (recorded when signing, CT-6), preIssueCheck (CT-5).
+ *     - Organisation.settings: singleObjectiveLimitPct (null = none, CT-4), showDraftToEmployee (CT-7).
+ *     - Review.notAssessable[].askedBy: the employee may also ask HR (CT-9).
  * v1.13 (6 November 2026, Elijah; Targets Specification v0.1, TG-1 to TG-11): Performance › Targets.
  *     - KpiBreakdown, KpiShare, ShareReading: a Cascade KPI broken down into unit shares for a year, combined by one
  *       rule ('sum' | 'weighted' | 'none'); share readings are verified by the share owner's supervisor (TG-3).
@@ -240,6 +245,8 @@ export interface Organisation extends Audited {
   settings: {
     overdueEscalationDays: number; // default 7 (C7)
     reviewModel: 'mid_year_and_annual' | 'quarterly'; // C4; v1.13: quarterly = three provisional quarters plus the year-end review (TG-11)
+    singleObjectiveLimitPct: number | null; // v1.14 (CT-4): none by default
+    showDraftToEmployee: boolean; // v1.14 (CT-7): off by default
     standingDutyLimitPct: number; // v1.13: most of a contract's weight standing duties may carry, default 20 (TG-6)
     kpiStatus: { onTrackAt: number; atRiskAt: number }; // share of expected-to-date, defaults 0.9 / 0.7 (P10)
     ratingSchemeId: Id<'RatingScheme'>; // R1
@@ -799,6 +806,19 @@ export interface PerformanceContract extends OrgScoped, Audited {
   status: 'draft' | 'issued' | 'signed' | 'closed';
   signedByEmployee: Stamp | null;
   signedBySupervisor: Stamp | null;
+  version?: number; // v1.14 (CT-8): 1 unless revised
+  previousVersionId?: Id<'PerformanceContract'> | null; // v1.14: the version this one replaces once both sign
+  employeeNote?: string | null; // v1.14 (CT-6): a constraint or disagreement recorded when signing
+  preIssueCheck?: { by: Stamp; outcome: 'cleared' | 'sent_back' | 'waiting'; reason: string | null } | null; // v1.14 (CT-5)
+}
+
+/** v1.14: a target relies on work someone else owns, by a date. Never on a corporate KPI. */
+export interface Dependency extends OrgScoped, Audited {
+  id: Id<'Dependency'>;
+  from: { contractObjectiveId: Id<'ContractObjective'> } | { shareId: Id<'KpiShare'> };
+  on: { activityId: Id<'Activity'> } | { shareId: Id<'KpiShare'> };
+  neededBy: ISODate;
+  note: string;
 }
 
 /** Live link to the source plus a frozen copy taken at signature (behaviour 5). */
@@ -843,7 +863,7 @@ export interface Review extends OrgScoped, Audited {
   supervisorAssessment: { text: string; completed: Stamp | null } | null;
   status: 'open' | 'self_submitted' | 'completed';
   adjustments: { contractObjectiveId: Id<'ContractObjective'>; bandDelta: -1 | 1; reason: string; by: Stamp }[]; // R7
-  notAssessable: { contractObjectiveId: Id<'ContractObjective'>; reason: string; hrApproval: Stamp | null }[]; // R9
+  notAssessable: { contractObjectiveId: Id<'ContractObjective'>; reason: string; hrApproval: Stamp | null ; askedBy?: 'supervisor' | 'employee' }[]; // R9
   competencyRatings: { label: string; score: 1 | 2 | 3 | 4 | 5; justification: string }[]; // R5, if enabled
   returnedByReviewer: { reason: string; by: Stamp } | null; // R8
   periodEnd?: ISODate | null; // v1.13: the quarter a quarterly review covers (TG-11)
@@ -985,6 +1005,7 @@ export const PERMISSIONS: PermissionMatrix = {
   KpiBreakdown: { view: ['all_members'], draft: ['owner', 'strategy_office'] },
   KpiShare: { view: ['all_members'], draft: ['owner', 'strategy_office'] },
   ShareReading: { view: ['all_members'], draft: ['owner'], approve: ['supervisor'] },
+  Dependency: { view: ['all_members'], draft: ['supervisor', 'owner'] }, // v1.14: the drafting supervisor, or a share's owner
   SurveyResponse: { view: ['strategy_office', 'executive', 'owner'], draft: ['self'] },
   SurveyReceipt: { view: ['self', 'strategy_office'], draft: ['self'] },
   Workshop: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },

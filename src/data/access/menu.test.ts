@@ -63,12 +63,13 @@ describe('Sample Water Utility at 18 October 2026', () => {
   it('gives Progress updates to the Meter Reader, Zone B and the Commercial Officer only (v0.18.0)', () => {
     const perf = (r: Parameters<typeof devMembership>[1]) => as(r).menu().performance.map((e) => e.label);
     // v0.20.0 (RV-5): Reviews joins for the employee, the supervisor, the next-level reviewer and HR.
-    expect(perf('employee')).toEqual(['progress', 'reviews']);
-    expect(perf('supervisor')).toEqual(['progress', 'reviews']);
-    expect(perf('reviewer')).toEqual(['reviews']);
-    expect(perf('hr')).toEqual(['reviews']);
+    // v0.22.0: Contracts for anyone with a contract, supervisors of positions, and HR (at most four entries, N-5).
+    expect(perf('employee')).toEqual(['progress', 'reviews', 'contracts']);
+    expect(perf('supervisor')).toEqual(['progress', 'reviews', 'contracts']);
+    expect(perf('reviewer')).toEqual(['reviews', 'contracts']);
+    expect(perf('hr')).toEqual(['reviews', 'contracts']);
     // v0.21.0: Targets for KPI owners (the Executive owns one) and the Strategy office.
-    expect(perf('executive')).toEqual(['targets']);
+    expect(perf('executive')).toEqual(['targets', 'contracts']);
     expect(perf('strategy')).toEqual(['targets']);
     expect(perf('finance')).toEqual([]);
   });

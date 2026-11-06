@@ -18,7 +18,7 @@ export function createNewOrganisation(): { orgId: string; store: Store; devRoles
       id: NEW_ORG, name: 'Sample New Organisation', countryCode: 'ZM', timeZone: 'Africa/Lusaka', baseCurrency: 'ZMW', financialYearStartMonth: 1,
       created: stamp, updated: stamp, termLabels: structuredClone(DEFAULT_TERMS), perspectives: structuredClone(DEFAULT_PERSPECTIVES),
       settings: {
-        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', standingDutyLimitPct: 20, kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 }, ratingSchemeId: id('rs-new'),
+        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', standingDutyLimitPct: 20, singleObjectiveLimitPct: null, showDraftToEmployee: false, kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 }, ratingSchemeId: id('rs-new'),
         aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5, structureView: structuredClone(DEFAULT_STRUCTURE_VIEW),
       },
     },
@@ -32,7 +32,7 @@ export function createNewOrganisation(): { orgId: string; store: Store; devRoles
       { ...base, id: id('m-new-cn'), personId: id('p-new-cn'), roles: ['org_admin'], startsOn: '2026-10-01' as ISODate, endsOn: '2026-12-31' as ISODate, status: 'active' },
     ],
     units: [], positions: [], assignments: [], plans: [], fourQEntries: [], goals: [], objectives: [], kpis: [], kpiTargets: [], kpiActuals: [],
-    baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords: [], surveyRounds: [], surveyResponses: [], surveyReceipts: [], kpiBreakdowns: [], kpiShares: [], shareReadings: [], activities: [], activityProgress: [], deficiencies: [], cycles: [], budgetVersions: [], budgetLines: [],
+    baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords: [], surveyRounds: [], surveyResponses: [], surveyReceipts: [], kpiBreakdowns: [], kpiShares: [], shareReadings: [], dependencies: [], activities: [], activityProgress: [], deficiencies: [], cycles: [], budgetVersions: [], budgetLines: [],
     contracts: [], contractObjectives: [], progressUpdates: [], reviews: [],
     ratingSchemes: [{
       ...base, id: id('rs-new'), preset: 'A', bands: RATING_PRESETS.A, competencySection: { enabled: false, weightPct: 0 },
