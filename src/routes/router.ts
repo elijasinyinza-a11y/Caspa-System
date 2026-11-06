@@ -37,13 +37,16 @@ export type Route =
    */
   | { kind: 'progress'; tab?: 'mine' | 'verify'; objectiveId?: string }
   /** Staff survey (v0.19.0): answering, #/survey/<roundId>, and the organisation's results, #/survey/<roundId>/results. */
-  | { kind: 'survey'; roundId: string; results?: boolean };
+  | { kind: 'survey'; roundId: string; results?: boolean }
+  /** Performance › Reviews (v0.20.0): #/performance/reviews, a tab (/mine, /team, /check, /round), or one review (/r/<id>). */
+  | { kind: 'reviews'; tab?: 'mine' | 'team' | 'check' | 'round'; reviewId?: string };
 
 export const hrefFor = (r: Route): string =>
   r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
+  : r.kind === 'reviews' ? (r.reviewId ? `#/performance/reviews/r/${encodeURIComponent(r.reviewId)}` : `#/performance/reviews${r.tab ? `/${r.tab}` : ''}`)
   : r.kind === 'survey' ? `#/survey/${encodeURIComponent(r.roundId)}${r.results ? '/results' : ''}`
   : r.kind === 'progress' ? ['#/performance/progress', r.tab, r.tab === 'mine' && r.objectiveId ? encodeURIComponent(r.objectiveId) : null].filter(Boolean).join('/')
   : r.kind === 'workspace' ? `#/${r.w}`
@@ -83,6 +86,11 @@ export const parseRoute = (hash: string): Route => {
       const stage = FORMING_STAGES.includes(parts[2] as FormingStage) ? (parts[2] as FormingStage) : undefined;
       return { kind: 'strategy', entry, stage, tab: stage ? parts[3] || undefined : undefined };
     }
+  }
+  if (parts[0] === 'performance' && parts[1] === 'reviews') {
+    if (parts[2] === 'r' && parts[3]) return { kind: 'reviews', reviewId: decodeURIComponent(parts[3]) };
+    const tab = (['mine', 'team', 'check', 'round'] as const).find((x) => x === parts[2]);
+    return tab ? { kind: 'reviews', tab } : { kind: 'reviews' };
   }
   if (parts[0] === 'survey' && parts[1]) return { kind: 'survey', roundId: decodeURIComponent(parts[1]), results: parts[2] === 'results' ? true : undefined };
   if (parts[0] === 'performance' && parts[1] === 'progress') {

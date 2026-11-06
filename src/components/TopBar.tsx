@@ -94,11 +94,11 @@ export function TopBar() {
                   {en.menu.entry[repo.menu().strategy.find((e) => e.entry === route.entry)?.label ?? route.entry] ?? en.nav.strategy}
                 </li>
               </>
-            ) : route.kind === "progress" ? (
+            ) : route.kind === "progress" || route.kind === "reviews" ? (
               <>
                 <li><a href="#/performance" className="inline-flex min-h-11 items-center text-muted hover:text-navy hover:underline">{en.nav.performance}</a></li>
                 <li aria-hidden="true" className="text-muted">›</li>
-                <li aria-current="page" className="font-semibold text-navy">{en.menu.entry.progress}</li>
+                <li aria-current="page" className="font-semibold text-navy">{en.menu.entry[route.kind === "reviews" ? "reviews" : "progress"]}</li>
               </>
             ) : (
               <li aria-current="page" className="font-semibold text-navy">

@@ -53,3 +53,12 @@ describe('staff survey addresses (v0.19.0)', () => {
     expect(parseRoute('#/strategy/communication/g1')).toMatchObject({ kind: 'strategy', entry: 'communication', goalId: 'g1' });
   });
 });
+
+describe('reviews addresses (v0.20.0)', () => {
+  it('round-trips the page, its tabs and one review', () => {
+    round({ kind: 'reviews' });
+    round({ kind: 'reviews', tab: 'round' });
+    round({ kind: 'reviews', reviewId: 'rv-mrb-2026-mid' });
+    expect(hrefFor({ kind: 'reviews', reviewId: 'rv-mrb-2026-mid' })).toBe('#/performance/reviews/r/rv-mrb-2026-mid');
+  });
+});
