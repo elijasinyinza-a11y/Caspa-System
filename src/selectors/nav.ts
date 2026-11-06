@@ -33,7 +33,7 @@ export type FormingStage = 'overview' | 'conception' | 'consultation' | 'composi
 export const FORMING_STAGES: FormingStage[] = ['overview', 'conception', 'consultation', 'composition'];
 export type RegisterTab = 'baselines' | 'compliance';
 export type OrganisationEntry = 'vacancies' | 'people';
-export type PerformanceEntry = 'progress';
+export type PerformanceEntry = 'progress' | 'reviews';
 
 export interface StrategyMenuInput {
   /** The plan being formed, as this person may work on it; null when nothing is being formed or nothing is theirs. */
@@ -76,8 +76,12 @@ export function organisationMenu(i: { vacancies: boolean; people: boolean }): Me
  * Performance's entries (v0.18.0, NV-8): Progress updates, for people with a signed contract this year and for those
  * who verify someone's updates (N-4). One entry now; Reviews (v0.19.0) makes two.
  */
-export function performanceMenu(i: { progress: boolean }): MenuEntry[] {
-  return i.progress ? [{ w: 'performance', entry: 'progress', label: 'progress' }] : [];
+export function performanceMenu(i: { progress: boolean; reviews?: boolean }): MenuEntry[] {
+  const out: MenuEntry[] = [];
+  if (i.progress) out.push({ w: 'performance', entry: 'progress', label: 'progress' });
+  // v0.20.0 (RV-5): Reviews, for people with a review of their own, reviews to complete or check, or HR.
+  if (i.reviews) out.push({ w: 'performance', entry: 'reviews', label: 'reviews' });
+  return out;
 }
 
 /** The furthest open stage among those shown (Composition, then Consultation, then Conception), else the overview. */

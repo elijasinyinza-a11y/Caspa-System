@@ -27,7 +27,9 @@ export type NeedsYouKind = 'deadline' | 'decision_action' | 'finding' | 'approva
 export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string };
 /** Performance › Progress updates (v0.18.0): a tab, and on Mine the objective whose form opens. */
 export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | null;
+/** v0.20.0: Performance › Reviews, at one review or a tab. */
+export type ReviewsLink = { kind: 'reviews'; reviewId?: string; tab?: 'mine' | 'team' | 'check' | 'round' };
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {
@@ -135,10 +137,10 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
 
   /* Contracts: issue drafts (supervisor), sign issued ones (employee and supervisor). */
   for (const c of s.contracts.filter((x) => x.financialYear === fy)) {
+    const performance: FixTarget = { kind: 'workspace', w: 'performance' };
     const position = s.positions.find((p) => p.id === c.positionId);
     const supervises = mine(position?.reportsToPositionId);
     const person = s.people.find((p) => p.id === c.personId)?.fullName ?? null;
-    const performance: FixTarget = { kind: 'workspace', w: 'performance' };
     if (c.status === 'draft' && supervises) {
       add({
         key: `gate:contract.issue:${c.id}`, kind: 'deadline',
@@ -158,16 +160,15 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     const c = s.contracts.find((x) => x.id === r.contractId);
     if (!c || c.financialYear !== fy) continue;
     const kind = en.needsYou.reviewKind[r.kind];
-    const performance: FixTarget = { kind: 'workspace', w: 'performance' };
     if (c.personId === v.personId && r.status === 'open' && !r.selfAssessment?.submitted) {
-      add({ key: `gate:review.submit_self:${r.id}`, kind: 'deadline', title: en.needsYou.submitSelf(kind), detail: null, due: gateDueDate(s, 'review.submit_self', fy), severity: null, as: 'employee', link: performance });
+      add({ key: `gate:review.submit_self:${r.id}`, kind: 'deadline', title: en.needsYou.submitSelf(kind), detail: null, due: gateDueDate(s, 'review.submit_self', fy), severity: null, as: 'employee', link: { kind: 'reviews', reviewId: r.id } });
     }
     const position = s.positions.find((p) => p.id === c.positionId);
     if (mine(position?.reportsToPositionId)) {
       const person = holderOf(s, c.positionId, now)?.person ?? s.people.find((p) => p.id === c.personId)?.fullName ?? '';
       add({
         key: `gate:review.complete:${r.id}`, kind: 'deadline', title: en.needsYou.completeReview(person, kind),
-        detail: r.status === 'self_submitted' ? en.needsYou.selfSubmitted : en.needsYou.selfPending, due: gateDueDate(s, 'review.complete', fy), severity: null, as: 'supervisor', link: performance,
+        detail: r.status === 'self_submitted' ? en.needsYou.selfSubmitted : en.needsYou.selfPending, due: gateDueDate(s, 'review.complete', fy), severity: null, as: 'supervisor', link: { kind: 'reviews', reviewId: r.id },
       });
     }
   }
