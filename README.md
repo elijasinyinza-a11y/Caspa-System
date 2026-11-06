@@ -38,7 +38,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 13. Offline progress capture (Offline Progress Capture Specification v1.0; OP-1 to OP-12, BUILD-BRIEF section 39, now in the archive) — done (v0.18.0)
 14. Staff survey (Staff Voice Specification v0.1; SV-1 to SV-14, BUILD-BRIEF section 40, in the archive) — done (v0.19.0)
 15. Reviews (Reviews Specification v0.1; RV-1 to RV-13, BUILD-BRIEF section 41, in the archive) — done (v0.20.0)
-16. Targets: KPI shares, combining rule, standing duties (BUILD-BRIEF section 42) — specify, then build as v0.21.0
+16. Targets: KPI shares, combining rule, standing duties, quarterly reviews (BUILD-BRIEF sections 42–43, in the archive) — done (v0.21.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -55,11 +55,23 @@ The development role switcher has six roles: Executive, Strategy office, Finance
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
 and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
-## Next chat: Performance › Targets (v0.21.0)
+## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (721 tests). Write the Targets specification from BUILD-BRIEF
-  section 42 for Elijah's confirmation (prototype already shown: `reference/caspa-targets-prototype.html`), then build
-  as v0.21.0. See `NEXT.md`.
+- Start from this zip: `npm install`, `npm run verify` (735 tests). Choose the next slice with Elijah; `NEXT.md` lists the
+  candidates, including the parts of Targets not yet built.
+
+## Targets (v0.21.0)
+
+- BUILD-BRIEF sections 42 and 43 (in `DECISIONS-ARCHIVE.md`); Targets Specification v0.1, TG-1 to TG-11. Contract v1.13:
+  KpiBreakdown, KpiShare, ShareReading; contract objectives from a share, a combined figure or a standing duty;
+  `Review.periodEnd`. 735 tests (13 in `src/data/access/targets.test.ts`).
+- Code: rules in `src/rules/targets.ts`; data access `src/data/access/targets.ts` (`repo.targets`); screen
+  `src/routes/Targets.tsx`; the Cascade line `src/components/TargetsLine.tsx`; quarterly rounds and the final-period
+  check in `src/data/access/reviews.ts`; samples in `src/data/sample/targets-samples.ts`.
+- Try it: switch to Sample Packaging Manufacturer, Strategy office, Performance › Targets › Material waste: the shares
+  combine to 4.1% against 4%. As the Production Manager's supervisor role is not a development role, the tests cover
+  recording and verifying; in the scale organisation the Supervisor owns a breakdown with one share lacking an owner.
+- Not built: TG-4, TG-9 and the standing-duty limit on screen (see section 43).
 
 ## Reviews (v0.20.0)
 

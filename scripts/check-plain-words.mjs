@@ -17,6 +17,8 @@ const FORBIDDEN = [
   /\brespondents?\b/i, /\banonymi[sz]ed\b/i,
   // Reviews (RV-9): "score", "moved one band", "can't be assessed", "the year's reviews".
   /\bratings?\b/i, /\badjustments?\b/i, /\bnot assessable\b/i, /\bappraisals?\b/i,
+  // Targets (v0.21.0): "share", "combined", "weighted by".
+  /\bcascade down\b/i, /\bdecompos(e|ed|ition)\b/i, /\ballocations?\b/i,
 ];
 const PLACEHOLDER = /\[from the book\]/i;
 const pilot = process.env.CASPA_PILOT === '1';

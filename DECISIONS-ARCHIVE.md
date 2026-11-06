@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36 and 38 to 41 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36 and 38 to 43 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -394,3 +394,30 @@ Source: the *CASPA™ Reviews Specification v0.1* (a doc in the Project's chats)
 - **RV-10:** HR opens rounds, one kind at a time.
 - **RV-11 to RV-13 (weights and constraints):** answered by what exists: weights are set by the supervisor while drafting, signed by both, and frozen at signature; a constraint found late is handled by "Can't be assessed" with HR's acceptance, which leaves the objective out and re-spreads its weight, or by a one-band move with a reason.
 - **Delivered:** built as v0.20.0 (5 November 2026).
+
+## 42. Decisions for the next slice: Performance › Targets (5 November 2026)
+
+Agreed with Elijah on 5 November 2026 while settling Reviews. A specification follows; the prototype `reference/caspa-targets-prototype.html` shows the screens with illustrative districts.
+
+- **Where Cascade ends:** at the corporate KPI with its target and the activity with its total quantity. Strategy and Cascade stay as they are; Performance handles every further breakdown and detail, so they are not crowded.
+- **Two hooks only:** nothing in Performance exists without one: a KPI share hangs on a Cascade KPI; a contract objective comes from a Cascade activity, a KPI share, or a breakdown's combined figure. The one exception is a standing duty (below).
+- **Lean build:** one new record, a KPI share (KPI, unit, owner, year's target, weight), with its readings recorded through "Record a reading"; one combining rule per KPI with three choices: add up, weighted average (ratios and levels, weighted by what the unit serves), not combined; contract objectives may come from a share or from a breakdown's combined figure, so district managers hold their share and their manager the combined figure, scored by the KPI progress rule.
+- **Checks:** shares combine to the corporate target; every share has an owner; every share has someone's work behind it; and a Cascade KPI that nobody in Performance carries.
+- **New kinds of work** are proposed into Cascade by the share owner and confirmed by the Strategy office, never created only in Performance.
+- **Standing duties:** recurring work not in the plan ("submit reports by the 12th") may be a contract objective, labelled "Standing duty, not part of the plan", measured and verified like any other, never counted in KPI progress or coverage; HR caps their share of a contract (for example 20%).
+- **Sector-neutral:** no presets in code; the combining rule is chosen per KPI by its owner with the Strategy office (an AI suggestion may be a labelled draft). Optional sector starter libraries may come later as importable sample data.
+- **Left out until pilots ask:** separate task records, recording a ratio's two parts, milestone breakdowns, the authority and weight-limit protections discussed on 5 November (people set up to fail through weights), sector packs and AI suggestions.
+
+## 43. Decisions on Performance › Targets, slice 16 (6 November 2026)
+
+Source: the *CASPA™ Targets Specification v0.1* (a doc in the Project's chats), TG-1 to TG-11, confirmed by Elijah on 6 November 2026, building on section 42. Contract v1.13. Prototype: `reference/caspa-targets-prototype.html`.
+
+- **TG-1 to TG-3:** the KPI's owner (or the Strategy office) breaks a KPI down by the units under a chosen unit; add up, weighted average by planned weights, or not combined; share readings are recorded by the share's owner, online or offline, and verified or returned by their supervisor; only verified readings count.
+- **TG-5, TG-6:** a contract objective comes from an activity, a share, a breakdown's combined figure or a standing duty; standing duties are labelled and limited by HR (20% by default). `servesShareId` links activity work to the share it moves (the specification's "link", which needed a field).
+- **TG-7:** checks: shares short of the corporate target (must fix), a share with no owner (must fix), no work linked (worth checking), KPIs nobody carries (worth checking, to the Strategy office).
+- **TG-8 (Elijah, 6 November 2026):** final-period figures sent but not verified are shown before a year-end review is completed and before HR closes the year, and recorded in the gate event; they do not block.
+- **TG-10:** samples in the scale organisation and the packaging manufacturer; Sample Water Utility unchanged; the NGO has none because its structure is flat.
+- **TG-11 (Elijah, 6 November 2026):** quarterly formal reviews: the existing `reviewModel` setting chooses "quarterly"; quarters 1 to 3 provisional, then the year-end review; `Review.periodEnd`; each review shows the year's earlier scores.
+- **Built differently, to settle with Elijah:** a share's score uses the reading against its target (direction-aware, as R1 and RV-1), not KPI progress (P1), because shares hold no baseline; share readings are verified from the share's page and "Needs you", not inside Progress updates › To verify.
+- **Not built in v0.21.0:** TG-4 (Cascade's corporate reading computed from the shares; Cascade shows the one line and the combined figure, but KPI progress still uses its own readings); TG-9 (proposing an activity into Cascade: there is no existing propose-and-confirm route for activities, so it needs its own short specification); the standing-duty limit as a screen check (the rule is built and tested, but CASPA™ has no contract-drafting screen yet).
+- **Delivered:** built as v0.21.0 (6 November 2026).
