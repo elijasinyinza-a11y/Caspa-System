@@ -62,3 +62,12 @@ describe('reviews addresses (v0.20.0)', () => {
     expect(hrefFor({ kind: 'reviews', reviewId: 'rv-mrb-2026-mid' })).toBe('#/performance/reviews/r/rv-mrb-2026-mid');
   });
 });
+
+describe('targets addresses (v0.21.0)', () => {
+  it('round-trips the list, a breakdown, a share and setting one up', () => {
+    round({ kind: 'targets' });
+    round({ kind: 'targets', breakdownId: 'kb-k-mfg-K1.1.1-2026' });
+    round({ kind: 'targets', shareId: 'ks-1' });
+    round({ kind: 'targets', setup: 'k-mfg-K2.1.1' });
+  });
+});

@@ -29,6 +29,7 @@ import { hrefFor, useRoute } from './router';
 import { PerformanceLanding, ProgressUpdates } from './Performance';
 import { SurveyAnswer, SurveyStaffResults } from './Survey';
 import { ReviewsPage } from './Reviews';
+import { TargetsPage } from './Targets';
 
 export function App() {
   const [orgs] = useState(createReviewOrgs);
@@ -80,6 +81,7 @@ export function App() {
   useEffect(() => {
     if (route.kind === 'workspace' && !repo.workspaces().includes(route.w)) navigate({ kind: 'workspace', w: 'home' });
     // Progress updates is guarded like a workspace: only for people its page holds something for (N-4).
+    if (route.kind === 'targets' && !repo.menu().performance.some((e) => e.entry === 'targets')) navigate({ kind: 'workspace', w: repo.workspaces().includes('performance') ? 'performance' : 'home' });
     if (route.kind === 'reviews' && !repo.menu().performance.some((e) => e.entry === 'reviews')) navigate({ kind: 'workspace', w: repo.workspaces().includes('performance') ? 'performance' : 'home' });
     if (route.kind === 'progress' && !repo.menu().performance.some((e) => e.entry === 'progress')) navigate({ kind: 'workspace', w: repo.workspaces().includes('performance') ? 'performance' : 'home' });
     // An organisation that has not confirmed its structure opens on Organisation, where its setup is (D7-13).
@@ -96,6 +98,7 @@ export function App() {
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'strategy' ? <StrategyEntryPage key={`${org.orgId}:${viewing}:${hrefFor(route)}`} entry={route.entry} stage={route.stage} tab={route.tab} goalId={route.goalId} />
     : route.kind === 'boardPaper' ? <BoardPaperPrint key={`${org.orgId}:${viewing}:${route.goalId}`} goalId={route.goalId} />
+    : route.kind === 'targets' ? <TargetsPage key={`${org.orgId}:${viewing}:${route.breakdownId ?? ''}:${route.shareId ?? ''}:${route.setup ?? ''}`} breakdownId={route.breakdownId} shareId={route.shareId} setup={route.setup} />
     : route.kind === 'reviews' ? <ReviewsPage key={`${org.orgId}:${viewing}`} tab={route.tab} reviewId={route.reviewId} />
     : route.kind === 'survey' ? (route.results ? <SurveyStaffResults key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} /> : <SurveyAnswer key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} />)
     : route.kind === 'progress' ? <ProgressUpdates key={`${org.orgId}:${viewing}`} tab={route.tab} objectiveId={route.objectiveId} />

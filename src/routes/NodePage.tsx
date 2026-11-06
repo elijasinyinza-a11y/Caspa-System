@@ -14,6 +14,7 @@ import { en, type WorkspaceKey } from '../strings/en';
 import { nodeHref } from './router';
 import { ActivityLevel, MapSummary } from './DecisionMap';
 import { RecordFigure } from '../components/RecordFigure';
+import { TargetsLine } from '../components/TargetsLine';
 import { GoalRecordSection } from './Communication';
 
 type Panel = 'strategy' | 'cascade' | 'plan' | 'performance';
@@ -303,6 +304,7 @@ function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<
             <Field label={en.node.unit}>{c.unit}</Field>
           </dl>
           <RecordFigure kind="kpi" id={n.ref.id} aggregation={en.aggregation[c.aggregation]} />
+          <TargetsLine kpiId={n.ref.id} unit={c.unit} />
           <div>
             <h3 className="text-14 font-semibold text-navy">{labels.activity}</h3>
             {c.children.length === 0 ? (

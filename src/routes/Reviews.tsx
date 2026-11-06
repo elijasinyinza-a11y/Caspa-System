@@ -7,13 +7,19 @@ import { useId, useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { EntryRow } from '../components/SubMenu';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
-import type { ObjectiveLine, ReviewTab, ReviewView, RoundView } from '../data/access/reviews';
+import { quarterOf, type ObjectiveLine, type ReviewTab, type ReviewView, type RoundView } from '../data/access/reviews';
 import { formatDate, formatFinancialYear, formatNumber, formatPercent } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, Chip, input, label, primary } from './organisation/ui';
 import { hrefFor } from './router';
 
 const R = en.reviews;
+/** "mid-year", "year-end" or "quarter 2" (TG-11). */
+function useKindLabel() {
+  const { repo } = useApp();
+  const start = repo.settings().financialYearStartMonth;
+  return (kind: string, periodEnd: string | null) => (kind === 'quarterly' && periodEnd ? R.quarter(quarterOf(periodEnd, start)) : R.kind[kind]!);
+}
 
 export function ReviewsPage({ tab, reviewId }: { tab?: ReviewTab; reviewId?: string }) {
   const { repo } = useApp();
@@ -52,7 +58,7 @@ function Lines({ r, share, supervise }: { r: ReviewView; share: number; supervis
         <>
           <p className="mt-3 text-16 text-text">{R.overall(r.overall.score.toFixed(2), r.overall.label)} <span className="font-semibold">{r.overall.provisional ? R.provisional : R.final}</span></p>
           {r.scoredWeightPct < r.totalWeightPct && <p className="text-13 text-muted">{R.partial(r.scoredWeightPct)}</p>}
-          {r.kind === 'mid_year' && <p className="text-13 text-muted">{R.midYear(formatPercent(share))}</p>}
+          {(r.kind === 'mid_year' || r.kind === 'quarterly') && <p className="text-13 text-muted">{R.midYear(formatPercent(share))}</p>}
         </>
       ) : <p className="mt-3 text-14 text-muted">{R.nothingScored}</p>}
     </>
@@ -113,7 +119,8 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
   const [assessment, setAssessment] = useState(r.assessment ?? '');
   const [reason, setReason] = useState('');
   const [dis, setDis] = useState('');
-  const kind = R.kind[r.kind]!;
+  const kindLabel = useKindLabel();
+  const kind = kindLabel(r.kind, r.periodEnd);
   const act = (res: { ok: boolean; error?: string; queued?: boolean; note?: string }, ok: string) => say(res.ok ? (res.queued ? R.toasts.savedOffline : ok) : R.errors[res.error ?? 'not_allowed'] ?? null);
   const stepTone = r.step === 'acknowledged' ? 'complete' : 'info';
   return (
@@ -124,6 +131,7 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
         <p className="mt-1"><Chip tone={stepTone}>{R.step[r.step]}</Chip></p>
         {as === 'reviewer' && r.flags.map((f, i) => <p key={i} className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text"><b>{R.check.flag[f.kind]}</b> {f.title}</p>)}
         <Lines r={r} share={share} supervise={r.can.supervise} />
+        {r.history.length > 0 && <p className="tabular mt-2 text-13 text-muted">{R.history} {r.history.map((h) => R.historyItem(kindLabel(h.kind, h.periodEnd), h.score === null ? '—' : h.score.toFixed(2))).join(' · ')}</p>}
       </div>
 
       <div className={`${card} mt-3`}>
@@ -152,6 +160,7 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
             <>
               <label htmlFor={`${id}-a`} className={`${label} mt-2 block`}>{R.sup.label}</label>
               <textarea id={`${id}-a`} rows={5} value={assessment} onChange={(e) => setAssessment(e.target.value)} className={`${input} py-2`} />
+              {r.finalPending > 0 && <p className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text">{R.finalPending(r.finalPending)}</p>}
               {r.blocks.length > 0 && <div className="mt-2 rounded-lg border border-block-border bg-block-bg p-3 text-14 text-block-text"><p className="font-semibold">{R.blocks.title}</p><ul className="list-disc pl-5">{r.blocks.map((b) => <li key={b}>{b}</li>)}</ul></div>}
               <div className="mt-2"><button type="button" className={primary} onClick={() => { const x = repo.reviews.complete(r.id, assessment); say(x.ok ? (x.note ? R.toasts.completedCheck(x.note) : R.toasts.completed) : x.error === 'blocked' ? (assessment.trim() ? R.errors.blocked! : R.blocks.no_assessment) : R.errors[x.error] ?? null); }}>{R.sup.complete}</button></div>
               <details className="mt-2">
@@ -215,13 +224,14 @@ function Team({ rows, open, share }: { rows: ReviewView[]; open: string | null; 
 
 function Round({ rv, fy }: { rv: RoundView; fy: string }) {
   const { repo, say } = useApp();
+  const kindLabel = useKindLabel();
   const act = (res: { ok: boolean; error?: string }, ok: string) => say(res.ok ? ok : R.errors[res.error ?? 'not_allowed'] ?? null);
   return (
     <>
       <section className={`${card} border-t-4 border-t-performance-mark`}>
         {rv.open ? (
           <>
-            <h2 className="text-18 font-bold text-navy">{R.round.title(R.kind[rv.open.kind]!, fy)}</h2>
+            <h2 className="text-18 font-bold text-navy">{R.round.title(kindLabel(rv.open.kind, rv.open.periodEnd), fy)}</h2>
             <div className="mt-2 overflow-x-auto">
               <table className="tabular w-full border-collapse text-14">
                 <thead><tr className="border-b border-border"><th scope="col" className="py-2 text-left font-semibold text-muted">{R.round.steps}</th><th scope="col" className="py-2 text-right font-semibold text-muted">{R.round.count}</th></tr></thead>
@@ -234,7 +244,7 @@ function Round({ rv, fy }: { rv: RoundView; fy: string }) {
         {rv.canOpen.length > 0 && (
           <div className="mt-3">
             <p className="text-13 text-muted">{R.round.openHint}</p>
-            <div className="mt-1 flex flex-wrap gap-2">{rv.canOpen.map((k) => <button key={k} type="button" className={btn} onClick={() => act(repo.reviews.openRound(k), R.toasts.opened)}>{R.round.open(R.kind[k]!)}</button>)}</div>
+            <div className="mt-1 flex flex-wrap gap-2">{rv.canOpen.map((k) => <button key={`${k.kind}:${k.periodEnd ?? ''}`} type="button" className={btn} onClick={() => act(repo.reviews.openRound(k.kind, k.periodEnd), R.toasts.opened)}>{R.round.open(kindLabel(k.kind, k.periodEnd))}</button>)}</div>
           </div>
         )}
       </section>
@@ -260,6 +270,7 @@ function Round({ rv, fy }: { rv: RoundView; fy: string }) {
         <section className={`${card} mt-3`}>
           <h3 className="text-16 font-bold text-navy">{R.round.close}</h3>
           <p className="text-14">{R.round.closeNote}</p>
+          {rv.finalPending > 0 && <p className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text">{R.finalPending(rv.finalPending)}</p>}
           {rv.closeBlocks.length > 0 && <div className="mt-2 rounded-lg border border-block-border bg-block-bg p-3 text-14 text-block-text"><p className="font-semibold">{R.round.closeBlocks}</p><ul className="list-disc pl-5">{rv.closeBlocks.map((b) => <li key={b}>{b}</li>)}</ul></div>}
           <div className="mt-2"><button type="button" className={primary} onClick={() => act(repo.reviews.closeRound(), R.toasts.closed)}>{R.round.close}</button></div>
         </section>

@@ -67,6 +67,6 @@ export function menuFor(repo: Repository, s: Store): Menu {
   const organisation = org.mode === 'structure' ? organisationMenu({ vacancies: !!repo.structure.vacancies(), people: org.isAdmin }) : [];
   // N-4 from what the data-access layer returns: the person's own contract to report on, or someone's updates to verify.
   const pp = repo.workspaces().includes('performance') ? repo.progress.page() : null;
-  const performance = performanceMenu({ progress: !!pp && (pp.mine !== null || pp.verify !== null), reviews: !!pp && repo.reviews.page().tabs.length > 0 });
+  const performance = performanceMenu({ progress: !!pp && (pp.mine !== null || pp.verify !== null), reviews: !!pp && repo.reviews.page().tabs.length > 0, targets: !!pp && repo.targets.hasAny() });
   return { strategy, organisation, performance, forming, registers, formingConfirmed: plan?.status === 'confirmed' };
 }

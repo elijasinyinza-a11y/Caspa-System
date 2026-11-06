@@ -327,7 +327,7 @@ export function nodeView(s: Store, kind: NodeKind, id: string, ctx: ProgressCont
   /* Performance: contract objectives drawn from the activities under this node. Never ratings. */
   const performance: PerformancePanel = { objectives: [], hidden: { count: 0, assigned: [] } };
   const assigned = new Map<string, number>();
-  for (const co of s.contractObjectives.filter((x) => actIds.has(x.sourceActivityId))) {
+  for (const co of s.contractObjectives.filter((x) => !!x.sourceActivityId && actIds.has(x.sourceActivityId))) {
     const c = s.contracts.find((x) => x.id === co.contractId);
     if (!c || c.financialYear !== fy) continue;
     const target = co.snapshot ? co.snapshot.quantityTarget : co.quantityTarget;
@@ -342,7 +342,7 @@ export function nodeView(s: Store, kind: NodeKind, id: string, ctx: ProgressCont
         target,
         done: verified?.quantityDone ?? null,
         contractStatus: c.status,
-        activity: actRef(co.sourceActivityId),
+        activity: actRef(co.sourceActivityId!),
       });
     } else {
       performance.hidden.count += 1;
@@ -358,7 +358,7 @@ export function nodeView(s: Store, kind: NodeKind, id: string, ctx: ProgressCont
     ...tree.kpis.map((x) => `Kpi:${x.id}`),
     ...tree.activities.map((x) => `Activity:${x.id}`),
     ...allLines.map((x) => `BudgetLine:${x.id}`),
-    ...s.contractObjectives.filter((x) => actIds.has(x.sourceActivityId)).map((x) => `ContractObjective:${x.id}`),
+    ...s.contractObjectives.filter((x) => !!x.sourceActivityId && actIds.has(x.sourceActivityId)).map((x) => `ContractObjective:${x.id}`),
     ...s.deficiencies.filter((d) => tree.objectives.some((o) => o.id === d.objectiveId)).map((x) => `Deficiency:${x.id}`),
   ]);
   const findings = computeFindings(s, { financialYear: fy }).filter((f) => inTree.has(`${f.subject.type}:${f.subject.id}`) && access.canView(f.subject));

@@ -8,6 +8,7 @@ import { createNgo } from './ngo';
 import { createScale } from './scale';
 import { createSeed, DEV_ROLE_MEMBERSHIPS, ORG } from './seed';
 import { addSampleSurvey } from './survey-samples';
+import { addSampleTargets } from './targets-samples';
 
 export type BaseDevRole = 'executive' | 'strategy' | 'finance' | 'hr' | 'supervisor' | 'employee';
 /**
@@ -32,5 +33,6 @@ export const createSampleOrgs = (): SampleOrg[] => [
   // v0.19.0: staff survey rounds for two test organisations (src/data/sample/survey-samples.ts).
   if (o.store.organisation.name.includes('Health NGO')) addSampleSurvey(o.store, { title: 'Start of year, 2026/27', opensOn: '2026-07-13', closesOn: '2026-08-07', answers: 3 });
   if (o.store.organisation.name.includes('Scale Test')) addSampleSurvey(o.store, { title: 'Start of year, 2026', opensOn: '2026-02-09', closesOn: '2026-03-06', answers: 'all' });
+  addSampleTargets(o.store); // v0.21.0 (src/data/sample/targets-samples.ts)
   return o;
 });

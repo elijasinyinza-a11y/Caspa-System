@@ -117,7 +117,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
       financialYearStartMonth: spec.fyStartMonth, created: stamp, updated: stamp,
       termLabels: { ...DEFAULT_TERMS, ...spec.terms }, perspectives: spec.perspectives,
       settings: {
-        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 }, ratingSchemeId: id(`rs-${k}`),
+        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', standingDutyLimitPct: 20, kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 }, ratingSchemeId: id(`rs-${k}`),
         aiEnabled: true, boardApprovalRequired: { plan: true, budget: false }, consultationMinGroupSize: 5, structureView: structuredClone(DEFAULT_STRUCTURE_VIEW),
       },
     },
@@ -127,7 +127,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
       confirmation: { at: stamp.at, byMembershipId: sharedMembership }, boardApproval: null, formation: null, processOwnerPositionId: null, calendar: null, currentRevision: 0,
     }],
     fourQEntries, goals, objectives, kpis,
-    kpiTargets: [], kpiActuals: [], baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords: [], surveyRounds: [], surveyResponses: [], surveyReceipts: [], activities, activityProgress: [], deficiencies: [],
+    kpiTargets: [], kpiActuals: [], baselineMeasures: [], consultationRounds: [], consultationInputs: [], complianceItems: [], resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords: [], surveyRounds: [], surveyResponses: [], surveyReceipts: [], kpiBreakdowns: [], kpiShares: [], shareReadings: [], activities, activityProgress: [], deficiencies: [],
     cycles: [{ ...base, id: id(`cy-${k}-budget`), kind: 'budget', financialYear: spec.fy, status: 'open', gateDueDates: {} }],
     budgetVersions: [{ ...base, id: id(`bv-${k}-1`), cycleId: id(`cy-${k}-budget`), version: 1, status: 'draft', approval: null, boardApproval: null }],
     budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [],

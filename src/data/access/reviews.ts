@@ -5,6 +5,7 @@
  */
 import type { FinancialYear, ISODate, ISODateTime, PerformanceContract, Review } from '../../contract/caspa-data-contract';
 import { rateContract, type ObjectiveRating } from '../../rules/rating';
+import { finalPeriodPending } from '../../rules/targets';
 import { closeBlocks, completeBlocks, holdersOf, needsCheck, reviewerPositionOf, stepOf, supervisorPositionOf, type ReviewStep } from '../../rules/review';
 import type { NeedsYouItem } from '../../selectors/needs-you';
 import { formatDate } from '../../selectors/format';
@@ -65,14 +66,20 @@ export interface ReviewView {
   acknowledgement: { disagreement: string | null } | null;
   can: { writeSelf: boolean; supervise: boolean; check: boolean; acknowledge: boolean };
   blocks: string[]; // shown to the supervisor before completing
+  /** TG-11: which quarter a quarterly review covers, and the year's earlier scores. */
+  periodEnd: ISODate | null;
+  history: { kind: Review['kind']; periodEnd: ISODate | null; score: number | null }[];
+  /** TG-8: final-period figures sent but not verified (year-end reviews only). */
+  finalPending: number;
 }
 export interface RoundView {
-  open: { kind: Review['kind']; reviews: number; byStep: { step: string; n: number }[] } | null;
+  open: { kind: Review['kind']; periodEnd: ISODate | null; reviews: number; byStep: { step: string; n: number }[] } | null;
   waiting: { reviewId: string; contractObjectiveId: string; title: string; person: string; reason: string; askedBy: string }[];
-  canOpen: Review['kind'][];
+  canOpen: { kind: Review['kind']; periodEnd: ISODate | null }[];
   canClose: boolean;
   closeBlocks: string[];
   closed: boolean;
+  finalPending: number;
 }
 export interface ReviewsPage {
   tabs: ReviewTab[];
@@ -102,7 +109,7 @@ export interface ReviewsAccess {
   returnToSupervisor(id: string, reason: string): ReviewResult;
   acknowledge(id: string, disagreement: string): ReviewResult;
   decideCantAssess(id: string, contractObjectiveId: string, accept: boolean): ReviewResult;
-  openRound(kind: Review['kind']): ReviewResult;
+  openRound(kind: Review['kind'], periodEnd?: ISODate | null): ReviewResult;
   closeRound(): ReviewResult;
 }
 
@@ -120,8 +127,9 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
   const audit = (action: string, r: Review, before: unknown, after: unknown) => {
     s.auditEntries.push({ id: `au-${s.auditEntries.length + 1}` as never, orgId: s.organisation.id, at: c.clock(), actorMembershipId: v.membershipId, action, entity: { type: 'Review', id: r.id }, before, after });
   };
-  const gate = (code: 'review.submit_self' | 'review.complete' | 'appraisal.close', subject: { type: string; id: string }, outcome: 'passed' | 'blocked', keys: string[]) => {
-    s.gateEvents.push({ id: `ge-${s.gateEvents.length + 1}` as never, orgId: s.organisation.id, gate: code, subject, attempted: stamp(), outcome, blockingFindingKeys: keys, advisoryAtGate: [] });
+  // TG-8: worth-checking items at a gate are recorded with no acknowledgement, as at the budget gate (section 19).
+  const gate = (code: 'review.submit_self' | 'review.complete' | 'appraisal.close', subject: { type: string; id: string }, outcome: 'passed' | 'blocked', keys: string[], advisory: string[] = []) => {
+    s.gateEvents.push({ id: `ge-${s.gateEvents.length + 1}` as never, orgId: s.organisation.id, gate: code, subject, attempted: stamp(), outcome, blockingFindingKeys: keys, advisoryAtGate: advisory.map((findingKey) => ({ findingKey, acknowledgementId: null })) });
   };
   const due = (code: string) => {
     const cyc = s.cycles.find((x) => x.financialYear === fy && x.kind === 'appraisal');
@@ -142,6 +150,10 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
     return e ? ((e.after as { reason?: string })?.reason ?? null) : null;
   };
 
+  /** An earlier review's score, as it stood: computed live for that review's own objectives (provisional). */
+  const scoreAt = (x: Review) => { const rt = rateContract(s, x.contractId, { now: x.periodEnd ?? now }); return rt?.overall ?? null; };
+  const sharesIn = (contractIds: string[]) => s.contractObjectives.filter((co) => contractIds.includes(co.contractId) && co.sourceShareId).map((co) => co.sourceShareId as string);
+  const pendingFor = (contractIds: string[]) => { const p = finalPeriodPending(s, contractIds, sharesIn(contractIds), fy); return p.updates.length + p.readings.length; };
   const view = (r: Review): ReviewView => {
     const ct = contractOf(r);
     const rating = rateContract(s, ct.id, { now });
@@ -182,6 +194,9 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
         check: who.reviewer && needsCheck(s, r, now),
         acknowledge: who.employee && r.status === 'completed' && !needsCheck(s, r, now) && !r.employeeAcknowledgement,
       },
+      periodEnd: r.periodEnd ?? null,
+      history: s.reviews.filter((x) => x.contractId === r.contractId && x.id !== r.id && (x.created.at < r.created.at)).map((x) => ({ kind: x.kind, periodEnd: x.periodEnd ?? null, score: x.finalResult?.overallScore ?? scoreAt(x) })),
+      finalPending: r.kind === 'annual' && (who.supervisor || isHr) ? pendingFor([ct.id]) : 0,
       blocks: who.supervisor && r.status === 'self_submitted'
         ? completeBlocks(s, r, r.supervisorAssessment?.text ?? 'x', now).flatMap((b) => (b.kind === 'no_assessment' ? [] : [R.blocks[b.kind](objectives.find((o) => o.id === b.contractObjectiveId)?.title ?? '')]))
         : [],
@@ -209,25 +224,40 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
 
   const roundView = (): RoundView => {
     const reviews = yearReviews();
-    // The current round: year-end once opened, otherwise mid-year. Mid-year reviews are never frozen.
+    // The current round: year-end once opened, otherwise the latest opened mid-year or quarter (TG-11).
     const active = reviews.filter((r) => !r.finalResult);
-    const kind = active.some((r) => r.kind === 'annual') ? 'annual' : (active[0]?.kind ?? null);
-    const open = active.filter((r) => r.kind === kind);
+    const latest = [...active].sort((a, b) => (a.kind === 'annual' ? 1 : 0) - (b.kind === 'annual' ? 1 : 0) || String(a.periodEnd ?? '').localeCompare(String(b.periodEnd ?? '')) || a.created.at.localeCompare(b.created.at)).pop();
+    const kind = latest?.kind ?? null;
+    const open = active.filter((r) => r.kind === kind && (r.periodEnd ?? null) === (latest?.periodEnd ?? null));
     const steps = ['awaiting_self', 'awaiting_supervisor', 'being_checked', 'awaiting_acknowledgement', 'acknowledged'] as const;
     const signed = s.contracts.filter((x) => x.financialYear === fy && x.status === 'signed');
-    const canOpen = (['mid_year', 'annual'] as const).filter((k) => signed.some((ct) => !reviews.some((r) => r.contractId === ct.id && r.kind === k)) && !open.some((r) => r.kind !== k && r.status !== 'completed'));
+    const busy = open.some((r) => r.status !== 'completed');
+    const has = (k: Review['kind'], pe: ISODate | null) => reviews.some((r) => r.kind === k && (r.periodEnd ?? null) === pe);
+    const next: { kind: Review['kind']; periodEnd: ISODate | null }[] = [];
+    if (s.organisation.settings.reviewModel === 'quarterly') {
+      const start = s.organisation.financialYearStartMonth;
+      const q = [3, 6, 9].map((m) => new Date(Date.UTC(fy, start - 1 + m, 0)).toISOString().slice(0, 10) as ISODate);
+      const due = q.find((pe) => !has('quarterly', pe));
+      if (due && due <= now) next.push({ kind: 'quarterly', periodEnd: due });
+      else if (!due && !has('annual', null)) next.push({ kind: 'annual', periodEnd: null });
+    } else {
+      if (!has('mid_year', null)) next.push({ kind: 'mid_year', periodEnd: null });
+      else if (!has('annual', null)) next.push({ kind: 'annual', periodEnd: null });
+    }
+    const canOpen = busy || signed.length === 0 ? [] : next;
     const blocks = closeBlocks(s, open, now);
     return {
-      open: kind ? { kind, reviews: open.length, byStep: steps.map((st) => ({ step: st, n: open.filter((r) => stepOf(s, r, now) === st).length })) } : null,
+      open: kind ? { kind, periodEnd: latest?.periodEnd ?? null, reviews: open.length, byStep: steps.map((st) => ({ step: st, n: open.filter((r) => stepOf(s, r, now) === st).length })) } : null,
       waiting: open.flatMap((r) => r.notAssessable.filter((n) => !n.hrApproval).map((n) => {
         const co = s.contractObjectives.find((x) => x.id === n.contractObjectiveId);
         const asked = [...s.auditEntries].reverse().find((a) => a.entity.id === r.id && a.action === 'ask_cant_assess');
         return { reviewId: r.id, contractObjectiveId: n.contractObjectiveId, title: co?.snapshot?.title ?? co?.title ?? '', person: personName(contractOf(r).personId), reason: n.reason, askedBy: personName(s.memberships.find((m) => m.id === asked?.actorMembershipId)?.personId ?? '') };
       })),
-      canOpen: canOpen as Review['kind'][],
+      canOpen,
       canClose: kind === 'annual' && open.length > 0 && blocks.length === 0,
       closeBlocks: kind === 'annual' ? blocks.map((b) => R.round.block[b.kind]!(b.count)) : [],
       closed: reviews.some((r) => r.kind === 'annual' && !!r.finalResult) && !open.some((r) => r.kind === 'annual'),
+      finalPending: kind === 'annual' ? pendingFor(open.map((r) => r.contractId as string)) : 0,
     };
   };
 
@@ -332,11 +362,12 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       if (!r || !roles(r).supervisor || r.status !== 'self_submitted') return deny('not_allowed');
       const blocks = completeBlocks(s, r, assessment, now);
       if (blocks.length) { gate('review.complete', { type: 'Review', id }, 'blocked', blocks.map((b) => `review:${b.kind}`)); c.changed(); return deny('blocked'); }
+      const pending = r.kind === 'annual' ? finalPeriodPending(s, [r.contractId], sharesIn([r.contractId]), fy) : { updates: [], readings: [] };
       r.supervisorAssessment = { text: assessment.trim(), completed: stamp() };
       r.status = 'completed';
       r.returnedByReviewer = null;
       r.reviewerCheck = null;
-      gate('review.complete', { type: 'Review', id }, 'passed', []);
+      gate('review.complete', { type: 'Review', id }, 'passed', [], [...pending.updates, ...pending.readings].map((x) => `final-period:${x}`));
       audit('complete', r, { status: 'self_submitted' }, { status: 'completed' });
       touch(r);
       const flagged = needsCheck(s, r, now);
@@ -379,13 +410,13 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       touch(r);
       return { ok: true };
     },
-    openRound(kind) {
-      if (!isHr || !roundView().canOpen.includes(kind)) return deny('not_allowed');
+    openRound(kind, periodEnd = null) {
+      if (!isHr || !roundView().canOpen.some((x) => x.kind === kind && x.periodEnd === (periodEnd ?? null))) return deny('not_allowed');
       const st = stamp();
       for (const ct of s.contracts.filter((x) => x.financialYear === fy && x.status === 'signed') as PerformanceContract[]) {
-        if (s.reviews.some((r) => r.contractId === ct.id && r.kind === kind)) continue;
+        if (s.reviews.some((r) => r.contractId === ct.id && r.kind === kind && (r.periodEnd ?? null) === (periodEnd ?? null))) continue;
         s.reviews.push({
-          orgId: s.organisation.id, id: `rv-${ct.id}-${kind}` as never, contractId: ct.id, kind, selfAssessment: null, supervisorAssessment: null, status: 'open',
+          orgId: s.organisation.id, id: `rv-${ct.id}-${kind}${periodEnd ? `-${periodEnd}` : ''}` as never, contractId: ct.id, kind, periodEnd: periodEnd ?? null, selfAssessment: null, supervisorAssessment: null, status: 'open',
           adjustments: [], notAssessable: [], competencyRatings: [], returnedByReviewer: null, reviewerCheck: null, employeeAcknowledgement: null, finalResult: null, created: st, updated: st,
         });
       }
@@ -400,16 +431,20 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       const cyc = s.cycles.find((x) => x.financialYear === fy && x.kind === 'appraisal');
       const subject = { type: 'Cycle', id: (cyc?.id as string) ?? `appraisal-${fy}` };
       if (blocks.length) { gate('appraisal.close', subject, 'blocked', blocks.map((b) => `review:${b.kind}`)); c.changed(); return deny('blocked'); }
+      const pending = finalPeriodPending(s, open.map((r) => r.contractId as string), sharesIn(open.map((r) => r.contractId as string)), fy);
       for (const r of open) {
         const rating = rateContract(s, r.contractId, { now });
         if (rating && rating.overall !== null) r.finalResult = { overallScore: rating.overall, label: rating.label ?? '', schemeId: s.ratingSchemes[0]!.id, frozenAt: c.clock() };
         r.updated = stamp();
       }
-      gate('appraisal.close', subject, 'passed', []);
+      gate('appraisal.close', subject, 'passed', [], [...pending.updates, ...pending.readings].map((x) => `final-period:${x}`));
       c.changed();
       return { ok: true };
     },
   };
 }
+
+/** Which quarter of the financial year a quarter-end date closes (1 to 4). */
+export const quarterOf = (periodEnd: string, startMonth: number): number => Math.round((((Number(periodEnd.slice(5, 7)) - startMonth + 12) % 12) + 1) / 3);
 
 export const formatReviewDue = (d: ISODate | null) => (d ? formatDate(d) : '');

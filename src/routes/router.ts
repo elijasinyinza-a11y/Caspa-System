@@ -39,13 +39,16 @@ export type Route =
   /** Staff survey (v0.19.0): answering, #/survey/<roundId>, and the organisation's results, #/survey/<roundId>/results. */
   | { kind: 'survey'; roundId: string; results?: boolean }
   /** Performance › Reviews (v0.20.0): #/performance/reviews, a tab (/mine, /team, /check, /round), or one review (/r/<id>). */
-  | { kind: 'reviews'; tab?: 'mine' | 'team' | 'check' | 'round'; reviewId?: string };
+  | { kind: 'reviews'; tab?: 'mine' | 'team' | 'check' | 'round'; reviewId?: string }
+  /** Performance › Targets (v0.21.0): the list, one breakdown (/b/<id>), or one share (/s/<id>). */
+  | { kind: 'targets'; breakdownId?: string; shareId?: string; setup?: string };
 
 export const hrefFor = (r: Route): string =>
   r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
+  : r.kind === 'targets' ? (r.shareId ? `#/performance/targets/s/${encodeURIComponent(r.shareId)}` : r.breakdownId ? `#/performance/targets/b/${encodeURIComponent(r.breakdownId)}` : r.setup ? `#/performance/targets/new/${encodeURIComponent(r.setup)}` : '#/performance/targets')
   : r.kind === 'reviews' ? (r.reviewId ? `#/performance/reviews/r/${encodeURIComponent(r.reviewId)}` : `#/performance/reviews${r.tab ? `/${r.tab}` : ''}`)
   : r.kind === 'survey' ? `#/survey/${encodeURIComponent(r.roundId)}${r.results ? '/results' : ''}`
   : r.kind === 'progress' ? ['#/performance/progress', r.tab, r.tab === 'mine' && r.objectiveId ? encodeURIComponent(r.objectiveId) : null].filter(Boolean).join('/')
@@ -86,6 +89,10 @@ export const parseRoute = (hash: string): Route => {
       const stage = FORMING_STAGES.includes(parts[2] as FormingStage) ? (parts[2] as FormingStage) : undefined;
       return { kind: 'strategy', entry, stage, tab: stage ? parts[3] || undefined : undefined };
     }
+  }
+  if (parts[0] === 'performance' && parts[1] === 'targets') {
+    const id = parts[3] ? decodeURIComponent(parts[3]) : undefined;
+    return parts[2] === 's' && id ? { kind: 'targets', shareId: id } : parts[2] === 'b' && id ? { kind: 'targets', breakdownId: id } : parts[2] === 'new' && id ? { kind: 'targets', setup: id } : { kind: 'targets' };
   }
   if (parts[0] === 'performance' && parts[1] === 'reviews') {
     if (parts[2] === 'r' && parts[3]) return { kind: 'reviews', reviewId: decodeURIComponent(parts[3]) };

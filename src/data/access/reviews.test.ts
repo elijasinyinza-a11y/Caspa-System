@@ -129,7 +129,7 @@ describe('the year-end round (R9)', () => {
     submitted(s);
     as(s, ESTHER).reviews.complete(RV, 'Assessment.');
     as(s, PETER).reviews.accept(RV);
-    expect(hr().page().round!.canOpen).toEqual(['annual']);
+    expect(hr().page().round!.canOpen).toEqual([{ kind: 'annual', periodEnd: null }]);
     expect(hr().openRound('annual')).toEqual({ ok: true });
     const yr = s.reviews.find((x) => x.kind === 'annual')!;
     expect(hr().page().round!.closeBlocks).toEqual(['1 review is not completed yet.']);

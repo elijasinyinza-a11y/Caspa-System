@@ -33,7 +33,7 @@ export type FormingStage = 'overview' | 'conception' | 'consultation' | 'composi
 export const FORMING_STAGES: FormingStage[] = ['overview', 'conception', 'consultation', 'composition'];
 export type RegisterTab = 'baselines' | 'compliance';
 export type OrganisationEntry = 'vacancies' | 'people';
-export type PerformanceEntry = 'progress' | 'reviews';
+export type PerformanceEntry = 'progress' | 'reviews' | 'targets';
 
 export interface StrategyMenuInput {
   /** The plan being formed, as this person may work on it; null when nothing is being formed or nothing is theirs. */
@@ -76,11 +76,13 @@ export function organisationMenu(i: { vacancies: boolean; people: boolean }): Me
  * Performance's entries (v0.18.0, NV-8): Progress updates, for people with a signed contract this year and for those
  * who verify someone's updates (N-4). One entry now; Reviews (v0.19.0) makes two.
  */
-export function performanceMenu(i: { progress: boolean; reviews?: boolean }): MenuEntry[] {
+export function performanceMenu(i: { progress: boolean; reviews?: boolean; targets?: boolean }): MenuEntry[] {
   const out: MenuEntry[] = [];
   if (i.progress) out.push({ w: 'performance', entry: 'progress', label: 'progress' });
   // v0.20.0 (RV-5): Reviews, for people with a review of their own, reviews to complete or check, or HR.
   if (i.reviews) out.push({ w: 'performance', entry: 'reviews', label: 'reviews' });
+  // v0.21.0: Targets, for KPI owners, share owners, their supervisors and the Strategy office.
+  if (i.targets) out.push({ w: 'performance', entry: 'targets', label: 'targets' });
   return out;
 }
 

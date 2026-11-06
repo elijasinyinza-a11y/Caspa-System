@@ -246,7 +246,7 @@ function seedStore(): Store {
         { key: 'financial', label: 'Financial' },
       ],
       settings: {
-        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 },
+        overdueEscalationDays: 7, reviewModel: 'mid_year_and_annual', standingDutyLimitPct: 20, kpiStatus: { onTrackAt: 0.9, atRiskAt: 0.7 },
         ratingSchemeId: id('rs-a'), aiEnabled: true, boardApprovalRequired: { plan: true, budget: true }, consultationMinGroupSize: 5, structureView: structuredClone(DEFAULT_STRUCTURE_VIEW),
       },
     },
@@ -291,7 +291,7 @@ function seedStore(): Store {
     kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts,
+    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts, kpiBreakdowns: [], kpiShares: [], shareReadings: [],
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [

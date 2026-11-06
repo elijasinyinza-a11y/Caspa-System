@@ -67,7 +67,10 @@ describe('Sample Water Utility at 18 October 2026', () => {
     expect(perf('supervisor')).toEqual(['progress', 'reviews']);
     expect(perf('reviewer')).toEqual(['reviews']);
     expect(perf('hr')).toEqual(['reviews']);
-    for (const r of ['executive', 'strategy', 'finance'] as const) expect(perf(r)).toEqual([]);
+    // v0.21.0: Targets for KPI owners (the Executive owns one) and the Strategy office.
+    expect(perf('executive')).toEqual(['targets']);
+    expect(perf('strategy')).toEqual(['targets']);
+    expect(perf('finance')).toEqual([]);
   });
   it('opens Registers on Compliance for the compliance officer (NV-3)', () => {
     expect(as('compliance').menu().registers[0]).toBe('compliance');

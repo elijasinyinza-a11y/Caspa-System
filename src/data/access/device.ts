@@ -73,7 +73,9 @@ export interface Device {
   survey: DeviceSurvey[];
   /** v0.20.0 (RV-7): self-assessments written offline, sent when back online. */
   reviewSelf: { membershipId: string; reviewId: string; text: string }[];
+  /** v0.21.0 (TG-3): share readings recorded offline. */
+  shareReadings: { membershipId: string; shareId: string; periodEnd: string; value: number }[];
   seq: number;
 }
 
-export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], reviewSelf: [], seq: 1 });
+export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], reviewSelf: [], shareReadings: [], seq: 1 });
