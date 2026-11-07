@@ -8,7 +8,7 @@
  * - vision.confirm needs an accepted entry in every section of the organisation sheet and a vision written by
  *   leadership; an Executive confirms. Dates are never checked.
  */
-import type { FourQCell, FourQEntry, StrategicPlan } from '../contract/caspa-data-contract';
+import type { FourQCell, FourQEntry, SixPLevel, StrategicPlan } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { formingPlan } from './formation';
 import { accountablePositionOfUnit } from './structure';
@@ -131,3 +131,23 @@ export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${
 
 /** Whether these positions answer for a department while a plan is being formed: their Strategy workspace (F-2). */
 export const headsADepartment = (s: Store, positionIds: readonly string[]) => !!formingPlan(s) && departmentsHeadedBy(s, positionIds).length > 0;
+
+/* ── v0.24.0 (4Q Enhancement Specification v0.1, Part A; contract v1.16) ── */
+
+/** A2: only critical failure factors in Retraction and Repositioning carry a cause level. */
+export const mayCarryLevel = (c: FourQCell): boolean => c.band !== 'projection' && c.column === 'failure_factors';
+
+export const SIX_P_ORDER: SixPLevel[] = ['principle', 'process', 'people', 'policy', 'procedures', 'practices'];
+
+/** A3: "Where the causes sit": accepted failure factors on the organisation sheet, counted by level. A count, not a check. */
+export function causeLevels(s: Store, planId: string): { counts: Record<SixPLevel, number>; notSet: number; total: number } {
+  const f = organisationSheet(s, planId).filter((e) => isAccepted(e) && mayCarryLevel(e.cell));
+  const counts = Object.fromEntries(SIX_P_ORDER.map((l) => [l, f.filter((e) => e.causeLevel === l).length])) as Record<SixPLevel, number>;
+  return { counts, notSet: f.filter((e) => !e.causeLevel).length, total: f.length };
+}
+
+/** Merging: the card kept keeps its level; if it had none it takes the other's. Differing levels are both reported for the audit. */
+export function mergeLevel(keep: FourQEntry, gone: FourQEntry): { level: SixPLevel | null; differed: boolean } {
+  const a = keep.causeLevel ?? null, b = gone.causeLevel ?? null;
+  return { level: a ?? b, differed: a !== null && b !== null && a !== b };
+}

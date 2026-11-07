@@ -228,6 +228,13 @@ export const en = {
    * same contract column reads "Past successes" under Retraction and "Present successes" under Repositioning.
    */
   fourQ: {
+    /* v0.24.0 (4Q Enhancement Specification v0.1): suggested cards and where causes sit. Sentences carry no figures. */
+    candidate: {
+      met: (name: string, fy: number) => `${name}: target met in FY${fy}`,
+      notMet: (name: string, fy: number) => `${name}: target not met in FY${fy}`,
+      soFar: (name: string, outcome: string, fy: number) => `${name}: ${outcome === 'on_track' ? 'on track' : outcome === 'at_risk' ? 'at risk' : 'behind'} in FY${fy} so far`,
+      noOwner: 'Records with no owner',
+    },
     band: { retraction: 'Retraction', repositioning: 'Repositioning', projection: 'Projection' },
     column: {
       retraction: { successes: 'Past successes', success_factors: 'Critical success factors', failures: 'Past failures', failure_factors: 'Critical failure factors' },
@@ -1678,6 +1685,23 @@ export const en = {
    * Framework explanations come only from en.book; everything here is product wording.
    */
   conception: {
+    /* v0.24.0 (4Q Enhancement Specification v0.1). */
+    cause: {
+      label: 'Where the cause sits', notSet: 'Not set', change: 'Change', set: (l: string) => `Cause level set: ${l}.`, cleared: 'Cause level cleared.',
+      title: 'Where the causes sit', notSetCount: (n: string) => `Not set ${n}`, noneAt: (l: string) => `None at: ${l}`,
+      note: (n: string) => `Counts the ${n} critical failure factors on this board, in Retraction and Repositioning. A count, not a check.`,
+    },
+    suggest: {
+      title: 'Suggested from your results',
+      intro: (plan: string) => `Results in ${plan} that may belong on this sheet. Add, edit or dismiss each one. Figures stay live from the records, so they are not copied into the card.`,
+      add: 'Add to sheet', edit: 'Edit, then add', dismiss: 'Not relevant', restore: 'Restore', showDismissed: (n: number) => `Show dismissed (${n})`,
+      added: 'Added to the sheet.', dismissed: 'Dismissed. You can restore it from “Show dismissed”.', failed: 'That can’t be added here.', allDone: 'All suggestions handled.',
+      mayRepeat: (t: string) => `Added. It may repeat “${t}” (AI suggestion). The Strategy office can merge them or keep them separate.`,
+      noFigures: 'Figures belong in the records. They show live beside the card.',
+      noOwnerNote: 'No department owns these records, so cards added here go straight to the organisation sheet.',
+      fromMap: (o: string) => `Decision map, ${o}`, noCorrective: 'No corrective activity yet', levelCarried: 'carried from the decision map',
+      actual: 'Actual', target: 'Target', progress: 'Progress', outcome: { target_met: 'Target met', target_not_met: 'Target not met', on_track: 'On track', at_risk: 'At risk', behind: 'Behind' } as Record<string, string>,
+    },
     tabs: { board: '4Q board', mine: (unit: string) => `${unit}’s part`, mineMany: 'Your departments', documents: 'Source documents', vision: 'Vision and mission' },
     stageNotOpen: 'Conception has not been opened yet. The Strategy office opens it when the work is ready; until then you can look, and the Strategy office can prepare.',
     model: '4Q Model',
@@ -2135,6 +2159,14 @@ export const en = {
       none: 'Not set',
     },
     rows: {
+      /* v0.24.0 (4Q Enhancement Specification v0.1, Part A). */
+      fromCards: {
+        title: 'Critical failure factors linked to this objective',
+        where: (band: string) => `${band}, Critical failure factors`, level: (l: string) => `Where the cause sits: ${l}`, noLevel: 'Where the cause sits: not set',
+        add: 'Add as deficiency', added: 'Added as deficiency', save: 'Add to decision map', choose: 'Choose a level',
+        needLevel: 'This card has no level yet. Every deficiency needs one, so choose where it occurs. The card stays as it is.',
+        done: 'Added to the decision map.', source: (band: string) => `From the 4Q review: ${band}, Critical failure factors`,
+      },
       title: 'Decision map',
       text: 'What is lacking, at which of the six levels, and the corrective work for it in a plan year.',
       none: 'No rows yet.',
