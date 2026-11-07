@@ -41,6 +41,8 @@ import { createSurveyAccess, type SurveyAccess } from './survey';
 import { createReviewsAccess, type ReviewsAccess } from './reviews';
 import { createTargetsAccess, type TargetsAccess } from './targets';
 import { createContractsAccess, type ContractsAccess } from './contracts';
+import { createPolicyAccess, type PolicyAccess } from './policy';
+import { createPrintoutsAccess, type PrintoutsAccess } from './printouts';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
@@ -238,6 +240,10 @@ export interface Repository {
   targets: TargetsAccess;
   /** Performance › Contracts (v0.22.0; contract v1.14). */
   contracts: ContractsAccess;
+  /** Performance › Reviews › Scoring policy (v0.23.0; contract v1.15). */
+  policy: PolicyAccess;
+  /** Printed contract and assessment (v0.23.0). */
+  printouts: PrintoutsAccess;
   /** Who confirmed the structure and when (D7-9), for the Executive's Home; null until confirmed. */
   structureConfirmed(): { by: string; on: ISODate } | null;
 }
@@ -638,9 +644,11 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     menu: () => menuFor(repo, s),
     progress: createProgressAccess({ s, viewer, now, financialYear, clock, audit, device, changed: () => options.onChange?.() }),
     survey: createSurveyAccess({ s, viewer, now, clock, device, changed: () => options.onChange?.() }),
-    reviews: createReviewsAccess({ s, viewer, now, financialYear, clock, device, changed: () => options.onChange?.() }),
+    reviews: createReviewsAccess({ s, viewer, now, financialYear, clock, device, changed: () => options.onChange?.(), policy: () => createPolicyAccess({ s, viewer, now, financialYear, clock, changed: () => undefined }).view() }),
     targets: createTargetsAccess({ s, viewer, now, financialYear, clock, device, changed: () => options.onChange?.() }),
     contracts: createContractsAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
+    policy: createPolicyAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
+    printouts: undefined as unknown as PrintoutsAccess, // set below, once contracts and reviews exist
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
       const e = structureConfirmation(s);
@@ -766,7 +774,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
         expected: expectedToDate(financialYear, s.organisation.financialYearStartMonth, now),
         homes,
         // v0.18.0: progress items (OP-10) merged in, soonest first as ever.
-        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs(), ...repo.survey.needs(), ...repo.reviews.needs(), ...repo.targets.needs(), ...repo.contracts.needs()]),
+        needsYou: sortQueue([...needsYou(s, { viewer, financialYear, now, routedFindings, ...access }), ...repo.progress.needs(), ...repo.survey.needs(), ...repo.reviews.needs(), ...repo.targets.needs(), ...repo.contracts.needs(), ...repo.policy.needs()]),
         goalHealth: has('executive') || has('strategy_office') || has('member') ? goalHealth(s, ctx) : null,
         finance: has('finance') ? financeSummary(s, financialYear, access) : null,
         hr: has('hr') ? hrSummary(s, ctx, access) : null,
@@ -778,6 +786,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   // Going back online sends survey answers waiting on this device too (SV-8); progress reports its own result.
   const setOffline = repo.progress.setOffline;
   repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) { repo.survey.sendWaiting(); repo.reviews.sendWaiting(); repo.targets.sendWaiting(); } return r; };
+  repo.printouts = createPrintoutsAccess({ s, viewer, now, contracts: repo.contracts, reviews: repo.reviews });
   return repo;
 }
 

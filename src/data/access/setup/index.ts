@@ -829,8 +829,9 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
         if (existing) Object.assign(existing, { fullName: p.fullName, email: p.email });
         else s.people.push({ id: p.id as Id<'Person'>, fullName: p.fullName, email: p.email });
         const m = s.memberships.find((x) => x.personId === p.id && x.status === 'active');
-        if (m) Object.assign(m, { roles: [...p.roles], endsOn: p.endsOn, updated: stamp() });
-        else s.memberships.push({ ...base(), id: `m-${p.id}` as Id<'Membership'>, personId: p.id as Id<'Person'>, roles: [...p.roles], startsOn: now, endsOn: p.endsOn, status: 'active' });
+        const num = (p as { employeeNumber?: string | null }).employeeNumber ?? undefined;
+        if (m) Object.assign(m, { roles: [...p.roles], endsOn: p.endsOn, updated: stamp() }, num ? { employeeNumber: num } : {});
+        else s.memberships.push({ ...base(), id: `m-${p.id}` as Id<'Membership'>, personId: p.id as Id<'Person'>, roles: [...p.roles], startsOn: now, endsOn: p.endsOn, status: 'active', employeeNumber: num ?? null });
       }
       for (const p of st.positions) {
         if (!p.holder) continue;

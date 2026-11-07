@@ -65,7 +65,7 @@ export function importRows(sheet: string[][], existing: DraftPerson[], nextId: (
   for (let i = start; i < sheet.length; i++) {
     const cells = (sheet[i] ?? []).map((c) => (c ?? '').trim());
     if (blank(cells)) continue;
-    const [path = '', type = '', title = '', , name = '', email = '', acting = '', roleCell = '', ref = ''] = cells;
+    const [path = '', type = '', title = '', , name = '', email = '', acting = '', roleCell = '', ref = '', staffNo = ''] = cells;
     const row = i + 1;
     const unit = ensureUnit(splitPath(path), type);
     if (!unit || !title) continue; // a row with no unit path or title has nothing to add
@@ -75,10 +75,11 @@ export function importRows(sheet: string[][], existing: DraftPerson[], nextId: (
       const key = email ? `${email.toLowerCase()}|${name.toLowerCase()}` : null;
       let person = key ? personByKey.get(key) : undefined;
       if (!person) {
-        person = { id: nextId('per'), fullName: name, email: email || null, roles: [], endsOn: null, existing: false };
+        person = { id: nextId('per'), fullName: name, email: email || null, roles: [], endsOn: null, existing: false, employeeNumber: staffNo || null };
         people.push(person);
         if (key) personByKey.set(key, person);
       }
+      if (staffNo && !person.employeeNumber) person.employeeNumber = staffNo;
       for (const r of roles) if (!person.roles.includes(r)) person.roles.push(r);
       position.holder = { personId: person.id, acting: yes(acting) };
     } else if (roles.length) {

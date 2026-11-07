@@ -5,6 +5,7 @@
  */
 import type { ContractObjective, Dependency, FinancialYear, ISODate, ISODateTime, PerformanceContract } from '../../contract/caspa-data-contract';
 import { carriedQuantity, dependencyFlags, draftChecks, makesCircle, type DraftCheck } from '../../rules/contracts';
+import { reviewPeriodEnd, schemeFor } from '../../rules/rating';
 import { activityFingerprint } from '../../rules/fingerprint';
 import { holdersOf, reviewerPositionOf, supervisorPositionOf } from '../../rules/review';
 import type { NeedsYouItem } from '../../selectors/needs-you';
@@ -20,6 +21,9 @@ export interface ObjectiveView {
   id: string; title: string; source: 'activity' | 'share' | 'combined' | 'duty'; sourceText: string; level: string | null;
   quantity: number | null; unit: string; weight: number;
   deps: { id: string; text: string; neededBy: ISODate; note: string; flags: string[] }[];
+  /** v0.23.0 (A5, C1): targets for review periods before year end, and the agreed means of verification. */
+  periodTargets: { periodEnd: ISODate; label: string; value: number | null }[];
+  meansOfVerification: string | null;
 }
 export interface ContractView {
   id: string; person: string; position: string; supervisor: string; reviewer: string; version: number;
@@ -27,18 +31,20 @@ export interface ContractView {
   objectives: ObjectiveView[]; weightTotal: number; mustFix: string[]; worth: string[]; fairness: boolean;
   employeeNote: string | null; signedByEmployee: boolean; signedBySupervisor: boolean; history: { version: number; status: string }[];
   can: { edit: boolean; issue: boolean; signAsEmployee: boolean; signAsSupervisor: boolean; check: boolean; revise: boolean };
+  /** v0.23.0: how the result is made up under the policy this contract follows. */
+  split: { targetsPct: number; attributesPct: number; attributes: { name: string; measures: string }[]; methodText: string };
 }
 export interface TeamRow { positionId: string; position: string; person: string | null; contract: { id: string; step: ContractView['step'] } | null; canCreate: boolean }
 export type ContractResult = { ok: true; outcome?: 'issued' | 'sent_for_check' | 'signed' | 'fully_signed'; id?: string } | { ok: false; error: string };
 
 export interface ContractsAccess {
   hasAny(): boolean;
-  page(): { tabs: ContractTab[]; opensOn: ContractTab; mine: ContractView[]; team: TeamRow[]; check: ContractView[]; overview: { byStep: { step: string; n: number }[]; none: number; limits: { standing: number; single: number | null; showDraft: boolean } } | null };
+  page(): { tabs: ContractTab[]; opensOn: ContractTab; mine: ContractView[]; team: TeamRow[]; check: ContractView[]; overview: { byStep: { step: string; n: number }[]; none: number; limits: { standing: number; single: number | null; showDraft: boolean }; received: { id: string; person: string; position: string; signedAt: string }[] } | null };
   contract(id: string): ContractView | null;
   sources(contractId: string): { activities: { id: string; label: string; remaining: number | null; unit: string }[]; shares: { id: string; label: string }[]; breakdowns: { id: string; label: string }[]; dependable: { id: string; label: string }[] };
   createDraft(positionId: string): ContractResult;
   addObjective(contractId: string, o: { source: ObjectiveView['source']; refId?: string; title: string; quantity: number | null; unit: string; weight: number }): ContractResult;
-  updateObjective(id: string, o: { title?: string; quantity?: number | null; weight?: number }): ContractResult;
+  updateObjective(id: string, o: { title?: string; quantity?: number | null; weight?: number; meansOfVerification?: string; periodTargets?: { periodEnd: string; value: number | null }[] }): ContractResult;
   removeObjective(id: string): ContractResult;
   addDependency(contractObjectiveId: string, onActivityId: string, neededBy: string, note: string): ContractResult;
   removeDependency(id: string): ContractResult;
@@ -99,6 +105,23 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
     }
   };
 
+  /** Review periods before year end for this organisation's review model: mid-year, or the first three quarters. */
+  const periodsOf = (ct: PerformanceContract): { periodEnd: ISODate; label: string }[] => {
+    const quarterly = s.organisation.settings.reviewModel === 'quarterly';
+    const kinds = quarterly ? [3, 6, 9] : [6];
+    return kinds.map((months, i) => {
+      const fake = { kind: months === 6 && !quarterly ? 'mid_year' : 'quarterly', periodEnd: null } as never;
+      const end = months === 6 && !quarterly ? reviewPeriodEnd(s, fake, ct) : quarterEnd(ct, months);
+      return { periodEnd: end, label: quarterly ? C.quarter(i + 1) : C.midYear };
+    });
+  };
+  const quarterEnd = (ct: PerformanceContract, months: number): ISODate => {
+    const m0 = s.organisation.financialYearStartMonth - 1 + months; // months after January of the start year
+    const y = ct.financialYear + Math.floor(m0 / 12);
+    const m = m0 % 12;
+    const d = new Date(Date.UTC(y, m, 0));
+    return d.toISOString().slice(0, 10) as ISODate;
+  };
   const view = (ct: PerformanceContract): ContractView => {
     const r = roles(ct);
     const cos = s.contractObjectives.filter((co) => co.contractId === ct.id);
@@ -116,12 +139,21 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
           sourceText: source === 'duty' ? en.targets.standingDuty : source === 'activity' && a ? C.fromActivity(`${a.code} ${a.title}`) : source === 'share' ? C.fromShare : C.fromCombined,
           level: levelName(a?.decisionLevel), quantity: q?.value ?? null, unit: q?.unit ?? '', weight: co.weightPct,
           deps: depsOf(co.id).map((d) => ({ id: d.id, text: depText(d), neededBy: d.neededBy, note: d.note, flags: dependencyFlags(s, d, fy, now).map((f) => flagText(f, d)) })),
+          periodTargets: source === 'share' || source === 'combined' ? [] : periodsOf(ct).map((p) => ({ ...p, value: co.periodTargets?.find((x) => x.periodEnd === p.periodEnd)?.value ?? null })),
+          meansOfVerification: co.meansOfVerification ?? null,
         };
       }),
       weightTotal: cos.reduce((a, co) => a + co.weightPct, 0),
       mustFix: checks.mustFix.map((x) => describe(x, cos)), worth: checks.worth.map((x) => describe(x, cos)), fairness: checks.fairness,
       employeeNote: ct.employeeNote ?? null, signedByEmployee: !!ct.signedByEmployee, signedBySupervisor: !!ct.signedBySupervisor,
       history: s.contracts.filter((x) => x.positionId === ct.positionId && x.financialYear === fy && x.id !== ct.id).map((x) => ({ version: x.version ?? 1, status: x.status })),
+      split: (() => {
+        const sc = schemeFor(s, ct);
+        const on = sc.competencySection.enabled && (sc.competencySection.attributes?.length ?? 0) > 0;
+        const w = on ? sc.competencySection.weightPct : 0;
+        const cap = sc.achievementCap ?? null;
+        return { targetsPct: 100 - w, attributesPct: w, attributes: on ? (sc.competencySection.attributes ?? []).map((a) => ({ name: a.name, measures: a.measures })) : [], methodText: (sc.scoringMethod ?? 'bands') === 'weighted_points' ? en.reviews.policy.weightedPoints(cap) : en.reviews.policy.bands(cap) };
+      })(),
       can: {
         edit: r.supervisor && ct.status === 'draft' && st !== 'waiting_check',
         issue: r.supervisor && ct.status === 'draft' && st !== 'waiting_check',
@@ -147,6 +179,8 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
       co.snapshot = { title: co.title, quantityTarget: co.quantityTarget, sourceFingerprint: a ? activityFingerprint(a) : `${co.sourceShareId ?? co.sourceBreakdownId ?? 'duty'}`, frozenAt: c.clock() };
     }
     ct.status = 'signed';
+    // v1.15: the scoring policy in force at signature stays with the contract for the year.
+    ct.ratingSchemeId = (schemeFor(s, ct).id ?? null) as never;
     if (ct.previousVersionId) { const old = s.contracts.find((x) => x.id === ct.previousVersionId); if (old) { old.status = 'closed'; old.updated = stamp(); } }
   };
 
@@ -167,6 +201,8 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
         byStep: steps.map((x) => ({ step: x, n: yearContracts().filter((ct) => ct.status !== 'closed' && step(ct) === x).length })),
         none: s.positions.filter((p) => holdersOf(s, p.id, now).length && !yearContracts().some((ct) => ct.positionId === p.id && ct.status !== 'closed')).length,
         limits: { standing: s.organisation.settings.standingDutyLimitPct, single: s.organisation.settings.singleObjectiveLimitPct, showDraft: s.organisation.settings.showDraftToEmployee },
+        // v0.23.0: HR is the final recipient of every signed contract; arrival is enough, nothing is recorded.
+        received: yearContracts().filter((ct) => ct.status === 'signed').map((ct) => ({ id: ct.id as string, person: person(ct.personId), position: posTitle(ct.positionId), signedAt: [ct.signedByEmployee?.at ?? '', ct.signedBySupervisor?.at ?? ''].sort().pop() ?? '' })).sort((a, b) => (a.signedAt < b.signedAt ? 1 : -1)),
       } : null;
       const todo = (t: ContractTab) => (t === 'team' ? tm.some((x) => x.canCreate || (x.contract && ['draft', 'sent_back'].includes(x.contract.step))) : t === 'check' ? check.length > 0 : t === 'mine' ? mineC.some((x) => x.can.signAsEmployee) : false);
       return { tabs, opensOn: tabs.find(todo) ?? tabs[0] ?? 'mine', mine: mineC, team: tm, check, overview };
@@ -217,12 +253,17 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
     updateObjective(id, o) {
       const x = canEditObjective(id);
       if (!x) return { ok: false, error: 'not_allowed' };
-      const before = { title: x.co.title, quantityTarget: x.co.quantityTarget, weightPct: x.co.weightPct };
+      const before = { title: x.co.title, quantityTarget: x.co.quantityTarget, weightPct: x.co.weightPct, meansOfVerification: x.co.meansOfVerification ?? null, periodTargets: x.co.periodTargets ?? [] };
       if (o.title !== undefined && o.title.trim()) x.co.title = o.title.trim();
       if (o.quantity !== undefined && x.co.quantityTarget) x.co.quantityTarget = { ...x.co.quantityTarget, value: o.quantity ?? 0 };
       if (o.weight !== undefined) x.co.weightPct = o.weight;
+      if (o.meansOfVerification !== undefined) x.co.meansOfVerification = o.meansOfVerification.trim() || null;
+      if (o.periodTargets !== undefined) {
+        const allowed = new Set(periodsOf(x.ct).map((p) => p.periodEnd as string));
+        x.co.periodTargets = o.periodTargets.filter((p) => allowed.has(p.periodEnd) && p.value !== null && Number.isFinite(p.value) && p.value >= 0).map((p) => ({ periodEnd: p.periodEnd as ISODate, value: p.value as number }));
+      }
       x.co.updated = stamp();
-      audit('update', 'ContractObjective', id, before, { title: x.co.title, quantityTarget: x.co.quantityTarget, weightPct: x.co.weightPct });
+      audit('update', 'ContractObjective', id, before, { title: x.co.title, quantityTarget: x.co.quantityTarget, weightPct: x.co.weightPct, meansOfVerification: x.co.meansOfVerification ?? null, periodTargets: x.co.periodTargets ?? [] });
       c.changed();
       return { ok: true };
     },

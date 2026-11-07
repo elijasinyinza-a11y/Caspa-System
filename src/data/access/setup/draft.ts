@@ -14,6 +14,8 @@ export interface DraftPerson extends StructurePerson {
   endsOn: ISODate | null;
   /** True when the person is already a record in this organisation (for example the administrator). */
   existing: boolean;
+  /** v0.23.0 (C7): the organisation's staff number, from the spreadsheet's optional last column. */
+  employeeNumber?: string | null;
 }
 export interface DraftStructure extends StructureInput { units: DraftUnit[]; positions: DraftPosition[]; people: DraftPerson[] }
 

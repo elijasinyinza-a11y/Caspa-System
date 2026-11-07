@@ -12,6 +12,7 @@ import {
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
+import type { FinancialYear } from '../../contract/caspa-data-contract';
 import './composition'; // part 11d: the AI stub's approved sample wording for this organisation
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 import { en } from '../../strings/en';
@@ -71,8 +72,10 @@ const assignments: PositionAssignment[] = PEOPLE.map((p) => ({
   // H2 (BUILD-BRIEF section 26, 30 October 2026): the Head of Commercial post is vacant from 1 September 2026.
   to: p.key === 'hoc' ? d('2026-08-31') : null,
 }));
-const memberships: Membership[] = PEOPLE.map((p) => ({
+const memberships: Membership[] = PEOPLE.map((p, i) => ({
   ...base, id: id(`m-${p.key}`), personId: per(p.key), roles: p.roles ?? [], startsOn: d('2024-01-01'), endsOn: null, status: 'active',
+  // v0.23.0 (C7): sample staff numbers, as printed on contracts (Mary Chileshe's approved as SWU-0412).
+  employeeNumber: p.key === 'mrb' ? 'SWU-0412' : `SWU-${String(101 + i * 7).padStart(4, '0')}`,
 }));
 
 /** Membership behind each development role switch (Build Brief, screen 1). */
@@ -214,8 +217,10 @@ const line = (n: number, activityCode: string | null, description: string, kwach
   description, amount: zmw(kwacha), costCategory: cat, fundingSource: src, fundingNote: null,
 });
 
+/** v0.23.0 (C1): means of verification agreed for the Zone B contract (approved with the printed samples, 6 November 2026). */
+const MOV: Record<number, string> = { 1: 'Meter replacement job cards; meter changes in the billing system', 2: 'Route reading sheets; reading log in the billing system' };
 const signed = (a: Activity, title: string, value: number, unit: string, weightPct: number, n: number): ContractObjective => ({
-  ...base, id: id(`co-b-${n}`), contractId: id('pc-mrb-2026'), sourceActivityId: a.id, title, quantityTarget: { value, unit },
+  ...base, id: id(`co-b-${n}`), contractId: id('pc-mrb-2026'), sourceActivityId: a.id, title, quantityTarget: { value, unit }, meansOfVerification: MOV[n] ?? null,
   snapshot: { title, quantityTarget: { value, unit }, sourceFingerprint: activityFingerprint(a), frozenAt: dt('2026-02-02T10:00:00+02:00') },
   direction: 'higher_is_better', weightPct,
 });
@@ -230,6 +235,59 @@ const draftDependencies: Dependency[] = [{
   ...base, id: id('dep-co-1'), from: { contractObjectiveId: id('co-co-1') }, on: { activityId: id('a1.2.1.2') }, neededBy: d('2026-02-28'),
   note: 'The revised policy sets the check-in rules the briefings teach.',
 }];
+
+/**
+ * v0.23.0: HR's draft scoring policy for FY2027, the sample approved on 6 November 2026: weighted points, no objective
+ * earning more than its weight, thresholds 90/80/70/60, and five personal attributes at 5%. Not yet sent for approval.
+ * Attribute wording is general and approved as sample wording; it is not copied from any organisation's form.
+ */
+const ATTR = (key: string, name: string, measures: string, levels: string[]) => ({ id: `attr-${key}`, name, measures, levels });
+const FY2027_POLICY_DRAFT = {
+  ...base, id: id<'RatingScheme'>('rs-2027'), preset: 'custom' as const,
+  bands: [
+    { score: 5 as const, label: 'Outstanding', minAchievement: 0.9 }, { score: 4 as const, label: 'Exceeds', minAchievement: 0.8 },
+    { score: 3 as const, label: 'Meets', minAchievement: 0.7 }, { score: 2 as const, label: 'Partly meets', minAchievement: 0.6 },
+    { score: 1 as const, label: 'Does not meet', minAchievement: null },
+  ],
+  competencySection: {
+    enabled: true, weightPct: 5, levelLabels: ['Outstanding', 'Commendable', 'Satisfactory', 'Needs improvement', 'Unsatisfactory'],
+    attributes: [
+      ATTR('teamwork', 'Teamwork', 'Working with others, sharing knowledge and supporting team decisions.', [
+        'Supports and helps put others’ ideas into practice; shares knowledge without being asked; disagrees constructively and offers alternatives.',
+        'Responds constructively to others’ ideas; shares knowledge when asked; disagrees constructively.',
+        'Responds constructively to others’ ideas but rarely helps put them into practice; shares knowledge when own work needs it.',
+        'Seldom supports others’ ideas; disagrees without offering workable alternatives.',
+        'Rarely supports others or shares ideas; disagreement is unconstructive.']),
+      ATTR('time', 'Time keeping', 'Meeting deadlines and keeping working hours.', [
+        'No missed deadlines in the period; no late arrivals or early departures.',
+        'Missed fewer than 5% of deadlines; rarely late or early.',
+        'Missed 5% to under 10% of deadlines; sometimes late or early by a few minutes.',
+        'Missed 10% to under 20% of deadlines; late or early most weeks.',
+        'Missed 20% or more of deadlines; consistently late or leaves early.']),
+      ATTR('customer', 'Customer focus', 'Courtesy and care in dealing with customers and colleagues, and resolving complaints.', [
+        'No complaints; commended by customers or colleagues; calm under pressure.',
+        'Rarely a complaint; handles matters to others’ satisfaction; tracks customer satisfaction.',
+        'Occasional complaints, fewer than before, and handled fairly.',
+        'At least one complaint about conduct every two months.',
+        'More than two complaints about conduct in a quarter.']),
+      ATTR('integrity', 'Integrity and accountability', 'Honesty, owning one’s work and mistakes, and seeking and giving feedback.', [
+        'Recorded commendations for honesty; owns mistakes without exception; seeks and gives feedback promptly.',
+        'No concerns about honesty; owns mistakes; seeks and gives feedback promptly.',
+        'No concerns about honesty; sometimes blames others; gives feedback only when asked.',
+        'Concerns about honesty raised once; often blames others; needs reminding to give feedback.',
+        'Repeated concerns about honesty; blames others; resists feedback.']),
+      ATTR('attendance', 'Attendance', 'Being at work and available, and absence only with permission.', [
+        'Never absent without permission; availability used fully for the job.',
+        'Rarely absent; asks permission only for emergencies.',
+        'Absence with and without permission in roughly equal measure; improving.',
+        'Often absent; rarely asks permission first.',
+        'Consistently absent without regard to supervision.']),
+    ],
+  },
+  floorRule: false, highAchievementFlagAt: 1.5, lockedByCycleId: null,
+  scoringMethod: 'weighted_points' as const, achievementCap: 1, countersignAll: false, flagScoredOne: true,
+  appliesFromYear: 2027 as FinancialYear, approval: { status: 'draft' as const, sent: null, decided: null, returnReason: null },
+};
 
 export function createSeed(): Store {
   // A deep copy, so every store owns its records: slice 6 writes to activities, which are built once at module level.
@@ -339,8 +397,9 @@ function seedStore(): Store {
     contractObjectives: [
       signed(act('1.2.1.3'), 'Replace 400 faulty meters on route', 400, 'meters', 50, 1),
       signed(act('1.1.1.1'), 'Complete scheduled meter readings', 2400, 'readings', 50, 2),
-      draftObjective('co-co-1', act('1.2.1.4').id, null, 'Run daily route briefings for the meter readers', 240, 'briefings', 40),
-      draftObjective('co-co-2', act('1.1.1.1').id, null, 'Complete monthly meter-reading routes in Zones A to C', 2400, 'readings', 40),
+      // v0.23.0 (A5): mid-year targets on Esther Banda's draft, half the full year.
+      { ...draftObjective('co-co-1', act('1.2.1.4').id, null, 'Run daily route briefings for the meter readers', 240, 'briefings', 40), periodTargets: [{ periodEnd: d('2026-06-30'), value: 120 }] },
+      { ...draftObjective('co-co-2', act('1.1.1.1').id, null, 'Complete monthly meter-reading routes in Zones A to C', 2400, 'readings', 40), periodTargets: [{ periodEnd: d('2026-06-30'), value: 1200 }] },
       draftObjective('co-co-3', null, 'Monthly commercial report', 'Submit the monthly commercial report by the 12th', 12, 'reports', 30),
     ],
     progressUpdates: ([
@@ -366,7 +425,7 @@ function seedStore(): Store {
     ratingSchemes: [{
       ...base, id: id('rs-a'), preset: 'A', bands: RATING_PRESETS.A, competencySection: { enabled: false, weightPct: 0 },
       floorRule: false, highAchievementFlagAt: 1.5, lockedByCycleId: id('cy-appraisal-2026'),
-    }],
+    }, FY2027_POLICY_DRAFT],
     workshops: [],
     formationDeadlines: [],
     acknowledgements: [],

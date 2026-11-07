@@ -89,13 +89,15 @@ describe('visibility (section 17)', () => {
     const s = createSeed();
     for (const m of ['m-md', 'm-spm', 'm-hof']) {
       const r = as(s, m).reviews;
-      expect(r.page().tabs).toEqual([]);
+      // v0.23.0: the Executive sees the scoring policy to approve it, never anyone's review or score.
+      expect(r.page().tabs).toEqual(m === 'm-md' ? ['policy'] : []);
+      expect([r.page().mine, r.page().team, r.page().check].flat()).toEqual([]);
       expect(r.review(RV)).toBeNull();
     }
     expect(as(s, MARY).reviews.page().tabs).toEqual(['mine']);
     expect(as(s, ESTHER).reviews.page().tabs).toEqual(['team']);
     expect(as(s, PETER).reviews.page().tabs).toEqual(['check']);
-    expect(as(s, HR).reviews.page().tabs).toEqual(['round']);
+    expect(as(s, HR).reviews.page().tabs).toEqual(['round', 'policy']);
   });
   it('shows flags to the reviewer and HR, never to the employee', () => {
     const s = createSeed();

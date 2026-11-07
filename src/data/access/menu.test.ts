@@ -69,7 +69,8 @@ describe('Sample Water Utility at 18 October 2026', () => {
     expect(perf('reviewer')).toEqual(['reviews', 'contracts']);
     expect(perf('hr')).toEqual(['reviews', 'contracts']);
     // v0.21.0: Targets for KPI owners (the Executive owns one) and the Strategy office.
-    expect(perf('executive')).toEqual(['targets', 'contracts']);
+    // v0.23.0: the Executive approves the scoring policy under Reviews.
+    expect(perf('executive')).toEqual(['reviews', 'targets', 'contracts']);
     expect(perf('strategy')).toEqual(['targets']);
     expect(perf('finance')).toEqual([]);
   });

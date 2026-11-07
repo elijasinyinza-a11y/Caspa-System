@@ -4,7 +4,7 @@
  * supervisor, the next-level reviewer and HR only; nobody else sees scores here (section 17).
  */
 import type { FinancialYear, ISODate, ISODateTime, PerformanceContract, Review } from '../../contract/caspa-data-contract';
-import { rateContract, type ObjectiveRating } from '../../rules/rating';
+import { rateContract, schemeFor, type ObjectiveRating } from '../../rules/rating';
 import { finalPeriodPending } from '../../rules/targets';
 import { dependencyFlags } from '../../rules/contracts';
 import { closeBlocks, completeBlocks, holdersOf, needsCheck, reviewerPositionOf, stepOf, supervisorPositionOf, type ReviewStep } from '../../rules/review';
@@ -25,9 +25,11 @@ interface Ctx {
   clock: () => ISODateTime;
   device: Device;
   changed: () => void;
+  /** v0.23.0: the policy page's state, for which tab opens first. */
+  policy?: () => { canDecide: boolean; canEdit: boolean; draft: { status: string } | null };
 }
 
-export type ReviewTab = 'mine' | 'team' | 'check' | 'round';
+export type ReviewTab = 'mine' | 'team' | 'check' | 'round' | 'policy';
 export interface ObjectiveLine {
   id: string;
   title: string;
@@ -46,6 +48,18 @@ export interface ObjectiveLine {
   basis: ObjectiveRating['basis'];
   /** v0.22.0: what this objective depends on, with any worth-checking flags, as evidence at review. */
   depends: string[];
+  /** v0.23.0: the full-year target beside the period target, achievement as counted, and points earned. */
+  fullYearTarget: number | null;
+  counted: number | null;
+  points: number | null;
+  /** v0.23.0: the employee's own reported figure, scored the same way (C2); null when nothing is reported. */
+  selfDone: number | null;
+  selfPoints: number | null;
+  meansOfVerification: string | null;
+}
+export interface AttributeLine {
+  id: string; name: string; measures: string; levels: string[];
+  score: number | null; scoreLabel: string | null; selfScore: number | null; justification: string;
 }
 export interface ReviewView {
   id: string;
@@ -58,7 +72,15 @@ export interface ReviewView {
   step: ReviewStep | 'waiting_to_send';
   due: ISODate | null;
   objectives: ObjectiveLine[];
-  overall: { score: number; label: string; provisional: boolean } | null;
+  overall: { score: number; label: string; provisional: boolean; display: string; percent: number | null } | null;
+  /** v0.23.0: the policy this review is scored under. */
+  method: 'bands' | 'weighted_points';
+  methodText: string;
+  targetsPart: number | null;
+  attributes: { enabled: boolean; weightPct: number; sum: number; max: number; percent: number | null; levelLabels: string[]; lines: AttributeLine[] };
+  contributions: string | null;
+  followUp: string | null;
+  countersign: { required: boolean; done: { agrees: boolean; reason: string | null; by: string; at: string } | null };
   scoredWeightPct: number;
   totalWeightPct: number;
   flags: { kind: string; title: string }[];
@@ -83,6 +105,8 @@ export interface RoundView {
   closeBlocks: string[];
   closed: boolean;
   finalPending: number;
+  /** v0.23.0: final assessments HR has received (frozen at close), newest first. */
+  received: { id: string; person: string; kind: Review['kind']; periodEnd: ISODate | null; frozenAt: string }[];
 }
 export interface ReviewsPage {
   tabs: ReviewTab[];
@@ -111,6 +135,12 @@ export interface ReviewsAccess {
   accept(id: string): ReviewResult;
   returnToSupervisor(id: string, reason: string): ReviewResult;
   acknowledge(id: string, disagreement: string): ReviewResult;
+  /** v0.23.0: the supervisor scores a personal attribute (1 to 5) with a comment; the employee may add their own score. */
+  rateAttribute(id: string, attributeId: string, score: number, justification: string): ReviewResult;
+  selfRateAttribute(id: string, attributeId: string, score: number | null): ReviewResult;
+  saveNotes(id: string, notes: { contributions?: string; followUp?: string }): ReviewResult;
+  /** v0.23.0 (C3): countersign, agreeing or disagreeing with reasons. */
+  countersign(id: string, agrees: boolean, reason: string): ReviewResult;
   decideCantAssess(id: string, contractObjectiveId: string, accept: boolean): ReviewResult;
   openRound(kind: Review['kind'], periodEnd?: ISODate | null): ReviewResult;
   closeRound(): ReviewResult;
@@ -165,9 +195,33 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
     const text = a ? en.contracts.dependsOn(`${a.code} ${a.title}`, owner, level, formatDate(d.neededBy)) : en.contracts.dependsOnShare('', formatDate(d.neededBy));
     return flags.length ? `${text} · ${flags.join('; ')}` : text;
   });
+  /** C2: the employee's own latest reported figure (verified or not), scored the same way as the verified one. */
+  const selfOf = (co: (typeof s.contractObjectives)[number], o: ObjectiveRating, sc: ReturnType<typeof schemeFor>) => {
+    const u = s.progressUpdates.filter((x) => x.contractObjectiveId === co.id && x.periodEnd <= now).sort((a, b) => (a.periodEnd < b.periodEnd ? 1 : a.periodEnd > b.periodEnd ? -1 : 0))[0];
+    const selfDone = u?.quantityDone ?? null;
+    if (selfDone === null || o.target === null || o.target <= 0 || co.sourceShareId || co.sourceBreakdownId) return { selfDone: null, selfPoints: null };
+    const ach = co.direction === 'lower_is_better' ? (selfDone === 0 ? Number.POSITIVE_INFINITY : o.target / selfDone) : selfDone / o.target;
+    const cnt = sc.achievementCap == null ? ach : Math.min(ach, sc.achievementCap);
+    return { selfDone, selfPoints: Number.isFinite(cnt) ? co.weightPct * cnt : null };
+  };
+  const methodText = (sc: ReturnType<typeof schemeFor>) => ((sc.scoringMethod ?? 'bands') === 'weighted_points' ? R.policy.weightedPoints(sc.achievementCap ?? null) : R.policy.bands(sc.achievementCap ?? null));
+  const displayOverall = (m: 'bands' | 'weighted_points', x: number) => (m === 'weighted_points' ? `${x.toFixed(2)}%` : x.toFixed(2));
+  const attributesOf = (r: Review, sc: ReturnType<typeof schemeFor>, rating: ReturnType<typeof rateContract>, hideSupervisor: boolean): ReviewView['attributes'] => {
+    const cs = sc.competencySection;
+    const levelLabels = cs.levelLabels ?? [];
+    const lines: AttributeLine[] = cs.enabled ? (cs.attributes ?? []).map((a) => {
+      const x = r.competencyRatings.find((y) => y.attributeId === a.id);
+      const scored = !!x && x.justification.trim() !== '';
+      const score = hideSupervisor || !scored ? null : x!.score;
+      return { id: a.id, name: a.name, measures: a.measures, levels: a.levels, score, scoreLabel: score === null ? null : (levelLabels[5 - score] ?? null), selfScore: x?.selfScore ?? null, justification: score === null ? '' : x!.justification };
+    }) : [];
+    const at = rating?.attributes;
+    return { enabled: cs.enabled && lines.length > 0, weightPct: cs.weightPct, sum: hideSupervisor ? 0 : (at?.sum ?? 0), max: at?.max ?? 0, percent: hideSupervisor ? null : (at?.percent ?? null), levelLabels, lines };
+  };
   const view = (r: Review): ReviewView => {
     const ct = contractOf(r);
     const rating = rateContract(s, ct.id, { now });
+    const scheme = schemeFor(s, ct);
     const who = roles(r);
     const waiting = who.employee && pendingSelf().some((x) => x.reviewId === r.id);
     const objectives: ObjectiveLine[] = (rating?.objectives ?? []).map((o) => {
@@ -179,10 +233,12 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
         id: co.id, title: co.snapshot?.title ?? co.title, weightPct: co.weightPct, lower: co.direction === 'lower_is_better',
         done: o.done, target: o.target, unit: (co.snapshot?.quantityTarget ?? co.quantityTarget)?.unit ?? '',
         achievement: o.achievement === null || Number.isFinite(o.achievement) ? o.achievement : null, bandScore: o.bandScore, score: o.score,
-        label: o.score === null ? null : (s.ratingSchemes[0]?.bands.find((b) => b.score === o.score)?.label ?? null), verifiedOn: latest?.periodEnd ?? null,
+        label: o.score === null ? null : (scheme.bands.find((b) => b.score === o.score)?.label ?? null), verifiedOn: latest?.periodEnd ?? null,
         adjustment: adj ? { delta: adj.bandDelta, reason: adj.reason, by: personName(s.memberships.find((m) => m.id === adj.by.byMembershipId)?.personId ?? '') } : null,
         cantAssess: na ? { reason: na.reason, accepted: !!na.hrApproval } : null, basis: o.basis,
         depends: dependsOf(co.id),
+        fullYearTarget: o.fullYearTarget, counted: o.counted === null || Number.isFinite(o.counted) ? o.counted : null, points: o.points,
+        ...selfOf(co, o, scheme), meansOfVerification: co.meansOfVerification ?? null,
       };
     });
     const step = waiting ? 'waiting_to_send' : stepOf(s, r, now);
@@ -191,7 +247,17 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       id: r.id, person: personName(ct.personId), firstName: personName(ct.personId).split(' ')[0] ?? '', position: s.positions.find((p) => p.id === ct.positionId)?.title ?? '',
       supervisor: holderName(supervisorPositionOf(s, ct)), reviewer: holderName(reviewerPositionOf(s, ct, now)), kind: r.kind, step,
       due: due('review.complete'), objectives,
-      overall: rating && rating.overall !== null && rating.labelScore !== null ? { score: rating.overall, label: rating.label ?? '', provisional: rating.provisional } : null,
+      overall: rating && rating.overall !== null && rating.labelScore !== null ? { score: rating.overall, label: rating.label ?? '', provisional: rating.provisional, display: displayOverall(rating.method, rating.overall), percent: rating.percent } : null,
+      method: rating?.method ?? 'bands',
+      methodText: methodText(scheme),
+      targetsPart: rating?.targetsPart ?? null,
+      attributes: attributesOf(r, scheme, rating, who.employee && !(r.status === 'completed' || who.supervisor)),
+      contributions: showAssessment ? (r.contributions ?? null) : null,
+      followUp: showAssessment ? (r.followUp ?? null) : null,
+      countersign: {
+        required: !!scheme.countersignAll,
+        done: r.reviewerCheck ? { agrees: r.reviewerCheck.agrees !== false, reason: r.reviewerCheck.reason ?? null, by: personName(s.memberships.find((m) => m.id === r.reviewerCheck!.by.byMembershipId)?.personId ?? ''), at: r.reviewerCheck.by.at } : null,
+      },
       scoredWeightPct: rating?.scoredWeightPct ?? 0, totalWeightPct: rating?.totalWeightPct ?? 0,
       // Flags reach the next-level reviewer and HR only, never the employee as a warning about themselves.
       flags: who.reviewer || isHr ? (rating?.flags ?? []).map((f) => ({ kind: f.kind, title: objectives.find((o) => o.id === f.contractObjectiveId)?.title ?? '' })) : [],
@@ -210,7 +276,7 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       history: s.reviews.filter((x) => x.contractId === r.contractId && x.id !== r.id && (x.created.at < r.created.at)).map((x) => ({ kind: x.kind, periodEnd: x.periodEnd ?? null, score: x.finalResult?.overallScore ?? scoreAt(x) })),
       finalPending: r.kind === 'annual' && (who.supervisor || isHr) ? pendingFor([ct.id]) : 0,
       blocks: who.supervisor && r.status === 'self_submitted'
-        ? completeBlocks(s, r, r.supervisorAssessment?.text ?? 'x', now).flatMap((b) => (b.kind === 'no_assessment' ? [] : [R.blocks[b.kind](objectives.find((o) => o.id === b.contractObjectiveId)?.title ?? '')]))
+        ? completeBlocks(s, r, r.supervisorAssessment?.text ?? 'x', now).flatMap((b) => (b.kind === 'no_assessment' ? [] : b.kind === 'attribute_not_scored' ? [R.blocks.attribute_not_scored(scheme.competencySection.attributes?.find((a) => a.id === b.attributeId)?.name ?? '')] : [R.blocks[b.kind](objectives.find((o) => o.id === b.contractObjectiveId)?.title ?? '')]))
         : [],
     };
   };
@@ -226,7 +292,10 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
     if (team.length) tabs.push('team');
     if (all.some((r) => roles(r).reviewer)) tabs.push('check');
     if (isHr) tabs.push('round');
-    const todo = (t: ReviewTab) => (t === 'mine' ? mineR.some((x) => x.can.writeSelf || x.can.acknowledge) : t === 'team' ? team.some((x) => x.can.supervise) : t === 'check' ? check.some((x) => x.can.check) : !!round && (round.waiting.length > 0 || round.canClose));
+    // v0.23.0: the scoring policy, set by HR and approved by the Executive.
+    if (isHr || v.roles.includes('executive')) tabs.push('policy');
+    const pol = c.policy?.();
+    const todo = (t: ReviewTab) => (t === 'policy' ? !!pol && (pol.canDecide || (pol.canEdit && pol.draft?.status === 'returned')) : t === 'mine' ? mineR.some((x) => x.can.writeSelf || x.can.acknowledge) : t === 'team' ? team.some((x) => x.can.supervise) : t === 'check' ? check.some((x) => x.can.check) : !!round && (round.waiting.length > 0 || round.canClose));
     const opensOn = tabs.find(todo) ?? tabs[0] ?? 'mine';
     const start = new Date(Date.UTC(fy, s.organisation.financialYearStartMonth - 1, 1)).getTime();
     const end = new Date(Date.UTC(fy + 1, s.organisation.financialYearStartMonth - 1, 1)).getTime();
@@ -258,7 +327,9 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
     }
     const canOpen = busy || signed.length === 0 ? [] : next;
     const blocks = closeBlocks(s, open, now);
+    const received = reviews.filter((r) => r.finalResult).map((r) => ({ id: r.id as string, person: personName(contractOf(r).personId), kind: r.kind, periodEnd: r.periodEnd ?? null, frozenAt: r.finalResult!.frozenAt })).sort((x, y) => (x.frozenAt < y.frozenAt ? 1 : -1));
     return {
+      received,
       open: kind ? { kind, periodEnd: latest?.periodEnd ?? null, reviews: open.length, byStep: steps.map((st) => ({ step: st, n: open.filter((r) => stepOf(s, r, now) === st).length })) } : null,
       waiting: open.flatMap((r) => r.notAssessable.filter((n) => !n.hrApproval).map((n) => {
         const co = s.contractObjectives.find((x) => x.id === n.contractObjectiveId);
@@ -288,7 +359,7 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
   return {
     page,
     review: (id) => { const r = find(id); return r && visible(r) ? view(r) : null; },
-    hasAny: () => yearReviews().some(visible) || isHr,
+    hasAny: () => yearReviews().some(visible) || isHr || v.roles.includes('executive'),
     needs() {
       const out: NeedsYouItem[] = [];
       const link = (id: string) => ({ kind: 'reviews' as const, reviewId: id });
@@ -415,6 +486,51 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       touch(r);
       return { ok: true };
     },
+    rateAttribute(id, attributeId, score, justification) {
+      const r = find(id);
+      if (!r || !roles(r).supervisor || r.status !== 'self_submitted') return deny('not_allowed');
+      const a = schemeFor(s, contractOf(r)).competencySection.attributes?.find((x) => x.id === attributeId);
+      if (!a || !Number.isInteger(score) || score < 1 || score > 5) return deny('not_allowed');
+      if (!justification.trim()) return deny('comment_required');
+      const before = r.competencyRatings.find((x) => x.attributeId === attributeId) ?? null;
+      const next = { label: a.name, score: score as 1 | 2 | 3 | 4 | 5, justification: justification.trim(), attributeId, selfScore: before?.selfScore ?? null };
+      r.competencyRatings = [...r.competencyRatings.filter((x) => x.attributeId !== attributeId), next];
+      audit('rate_attribute', r, before, next);
+      touch(r);
+      return { ok: true };
+    },
+    selfRateAttribute(id, attributeId, score) {
+      const r = find(id);
+      if (!r || !roles(r).employee || r.status !== 'open') return deny('not_allowed');
+      const a = schemeFor(s, contractOf(r)).competencySection.attributes?.find((x) => x.id === attributeId);
+      if (!a || (score !== null && (!Number.isInteger(score) || score < 1 || score > 5))) return deny('not_allowed');
+      const before = r.competencyRatings.find((x) => x.attributeId === attributeId);
+      // The employee's own score sits beside the supervisor's; until the supervisor scores, the entry holds the self-score only.
+      if (before) before.selfScore = score as 1 | 2 | 3 | 4 | 5 | null;
+      else if (score !== null) r.competencyRatings.push({ label: a.name, score: score as 1 | 2 | 3 | 4 | 5, justification: '', attributeId, selfScore: score as 1 | 2 | 3 | 4 | 5 });
+      audit('self_rate_attribute', r, null, { attributeId, selfScore: score });
+      touch(r);
+      return { ok: true };
+    },
+    saveNotes(id, notes) {
+      const r = find(id);
+      if (!r || !roles(r).supervisor || r.status !== 'self_submitted') return deny('not_allowed');
+      const before = { contributions: r.contributions ?? null, followUp: r.followUp ?? null };
+      if (notes.contributions !== undefined) r.contributions = notes.contributions.trim() || null;
+      if (notes.followUp !== undefined) r.followUp = notes.followUp.trim() || null;
+      audit('notes', r, before, { contributions: r.contributions ?? null, followUp: r.followUp ?? null });
+      touch(r);
+      return { ok: true };
+    },
+    countersign(id, agrees, reason) {
+      const r = find(id);
+      if (!r || !roles(r).reviewer || !needsCheck(s, r, now)) return deny('not_allowed');
+      if (!agrees && !reason.trim()) return deny('reason_required');
+      r.reviewerCheck = { by: stamp(), agrees, reason: reason.trim() || null };
+      audit('reviewer_check', r, null, r.reviewerCheck);
+      touch(r);
+      return { ok: true };
+    },
     decideCantAssess(id, coId, accept) {
       const r = find(id);
       if (!r || !isHr) return deny('not_allowed');
@@ -450,7 +566,8 @@ export function createReviewsAccess(c: Ctx): ReviewsAccess {
       const pending = finalPeriodPending(s, open.map((r) => r.contractId as string), sharesIn(open.map((r) => r.contractId as string)), fy);
       for (const r of open) {
         const rating = rateContract(s, r.contractId, { now });
-        if (rating && rating.overall !== null) r.finalResult = { overallScore: rating.overall, label: rating.label ?? '', schemeId: s.ratingSchemes[0]!.id, frozenAt: c.clock() };
+        const sc = schemeFor(s, contractOf(r));
+        if (rating && rating.overall !== null) r.finalResult = { overallScore: rating.overall, label: rating.label ?? '', schemeId: (sc.id ?? s.ratingSchemes[0]!.id) as never, frozenAt: c.clock() };
         r.updated = stamp();
       }
       gate('appraisal.close', subject, 'passed', [], [...pending.updates, ...pending.readings].map((x) => `final-period:${x}`));

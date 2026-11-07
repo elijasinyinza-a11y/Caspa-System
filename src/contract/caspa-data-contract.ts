@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.14
+ * CASPA™ data contract — v1.15
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,13 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.15 (6 November 2026, Elijah; Scoring Policy and Personal Attributes Specification v0.1): fields only.
+ *     - RatingScheme: scoringMethod, achievementCap, countersignAll, flagScoredOne, appliesFromYear, approval;
+ *       competencySection gains levelLabels and attributes (personal attributes with five level descriptions).
+ *     - PerformanceContract.ratingSchemeId: the policy a contract was signed under, fixed at signature.
+ *     - ContractObjective: periodTargets and meansOfVerification.
+ *     - Review: competencyRatings by attributeId with a self-score; contributions; followUp; reviewerCheck may agree or disagree.
+ *     - Membership.employeeNumber.
  * v1.14 (6 November 2026, Elijah; Contracts Specification v0.1, CT-1 to CT-10): drafting, issuing, signing, revising.
  *     - Dependency: a contract objective or share depends on a Cascade activity or another share, by a date.
  *     - PerformanceContract: version, previousVersionId, employeeNote (recorded when signing, CT-6), preIssueCheck (CT-5).
@@ -290,6 +297,7 @@ export interface Membership extends OrgScoped, Audited {
   startsOn: ISODate;
   endsOn: ISODate | null; // required when roles include 'facilitator' (B4)
   status: 'active' | 'suspended' | 'ended';
+  employeeNumber?: string | null; // v1.15 (C7): the organisation's own staff number, shown on printouts
 }
 
 /* ───────────────────────── Organisation structure (A1–A3) ───────────────────────── */
@@ -810,6 +818,7 @@ export interface PerformanceContract extends OrgScoped, Audited {
   previousVersionId?: Id<'PerformanceContract'> | null; // v1.14: the version this one replaces once both sign
   employeeNote?: string | null; // v1.14 (CT-6): a constraint or disagreement recorded when signing
   preIssueCheck?: { by: Stamp; outcome: 'cleared' | 'sent_back' | 'waiting'; reason: string | null } | null; // v1.14 (CT-5)
+  ratingSchemeId?: Id<'RatingScheme'> | null; // v1.15: the scoring policy in force when both signed; fixed with the contract
 }
 
 /** v1.14: a target relies on work someone else owns, by a date. Never on a corporate KPI. */
@@ -841,6 +850,8 @@ export interface ContractObjective extends OrgScoped, Audited {
   } | null; // null until signed
   direction: 'higher_is_better' | 'lower_is_better';
   weightPct: number; // set by supervisor, totals 100 per contract, frozen at signature (R4)
+  periodTargets?: { periodEnd: ISODate; value: number }[]; // v1.15 (A5): targets for review periods; the full-year target applies otherwise
+  meansOfVerification?: string | null; // v1.15 (C1): agreed when drafting, printed on the contract
 }
 
 export interface ProgressUpdate extends OrgScoped, Audited {
@@ -864,10 +875,12 @@ export interface Review extends OrgScoped, Audited {
   status: 'open' | 'self_submitted' | 'completed';
   adjustments: { contractObjectiveId: Id<'ContractObjective'>; bandDelta: -1 | 1; reason: string; by: Stamp }[]; // R7
   notAssessable: { contractObjectiveId: Id<'ContractObjective'>; reason: string; hrApproval: Stamp | null ; askedBy?: 'supervisor' | 'employee' }[]; // R9
-  competencyRatings: { label: string; score: 1 | 2 | 3 | 4 | 5; justification: string }[]; // R5, if enabled
+  competencyRatings: { label: string; score: 1 | 2 | 3 | 4 | 5; justification: string; attributeId?: string; selfScore?: 1 | 2 | 3 | 4 | 5 | null }[]; // R5; v1.15: by attribute, with the employee's own score
+  contributions?: string | null; // v1.15 (C4): the supervisor's note of work outside the contract; never scored
+  followUp?: string | null; // v1.15 (C5): the supervisor's recommendations and follow-up actions
   returnedByReviewer: { reason: string; by: Stamp } | null; // R8
   periodEnd?: ISODate | null; // v1.13: the quarter a quarterly review covers (TG-11)
-  reviewerCheck: { by: Stamp } | null; // v1.12 (RV-3): the next-level reviewer accepted the flagged review
+  reviewerCheck: { by: Stamp; agrees?: boolean; reason?: string | null } | null; // v1.12 (RV-3); v1.15 (C3): countersigning may agree or disagree, with reasons
   employeeAcknowledgement: { at: ISODateTime; disagreement: string | null } | null; // R8
   /** Frozen at appraisal.close; until then scores are computed live and shown as provisional (R9). */
   finalResult: { overallScore: number; label: string; schemeId: Id<'RatingScheme'>; frozenAt: ISODateTime } | null;
@@ -879,10 +892,23 @@ export interface RatingScheme extends OrgScoped, Audited {
   id: Id<'RatingScheme'>;
   preset: 'A' | 'B' | 'custom'; // A is the default
   bands: { score: 1 | 2 | 3 | 4 | 5; label: string; minAchievement: number | null }[]; // null = no lower bound
-  competencySection: { enabled: boolean; weightPct: number };
+  competencySection: {
+    enabled: boolean;
+    weightPct: number; // v1.15 (B1): 1 to 30
+    levelLabels?: string[]; // v1.15: five names, score 5 first
+    attributes?: { id: string; name: string; measures: string; levels: string[] }[]; // v1.15: three to eight; levels score 5 first
+  };
   floorRule: boolean; // off by default: any objective scored 1 caps overall at 3
   highAchievementFlagAt: number; // default 1.5 (150%), advisory to next-level reviewer
   lockedByCycleId: Id<'Cycle'> | null;
+  /** v1.15 (A2): 'bands' scores each objective from its band; 'weighted_points' earns weight × achievement and rates the overall share. */
+  scoringMethod?: 'bands' | 'weighted_points';
+  achievementCap?: number | null; // v1.15: the most achievement an objective counts for (1 = 100%); null for none
+  countersignAll?: boolean; // v1.15 (C3): the next-level reviewer countersigns every review
+  flagScoredOne?: boolean; // v1.15: default true
+  appliesFromYear?: FinancialYear | null; // v1.15: the first financial year it applies to
+  /** v1.15 (A1): HR drafts, the Executive approves. Absent on a policy approved before v1.15. */
+  approval?: { status: 'draft' | 'sent' | 'approved' | 'returned'; sent: Stamp | null; decided: Stamp | null; returnReason: string | null } | null;
 }
 
 export const RATING_PRESETS: Record<'A' | 'B', RatingScheme['bands']> = {
