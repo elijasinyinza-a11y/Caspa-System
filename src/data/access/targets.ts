@@ -3,9 +3,12 @@
  * KPI broken down into unit shares; readings recorded by each share's owner and verified by their supervisor (TG-3);
  * combined figures computed from verified readings only. Nothing here changes Strategy or Cascade records.
  */
-import type { FinancialYear, ISODate, ISODateTime, KpiBreakdown, KpiShare, ShareReading } from '../../contract/caspa-data-contract';
+import type { Activity, ActivityProposal, Dependency, FinancialYear, ISODate, ISODateTime, KpiBreakdown, KpiShare, ShareReading, SixPLevel } from '../../contract/caspa-data-contract';
+import { dependencyFlags, makesCircle } from '../../rules/contracts';
+import { financialYearBounds } from '../../rules/kpi-progress';
+import { can } from './permissions';
 import { endedPeriods, parseFigure } from '../../rules/progress';
-import { breakdownChecks, breakdownOf, combinedLatest, combinedTarget, corporateTarget, latestVerifiedReading, lowerIsBetter, notCarried, sharesOf } from '../../rules/targets';
+import { breakdownChecks, breakdownOf, combinedLatest, combinedTarget, corporateTarget, fromShares, latestVerifiedReading, lowerIsBetter, notCarried, sharesOf, suggestedCombine, unusualCombine } from '../../rules/targets';
 import type { NeedsYouItem } from '../../selectors/needs-you';
 import { en } from '../../strings/en';
 import type { Device } from './device';
@@ -36,9 +39,23 @@ export interface ShareView {
   periods: ISODate[];
   work: { id: string; title: string; who: string; quantity: string; how: 'source' | 'serves' }[];
   linkable: { id: string; title: string; who: string; quantity: string }[];
-  can: { record: boolean; verify: boolean; link: boolean };
+  can: { record: boolean; verify: boolean; link: boolean; propose: boolean; depend: boolean };
   inContract: string | null;
+  /** v0.25.0 (TG-9): proposals of new work for this share; the owners a proposal may name. */
+  proposals: ProposalView[];
+  proposalOwners: { id: string; label: string }[];
+  kpiCode: string;
+  /** v0.25.0: what this share depends on, and what it can depend on (an activity or another share). */
+  deps: { id: string; on: string; owner: string; neededBy: ISODate; note: string; flags: string[] }[];
+  dependOptions: { id: string; kind: 'activity' | 'share'; label: string }[];
 }
+export interface ProposalView {
+  id: string; shareId: string; shareUnit: string; kpi: string; title: string; level: SixPLevel; quantity: { value: number; unit: string } | null;
+  owner: string; ownerPositionId: string; evidence: string; reason: string; by: string; sentAt: string;
+  outcome: ActivityProposal['outcome']; returnReason: string | null; activityCode: string | null;
+  asSent: { title: string; level: SixPLevel } | null; canDecide: boolean; canChange: boolean;
+}
+export interface ProposalInput { title: string; decisionLevel: SixPLevel | null; quantity: number | null; unit: string; ownerPositionId: string; evidence: string; reason: string }
 export type TargetsResult = { ok: true; queued?: boolean } | { ok: false; error: string };
 
 export interface TargetsAccess {
@@ -56,7 +73,19 @@ export interface TargetsAccess {
   link(shareId: string, contractObjectiveIds: string[]): TargetsResult;
   unlink(shareId: string, contractObjectiveId: string): TargetsResult;
   needs(): NeedsYouItem[];
-  cascadeLine(kpiId: string): { shares: number; combinedLatest: number | null; breakdownId: string } | null;
+  cascadeLine(kpiId: string): { shares: number; combinedLatest: number | null; breakdownId: string; fromShares: { reported: number; of: number; latest: ISODate | null; showing: ISODate | null } | null } | null;
+  /** v0.25.0 (F10): the combining rule a new breakdown starts from, by the KPI's unit. */
+  suggestedCombine(kpiId: string): KpiBreakdown['combine'];
+  /** v0.25.0 (TG-9): propose new work from a share; the Strategy office confirms or returns it. */
+  propose(shareId: string, input: ProposalInput): TargetsResult & { id?: string };
+  changeProposal(id: string, input: ProposalInput): TargetsResult;
+  withdrawProposal(id: string): TargetsResult;
+  proposalsToDecide(): ProposalView[];
+  confirmProposal(id: string, edits?: Partial<ProposalInput>): TargetsResult & { code?: string };
+  returnProposal(id: string, reason: string): TargetsResult;
+  /** v0.25.0: dependencies from a share, on an activity or another share. */
+  addDependency(shareId: string, onId: string, neededBy: string, note: string): TargetsResult;
+  removeDependency(id: string): TargetsResult;
 }
 
 export function createTargetsAccess(c: Ctx): TargetsAccess {
@@ -90,7 +119,7 @@ export function createTargetsAccess(c: Ctx): TargetsAccess {
     if (x.kind === 'short_of_target') return { must: true, text: T.checks.short(round1(x.combined), round1(x.corporate), kpi(b.kpiId)?.unit ?? '') };
     const sh = shareOf((x as { shareId: string }).shareId); const unit = s.units.find((u) => u.id === sh?.unitId)?.name ?? '';
     return x.kind === 'no_owner' ? { must: true, text: T.checks.noOwner(unit) } : { must: false, text: T.checks.noWork(unit) };
-  });
+  }).concat((() => { const u = unusualCombine(kpi(b.kpiId)?.unit ?? '', b.combine, s.organisation.baseCurrency); return u ? [{ must: false, text: T.checks[u] }] : []; })());
 
   const breakdownView = (b: KpiBreakdown): BreakdownView => {
     const k = kpi(b.kpiId)!;
@@ -113,6 +142,38 @@ export function createTargetsAccess(c: Ctx): TargetsAccess {
         };
       }),
     };
+  };
+
+  /* ── v0.25.0 (Finish Targets Specification v0.1) ── */
+  const levelOk = (l: unknown): l is SixPLevel => ['principle', 'process', 'people', 'policy', 'procedures', 'practices'].includes(l as string);
+  const proposalView = (p: ActivityProposal): ProposalView => {
+    const sh = shareOf(p.shareId)!; const k = kpi(p.kpiId)!;
+    return {
+      id: p.id, shareId: p.shareId, shareUnit: s.units.find((u) => u.id === sh.unitId)?.name ?? '', kpi: `${k.code} ${k.name}`, title: p.title, level: p.decisionLevel, quantity: p.quantityTarget,
+      owner: `${posTitle(p.ownerPositionId) ?? ''}${holder(p.ownerPositionId) ? `, ${holder(p.ownerPositionId)}` : ''}`, ownerPositionId: p.ownerPositionId, evidence: p.evidence, reason: p.reason,
+      by: s.people.find((x) => x.id === s.memberships.find((m) => m.id === p.sent.byMembershipId)?.personId)?.fullName ?? '', sentAt: p.sent.at,
+      outcome: p.outcome, returnReason: p.returnReason, activityCode: s.activities.find((a) => a.id === p.activityId)?.code ?? null,
+      asSent: p.asSent ? { title: p.asSent.title, level: p.asSent.decisionLevel } : null,
+      canDecide: isSO && p.outcome === 'waiting', canChange: p.outcome === 'returned' && can(s, v, 'propose', { type: 'ActivityProposal', id: p.id }),
+    };
+  };
+  const ownerChoices = (sh: KpiShare) => s.positions.filter((p) => p.unitId === sh.unitId || p.id === sh.ownerPositionId).map((p) => ({ id: p.id as string, label: `${p.title}${holder(p.id) ? `, ${holder(p.id)}` : ''}` }));
+  const checkInput = (sh: KpiShare, i: ProposalInput): string | null => {
+    if (!i.title.trim()) return 'title_required';
+    if (!levelOk(i.decisionLevel)) return 'level_required';
+    if (!ownerChoices(sh).some((o) => o.id === i.ownerPositionId)) return 'owner_required';
+    if (i.quantity !== null && !(i.quantity > 0)) return 'bad_number';
+    return null;
+  };
+  const nextCode = (kpiId: string) => {
+    const k = kpi(kpiId)!; const base = `A${k.code.replace(/^K/, '')}.`;
+    const n = Math.max(0, ...s.activities.filter((a) => a.code.startsWith(base)).map((a) => Number(a.code.slice(base.length)) || 0)) + 1;
+    return `${base}${n}`;
+  };
+  const depText = (d: Dependency): { on: string; owner: string } => {
+    if ('activityId' in d.on) { const a = s.activities.find((x) => x.id === (d.on as { activityId: string }).activityId); return { on: a ? `${a.code} ${a.title}` : '', owner: holder(a?.ownerPositionId ?? null) ?? posTitle(a?.ownerPositionId ?? null) ?? '' }; }
+    const o = shareOf((d.on as { shareId: string }).shareId); const ob = o && bOfShare(o); const k2 = ob && kpi(ob.kpiId);
+    return { on: o ? T.deps.shareOf(s.units.find((u) => u.id === o.unitId)?.name ?? '', k2?.code ?? '') : '', owner: holder(o?.ownerPositionId ?? null) ?? '' };
   };
 
   const deliver = (sh: KpiShare, periodEnd: ISODate, value: number, offline: boolean) => {
@@ -193,8 +254,15 @@ export function createTargetsAccess(c: Ctx): TargetsAccess {
         periods: [...endedPeriods(fy, s.organisation.financialYearStartMonth, k.reportingFrequency, now)].reverse(),
         work: s.contractObjectives.filter((co) => co.servesShareId === id || co.sourceShareId === id).map((co) => ({ id: co.id, title: objTitle(co.id), who: who(co.contractId), quantity: qty(co.id), how: co.sourceShareId === id ? 'source' as const : 'serves' as const })),
         linkable: owner ? teamCos.map((co) => ({ id: co.id, title: objTitle(co.id), who: who(co.contractId), quantity: qty(co.id) })) : [],
-        can: { record: owner, verify: mine(supOf(sh.ownerPositionId)) && !owner, link: owner },
+        can: { record: owner, verify: mine(supOf(sh.ownerPositionId)) && !owner, link: owner, propose: can(s, v, 'propose', { type: 'ActivityProposal', id: sh.id }), depend: can(s, v, 'draft', { type: 'Dependency', id: sh.id }) && (owner || canEdit(k.id)) },
         inContract: contractObj ? T.inContract(k.name, s.units.find((u) => u.id === sh.unitId)?.name ?? '', sh.target, k.unit) : null,
+        proposals: s.activityProposals.filter((p) => p.shareId === id && p.outcome !== 'withdrawn' && can(s, v, 'view', { type: 'ActivityProposal', id: p.id })).map(proposalView),
+        proposalOwners: ownerChoices(sh), kpiCode: k.code,
+        deps: s.dependencies.filter((d) => 'shareId' in d.from && (d.from as { shareId: string }).shareId === id).map((d) => ({ id: d.id, ...depText(d), neededBy: d.neededBy, note: d.note, flags: dependencyFlags(s, d, fy, now).map((f) => T.deps.flag[f] ?? f) })),
+        dependOptions: [
+          ...s.activities.filter((a) => a.financialYear === fy).map((a) => ({ id: a.id as string, kind: 'activity' as const, label: `${a.code} ${a.title}` })),
+          ...s.kpiShares.filter((x) => x.id !== id && s.kpiBreakdowns.some((bb) => bb.id === x.breakdownId && bb.financialYear === fy)).map((x) => { const k2 = kpi(bOfShare(x).kpiId); return { id: x.id as string, kind: 'share' as const, label: T.deps.shareOf(s.units.find((u) => u.id === x.unitId)?.name ?? '', k2?.code ?? '') }; }),
+        ],
       };
     },
     record(shareId, periodEnd, value) {
@@ -264,7 +332,13 @@ export function createTargetsAccess(c: Ctx): TargetsAccess {
     needs() {
       const out: NeedsYouItem[] = [];
       const toVerify = s.shareReadings.filter((r) => { const sh = shareOf(r.shareId); return sh && !r.verified && !r.returned && mine(supOf(sh.ownerPositionId)) && r.created.byMembershipId !== v.membershipId; });
-      if (toVerify.length) out.push({ key: 'targets:verify', kind: 'approval', title: T.needs.verify(toVerify.length), detail: null, due: null, daysOverdue: null, severity: null, as: null, link: { kind: 'targets', shareId: toVerify[0]!.shareId } });
+      // F6 (v0.25.0): share readings are verified in Progress updates › To verify, with contract updates.
+      if (toVerify.length) out.push({ key: 'targets:verify', kind: 'approval', title: T.needs.verify(toVerify.length), detail: null, due: null, daysOverdue: null, severity: null, as: null, link: { kind: 'progress', tab: 'verify' } });
+      // TG-9: proposals waiting for the Strategy office; returned ones back with whoever may change them.
+      for (const p of s.activityProposals.filter((x) => x.financialYear === fy)) {
+        if (p.outcome === 'waiting' && isSO) out.push({ key: `targets:proposal:${p.id}`, kind: 'approval', title: T.proposals.needs.decide(kpi(p.kpiId)?.code ?? '', p.title), detail: null, due: null, daysOverdue: null, severity: null, as: 'strategy_office', link: { kind: 'targets' } });
+        if (p.outcome === 'returned' && can(s, v, 'propose', { type: 'ActivityProposal', id: p.id })) out.push({ key: `targets:returned:${p.id}`, kind: 'deadline', title: T.proposals.needs.returned(p.title), detail: p.returnReason, due: null, daysOverdue: null, severity: null, as: null, link: { kind: 'targets', shareId: p.shareId } });
+      }
       for (const b of s.kpiBreakdowns.filter((x) => x.financialYear === fy && canEdit(x.kpiId))) {
         const must = checksText(b).filter((x) => x.must).length;
         if (must) out.push({ key: `targets:fix:${b.id}`, kind: 'finding', title: T.needs.fix(kpi(b.kpiId)?.name ?? '', must), detail: null, due: null, daysOverdue: null, severity: 'advisory', as: null, link: { kind: 'targets', breakdownId: b.id } });
@@ -273,7 +347,107 @@ export function createTargetsAccess(c: Ctx): TargetsAccess {
     },
     cascadeLine(kpiId) {
       const b = breakdownOf(s, kpiId, fy);
-      return b ? { shares: sharesOf(s, b.id).length, combinedLatest: combinedLatest(s, b, now).value, breakdownId: b.id } : null;
+      if (!b) return null;
+      const fs = fromShares(s, kpiId, fy, financialYearBounds(fy, s.organisation.financialYearStartMonth).start, now);
+      const last = fs?.periods[fs.periods.length - 1];
+      return {
+        shares: sharesOf(s, b.id).length, breakdownId: b.id,
+        combinedLatest: fs ? (last?.value ?? null) : combinedLatest(s, b, now).value,
+        fromShares: fs ? { reported: fs.latest?.reported ?? 0, of: fs.of, latest: fs.latest?.periodEnd ?? null, showing: last?.periodEnd ?? null } : null,
+      };
+    },
+    suggestedCombine: (kpiId) => suggestedCombine(kpi(kpiId)?.unit ?? ''),
+    propose(shareId, input) {
+      const sh = shareOf(shareId);
+      if (!sh || !can(s, v, 'propose', { type: 'ActivityProposal', id: shareId })) return { ok: false, error: 'not_allowed' };
+      const err = checkInput(sh, input);
+      if (err) return { ok: false, error: err };
+      const b = bOfShare(sh); const st = stamp();
+      const p: ActivityProposal = {
+        orgId: s.organisation.id, id: `prop-${s.activityProposals.length + 1}` as never, shareId: sh.id, kpiId: b.kpiId, financialYear: b.financialYear,
+        title: input.title.trim(), decisionLevel: input.decisionLevel!, quantityTarget: input.quantity === null ? null : { value: input.quantity, unit: input.unit.trim() },
+        ownerPositionId: input.ownerPositionId as never, evidence: input.evidence.trim(), reason: input.reason.trim(), sent: st, asSent: null,
+        outcome: 'waiting', decided: null, returnReason: null, activityId: null, created: st, updated: st,
+      };
+      s.activityProposals.push(p);
+      audit('propose', 'ActivityProposal', p.id, null, { title: p.title, decisionLevel: p.decisionLevel, shareId });
+      c.changed();
+      return { ok: true, id: p.id };
+    },
+    changeProposal(id, input) {
+      const p = s.activityProposals.find((x) => x.id === id);
+      if (!p || p.outcome !== 'returned' || !can(s, v, 'propose', { type: 'ActivityProposal', id })) return { ok: false, error: 'not_allowed' };
+      const err = checkInput(shareOf(p.shareId)!, input);
+      if (err) return { ok: false, error: err };
+      const before = structuredClone(p);
+      Object.assign(p, { title: input.title.trim(), decisionLevel: input.decisionLevel!, quantityTarget: input.quantity === null ? null : { value: input.quantity, unit: input.unit.trim() }, ownerPositionId: input.ownerPositionId, evidence: input.evidence.trim(), reason: input.reason.trim(), outcome: 'waiting', sent: stamp(), decided: null, returnReason: null, updated: stamp() });
+      audit('resend', 'ActivityProposal', id, before, { title: p.title, decisionLevel: p.decisionLevel });
+      c.changed();
+      return { ok: true };
+    },
+    withdrawProposal(id) {
+      const p = s.activityProposals.find((x) => x.id === id);
+      if (!p || (p.outcome !== 'returned' && p.outcome !== 'waiting') || !can(s, v, 'propose', { type: 'ActivityProposal', id })) return { ok: false, error: 'not_allowed' };
+      p.outcome = 'withdrawn'; p.updated = stamp();
+      audit('withdraw', 'ActivityProposal', id, null, { outcome: 'withdrawn' });
+      c.changed();
+      return { ok: true };
+    },
+    proposalsToDecide: () => (isSO ? s.activityProposals.filter((p) => p.outcome === 'waiting' && p.financialYear === fy).map(proposalView) : []),
+    confirmProposal(id, edits) {
+      const p = s.activityProposals.find((x) => x.id === id);
+      if (!p || p.outcome !== 'waiting' || !can(s, v, 'approve', { type: 'ActivityProposal', id })) return { ok: false, error: 'not_allowed' };
+      const sh = shareOf(p.shareId)!;
+      const next = { title: edits?.title ?? p.title, decisionLevel: edits?.decisionLevel ?? p.decisionLevel, quantity: edits?.quantity !== undefined ? edits.quantity : (p.quantityTarget?.value ?? null), unit: edits?.unit ?? p.quantityTarget?.unit ?? '', ownerPositionId: edits?.ownerPositionId ?? p.ownerPositionId, evidence: edits?.evidence ?? p.evidence, reason: p.reason };
+      const err = checkInput(sh, next);
+      if (err) return { ok: false, error: err };
+      const changed = next.title !== p.title || next.decisionLevel !== p.decisionLevel || next.ownerPositionId !== p.ownerPositionId || next.quantity !== (p.quantityTarget?.value ?? null);
+      if (changed) p.asSent = { title: p.title, decisionLevel: p.decisionLevel, quantityTarget: p.quantityTarget, ownerPositionId: p.ownerPositionId };
+      const st = stamp();
+      const a: Activity = {
+        ...(s.activities.find((x) => x.kpiId === p.kpiId) ?? s.activities[0]!), // copies only the shape; every field that matters is set below
+        id: `a-prop-${p.id}` as never, kpiId: p.kpiId, financialYear: p.financialYear, code: nextCode(p.kpiId), title: next.title.trim(),
+        decisionLevel: next.decisionLevel!, ownerPositionId: next.ownerPositionId as never, quantityTarget: next.quantity === null ? null : { value: next.quantity, unit: next.unit.trim() },
+        evidence: next.evidence.trim() || null, created: st, updated: st,
+      } as Activity;
+      s.activities.push(a);
+      Object.assign(p, { title: a.title, decisionLevel: a.decisionLevel, ownerPositionId: a.ownerPositionId, quantityTarget: a.quantityTarget, outcome: 'confirmed', decided: st, activityId: a.id, updated: st });
+      audit('create', 'Activity', a.id, null, { code: a.code, title: a.title, fromProposal: p.id });
+      audit('confirm', 'ActivityProposal', p.id, null, { activityId: a.id, code: a.code });
+      c.changed();
+      return { ok: true, code: a.code };
+    },
+    returnProposal(id, reason) {
+      const p = s.activityProposals.find((x) => x.id === id);
+      if (!p || p.outcome !== 'waiting' || !can(s, v, 'approve', { type: 'ActivityProposal', id })) return { ok: false, error: 'not_allowed' };
+      if (!reason.trim()) return { ok: false, error: 'reason_required' };
+      Object.assign(p, { outcome: 'returned', decided: stamp(), returnReason: reason.trim(), updated: stamp() });
+      audit('return', 'ActivityProposal', id, null, { reason: reason.trim() });
+      c.changed();
+      return { ok: true };
+    },
+    addDependency(shareId, onId, neededBy, note) {
+      const sh = shareOf(shareId);
+      if (!sh || !(mine(sh.ownerPositionId) || canEdit(bOfShare(sh).kpiId)) || !can(s, v, 'draft', { type: 'Dependency', id: shareId })) return { ok: false, error: 'not_allowed' };
+      const isAct = s.activities.some((a) => a.id === onId); const isShare = s.kpiShares.some((x) => x.id === onId && x.id !== shareId);
+      if ((!isAct && !isShare) || !/^\d{4}-\d{2}-\d{2}$/.test(neededBy)) return { ok: false, error: 'source_required' };
+      if (makesCircle(s, shareId, onId)) return { ok: false, error: 'circle' };
+      const st = stamp();
+      const d: Dependency = { orgId: s.organisation.id, id: `dep-${shareId}-${s.dependencies.length + 1}` as never, from: { shareId: sh.id }, on: isAct ? { activityId: onId as never } : { shareId: onId as never }, neededBy: neededBy as ISODate, note: note.trim(), created: st, updated: st };
+      s.dependencies.push(d);
+      audit('create', 'Dependency', d.id, null, { from: d.from, on: d.on, neededBy });
+      c.changed();
+      return { ok: true };
+    },
+    removeDependency(id) {
+      const d = s.dependencies.find((x) => x.id === id);
+      const shareId = d && 'shareId' in d.from ? (d.from as { shareId: string }).shareId : null;
+      const sh = shareId ? shareOf(shareId) : undefined;
+      if (!d || !sh || !(mine(sh.ownerPositionId) || canEdit(bOfShare(sh).kpiId))) return { ok: false, error: 'not_allowed' };
+      s.dependencies = s.dependencies.filter((x) => x.id !== id);
+      audit('delete', 'Dependency', id, { from: d.from, on: d.on }, null);
+      c.changed();
+      return { ok: true };
     },
   };
 }

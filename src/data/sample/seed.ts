@@ -367,7 +367,7 @@ function seedStore(): Store {
       ...([['1.1.1', 2024, 83], ['1.1.1', 2025, 87], ['1.2.1', 2024, 50], ['1.2.1', 2025, 49]] as const).map(([k, y, v]) => ({ ...base, id: id<'KpiActual'>(`ka-${k}-${y}-12`), kpiId: id<'Kpi'>(`k${k}`), periodEnd: d(`${y}-12-31`), value: v }))],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
-    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts, kpiBreakdowns: [], kpiShares: [], shareReadings: [], dependencies: draftDependencies,
+    resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts, kpiBreakdowns: [], kpiShares: [], activityProposals: [], shareReadings: [], dependencies: draftDependencies,
     activities,
     activityProgress: [{ ...base, id: id('ap-1.2.1.3-2026-06'), activityId: act('1.2.1.3').id, periodEnd: d('2026-06-30'), quantityDone: 620, note: '' }],
     deficiencies: [

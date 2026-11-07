@@ -3,6 +3,7 @@
  * Utility's approved structure is unchanged. The NGO's structure is flat (no units below its office), so it has none.
  * - Scale organisation: a weighted-average breakdown of the KPI its supervisor role owns, across that directorate's
  *   departments; one share without an owner; readings verified, waiting and none.
+ *   One proposal of new work from the second department's share waits for the Strategy office (v0.25.0, TG-9).
  * - Packaging manufacturer: Material waste (lower is better) by Production and Quality, weighted by tonnes of input,
  *   combining above the corporate target; and one standing duty in the Machine Operator's contract.
  */
@@ -42,6 +43,19 @@ export function addSampleTargets(s: Store): Store {
       { unitId: 'u-scale-d2p2', owner: 'pos-scale-dh22', target: 82, weight: 30, reading: { periodEnd: '2026-09-30', value: 76 } },
       { unitId: 'u-scale-d2p3', owner: null, target: 80, weight: 20 },
     ] });
+    // v0.25.0 (TG-9): one proposal of new work waiting for the Strategy office, from the second department's share.
+    const b = owner && s.kpiBreakdowns.find((x) => x.kpiId === owner.id);
+    const share = b && s.kpiShares.find((x) => x.breakdownId === b.id && x.ownerPositionId === 'pos-scale-dh22');
+    const by = s.memberships.find((m) => m.personId === s.assignments.find((a) => a.positionId === 'pos-scale-dh22')?.personId);
+    if (b && share && by) {
+      const st: Stamp = { at: at('2026-10-12'), byMembershipId: by.id };
+      s.activityProposals.push({
+        orgId: s.organisation.id, id: 'prop-scale-1' as never, shareId: share.id, kpiId: b.kpiId, financialYear: b.financialYear,
+        title: 'Run a quarterly output review clinic for the department', decisionLevel: 'procedures', quantityTarget: { value: 4, unit: 'clinics' },
+        ownerPositionId: 'pos-scale-dh22' as never, evidence: 'Clinic attendance records and the actions log', reason: 'Outputs slip between the quarterly checks; there is no routine to catch them early.',
+        sent: st, asSent: null, outcome: 'waiting', decided: null, returnReason: null, activityId: null, created: st, updated: st,
+      });
+    }
   }
   if (name.includes('Packaging')) {
     breakdown(s, { kpiId: 'k-mfg-K1.1.1', parentUnitId: 'u-mfg-plant1', weightLabel: 'Tonnes of material input a year', shares: [

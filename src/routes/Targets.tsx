@@ -6,7 +6,9 @@ import { useId, useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { EntryRow } from '../components/SubMenu';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
-import type { KpiBreakdown } from '../contract/caspa-data-contract';
+import { SIX_P_SCOPE, type KpiBreakdown, type SixPLevel } from '../contract/caspa-data-contract';
+import type { ProposalInput, ProposalView, ShareView } from '../data/access/targets';
+import { BookLine } from '../components/Explain';
 import { formatDate, formatNumber, formatPercent } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, Chip, input, label, primary } from './organisation/ui';
@@ -28,8 +30,10 @@ export function TargetsPage({ breakdownId, shareId, setup }: { breakdownId?: str
 function List() {
   const { repo } = useApp();
   const l = repo.targets.list();
+  const toDecide = repo.targets.proposalsToDecide();
   return (
     <>
+      {toDecide.length > 0 && <Decide items={toDecide} />}
       <ul className="space-y-3">
         {l.kpis.map((k) => (
           <li key={k.kpiId} className={`${card} border-t-4 border-t-performance-mark`}>
@@ -67,7 +71,9 @@ function Setup({ kpiId }: { kpiId: string }) {
   const opts = repo.targets.setupOptions(kpiId);
   const id = useId();
   const [unit, setUnit] = useState(opts?.units[0]?.id ?? '');
-  const [combine, setCombine] = useState<KpiBreakdown['combine']>('weighted');
+  const { repo: r0 } = useApp();
+  const suggested = r0.targets.suggestedCombine(kpiId);
+  const [combine, setCombine] = useState<KpiBreakdown['combine']>(suggested);
   const [weightLabel, setWeightLabel] = useState('');
   const k = repo.targets.list().kpis.find((x) => x.kpiId === kpiId);
   if (!opts || !k) return <p className={card}>{T.errors.not_allowed}</p>;
@@ -85,6 +91,7 @@ function Setup({ kpiId }: { kpiId: string }) {
         <div><label htmlFor={`${id}-u`} className={label}>{T.setup.units}</label>
           <select id={`${id}-u`} value={unit} onChange={(e) => setUnit(e.target.value)} className={input}>{opts.units.map((u) => <option key={u.id} value={u.id}>{T.setup.unitsOption(u.label, u.count)}</option>)}</select></div>
         <fieldset><legend className={label}>{T.setup.how}</legend>
+          <p className="text-13 text-muted">{T.setup.suggested(T.combine[suggested]!)}</p>
           {(['weighted', 'sum', 'none'] as const).map((c) => (
             <label key={c} className="flex min-h-11 items-start gap-3 py-1"><input type="radio" name={`${id}-c`} className="mt-1 h-5 w-5" checked={combine === c} onChange={() => setCombine(c)} /><span><b className="text-navy">{T.combine[c]}</b><br /><span className="text-13 text-muted">{T.combineHelp[c]}</span></span></label>
           ))}
@@ -137,12 +144,12 @@ function Breakdown({ id }: { id: string }) {
             {editing ? (
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 <div><label htmlFor={`${fid}-t-${x.id}`} className={label}>{T.page.target}</label><input id={`${fid}-t-${x.id}`} inputMode="decimal" value={rows[x.id]!.target} onChange={(e) => setRows({ ...rows, [x.id]: { ...rows[x.id]!, target: e.target.value } })} className={input} /></div>
-                {b.combine === 'weighted' && <div><label htmlFor={`${fid}-w-${x.id}`} className={label}>{T.page.weight}</label><input id={`${fid}-w-${x.id}`} inputMode="decimal" value={rows[x.id]!.weight} onChange={(e) => setRows({ ...rows, [x.id]: { ...rows[x.id]!, weight: e.target.value } })} className={input} /></div>}
+                {b.combine === 'weighted' && <div><label htmlFor={`${fid}-w-${x.id}`} className={label}>{T.page.sizeBy(b.weightLabel)}</label><input id={`${fid}-w-${x.id}`} inputMode="decimal" value={rows[x.id]!.weight} onChange={(e) => setRows({ ...rows, [x.id]: { ...rows[x.id]!, weight: e.target.value } })} className={input} /></div>}
                 <div><label htmlFor={`${fid}-o-${x.id}`} className={label}>{T.page.owner}</label><select id={`${fid}-o-${x.id}`} value={rows[x.id]!.owner} onChange={(e) => setRows({ ...rows, [x.id]: { ...rows[x.id]!, owner: e.target.value } })} className={input}><option value="">{T.page.chooseOwner}</option>{b.owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</select></div>
               </div>
             ) : (
               <>
-                <p className="text-13 text-muted">{x.ownerPosition ? `${T.page.owner}: ${x.ownerPosition}${x.owner ? `, ${x.owner}` : ''}` : ''}{x.weightPct !== null ? ` · ${T.page.share(formatPercent(x.weightPct))}` : ''}</p>
+                <p className="text-13 text-muted">{x.ownerPosition ? `${T.page.owner}: ${x.ownerPosition}${x.owner ? `, ${x.owner}` : ''}` : ''}{b.combine === 'weighted' ? (x.weight !== null && b.weightLabel ? ` · ${b.weightLabel}: ${formatNumber(x.weight)}` : '') : ''}{x.weightPct !== null ? ` · ${T.page.share(formatPercent(x.weightPct))}` : b.combine === 'weighted' && !b.weightLabel ? ` · ${T.page.equal}` : ''}</p>
                 <p className="tabular text-14">{T.page.target} <b>{fig(x.target, b.unit)}</b> · {x.latest ? T.page.latest(fig(x.latest.value, b.unit), formatDate(x.latest.periodEnd)) : T.page.noReading}</p>
                 <p className="text-13 text-muted">{T.page.work(x.work)}{x.waiting ? ` · ${T.page.waiting(x.waiting)}` : ''}</p>
               </>
@@ -221,7 +228,145 @@ function Share({ id }: { id: string }) {
             <div className="mt-2"><button type="button" className={primary} onClick={() => { act(repo.targets.link(id, picks), T.toasts.linked); setPicks([]); }}>{T.share.linkDo}</button></div>
           </details>
         )}
+        <Proposals sh={sh} />
       </section>
+      <Depends sh={sh} />
     </>
+  );
+}
+
+const SIX: SixPLevel[] = ['principle', 'process', 'people', 'policy', 'procedures', 'practices'];
+const PP = T.proposals;
+const blank = (sh: ShareView): ProposalInput => ({ title: '', decisionLevel: null, quantity: null, unit: '', ownerPositionId: sh.proposalOwners.find((o) => o.label === sh.owner)?.id ?? sh.proposalOwners[0]?.id ?? '', evidence: '', reason: '' });
+
+/** TG-9: new work proposed from a share; the Strategy office confirms it into Cascade or returns it. */
+function Proposals({ sh }: { sh: ShareView }) {
+  const { repo, say } = useApp();
+  const [form, setForm] = useState<{ input: ProposalInput; resend: string | null } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const send = () => {
+    if (!form) return;
+    const r = form.resend ? repo.targets.changeProposal(form.resend, form.input) : repo.targets.propose(sh.id, form.input);
+    if (!r.ok) { setError(PP.errors[r.error] ?? T.errors[r.error] ?? null); return; }
+    setForm(null); setError(null); say(PP.sent);
+  };
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      {sh.proposals.length > 0 && <ul className="divide-y divide-border">{sh.proposals.map((p) => (
+        <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+          <span><b className="text-navy">{p.title}</b><span className="block text-13 text-muted">{en.sixP[p.level]}{p.quantity ? ` · ${formatNumber(p.quantity.value)} ${p.quantity.unit}` : ''} · {PP.by(p.by)}</span>
+            {p.returnReason && p.outcome === 'returned' && <span className="block text-13">{PP.returnReason(p.returnReason)}</span>}</span>
+          <span className="flex flex-wrap gap-2">
+            <Chip tone={p.outcome === 'confirmed' ? 'complete' : p.outcome === 'returned' ? 'advisory' : 'info'}>{p.outcome === 'confirmed' ? PP.state.confirmed(p.activityCode ?? '') : PP.state[p.outcome as 'waiting' | 'returned']}</Chip>
+            {p.canChange && <><button type="button" className={btn} onClick={() => setForm({ input: { title: p.title, decisionLevel: p.level, quantity: p.quantity?.value ?? null, unit: p.quantity?.unit ?? '', ownerPositionId: p.ownerPositionId, evidence: p.evidence, reason: p.reason }, resend: p.id })}>{PP.resend}</button>
+              <button type="button" className={btn} onClick={() => { const r = repo.targets.withdrawProposal(p.id); say(r.ok ? PP.withdrawn : null); }}>{PP.withdraw}</button></>}
+          </span>
+        </li>
+      ))}</ul>}
+      {sh.can.propose && !form && <><button type="button" className={`${primary} mt-2`} onClick={() => setForm({ input: blank(sh), resend: null })}>{PP.title}</button><p className="mt-1 text-13 text-muted">{sh.can.record ? PP.note : PP.onBehalf}</p></>}
+      {form && <ProposalForm sh={sh} value={form.input} onChange={(input) => setForm({ ...form, input })} error={error} actions={<><button type="button" className={primary} onClick={send}>{PP.send}</button><button type="button" className={btn} onClick={() => { setForm(null); setError(null); }}>{PP.cancel}</button></>} />}
+    </div>
+  );
+}
+
+function ProposalForm({ sh, value: f, onChange, error, actions }: { sh: Pick<ShareView, 'proposalOwners'>; value: ProposalInput; onChange: (v: ProposalInput) => void; error: string | null; actions: React.ReactNode }) {
+  const id = useId();
+  const set = (p: Partial<ProposalInput>) => onChange({ ...f, ...p });
+  return (
+    <div className="mt-2 space-y-3 rounded-lg border border-control p-3">
+      <div><label htmlFor={`${id}-t`} className={label}>{PP.what}</label><input id={`${id}-t`} className={input} value={f.title} onChange={(e) => set({ title: e.target.value })} /></div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div><label htmlFor={`${id}-q`} className={label}>{PP.quantity}</label><input id={`${id}-q`} inputMode="numeric" className={input} value={f.quantity ?? ''} onChange={(e) => set({ quantity: e.target.value.trim() === '' ? null : Number(e.target.value.replace(/[ ,]/g, '')) })} /></div>
+        <div><label htmlFor={`${id}-u`} className={label}>{PP.unit}</label><input id={`${id}-u`} className={input} value={f.unit} onChange={(e) => set({ unit: e.target.value })} /></div>
+        <div><label htmlFor={`${id}-o`} className={label}>{PP.owner}</label><select id={`${id}-o`} className={input} value={f.ownerPositionId} onChange={(e) => set({ ownerPositionId: e.target.value })}>{sh.proposalOwners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</select></div>
+      </div>
+      <div><label htmlFor={`${id}-m`} className={label}>{PP.evidence}</label><input id={`${id}-m`} className={input} value={f.evidence} onChange={(e) => set({ evidence: e.target.value })} /></div>
+      <div><label htmlFor={`${id}-r`} className={label}>{PP.reason}</label><textarea id={`${id}-r`} rows={2} className={`${input} py-2`} value={f.reason} onChange={(e) => set({ reason: e.target.value })} /></div>
+      <fieldset className="space-y-2"><legend className={label}>{PP.level}</legend>
+        {SIX.map((l) => (
+          <label key={l} className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border p-2 ${f.decisionLevel === l ? 'border-navy bg-cascade-tint' : 'border-border'}`}>
+            <input type="radio" className="mt-1 h-5 w-5" name={`${id}-l`} checked={f.decisionLevel === l} onChange={() => set({ decisionLevel: l })} />
+            <span><b className="text-navy">{en.sixP[l]}</b><span className="block text-12"><BookLine line={en.book.sixPLevel[l]} /></span><span className="block text-12 text-muted">{en.explain.covers}: {SIX_P_SCOPE[l]}</span></span>
+          </label>
+        ))}
+      </fieldset>
+      {error && <p role="alert" className="rounded-lg border border-block-text bg-block-bg px-3 py-2 text-13 text-block-text">{error}</p>}
+      <div className="flex flex-wrap gap-2">{actions}</div>
+    </div>
+  );
+}
+
+/** The Strategy office's decisions on proposed work (TG-9, F4). */
+function Decide({ items }: { items: ProposalView[] }) {
+  const { repo, say } = useApp();
+  const [open, setOpen] = useState<string | null>(null);
+  const [edit, setEdit] = useState<ProposalInput | null>(null);
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const id = useId();
+  return (
+    <section className={`${card} mb-4 border-t-4 border-t-performance-mark`} aria-labelledby={`${id}-h`}>
+      <h2 id={`${id}-h`} className="text-18 font-bold text-navy">{PP.decideTitle}</h2>
+      <p className="text-13 text-muted">{PP.decideNote}</p>
+      <ul className="mt-2 divide-y divide-border">{items.map((p) => (
+        <li key={p.id} className="py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span><b className="text-navy">{p.title}</b><span className="block text-13 text-muted">{PP.forShare(p.shareUnit, p.kpi)} · {PP.by(p.by)}</span></span>
+            {open !== p.id && <button type="button" className={primary} onClick={() => { setOpen(p.id); setEdit({ title: p.title, decisionLevel: p.level, quantity: p.quantity?.value ?? null, unit: p.quantity?.unit ?? '', ownerPositionId: p.ownerPositionId, evidence: p.evidence, reason: p.reason }); setError(null); }}>{PP.open}<span className="sr-only">: {p.title}</span></button>}
+          </div>
+          {open === p.id && edit && (
+            <>
+              <p className="mt-2 text-13">{p.reason}</p>
+              <ProposalForm sh={{ proposalOwners: [{ id: p.ownerPositionId, label: p.owner }] }} value={edit} onChange={setEdit} error={error} actions={<button type="button" className={primary} onClick={() => { const r = repo.targets.confirmProposal(p.id, edit); if (!r.ok) setError(PP.errors[r.error] ?? T.errors[r.error] ?? null); else { setOpen(null); say(PP.confirmed(r.code ?? '')); } }}>{PP.confirm}</button>} />
+              <details className="mt-2"><summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-navy">{PP.returnTo}</summary>
+                <label htmlFor={`${id}-rr-${p.id}`} className={label}>{PP.reasonNeeded}</label><textarea id={`${id}-rr-${p.id}`} rows={2} className={`${input} py-2`} value={reason} onChange={(e) => setReason(e.target.value)} />
+                <div className="mt-2"><button type="button" className={btn} onClick={() => { const r = repo.targets.returnProposal(p.id, reason); if (r.ok) { setOpen(null); setReason(''); say(PP.returnedToast); } else setError(T.errors[r.error] ?? null); }}>{PP.returnDo}</button></div>
+              </details>
+            </>
+          )}
+        </li>
+      ))}</ul>
+    </section>
+  );
+}
+
+/** What a share depends on: an activity or another share (section 5). */
+function Depends({ sh }: { sh: ShareView }) {
+  const { repo, say } = useApp();
+  const id = useId();
+  const D = T.deps;
+  const [on, setOn] = useState(sh.dependOptions[0]?.id ?? '');
+  const [by, setBy] = useState('');
+  const [note, setNote] = useState('');
+  const [adding, setAdding] = useState(false);
+  return (
+    <section className={`${card} mt-3`} aria-labelledby={`${id}-h`}>
+      <h3 id={`${id}-h`} className="text-16 font-bold text-navy">{D.title}</h3>
+      {sh.deps.length === 0 ? <p className="text-14 text-muted">{D.none}</p> : (
+        <ul className="divide-y divide-border">{sh.deps.map((d) => (
+          <li key={d.id} className="flex flex-wrap items-start justify-between gap-2 py-2">
+            <span><b className="text-navy">{d.on}</b><span className="block text-13 text-muted">{D.owner(d.owner || '—')} · {D.by(formatDate(d.neededBy))}{d.note ? ` · ${d.note}` : ''}</span>
+              {d.flags.map((f) => <span key={f} className="mt-1 block rounded-lg border border-advisory-border bg-advisory-bg px-2 py-1 text-13 text-advisory-text">{f}</span>)}</span>
+            {sh.can.depend && <button type="button" className={btn} onClick={() => { const r = repo.targets.removeDependency(d.id); say(r.ok ? D.removed : null); }}>{D.remove}<span className="sr-only">: {d.on}</span></button>}
+          </li>
+        ))}</ul>
+      )}
+      {sh.can.depend && !adding && <button type="button" className={`${btn} mt-2`} onClick={() => setAdding(true)}>{D.add}</button>}
+      {adding && (
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+          <div className="sm:col-span-3"><label htmlFor={`${id}-on`} className={label}>{D.which}</label><select id={`${id}-on`} className={input} value={on} onChange={(e) => setOn(e.target.value)}>
+            <optgroup label={D.activities}>{sh.dependOptions.filter((o) => o.kind === 'activity').map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</optgroup>
+            <optgroup label={D.shares}>{sh.dependOptions.filter((o) => o.kind === 'share').map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</optgroup>
+          </select></div>
+          <div><label htmlFor={`${id}-by`} className={label}>{D.neededBy}</label><input id={`${id}-by`} type="date" className={input} value={by} onChange={(e) => setBy(e.target.value)} /></div>
+          <div className="sm:col-span-2"><label htmlFor={`${id}-n`} className={label}>{D.note}</label><input id={`${id}-n`} className={input} value={note} onChange={(e) => setNote(e.target.value)} /></div>
+          <div className="flex flex-wrap gap-2 sm:col-span-3">
+            <button type="button" className={primary} onClick={() => { const r = repo.targets.addDependency(sh.id, on, by, note); if (r.ok) { setAdding(false); setNote(''); say(D.added); } else say(r.error === 'circle' ? D.circle : T.errors[r.error] ?? null); }}>{D.save}</button>
+            <button type="button" className={btn} onClick={() => setAdding(false)}>{PP.cancel}</button>
+          </div>
+        </div>
+      )}
+      <p className="mt-2 text-13 text-muted">{D.note2}</p>
+    </section>
   );
 }

@@ -11,7 +11,7 @@ import { identity } from '../components/identity';
 import { ProgressBar } from '../components/Status';
 import { EntryRow } from '../components/SubMenu';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
-import type { ObjectiveCard, RowState, UpdateRow, VerifyCard } from '../data/access/progress';
+import type { ObjectiveCard, ProgressPage, RowState, UpdateRow, VerifyCard } from '../data/access/progress';
 import type { NodeRef } from '../selectors/node';
 import { formatDate, formatDateTime, formatFinancialYear, formatNumber } from '../selectors/format';
 import { en } from '../strings/en';
@@ -168,7 +168,7 @@ export function ProgressUpdates({ tab, objectiveId }: { tab?: 'mine' | 'verify';
             <a key={k} href={hrefFor({ kind: 'progress', tab: k })} aria-current={on === k ? 'page' : undefined}
               className={`-mb-px inline-flex min-h-11 items-center gap-2 border-b-4 px-3 text-14 ${on === k ? 'border-navy font-bold text-navy' : 'border-transparent text-muted hover:text-navy'}`}>
               {C.tabs[k]}
-              {k === 'verify' && p.verify && p.verify.length > 0 && <span className="tabular rounded-full bg-navy px-2 text-12 font-semibold text-white">{p.verify.length}</span>}
+              {k === 'verify' && p.verify && p.verify.length + p.shareReadings.length > 0 && <span className="tabular rounded-full bg-navy px-2 text-12 font-semibold text-white">{p.verify.length + p.shareReadings.length}</span>}
             </a>
           ))}
         </nav>
@@ -391,9 +391,43 @@ function ToVerify() {
           <p className="mt-1 text-13 text-muted">{C.queuedNote}</p>
         </section>
       )}
-      {list.length === 0 ? <div className={plainCard}><p className="text-14 text-muted">{C.verifyEmpty}</p></div>
+      {list.length === 0 && p.shareReadings.length === 0 ? <div className={plainCard}><p className="text-14 text-muted">{C.verifyEmpty}</p></div>
         : list.map((c) => <VerifyItem key={c.id} c={c} />)}
+      {p.shareReadings.map((r) => <ShareVerifyItem key={r.id} r={r} />)}
     </div>
+  );
+}
+
+/** v0.25.0 (F6): a share reading, verified here with contract updates; the same Verify and Return as on the share page. */
+function ShareVerifyItem({ r }: { r: ProgressPage['shareReadings'][number] }) {
+  const { repo, say } = useApp();
+  const id = useId();
+  const [returning, setReturning] = useState(false);
+  const [reason, setReason] = useState('');
+  const S = en.targets;
+  const done = (x: { ok: boolean; error?: string }, ok: string) => say(x.ok ? ok : S.errors[x.error ?? 'not_allowed'] ?? null);
+  return (
+    <section className={plainCard} aria-labelledby={`${id}-h`}>
+      <p className="text-12"><span className="rounded-md bg-cascade-tint px-2 py-0.5 font-semibold text-cascade-text">{C.shareOf(r.kpi.split(' ')[0] ?? '')}</span></p>
+      <h3 id={`${id}-h`} className="mt-1 text-16 font-bold text-navy">{r.person ? `${r.person}, ` : ''}{r.unit}</h3>
+      <p className="tabular text-14">{C.shareLine(r.kpi, `${fig(r.value)}${r.kpiUnit}`, C.periodName('monthly', r.periodEnd), `${fig(r.target)}${r.kpiUnit}`)}</p>
+      {r.savedOffline && <p className="text-13 text-muted">{C.savedOfflineNote}</p>}
+      {!returning ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" className={primary} onClick={() => done(repo.targets.verify(r.id), S.toasts.verified)}>{C.verify}<span className="sr-only">: {r.unit}</span></button>
+          <button type="button" className={button} onClick={() => setReturning(true)}>{S.share.return}<span className="sr-only">: {r.unit}</span></button>
+        </div>
+      ) : (
+        <div className="mt-2">
+          <label htmlFor={`${id}-r`} className="text-14 font-semibold text-navy">{S.share.reason}</label>
+          <textarea id={`${id}-r`} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1 w-full rounded-lg border border-control px-3 py-2 text-14" />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className={primary} onClick={() => done(repo.targets.returnReading(r.id, reason), S.toasts.returned)}>{S.share.return}</button>
+            <button type="button" className={button} onClick={() => setReturning(false)}>{S.page.cancel}</button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

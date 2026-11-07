@@ -20,6 +20,7 @@ import type { NeedsYouItem } from '../../selectors/needs-you';
 import { en } from '../../strings/en';
 import { can } from './permissions';
 import type { Device, DeviceDecision, DeviceUpdate } from './device';
+import { fromShares } from '../../rules/targets';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
 
@@ -117,6 +118,8 @@ export interface ProgressPage {
   };
   /** Null when this viewer verifies nobody's updates this year. */
   verify: VerifyCard[] | null;
+  /** v0.25.0 (F6): share readings waiting for this viewer, verified here with contract updates. */
+  shareReadings: { id: string; shareId: string; person: string; unit: string; kpi: string; periodEnd: ISODate; value: number; kpiUnit: string; target: number; savedOffline: boolean }[];
   queued: { id: string; decision: 'verify' | 'return'; quantityDone: number | null; unit: string; periodEnd: ISODate; frequency: ReportingFrequency }[];
   notices: { id: string; periodEnd: ISODate; quantityDone: number | null; unit: string; frequency: ReportingFrequency; person: string }[];
   /** Mine when an update is due or returned, otherwise To verify (section 39). */
@@ -134,7 +137,7 @@ export interface SendResult { sent: number; failed: number; decisions: number; n
 
 export type SaveError = 'not_found' | 'not_allowed' | 'figure_required' | 'figure_invalid' | 'reason_required' | 'period_invalid' | 'locked';
 export type DecideError = 'not_found' | 'not_allowed' | 'already_decided' | 'return_reason';
-export type RecordError = 'not_found' | 'not_allowed' | 'figure_required' | 'figure_invalid' | 'period_invalid' | 'offline';
+export type RecordError = 'not_found' | 'not_allowed' | 'figure_required' | 'figure_invalid' | 'period_invalid' | 'offline' | 'from_shares';
 
 export interface RecordForm {
   periods: ISODate[];
@@ -145,6 +148,8 @@ export interface RecordForm {
   latest: { value: number | null; periodEnd: ISODate } | null;
   /** Activity pages only (OP-12): the verified total of the contract objectives drawn from it, for reference. */
   contractTotal: { value: number; unit: string } | null;
+  /** v0.25.0 (F2): the KPI's figure comes from its shares this year, so its own readings are closed. */
+  fromShares?: boolean;
 }
 
 export interface ProgressAccess {
@@ -325,9 +330,26 @@ export function createProgressAccess(c: Ctx): ProgressAccess {
       });
   };
 
+  /** F6: share readings this viewer verifies (the owner's supervisor; never their own). */
+  const shareCards = (): ProgressPage['shareReadings'] => s.shareReadings
+    .filter((r) => {
+      const sh = s.kpiShares.find((x) => x.id === r.shareId);
+      const sup = s.positions.find((p) => p.id === sh?.ownerPositionId)?.reportsToPositionId;
+      return !!sh && !r.verified && !r.returned && !!sup && v.positionIds.includes(sup) && r.created.byMembershipId !== v.membershipId;
+    })
+    .sort((a, b) => (a.created.at < b.created.at ? -1 : 1))
+    .map((r) => {
+      const sh = s.kpiShares.find((x) => x.id === r.shareId)!;
+      const b = s.kpiBreakdowns.find((x) => x.id === sh.breakdownId);
+      const k = s.kpis.find((x) => x.id === b?.kpiId);
+      const a = s.assignments.find((x) => x.positionId === sh.ownerPositionId && x.from <= now && (x.to === null || x.to >= now));
+      return { id: r.id, shareId: sh.id, person: s.people.find((p) => p.id === a?.personId)?.fullName ?? '', unit: s.units.find((u) => u.id === sh.unitId)?.name ?? '', kpi: k ? `${k.code} ${k.name}` : '', periodEnd: r.periodEnd, value: r.value, kpiUnit: k?.unit ?? '', target: sh.target, savedOffline: r.savedOffline };
+    });
+
   const page = (): ProgressPage => {
     const m = mineView();
-    const verify = verifyCards();
+    const shares = shareCards();
+    const verify = verifyCards() ?? (shares.length ? [] : null);
     const unitFor = (coId: string) => {
       const co = s.contractObjectives.find((x) => x.id === coId);
       return co ? { unit: unitOf(co), frequency: frequencyOf(s, co) } : { unit: '', frequency: 'monthly' as ReportingFrequency };
@@ -338,6 +360,7 @@ export function createProgressAccess(c: Ctx): ProgressAccess {
       yearStart: financialYearBounds(fy, startMonth).start,
       mine: m,
       verify,
+      shareReadings: shares,
       queued: myDecisions().map((d) => {
         const u = s.progressUpdates.find((x) => x.id === d.updateId);
         return { id: d.id, decision: d.decision, quantityDone: u?.quantityDone ?? null, periodEnd: u?.periodEnd ?? now, ...unitFor(u?.contractObjectiveId ?? '') };
@@ -477,6 +500,7 @@ export function createProgressAccess(c: Ctx): ProgressAccess {
       periods: recordPeriods(k.reportingFrequency), frequency: k.reportingFrequency, unit: k.unit,
       recorded: Object.fromEntries(recs.map((x) => [x.periodEnd, x.value])),
       latest: latest ? { value: latest.value, periodEnd: latest.periodEnd } : null, contractTotal: null,
+      fromShares: !!fromShares(s, k.id, fy as never, start, now),
     };
   };
 
@@ -586,6 +610,7 @@ export function createProgressAccess(c: Ctx): ProgressAccess {
     recordKpi(kpiId, periodEnd, value) {
       const form = kpiForm(kpiId);
       if (!form) return { ok: false, error: s.kpis.some((k) => k.id === kpiId) ? 'not_allowed' : 'not_found' };
+      if (form.fromShares) return { ok: false, error: 'from_shares' };
       if (isOffline()) return { ok: false, error: 'offline' };
       if (!form.periods.includes(periodEnd as ISODate)) return { ok: false, error: 'period_invalid' };
       if (!value.trim()) return { ok: false, error: 'figure_required' };

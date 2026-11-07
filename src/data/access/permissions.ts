@@ -63,6 +63,15 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
         const ap = s.activityProgress.find((x) => x.id === subject.id);
         return mine(s.activities.find((a) => a.id === (ap ? ap.activityId : subject.id))?.ownerPositionId);
       }
+      // v1.17 (TG-9): a proposal (by its id, or the share's before one exists) belongs to the share's owner.
+      if (subject.type === 'ActivityProposal') return mine(proposalShare(s, subject.id)?.ownerPositionId);
+      // v0.25.0: a dependency from a share (by its id, or the share's) belongs to the share's owner and the KPI's owner.
+      if (subject.type === 'Dependency') {
+        const d = s.dependencies.find((x) => x.id === subject.id);
+        const shareId = d ? ('shareId' in d.from ? (d.from as { shareId: string }).shareId : null) : subject.id;
+        const sh = s.kpiShares.find((x) => x.id === shareId);
+        if (sh) { const kpiId = s.kpiBreakdowns.find((b) => b.id === sh.breakdownId)?.kpiId; return mine(sh.ownerPositionId) || mine(s.kpis.find((k) => k.id === kpiId)?.ownerPositionId); }
+      }
       if (subject.type === 'KpiActual') {
         const ka = s.kpiActuals.find((x) => x.id === subject.id);
         return mine(s.kpis.find((k) => k.id === (ka ? ka.kpiId : subject.id))?.ownerPositionId);
@@ -73,6 +82,11 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
       return mine(rec?.ownerPositionId);
     }
     case 'objective_owner': {
+      if (subject.type === 'ActivityProposal') {
+        const sh = proposalShare(s, subject.id);
+        const kpiId = sh && s.kpiBreakdowns.find((b) => b.id === sh.breakdownId)?.kpiId;
+        return mine(s.objectives.find((o) => o.id === s.kpis.find((k) => k.id === kpiId)?.objectiveId)?.ownerPositionId);
+      }
       const a = s.activities.find((x) => x.id === subject.id);
       if (a) return mine(objectiveOfActivity(s, a)?.ownerPositionId);
       const df = s.deficiencies.find((x) => x.id === subject.id);
@@ -103,6 +117,8 @@ function holds(s: Store, v: Viewer, principal: Principal, subject: Subject): boo
     case 'self':
       return contractOf(s, subject)?.personId === v.personId;
     case 'supervisor': {
+      // v1.17: a share owner's supervisor may propose on their behalf.
+      if (subject.type === 'ActivityProposal') return mine(s.positions.find((p) => p.id === proposalShare(s, subject.id)?.ownerPositionId)?.reportsToPositionId);
       const c = contractOf(s, subject);
       // v1.10 (OP-6): for progress updates the supervisor is whoever verifies: the position reported to, or the next
       // one up when it is vacant or held by the employee. Nobody verifies their own update.
@@ -164,4 +180,10 @@ export function canTakeBudgetStep(v: Viewer, step: 'submit' | 'approve' | 'retur
   if (step === 'submit') return v.roles.includes('finance');
   const approvers = (PERMISSIONS.BudgetLine?.approve ?? []) as Principal[];
   return approvers.some((p) => (v.roles as Principal[]).includes(p));
+}
+
+/** v1.17: the share a proposal (or, before one exists, the share itself) belongs to. */
+function proposalShare(s: Store, id: string) {
+  const p = s.activityProposals.find((x) => x.id === id);
+  return s.kpiShares.find((x) => x.id === (p ? p.shareId : id));
 }
