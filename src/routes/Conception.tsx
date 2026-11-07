@@ -4,14 +4,14 @@
  * documents and AI-drafted cards, consolidation, and vision and mission with their confirmation. Behaviour from the
  * approved Strategy workspace prototype (`reference/caspa-strategy-prototype.html`).
  */
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '../components/AppContext';
-import { BookLine, Explain } from '../components/Explain';
+import { BookLine, Explain, SixPChip } from '../components/Explain';
 import { Dialog } from '../components/Dialog';
-import type { CardView, ConceptionPage, DepartmentView } from '../data/access/conception';
-import type { FourQCell, SourceDocument } from '../contract/caspa-data-contract';
-import { BANDS, CELLS, cellKey, cellOfKey } from '../rules/conception';
-import { formatDate, formatNumber } from '../selectors/format';
+import type { CandidateFigures, CardView, ConceptionPage, DepartmentView } from '../data/access/conception';
+import { SIX_P_SCOPE, type FourQCell, type SixPLevel, type SourceDocument } from '../contract/caspa-data-contract';
+import { BANDS, CELLS, cellKey, cellOfKey, SIX_P_ORDER as SIX_P_LEVELS } from '../rules/conception';
+import { formatDate, formatNumber, formatPercent } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, input, label, plural, primary } from './organisation/ui';
 
@@ -54,6 +54,9 @@ export function Card({ c, large = false, onDone }: { c: CardView; large?: boolea
       <span className={`${large ? 'text-14' : 'text-12'} text-muted`}>
         {c.units.length ? `${C.card.from(en.list(c.units))}. ` : ''}{c.source}.{c.evidence ? ` ${C.card.evidence(c.evidence)}.` : ''}
       </span>
+      {c.basis && <Figures f={c.basis} />}
+      {c.carriesLevel && !large && <CauseLevel c={c} />}
+      {c.carriesLevel && large && c.causeLevel && <span className="text-14 text-white">{C.cause.label}: {en.sixP[c.causeLevel]}</span>}
       <span className="flex flex-wrap items-center gap-2">
         <StateChip state={c.state} />
         {c.merged > 0 && <span className="text-12 text-muted">{C.card.merged(formatNumber(c.merged))}</span>}
@@ -66,6 +69,125 @@ export function Card({ c, large = false, onDone }: { c: CardView; large?: boolea
         </div>
       )}
     </div>
+  );
+}
+
+/* ───────── v0.24.0: where a cause sits, and figures shown live (4Q Enhancement Specification v0.1) ───────── */
+
+/** A critical failure factor's cause level: chosen from the six levels, each with its book line and scope; optional. */
+function CauseLevel({ c }: { c: CardView }) {
+  const { repo, say } = useApp();
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const set = (l: SixPLevel | null) => { const r = repo.conception.setCauseLevel(c.id, l); say(r.ok ? (l ? C.cause.set(en.sixP[l]) : C.cause.cleared) : null); setOpen(false); };
+  return (
+    <div className="border-t border-border pt-2">
+      <span className="text-12 text-muted">{C.cause.label}: </span>
+      {c.causeLevel ? <SixPChip level={c.causeLevel} scope={SIX_P_SCOPE[c.causeLevel]} /> : <span className="text-13 text-muted">{C.cause.notSet}</span>}
+      {c.canDecide && <button type="button" className={`${btn} ml-2`} aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{C.cause.change}<span className="sr-only">: {c.text}</span></button>}
+      {open && (
+        <fieldset id={id} className="mt-2 space-y-2">
+          <legend className="text-13 font-semibold text-navy">{C.cause.label}</legend>
+          {SIX_P_LEVELS.map((l) => (
+            <label key={l} className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border p-2 ${c.causeLevel === l ? 'border-navy bg-cascade-tint' : 'border-border'}`}>
+              <input type="radio" className="mt-1 h-5 w-5" name={id} checked={c.causeLevel === l} onChange={() => set(l)} />
+              <span><b className="text-navy">{en.sixP[l]}</b><span className="block text-12"><BookLine line={en.book.sixPLevel[l]} /></span><span className="block text-12 text-muted">{en.explain.covers}: {SIX_P_SCOPE[l]}</span></span>
+            </label>
+          ))}
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border p-2"><input type="radio" className="h-5 w-5" name={id} checked={!c.causeLevel} onChange={() => set(null)} />{C.cause.notSet}</label>
+        </fieldset>
+      )}
+    </div>
+  );
+}
+
+/** Figures from the record a suggestion came from: live, never copied into the card. */
+function Figures({ f }: { f: CandidateFigures }) {
+  if (f.kind === 'deficiency') return <span className="text-12 text-muted">{C.suggest.fromMap(f.objective ?? '')}{f.outcome === 'unaddressed' ? ` · ${C.suggest.noCorrective}` : ''}</span>;
+  return (
+    <span className="tabular flex flex-wrap gap-x-3 text-12 text-muted">
+      <span>{f.code}</span>
+      {f.actual !== null && <span>{C.suggest.actual} <b className="text-navy">{formatNumber(f.actual)}</b></span>}
+      {f.target !== null && <span>{C.suggest.target} <b className="text-navy">{formatNumber(f.target)}</b></span>}
+      {f.progress !== null && f.outcome !== 'target_met' && f.outcome !== 'target_not_met' && <span>{C.suggest.progress} <b className="text-navy">{formatPercent(f.progress)}</b></span>}
+      {f.outcome && f.outcome !== 'unaddressed' && <span className="font-semibold text-navy">{en.status[f.outcome as keyof typeof en.status] ?? C.suggest.outcome[f.outcome]}</span>}
+    </span>
+  );
+}
+
+/** "Suggested from your results": candidate cards for each sheet this person may add to (Part B). */
+function Suggestions({ c, unitId }: { c: ConceptionPage; unitId: string | null | 'all' }) {
+  const { repo, say } = useApp();
+  const sheets = c.candidates.filter((x) => unitId === 'all' || x.unitId === unitId);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [text, setText] = useState('');
+  const [note, setNote] = useState<string | null>(null);
+  if (!sheets.length) return null;
+  const add = async (key: string, words?: string) => {
+    const r = await repo.conception.acceptCandidate(key, words);
+    if (!r.ok) { say(C.suggest.failed); return; }
+    setEditing(null);
+    setNote(r.mayRepeat ? C.suggest.mayRepeat(r.mayRepeat) : null);
+    say(C.suggest.added);
+  };
+  return (
+    <section className={`${card} border-t-4 border-t-strategy-mark`} aria-labelledby="sg-h">
+      <h3 id="sg-h" className="text-16 font-bold text-navy">{C.suggest.title}</h3>
+      <p className="text-13 text-muted">{C.suggest.intro(sheets[0]!.source)}</p>
+      {note && <p role="status" className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-13 text-advisory-text">{note}</p>}
+      {sheets.map((sh) => (
+        <div key={sh.unitId ?? 'none'} className="mt-3">
+          {(unitId === 'all' || sheets.length > 1) && <h4 className="text-14 font-semibold text-navy">{sh.name}</h4>}
+          {sh.unitId === null && <p className="text-12 text-muted">{C.suggest.noOwnerNote}</p>}
+          <ul className="divide-y divide-border">
+            {sh.open.map((x) => (
+              <li key={x.key} className="grid gap-2 py-3 md:grid-cols-[11rem_minmax(0,1fr)_auto]">
+                <span><span className="rounded-md bg-info-bg px-2 py-0.5 text-12 font-semibold text-navy">{en.fourQ.band[x.cell.band]}</span><span className="mt-1 block text-12 font-semibold text-navy">{en.fourQ.cellName(x.cell)}</span></span>
+                <span className="flex flex-col gap-1">
+                  {editing === x.key ? (
+                    <><label htmlFor={`sg-${x.key}`} className={label}>{C.card.text}</label><textarea id={`sg-${x.key}`} rows={2} className={`${input} py-2`} value={text} onChange={(e) => setText(e.target.value)} /><span className="text-12 text-muted">{C.suggest.noFigures}</span></>
+                  ) : <span className="text-14 font-semibold text-navy">{x.text}</span>}
+                  <Figures f={x.figures} />
+                  {x.level && <span className="text-12">{C.cause.label}: <b className="text-cascade-text">{en.sixP[x.level]}</b> {C.suggest.levelCarried}</span>}
+                </span>
+                <span className="flex flex-wrap gap-2 md:justify-end">
+                  {editing === x.key
+                    ? <><button type="button" className={primary} onClick={() => void add(x.key, text)}>{C.suggest.add}</button><button type="button" className={btn} onClick={() => setEditing(null)}>{C.card.cancel}</button></>
+                    : <><button type="button" className={primary} onClick={() => void add(x.key)}>{C.suggest.add}<span className="sr-only">: {x.text}</span></button>
+                      <button type="button" className={btn} onClick={() => { setEditing(x.key); setText(x.text); }}>{C.suggest.edit}<span className="sr-only">: {x.text}</span></button>
+                      <button type="button" className={btn} onClick={() => { repo.conception.dismissCandidate(x.key); say(C.suggest.dismissed); }}>{C.suggest.dismiss}<span className="sr-only">: {x.text}</span></button></>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {sh.open.length === 0 && <p className="text-13 text-muted">{C.suggest.allDone}</p>}
+          {sh.dismissed.length > 0 && (
+            <details className="mt-1"><summary className="inline-flex min-h-11 cursor-pointer items-center text-14 font-semibold text-navy">{C.suggest.showDismissed(sh.dismissed.length)}</summary>
+              <ul>{sh.dismissed.map((x) => <li key={x.key} className="flex flex-wrap items-center justify-between gap-2 border-t border-border py-2 text-14"><span>{x.text}</span><button type="button" className={btn} onClick={() => repo.conception.restoreCandidate(x.key)}>{C.suggest.restore}<span className="sr-only">: {x.text}</span></button></li>)}</ul>
+            </details>
+          )}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/** "Where the causes sit": a count by level, never a check (A3). */
+function Causes({ c, dark = false }: { c: ConceptionPage; dark?: boolean }) {
+  const k = c.causes;
+  if (!k.total) return null;
+  const set = SIX_P_LEVELS.filter((l) => k.counts[l] > 0);
+  const none = SIX_P_LEVELS.filter((l) => k.counts[l] === 0);
+  return (
+    <section aria-labelledby="causes-h" className={`rounded-xl border-l-4 border-l-cascade-mark p-4 ${dark ? 'bg-white' : 'border border-border bg-white'}`}>
+      <h4 id="causes-h" className="text-16 font-bold text-navy">{C.cause.title}</h4>
+      <p className="tabular mt-1 flex flex-wrap items-center gap-x-4 text-14">
+        {set.map((l) => <span key={l} className="inline-flex items-center gap-1"><SixPChip level={l} scope={SIX_P_SCOPE[l]} /> {formatNumber(k.counts[l])}</span>)}
+        <span className="text-muted">{C.cause.notSetCount(formatNumber(k.notSet))}</span>
+      </p>
+      {none.length > 0 && <p className="text-13 text-muted">{C.cause.noneAt(en.list(none.map((l) => en.sixP[l])))}</p>}
+      <p className="text-12 text-muted">{C.cause.note(formatNumber(k.total))}</p>
+    </section>
   );
 }
 
@@ -128,7 +250,9 @@ function BoardBands({ c, focus, large = false }: { c: ConceptionPage; focus: Ban
   return (
     <>
       {BANDS.filter((b) => focus === 'all' || focus === b).map((b) => (
-        <section key={b} aria-label={en.fourQ.band[b]} className={`rounded-xl p-4 ${large ? 'bg-text' : 'border border-border bg-cream'}`}>
+        <Fragment key={b}>
+        {b === 'projection' && <Causes c={c} dark={large} />}
+        <section aria-label={en.fourQ.band[b]} className={`rounded-xl p-4 ${large ? 'bg-text' : 'border border-border bg-cream'}`}>
           <BandTitle band={b} dark={large} />
           <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2 xl:grid-cols-4">
             {c.board.filter((x) => x.cell.band === b).map((x) => (
@@ -140,7 +264,9 @@ function BoardBands({ c, focus, large = false }: { c: ConceptionPage; focus: Ban
             ))}
           </div>
         </section>
+        </Fragment>
       ))}
+      {focus === 'repositioning' && <Causes c={c} dark={large} />}
     </>
   );
 }
@@ -178,6 +304,7 @@ export function Board({ c, openVision }: { c: ConceptionPage; openVision: () => 
         <div className="mt-3"><FocusPicker focus={focus} setFocus={setFocus} /></div>
       </div>
       <BoardBands c={c} focus={focus} />
+      {c.canCurate && <Suggestions c={c} unitId="all" />}
       {c.canCurate && <Duplicates c={c} />}
       {c.canCurate && <AddCard unitId={null} title={C.add.title} intro={C.add.intro} idPrefix="board" />}
       {c.seesAll && <DepartmentSheets c={c} />}
@@ -361,6 +488,7 @@ function Department({ c, d }: { c: ConceptionPage; d: DepartmentView }) {
           <Step n={5} title={M.steps.objectives} state={M.later(en.formation.stage.composition!)} done={false} later />
         </ol>
       </div>
+      <Suggestions c={c} unitId={d.unitId} />
       {c.aiEnabled && !d.interviewed && <Interview unitId={d.unitId} unit={d.name} />}
       <section className={card} aria-labelledby={`cards-${d.unitId}`}>
         <h3 id={`cards-${d.unitId}`} className="text-16 font-bold text-navy">{M.cardsTitle(d.name)}</h3>

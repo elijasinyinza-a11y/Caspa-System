@@ -534,6 +534,7 @@ function Rows({ c, o, act }: { c: ComposerPage; o: ObjectiveView; act: Act }) {
       <p className="text-13 text-muted">{K.rows.text}</p>
       {o.rows.length === 0 && <p className="mt-1 text-13 text-muted">{K.rows.none}</p>}
       <ul className="mt-2 flex flex-col gap-2">{o.rows.map((r) => <Row key={r.id} c={c} o={o} r={r} act={act} />)}</ul>
+      {o.factors && o.factors.length > 0 && <FromCards o={o} act={act} />}
       {o.canEditRows && !adding && (
         <Buttons>
           <button type="button" className={btn} onClick={() => setAdding(true)}>{K.rows.add}</button>
@@ -556,6 +557,46 @@ function Rows({ c, o, act }: { c: ComposerPage; o: ObjectiveView; act: Act }) {
   );
 }
 
+/** v0.24.0 (A): linked critical failure factors become decision-map rows, keeping their level and a link to the card. */
+function FromCards({ o, act }: { o: ObjectiveView; act: Act }) {
+  const cp = useApp().repo.composition;
+  const [open, setOpen] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [level, setLevel] = useState<SixPLevel | ''>('');
+  const F = K.rows.fromCards;
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-cream p-3">
+      <h5 className="text-14 font-semibold text-navy">{F.title}</h5>
+      <ul className="mt-1 flex flex-col gap-2">{o.factors!.map((f) => (
+        <li key={f.id} className="rounded-lg border border-border bg-white p-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="min-w-0"><span className="text-14">{f.text}</span><span className="block text-12 text-muted">{F.where(en.fourQ.band[f.band])} · {f.level ? F.level(en.sixP[f.level]) : F.noLevel}</span></span>
+            {f.rowId ? <Chip tone="complete">{F.added}</Chip> : o.canEditRows && open !== f.id && <button type="button" className={primary} onClick={() => { setOpen(f.id); setDescription(f.text); setLevel(f.level ?? ''); }}>{F.add}<span className="sr-only">: {f.text}</span></button>}
+          </div>
+          {open === f.id && (
+            <div className="mt-2">
+              {!f.level && <p className="rounded-lg bg-info-bg px-3 py-2 text-13">{F.needLevel}</p>}
+              <div className="mt-2 flex flex-wrap gap-3">
+                <Field id={`fc-${f.id}-d`} text={K.rows.description}><input id={`fc-${f.id}-d`} className={input} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+                <Field id={`fc-${f.id}-l`} text={K.rows.level}>
+                  <select id={`fc-${f.id}-l`} className={input} value={level} onChange={(e) => setLevel(e.target.value as SixPLevel)}>
+                    {!f.level && <option value="">{F.choose}</option>}
+                    {SIX_P_LEVELS.map((l) => <option key={l} value={l}>{en.sixP[l]}</option>)}
+                  </select>
+                </Field>
+              </div>
+              <Buttons>
+                <button type="button" className={primary} onClick={() => act(cp.addRowFromCard(o.id, f.id, { description, level: level || null }), () => { setOpen(null); return F.done; })}>{F.save}</button>
+                <button type="button" className={btn} onClick={() => setOpen(null)}>{K.cancel}</button>
+              </Buttons>
+            </div>
+          )}
+        </li>
+      ))}</ul>
+    </div>
+  );
+}
+
 const LevelSelect = ({ id, value, onChange }: { id: string; value: SixPLevel; onChange: (l: SixPLevel) => void }) => (
   <select id={id} className={input} value={value} onChange={(e) => onChange(e.target.value as SixPLevel)}>
     {SIX_P_LEVELS.map((l) => <option key={l} value={l}>{en.sixP[l]}</option>)}
@@ -571,6 +612,7 @@ function Row({ c, o, r, act }: { c: ComposerPage; o: ObjectiveView; r: RowView; 
   return (
     <li className="rounded-lg border border-border bg-white p-3">
       <div className="flex flex-wrap items-center gap-2"><SixPChip level={r.level} /><span className="text-14">{r.description}</span>{r.draft && <Chip tone="advisory">{K.status.aiDraft}</Chip>}</div>
+      {r.fromCard && <p className="text-12 text-muted">{K.rows.fromCards.source(en.fourQ.band[r.fromCard])}</p>}
       {r.corrective.length === 0 ? <p className="mt-1 text-13 text-advisory-text">{K.rows.noCorrective}</p> : (
         <ul className="mt-1">{r.corrective.map((a) => (
           <li key={a.id} className="flex flex-wrap items-center gap-2 text-13">
