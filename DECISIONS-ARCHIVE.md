@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36, 38 to 44 and 46 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36, 38 to 44, 46 and 47 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -446,3 +446,21 @@ Source: the *CASPA™ Contracts Specification v0.1* (a doc in the Project's chat
 - **Sample data:** Esther Banda's FY2026 draft, drafted by the Commercial Manager, with the problems the checks catch and a dependency on the meter management policy.
 - **Not built in v0.22.0:** dependencies from a share (the record allows them; only contract objectives have a screen), and choosing a share as the thing depended on.
 - **Delivered:** built as v0.22.0 (6 November 2026).
+
+## 47. Decisions on the scoring policy, personal attributes and printouts, slice 18 (6 November 2026)
+
+Source: *CASPA™ Scoring Policy and Personal Attributes Specification v0.1* (a doc in the Project's chats), every decision accepted as recommended by Elijah on 6 November 2026, and the printed samples he approved the same day. Contract v1.15, fields only. Built as v0.23.0.
+
+- **A1, who sets it:** HR drafts the scoring policy for the next financial year on Performance › Reviews › Scoring policy; the Executive approves or returns it with a reason (the existing RatingScheme row). The policy in force is never edited. The Executive gains a Reviews entry showing only this tab, never anyone's review or score.
+- **A2, two methods:** "Bands then average" (R1–R4, unchanged, the default) and "Weighted points": each objective earns weight × achievement, totalled as a percentage, and the overall share is placed in a level. Achievement is always shown as measured.
+- **The limit:** "Most an objective can earn" (100%, 110%, 120%, 150% or none) applies to what counts, never to what is shown, so a large overachievement on one objective cannot offset a shortfall on another (standard practice; Elijah, 6 November 2026, after the printed samples). Default 100% for weighted points, none for bands; changing the method resets thresholds and limit to that method's defaults.
+- **A3:** five levels, names and thresholds editable. Checks before sending: names, thresholds rising level by level, levels a limit makes unreachable, attributes 1–30%, three to eight attributes, each complete.
+- **A4:** lower-is-better achievement is target ÷ figure (already RV-1, 5 November 2026).
+- **A5, period targets:** stored per contract objective for review periods before year end (mid-year, or the first three quarters); a review uses its period's target where one is stored, otherwise the full-year target.
+- **A6:** sample thresholds for weighted points: 90, 80, 70, 60.
+- **B1–B3, personal attributes:** one set for the organisation, 1–30% of the result, three to eight, each with what it measures and five level descriptions. Shown on every contract under that policy and fixed with it at signature. The employee may add their own score; the supervisor scores each with a comment, required before completing; a self-score never counts. The supervisor's scores reach the employee once the review is completed. Sample names: Teamwork, Time keeping, Customer focus, Integrity and accountability, Attendance; descriptions in general terms, not copied from any organisation's form.
+- **Policy per contract:** a signed contract keeps the policy in force when both signed (`PerformanceContract.ratingSchemeId`); otherwise the latest approved policy for its year, then the one in force.
+- **C1** means of verification per objective, set when drafting, printed. **C2** self-score per objective computed from the employee's own reported figures (no field). **C3** "Next-level reviewer countersigns every review" as a policy setting, off by default; countersigning agrees, or disagrees with reasons. **C4** contributions outside the contract and **C5** recommendations and follow-up: optional supervisor notes, never scored. **C6** no chief executive review (Elijah: a chief executive cannot review every contract; reviews stay between appraisee, appraiser and the next-level reviewer when required). **C7** employee number (`Membership.employeeNumber`, an optional last column in the setup spreadsheet) and date appointed to the post on printouts; grade left out.
+- **Printouts:** a printed contract and a printed assessment, A4 landscape, in tables (`#/print/contract/<id>`, `#/print/review/<id>`). The record in CASPA™ is the authority; nothing records that paper was signed. The assessment shows full-year and period targets, weight, achieved (verified), achievement, points or band score, the total weighted score and it as a percentage, attributes, the calculation, comments and signature lines. Before HR closes the year's reviews it is headed "Provisional".
+- **HR as final recipient:** signed contracts and final assessments arrive with HR (Contracts › Overview, Reviews › Round, and a count on HR's Home), with their printouts. Arrival is enough; HR records nothing.
+- **Plain words:** on screen "result level" stands for rating, "read and confirmed" for acknowledgement, and "moved by the supervisor" for adjustment (`check-plain-words`).

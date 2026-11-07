@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: scoring policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84;
+  --panel:#223D56; --side-fg:#C8D1DB; --line:#EDECEA;
+  --pf:#C2417A; --pf-t:#9B2C63; --pf-l:#FBEAF2;
+  --blk:#B42318; --blk-l:#FEF3F2; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy)}
+h2{font-size:18px;margin:0;color:var(--navy)}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px;font-weight:700}
+.mark{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:#fff}
+.sub{padding-left:34px;font-size:13px;min-height:36px}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;min-height:64px}
+.crumbs{flex:1 1 260px;color:var(--muted);font-size:13px}
+.crumbs b{color:var(--navy);font-weight:600}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:36px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:#fff;color:var(--text)}
+.content{padding:28px 32px 96px;max-width:1180px;width:100%;display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-size:13px;font-weight:600;color:var(--pf-t)}
+.linkish{border:0;background:none;padding:0;color:inherit;font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:24px}
+.entries{display:flex;gap:8px;flex-wrap:wrap}
+.entry{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:#fff;font-weight:600;color:var(--text);display:inline-flex;align-items:center}
+.entry.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{min-height:44px;padding:0 14px;border:0;border-bottom:4px solid transparent;background:none;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab.on{color:var(--navy);border-bottom-color:var(--navy)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.lens{border-top:4px solid var(--pf)}
+.sticky{position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.t-blk{background:var(--blk-l);color:var(--blk);border:1px solid var(--blk)}
+.opt{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--navy);background:var(--info-l)}
+.opt input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--navy)}
+.opt b{color:var(--navy)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0}
+.chip span{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--control);border-radius:999px;font-weight:600;cursor:pointer}
+.chip input:checked+span{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+.chip input:disabled+span{opacity:.55;cursor:not-allowed}
+label.f{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+input[type=text],input[type=number],textarea{width:100%;min-height:44px;padding:8px 10px;border-radius:8px;border:1px solid var(--control);background:#fff;color:var(--text)}
+input:disabled,textarea:disabled{background:var(--cream);color:var(--muted)}
+textarea{min-height:64px;resize:vertical}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--border)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.r,th.r{text-align:right}
+.lvl-in{max-width:120px}
+.toggle{display:flex;gap:12px;align-items:center;min-height:44px;font-weight:600}
+.toggle input{width:22px;height:22px;accent-color:var(--navy)}
+.attr{border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.attr summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-weight:600;color:var(--navy);list-style:none}
+.attr summary::-webkit-details-marker{display:none}
+.attr summary::before{content:"▸";color:var(--muted)}
+.attr[open] summary::before{content:"▾"}
+.desc{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:start}
+.check{border-radius:10px;padding:10px 12px;font-size:13px}
+.c-blk{background:var(--blk-l);color:var(--blk);border:1px solid var(--blk)}
+.c-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.big{font-size:28px;font-weight:700;color:var(--navy)}
+.prev td,.prev th{padding:6px 4px;font-size:13px}
+.banner{background:var(--info-l);border-radius:10px;padding:12px 14px;font-size:13px}
+.proto{border:1px dashed var(--control);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted);background:#fff}
+.drawer-bg{position:fixed;inset:0;background:rgba(13,27,42,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:#fff;z-index:21;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;z-index:30;max-width:90vw}
+@media (max-width:980px){ .grid{grid-template-columns:1fr} .sticky{position:static} }
+@media (max-width:760px){
+  .side{display:none}
+  .content{padding:18px 16px 110px}
+  .top{padding:10px 16px}
+  h1{font-size:22px}
+  .desc{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const halfUp = (x, d = 0) => { const f = 10 ** d; return Math.floor(x * f + 0.5) / f; };
+const fx = (x, d) => halfUp(x, d).toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+/* ═══ Defaults (preset A and the approved sample thresholds) ═══ */
+const DEFAULT_LABELS = ['Outstanding', 'Exceeds', 'Meets', 'Partly meets', 'Does not meet'];
+const DEFAULT_MIN = { bands:[120, 105, 95, 80, 0], points:[90, 80, 70, 60, 0] };
+const ATTR_LEVELS = ['Outstanding', 'Commendable', 'Satisfactory', 'Needs improvement', 'Unsatisfactory'];
+const SAMPLE_ATTRS = [
+  { name:'Teamwork', measures:'Working with others, sharing knowledge and supporting team decisions.', d:[
+    'Supports and helps put others’ ideas into practice; shares knowledge without being asked; disagrees constructively and offers alternatives.',
+    'Responds constructively to others’ ideas; shares knowledge when asked; disagrees constructively.',
+    'Responds constructively to others’ ideas but rarely helps put them into practice; shares knowledge when own work needs it.',
+    'Seldom supports others’ ideas; disagrees without offering workable alternatives.',
+    'Rarely supports others or shares ideas; disagreement is unconstructive.'] },
+  { name:'Time keeping', measures:'Meeting deadlines and keeping working hours.', d:[
+    'No missed deadlines in the period; no late arrivals or early departures.',
+    'Missed fewer than 5% of deadlines; rarely late or early.',
+    'Missed 5% to under 10% of deadlines; sometimes late or early by a few minutes.',
+    'Missed 10% to under 20% of deadlines; late or early most weeks.',
+    'Missed 20% or more of deadlines; consistently late or leaves early.'] },
+  { name:'Customer focus', measures:'Courtesy and care in dealing with customers and colleagues, and resolving complaints.', d:[
+    'No complaints; commended by customers or colleagues; calm under pressure.',
+    'Rarely a complaint; handles matters to others’ satisfaction; tracks customer satisfaction.',
+    'Occasional complaints, fewer than before, and handled fairly.',
+    'At least one complaint about conduct every two months.',
+    'More than two complaints about conduct in a quarter.'] },
+  { name:'Integrity and accountability', measures:'Honesty, owning one’s work and mistakes, and seeking and giving feedback.', d:[
+    'Recorded commendations for honesty; owns mistakes without exception; seeks and gives feedback promptly.',
+    'No concerns about honesty; owns mistakes; seeks and gives feedback promptly.',
+    'No concerns about honesty; sometimes blames others; gives feedback only when asked.',
+    'Concerns about honesty raised once; often blames others; needs reminding to give feedback.',
+    'Repeated concerns about honesty; blames others; resists feedback.'] },
+  { name:'Attendance', measures:'Being at work and available, and absence only with permission.', d:[
+    'Never absent without permission; availability used fully for the job.',
+    'Rarely absent; asks permission only for emergencies.',
+    'Absence with and without permission in roughly equal measure; improving.',
+    'Often absent; rarely asks permission first.',
+    'Consistently absent without regard to supervision.'] },
+];
+const clone = o => JSON.parse(JSON.stringify(o));
+const freshPolicy = () => ({
+  method:'points', cap:100,
+  labels:DEFAULT_LABELS.slice(), min:DEFAULT_MIN.points.slice(),
+  attrsOn:true, attrWeight:5, attrLevels:ATTR_LEVELS.slice(), attrs:clone(SAMPLE_ATTRS),
+  flagLow:true, flagHigh:150, countersignAll:false,
+});
+/* In force for FY2026 (approved 15 January 2026, sample): bands then average, preset A, no attributes. */
+const IN_FORCE = { method:'bands', cap:null, labels:DEFAULT_LABELS.slice(), min:DEFAULT_MIN.bands.slice(), attrsOn:false, attrWeight:5, attrLevels:ATTR_LEVELS.slice(), attrs:[], flagLow:true, flagHigh:150, countersignAll:false };
+
+/* ═══ Worked example: Mary Chileshe, Zone B, FY2026 year end (approved illustrative figures) ═══ */
+const EX = { targets:[ { t:'Replace 400 faulty meters', target:400, achieved:410, weight:50 }, { t:'Complete scheduled readings', target:2400, achieved:2530, weight:50 } ], attrScores:[4,4,3,4,4] };
+
+/* ═══ Rules (pure): both methods ═══ */
+function levelFor(p, value){ for (let i = 0; i < 5; i++) if (value >= p.min[i]) return { score:5 - i, label:p.labels[i] }; return { score:1, label:p.labels[4] }; }
+function compute(p){
+  const rows = EX.targets.map(x => { const ach = x.achieved / x.target * 100; const counted = p.cap === null ? ach : Math.min(ach, p.cap); return { ...x, ach, counted }; });
+  const attrN = p.attrsOn ? Math.min(EX.attrScores.length, Math.max(p.attrs.length, 0)) : 0;
+  const attrSum = EX.attrScores.slice(0, attrN).reduce((a, b) => a + b, 0);
+  const attrPct = attrN ? attrSum / (5 * attrN) * 100 : null;
+  const w = p.attrsOn && attrN ? p.attrWeight / 100 : 0;
+  if (p.method === 'bands') {
+    rows.forEach(r => { r.band = levelFor(p, r.counted); r.weighted = r.band.score * r.weight / 100; });
+    const tScore = rows.reduce((a, r) => a + r.weighted, 0);
+    const attrMean = attrN ? attrSum / attrN : null;
+    const total = attrN ? (1 - w) * tScore + w * attrMean : tScore;
+    const s = Math.min(5, Math.max(1, halfUp(total)));
+    return { rows, tScore, attrPct, attrMean, attrSum, attrN, total, pct: total / 5 * 100, rating:{ score:s, label:p.labels[5 - s] } };
+  }
+  rows.forEach(r => { r.points = r.counted * r.weight / 100; });
+  const tPct = rows.reduce((a, r) => a + r.points, 0);
+  const overall = attrN ? (1 - w) * tPct + w * attrPct : tPct;
+  return { rows, tPct, attrPct, attrSum, attrN, overall, rating:levelFor(p, overall) };
+}
+
+/* Checks that must pass before sending for approval. */
+function checks(p){
+  const out = [];
+  if (p.labels.some(l => !l.trim())) out.push('Every rating level needs a name.');
+  for (let i = 0; i < 4; i++) if (!(p.min[i] > p.min[i + 1])) { out.push('Each level’s lower threshold must be higher than the level below it.'); break; }
+  if (p.attrsOn) {
+    if (!(p.attrWeight >= 1 && p.attrWeight <= 30)) out.push('Personal attributes must carry between 1% and 30%.');
+    if (p.attrs.length < 3 || p.attrs.length > 8) out.push('Use between three and eight personal attributes.');
+    if (p.attrLevels.some(l => !l.trim())) out.push('Every attribute level needs a name.');
+    p.attrs.forEach((a, i) => { if (!a.name.trim() || !a.measures.trim() || a.d.some(x => !x.trim())) out.push(`Attribute ${i + 1}${a.name.trim() ? ` (${a.name.trim()})` : ''} needs a name, what it measures and all five descriptions.`); });
+  }
+  if (!(p.flagHigh >= 100)) out.push('The high-achievement flag must be 100% or more.');
+  if (p.method === 'bands' && p.cap !== null) { const top = p.min.findIndex(m => m <= p.cap); if (top > 0) out.push(`With a limit of ${p.cap}%, no target can reach ${p.labels.slice(0, top).map((l, i) => `${5 - i} ${l}`).join(' or ')}. Raise the limit or lower those thresholds.`); }
+  return out;
+}
+
+/* ═══ State ═══ */
+const S = { role:'hr', status:'draft', draft:freshPolicy(), sentBy:null, returned:null, approved:null, drawer:null, toast:null };
+const ROLES = { hr:'Natasha Kabwe, HR', exec:'Chanda Mulenga, Executive', emp:'Mary Chileshe, Employee' };
+const editable = () => S.role === 'hr' && (S.status === 'draft' || S.status === 'returned');
+
+/* ═══ Rendering ═══ */
+function render(){
+  const ae = document.activeElement; const focusId = ae && ae.id; const sel = ae && ae.selectionStart;
+  document.getElementById('app').innerHTML = `
+  <div class="shell">
+    <nav class="side" aria-label="Main">
+      <div class="brand"><span class="mark">C</span>CASPA™</div>
+      <div>
+        <div class="navbtn"><span class="dot" style="background:var(--side-fg)"></span>Home</div>
+        <div class="navbtn"><span class="dot" style="background:#378ADD"></span>Strategy</div>
+        <div class="navbtn"><span class="dot" style="background:#7C5CBF"></span>Cascade</div>
+        <div class="navbtn"><span class="dot" style="background:#B85C38"></span>Plan</div>
+        <div class="navbtn on"><span class="dot" style="background:var(--pf)"></span>Performance</div>
+        <div class="navbtn sub on">Reviews</div>
+      </div>
+    </nav>
+    <div class="main">
+      <header class="top">
+        <div class="crumbs">Performance › Reviews › <b>Scoring policy</b></div>
+        <label class="viewas">Viewing as <select id="role" aria-label="Viewing as">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === S.role ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+      </header>
+      <main class="content">
+        <p class="proto">Prototype for review: Scoring Policy and Personal Attributes Specification v0.1, Sample Water Utility. Records reset on reload.</p>
+        <div>
+          <span class="eyebrow">Performance · Controlling</span>
+          <h1>Scoring policy</h1>
+          <p class="muted">How performance is scored and rated in this organisation. HR sets it; the Executive approves it.</p>
+        </div>
+        <nav class="entries" aria-label="Performance">
+          <span class="entry">Progress updates</span><span class="entry on" aria-current="page">Reviews</span><span class="entry">Targets</span><span class="entry">Contracts</span>
+        </nav>
+        <div class="tabs" role="tablist"><span class="tab">Reviews</span><span class="tab on" aria-current="page">Scoring policy</span></div>
+        ${S.role === 'emp' ? employeeView() : policyView()}
+      </main>
+    </div>
+  </div>
+  ${S.drawer ? drawer() : ''}
+  ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+  bind();
+  if (focusId) { const el = document.getElementById(focusId); if (el) { el.focus(); try { if (sel != null && el.setSelectionRange) el.setSelectionRange(sel, sel); } catch(e){} } }
+}
+
+function statusBanner(){
+  const s = S.status;
+  const tag = s === 'draft' ? '<span class="tag t-info">Draft for FY2027</span>' : s === 'sent' ? '<span class="tag t-adv">With the Executive for approval</span>' : s === 'returned' ? '<span class="tag t-adv">Returned to HR</span>' : '<span class="tag t-ok">Approved for FY2027</span>';
+  return `<div class="banner">
+    <p>${tag} <b>In force for FY2026:</b> bands then average, preset A, no personal attributes. Approved 15 January 2026.</p>
+    <p style="margin-top:6px">The FY2026 appraisal round is open, so the policy in force is locked. This draft applies from the FY2027 round. Contracts already signed keep the policy they were signed under.</p>
+    ${S.returned ? `<p style="margin-top:6px"><b>Returned by Chanda Mulenga:</b> ${esc(S.returned)}</p>` : ''}
+    ${s === 'approved' ? `<p style="margin-top:6px"><b>Approved by Chanda Mulenga on 6 November 2026.</b> It takes effect when the FY2027 round opens.</p>` : ''}
+  </div>`;
+}
+
+function policyView(){
+  const p = S.draft, dis = editable() ? '' : 'disabled';
+  const thrHead = p.method === 'bands' ? 'Achievement of a target from' : 'Overall result from';
+  return `${statusBanner()}
+  <div class="grid">
+    <div class="col">
+      <section class="card lens" aria-labelledby="h-m">
+        <h2 id="h-m">1. Scoring method</h2>
+        <div class="opts" role="radiogroup" aria-labelledby="h-m">
+          <label class="opt"><input type="radio" name="method" value="bands" ${p.method === 'bands' ? 'checked' : ''} ${dis}><span><b>Bands then average</b><br><span class="small">Each target’s achievement is placed in a level and scored 1 to 5. The total weighted score is the weighted mean, out of 5; the rating is that score rounded half up.</span></span></label>
+          <label class="opt"><input type="radio" name="method" value="points" ${p.method === 'points' ? 'checked' : ''} ${dis}><span><b>Weighted points</b><br><span class="small">Each target earns its weight times its achievement. The points are totalled as a percentage, and the rating is the level that percentage reaches.</span></span></label>
+        </div>
+        <fieldset style="border:0;padding:0;margin:0">
+          <legend class="f">Most a target can earn</legend>
+          <div class="chips">${[[100,'100% of its weight'],[110,'110%'],[120,'120%'],[150,'150%'],[null,'No limit']].map(([v, l]) => `<label class="chip"><input type="radio" name="cap" value="${v}" ${p.cap === v ? 'checked' : ''} ${dis}><span>${l}</span></label>`).join('')}</div>
+          <p class="small muted" style="margin-top:6px">Achievement is always shown as measured. The limit only stops a large overachievement on one target from making up for a shortfall on another.</p>
+        </fieldset>
+      </section>
+
+      <section class="card lens" aria-labelledby="h-l">
+        <h2 id="h-l">2. Rating levels</h2>
+        <p class="small muted">Five levels. Name each one and set where it starts. ${p.method === 'bands' ? 'Under bands then average, thresholds apply to each target’s achievement.' : 'Under weighted points, thresholds apply to the overall result.'}</p>
+        <div class="tablewrap"><table class="num">
+          <thead><tr><th scope="col">Score</th><th scope="col">Name</th><th scope="col">${thrHead}</th></tr></thead>
+          <tbody>${p.labels.map((l, i) => `<tr><td><b>${5 - i}</b></td>
+            <td><label class="sr" for="lab${i}" style="position:absolute;left:-9999px">Name of level ${5 - i}</label><input type="text" id="lab${i}" data-k="label" data-i="${i}" value="${esc(l)}" ${dis}></td>
+            <td>${i < 4 ? `<label for="min${i}" style="position:absolute;left:-9999px">Threshold for level ${5 - i}, in percent</label><span style="display:flex;align-items:center;gap:6px"><input class="lvl-in" type="number" id="min${i}" data-k="min" data-i="${i}" value="${p.min[i]}" min="0" step="1" ${dis}> %</span>` : `<span class="muted">Below ${p.min[3]}%</span>`}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </section>
+
+      <section class="card lens" aria-labelledby="h-a">
+        <h2 id="h-a">3. Personal attributes</h2>
+        <label class="toggle"><input type="checkbox" id="attrsOn" ${p.attrsOn ? 'checked' : ''} ${dis}> Include personal attributes in every contract</label>
+        ${p.attrsOn ? `
+        <div style="max-width:240px"><label class="f" for="attrWeight">Share of the result (1% to 30%)</label><span style="display:flex;align-items:center;gap:6px"><input type="number" id="attrWeight" data-k="attrWeight" min="1" max="30" value="${p.attrWeight}" ${dis}> %</span>
+          <p class="small muted" style="margin-top:4px">Targets carry the other ${100 - (Number(p.attrWeight) || 0)}%.</p></div>
+        <fieldset style="border:0;padding:0;margin:0"><legend class="f">Level names for attributes</legend>
+          <div class="tablewrap"><table><tbody><tr>${p.attrLevels.map((l, i) => `<td style="padding:4px"><label for="al${i}" class="small muted">${5 - i}</label><input type="text" id="al${i}" data-k="attrLevel" data-i="${i}" value="${esc(l)}" ${dis}></td>`).join('')}</tr></tbody></table></div>
+        </fieldset>
+        <div class="row"><h3>Attributes (${p.attrs.length})</h3><span class="small muted">Three to eight; each counts equally</span></div>
+        ${p.attrs.map((a, i) => `<details class="attr" ${S.openAttr === i ? 'open' : ''} data-attr="${i}">
+          <summary>${esc(a.name || 'New attribute')}</summary>
+          <div><label class="f" for="an${i}">Name</label><input type="text" id="an${i}" data-k="aname" data-i="${i}" value="${esc(a.name)}" ${dis}></div>
+          <div><label class="f" for="am${i}">What it measures</label><input type="text" id="am${i}" data-k="ameasures" data-i="${i}" value="${esc(a.measures)}" ${dis}></div>
+          ${a.d.map((d, j) => `<div class="desc"><label class="f" for="ad${i}-${j}">${5 - j} ${esc(p.attrLevels[j])}</label><textarea id="ad${i}-${j}" data-k="adesc" data-i="${i}" data-j="${j}" ${dis}>${esc(d)}</textarea></div>`).join('')}
+          ${editable() ? `<div><button class="btn btn-quiet" data-act="rm-attr" data-i="${i}">Remove ${esc(a.name || 'this attribute')}</button></div>` : ''}
+        </details>`).join('')}
+        ${editable() && p.attrs.length < 8 ? `<div><button class="btn" data-act="add-attr">Add an attribute</button></div>` : ''}
+        ` : `<p class="small muted">Contracts score targets only.</p>`}
+      </section>
+
+      <section class="card lens" aria-labelledby="h-r">
+        <h2 id="h-r">4. Next-level reviewer</h2>
+        <label class="toggle"><input type="checkbox" id="countersignAll" ${p.countersignAll ? 'checked' : ''} ${dis}> Countersigns every review</label>
+        <p class="small muted">${p.countersignAll ? 'Every review goes to the next-level reviewer to agree or disagree, with reasons, before it is final.' : 'Only reviews with a flag go to the next-level reviewer.'}</p>
+        <label class="toggle"><input type="checkbox" id="flagLow" ${p.flagLow ? 'checked' : ''} ${dis}> Flag a target scored 1</label>
+        <div style="max-width:260px"><label class="f" for="flagHigh">Flag achievement above</label><span style="display:flex;align-items:center;gap:6px"><input type="number" id="flagHigh" data-k="flagHigh" min="100" value="${p.flagHigh}" ${dis}> %</span></div>
+      </section>
+    </div>
+
+    <div class="col">
+      ${preview()}
+      ${actions()}
+    </div>
+  </div>`;
+}
+
+function preview(){
+  const p = S.draft, r = compute(p);
+  const capTxt = p.cap === null ? '' : ` (no target earns more than ${p.cap}% of its weight)`;
+  let body;
+  if (p.method === 'bands') {
+    body = `<div class="tablewrap"><table class="prev num"><thead><tr><th>Target</th><th class="r">Achievement</th><th class="r">Score</th><th class="r">Weighted</th></tr></thead><tbody>
+      ${r.rows.map(x => `<tr><td>${esc(x.t)}</td><td class="r">${fx(x.ach, 1)}%</td><td class="r">${x.band.score} ${esc(x.band.label)}</td><td class="r">${fx(x.weighted, 2)}</td></tr>`).join('')}
+      <tr><td colspan="3"><b>Targets, out of 5</b></td><td class="r"><b>${fx(r.tScore, 2)}</b></td></tr>
+      ${r.attrN ? `<tr><td colspan="3">Attributes ${r.attrSum} of ${5 * r.attrN}, mean</td><td class="r">${fx(r.attrMean, 2)}</td></tr>` : ''}
+    </tbody></table></div>
+    ${r.attrN ? `<p class="small num">${100 - p.attrWeight}% × ${fx(r.tScore, 2)} + ${p.attrWeight}% × ${fx(r.attrMean, 2)}</p>` : ''}
+    <div class="row"><span>Total weighted score</span><span class="big num">${fx(r.total, 2)}</span></div>
+    <div class="row"><span>As a percentage (÷ 5)</span><span class="num"><b>${fx(r.pct, 1)}%</b></span></div>`;
+  } else {
+    body = `<div class="tablewrap"><table class="prev num"><thead><tr><th>Target</th><th class="r">Achievement</th><th class="r">Weight</th><th class="r">Points</th></tr></thead><tbody>
+      ${r.rows.map(x => `<tr><td>${esc(x.t)}</td><td class="r">${fx(x.ach, 1)}%</td><td class="r">${x.weight}</td><td class="r">${fx(x.points, 2)}</td></tr>`).join('')}
+      <tr><td colspan="3"><b>Targets</b></td><td class="r"><b>${fx(r.tPct, 1)}%</b></td></tr>
+      ${r.attrN ? `<tr><td colspan="3">Attributes ${r.attrSum} of ${5 * r.attrN}</td><td class="r">${fx(r.attrPct, 1)}%</td></tr>` : ''}
+    </tbody></table></div>
+    ${r.attrN ? `<p class="small num">${100 - p.attrWeight}% × ${fx(r.tPct, 1)}% + ${p.attrWeight}% × ${fx(r.attrPct, 1)}%</p>` : ''}
+    <div class="row"><span>Total weighted score</span><span class="big num">${fx(r.overall, 2)}%</span></div>`;
+  }
+  return `<section class="card lens sticky" aria-labelledby="h-p">
+    <h2 id="h-p">How this policy would score</h2>
+    <p class="small muted">Mary Chileshe, Meter Reader, Zone B, FY2026 year end (illustrative figures). Recomputed as you change the policy${esc(capTxt)}.</p>
+    ${body}
+    <div class="row"><span>Rating</span><span class="tag t-info" style="font-size:14px">${r.rating.score} ${esc(r.rating.label)}</span></div>
+  </section>`;
+}
+
+function actions(){
+  const errs = checks(S.draft);
+  if (S.role === 'hr') {
+    if (S.status === 'sent') return `<section class="card"><p>Sent to Chanda Mulenga for approval on 6 November 2026. You can’t change it while it is with her.</p></section>`;
+    if (S.status === 'approved') return `<section class="card"><p class="check c-ok">Approved. It takes effect when the FY2027 round opens.</p></section>`;
+    return `<section class="card" aria-labelledby="h-c"><h2 id="h-c">Checks</h2>
+      ${errs.length ? errs.map(e => `<p class="check c-blk"><b>Must fix before sending for approval</b><br>${esc(e)}</p>`).join('') : `<p class="check c-ok">Nothing to fix.</p>`}
+      <div class="btns"><button class="btn btn-primary" data-act="send" ${errs.length ? 'disabled' : ''}>Send to the Executive for approval</button><button class="btn btn-quiet" data-act="reset">Start again from the defaults</button></div></section>`;
+  }
+  if (S.status === 'sent') return `<section class="card" aria-labelledby="h-x"><h2 id="h-x">Approval</h2><p>Sent by Natasha Kabwe, HR, on 6 November 2026. Approving makes it the policy for the FY2027 round.</p>
+    <div class="btns"><button class="btn btn-primary" data-act="approve">Approve</button><button class="btn btn-quiet" data-act="return">Return to HR</button></div></section>`;
+  return `<section class="card"><p class="muted">${S.status === 'approved' ? 'You approved this policy. It takes effect when the FY2027 round opens.' : 'Nothing to approve. HR is preparing the FY2027 policy.'}</p></section>`;
+}
+
+function employeeView(){
+  const p = S.status === 'approved' ? S.draft : IN_FORCE, fy = S.status === 'approved' ? 'FY2027' : 'FY2026';
+  return `<section class="card lens"><h2>How you are scored, ${fy}</h2>
+    <p>${p.method === 'bands' ? 'Each of your targets is placed in a level from its achievement and scored 1 to 5; your total is the weighted mean of those scores.' : 'Each of your targets earns its weight times its achievement; your total is those points as a percentage.'}${p.cap !== null ? ` No target earns more than ${p.cap}% of its weight.` : ''} Only progress your supervisor has verified counts.</p>
+    ${p.attrsOn ? `<p>Personal attributes make up ${p.attrWeight}% of your result: ${p.attrs.map(a => esc(a.name)).join(', ')}. Your supervisor scores each from 1 to 5, and you can add your own score.</p>` : '<p>Your result comes from your targets only.</p>'}
+    <div class="tablewrap"><table class="num"><thead><tr><th>Rating</th><th>${p.method === 'bands' ? 'Achievement from' : 'Overall result from'}</th></tr></thead>
+      <tbody>${p.labels.map((l, i) => `<tr><td><b>${5 - i}</b> ${esc(l)}</td><td>${i < 4 ? p.min[i] + '%' : 'below ' + p.min[3] + '%'}</td></tr>`).join('')}</tbody></table></div>
+    <p class="small muted">${S.status === 'approved' ? 'This policy applies from the FY2027 round. Your FY2026 contract keeps the policy it was signed under.' : 'A policy for FY2027 is being prepared. Your signed contract keeps this one.'}</p></section>`;
+}
+
+function drawer(){
+  return `<div class="drawer-bg" data-act="close"></div><div class="drawer" role="dialog" aria-modal="true" aria-labelledby="dh">
+    <h2 id="dh">Return to HR</h2><p>Say what needs to change.</p>
+    <label class="f" for="reason">Reason (needed)</label><textarea id="reason">${esc(S.drawer.reason || '')}</textarea>
+    ${S.drawer.err ? `<p class="check c-blk" role="alert">Give a reason.</p>` : ''}
+    <div class="btns"><button class="btn btn-primary" data-act="do-return">Return</button><button class="btn btn-quiet" data-act="close">Cancel</button></div></div>`;
+}
+
+/* ═══ Actions ═══ */
+function toast(t){ S.toast = t; setTimeout(() => { S.toast = null; render(); }, 2600); }
+function act(a, el){
+  const p = S.draft;
+  if (a === 'add-attr') { p.attrs.push({ name:'', measures:'', d:['','','','',''] }); S.openAttr = p.attrs.length - 1; }
+  if (a === 'rm-attr') { p.attrs.splice(Number(el.dataset.i), 1); S.openAttr = null; }
+  if (a === 'send') { if (!checks(p).length) { S.status = 'sent'; S.returned = null; toast('Sent to Chanda Mulenga for approval.'); } }
+  if (a === 'reset') { S.draft = freshPolicy(); S.openAttr = null; toast('Draft reset to the defaults.'); }
+  if (a === 'approve') { S.status = 'approved'; toast('Approved for the FY2027 round.'); }
+  if (a === 'return') S.drawer = { reason:'' };
+  if (a === 'close') S.drawer = null;
+  if (a === 'do-return') { const t = document.getElementById('reason').value.trim(); if (!t) S.drawer = { reason:t, err:true }; else { S.status = 'returned'; S.returned = t; S.drawer = null; toast('Returned to HR.'); } }
+  render();
+  if (S.drawer) { const f = document.getElementById('reason'); f && f.focus(); }
+}
+function bind(){
+  document.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); act(el.dataset.act, el); }));
+  document.getElementById('role').addEventListener('change', e => { S.role = e.target.value; S.drawer = null; render(); });
+  const p = S.draft;
+  document.querySelectorAll('input[name=method]').forEach(i => i.addEventListener('change', () => {
+    p.method = i.value; p.min = DEFAULT_MIN[i.value].slice(); p.cap = i.value === 'points' ? 100 : null;
+    toast(`Thresholds and limit set to the defaults for ${i.value === 'bands' ? 'bands then average' : 'weighted points'}.`); render();
+  }));
+  document.querySelectorAll('input[name=cap]').forEach(i => i.addEventListener('change', () => { p.cap = i.value === 'null' ? null : Number(i.value); render(); }));
+  const live = (sel, fn) => document.querySelectorAll(sel).forEach(i => i.addEventListener('input', () => { fn(i); renderSoon(); }));
+  live('[data-k=label]', i => p.labels[i.dataset.i] = i.value);
+  live('[data-k=min]', i => p.min[i.dataset.i] = Number(i.value));
+  live('[data-k=attrLevel]', i => p.attrLevels[i.dataset.i] = i.value);
+  live('[data-k=attrWeight]', i => p.attrWeight = Number(i.value));
+  live('[data-k=flagHigh]', i => p.flagHigh = Number(i.value));
+  live('[data-k=aname]', i => { p.attrs[i.dataset.i].name = i.value; S.openAttr = Number(i.dataset.i); });
+  live('[data-k=ameasures]', i => { p.attrs[i.dataset.i].measures = i.value; S.openAttr = Number(i.dataset.i); });
+  live('[data-k=adesc]', i => { p.attrs[i.dataset.i].d[i.dataset.j] = i.value; S.openAttr = Number(i.dataset.i); });
+  [['attrsOn','attrsOn'],['countersignAll','countersignAll'],['flagLow','flagLow']].forEach(([id, k]) => { const el = document.getElementById(id); el && el.addEventListener('change', () => { p[k] = el.checked; render(); }); });
+  document.querySelectorAll('details.attr').forEach(d => d.addEventListener('toggle', () => { if (d.open) S.openAttr = Number(d.dataset.attr); else if (S.openAttr === Number(d.dataset.attr)) S.openAttr = null; }));
+}
+let pend = null;
+function renderSoon(){ clearTimeout(pend); pend = setTimeout(render, 250); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.drawer) { S.drawer = null; render(); } });
+render();
+</script>
+</body>
+</html>

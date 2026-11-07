@@ -40,6 +40,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 15. Reviews (Reviews Specification v0.1; RV-1 to RV-13, BUILD-BRIEF section 41, in the archive) — done (v0.20.0)
 16. Targets: KPI shares, combining rule, standing duties, quarterly reviews (BUILD-BRIEF sections 42–43, in the archive) — done (v0.21.0)
 17. Contracts: drafting, issuing, signing, revising, dependencies (BUILD-BRIEF sections 44 and 46, in the archive) — done (v0.22.0)
+18. Scoring policy, personal attributes, printed contract and assessment (BUILD-BRIEF section 47, in the archive) — done (v0.23.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -58,8 +59,20 @@ and a consultant. In the NGO one person holds both Finance and HR, so its queue 
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (744 tests). Choose the next slice with Elijah; `NEXT.md` lists the
-  candidates.
+- Start from this zip: `npm install`, `npm run verify` (771 tests). Next: the 4Q enhancement (4Q Enhancement Specification
+  v0.1, contract v1.16) as v0.24.0; then the candidates in `NEXT.md`.
+
+## Scoring policy and printouts (v0.23.0)
+
+- BUILD-BRIEF section 47 (in `DECISIONS-ARCHIVE.md`); Scoring Policy and Personal Attributes Specification v0.1. Contract
+  v1.15, fields only. 771 tests (10 in `src/rules/policy.test.ts`, 17 in `src/data/access/policy.test.ts`).
+- Code: rules `src/rules/rating.ts` (both methods, the limit, period targets, `schemeFor`, `scoreWith`) and
+  `src/rules/policy.ts` (checks); data access `src/data/access/policy.ts` (`repo.policy`) and
+  `src/data/access/printouts.ts` (`repo.printouts`); screens `src/routes/ScoringPolicy.tsx` and `src/routes/Print.tsx`.
+- Try it on Sample Water Utility: as HR, Performance › Reviews › Scoring policy: the FY2027 draft (weighted points,
+  attributes at 5%); "Try it" with 102.5, 105.4 and 4,4,3,4,4 gives 98.80%, Outstanding; send it; as Executive, approve
+  or return it. Print Mary Chileshe's contract from Contracts (or HR's Overview) and her review from Reviews. Esther
+  Banda's draft has mid-year targets; Mary's objectives show means of verification.
 
 ## Contracts (v0.22.0)
 

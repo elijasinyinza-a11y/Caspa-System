@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: 4Q causes and suggestions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84;
+  --panel:#223D56; --navy2:#16283B; --side-fg:#C8D1DB; --line:#EDECEA; --track:#E8E6E0;
+  --st:#378ADD; --st-t:#1A5A9E; --st-l:#EBF3FC; --ca:#7C5CBF; --ca-t:#4A2D8F; --ca-l:#F2EEF9;
+  --blk:#B42318; --blk-l:#FEF3F2; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy)}
+h2{font-size:18px;margin:0;color:var(--navy)}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px;font-weight:700}
+.mark{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:#fff}
+.sub{padding-left:34px;font-size:13px;min-height:36px}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;min-height:64px}
+.crumbs{flex:1 1 280px;color:var(--muted);font-size:13px}
+.crumbs b{color:var(--navy);font-weight:600}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:36px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:#fff;color:var(--text);max-width:260px}
+.content{padding:28px 32px 96px;max-width:1180px;width:100%;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:13px;font-weight:600;color:var(--st-t)}
+.linkish{border:0;background:none;padding:0;color:inherit;font:inherit;font-weight:600;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;cursor:pointer;min-height:24px}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.lens{border-top:4px solid var(--st)}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-blk{background:var(--blk-l);color:var(--blk);border:1px solid var(--blk)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.t-ca{background:var(--ca-l);color:var(--ca-t)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;color:var(--text)}
+.tab[aria-selected="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.stages{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.stage{min-height:44px;padding:0 14px;border:0;border-bottom:3px solid transparent;background:none;cursor:pointer;font-weight:600;color:var(--muted)}
+.stage[aria-current="page"]{color:var(--navy);border-bottom-color:var(--st)}
+.cand{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:16px;align-items:start;padding:14px 0;border-top:1px solid var(--line)}
+.cand:first-of-type{border-top:0}
+.figs{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}
+.figs span b{font-weight:600;color:var(--navy)}
+.ws{background:var(--navy);color:#fff;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.ws h2,.ws h3{color:#fff}
+.band{background:var(--navy2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.bandhead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bandhead .linkish{color:#fff;font-size:16px}
+.cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.cell{display:flex;flex-direction:column;gap:8px;min-width:0}
+.cellname{font-size:12px;font-weight:600;color:var(--side-fg)}
+.qcard{background:#fff;color:var(--text);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border:2px solid #fff}
+.qcard.new{border-color:var(--ok-b)}
+.qmeta{font-size:12px;color:var(--muted)}
+.lvl{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:8px}
+.lvlbtn{min-height:44px;border:1px solid var(--control);border-radius:8px;background:#fff;color:var(--text);text-align:left;padding:6px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lvlbtn b{color:var(--ca-t)}
+.lvltext{font-size:13px}
+.lvltext b{color:var(--ca-t);font-weight:600}
+.empty{border:2px dashed var(--panel);border-radius:10px;padding:10px;font-size:12px;color:var(--side-fg)}
+.others{border:1px solid var(--panel);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--side-fg)}
+.causes{background:#fff;color:var(--text);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-left:6px solid var(--ca)}
+.ws .causes h3{color:var(--navy)}
+.causes .counts{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.causes .counts .linkish{color:var(--ca-t)}
+.prompt{border:1px dashed var(--control);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.prompt .btn{min-height:44px;font-size:13px}
+table{width:100%;border-collapse:collapse}
+.tablewrap{overflow-x:auto}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+.linked{display:flex;flex-direction:column;gap:10px}
+.lrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px}
+.note{background:var(--info-l);border-radius:10px;padding:12px 14px;font-size:13px}
+.drawer-bg{position:fixed;inset:0;background:rgba(13,27,42,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:#fff;z-index:21;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));overflow-y:auto;display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--border)}
+.opt{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;min-height:44px}
+.opt:has(input:checked){border-color:var(--ca);background:var(--ca-l)}
+.opt input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--navy)}
+.opt b{color:var(--navy)}
+.ai{border:1px dashed var(--control);border-radius:8px;padding:10px 12px;font-size:13px}
+textarea{width:100%;min-height:88px;padding:10px 12px;border-radius:8px;border:1px solid var(--control);background:#fff;color:var(--text);resize:vertical}
+label.f{font-weight:600;font-size:13px}
+.err{color:var(--blk);font-size:13px;font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;z-index:30;max-width:90vw}
+.proto{border:1px dashed var(--control);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted);background:#fff}
+@media (max-width:900px){ .cells{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:760px){
+  .side{display:none}
+  .content{padding:18px 16px 110px}
+  .cells{grid-template-columns:1fr}
+  .cand{grid-template-columns:1fr;gap:8px}
+  .lrow{grid-template-columns:1fr}
+  .top{padding:10px 16px}
+  h1{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* ═════════ Helpers ═════════ */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const halfUp = x => Math.floor(x + 0.5);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const dTxt = iso => { const [y, m, d] = iso.split('-').map(Number); return d + ' ' + MONTHS[m - 1] + ' ' + y; };
+const NOW = '2026-11-06';
+let seq = 100; const uid = p => p + (++seq);
+
+/* ═════════ Framework text (confirmed lines in en.book; scopes from SIX_P_SCOPE) ═════════ */
+const LEVELS = ['principle','process','people','policy','procedures','practices'];
+const SIXP = { principle:'Principle', process:'Process', people:'People', policy:'Policy', procedures:'Procedure', practices:'Practices' };
+const SIXP_LINE = {
+  principle:'Decisions that alter the four business variables, value, customers, capital and people, to set the overall direction of the business.',
+  process:'Decisions within the specialised processes that bring capital and people together to generate value, such as production and revenue collection.',
+  people:'Decisions on human resource matters. People are the primary drivers of process.',
+  policy:'Decisions made through policy frameworks, which provide consistency and standardisation in key decision areas.',
+  procedures:'Decisions on procedures, the link between processes and people, which align employees to process requirements for consistent results.',
+  practices:'Decisions on practices: habits individuals and teams have formed over time, which make up the culture of the organisation.',
+};
+const SIXP_SCOPE = {
+  principle:'Value, customer, capital, people', process:'Technology, infrastructure',
+  people:'Organisational structure, people skills, behaviours and attitudes',
+  policy:'Investment, labour, statutory, regulatory, industrial relations, asset management',
+  procedures:'Standard operating procedures', practices:'Organisational culture',
+};
+const BANDS = ['retraction','repositioning','projection'];
+const BAND_NAME = { retraction:'Retraction', repositioning:'Repositioning', projection:'Projection' };
+const BAND_LINE = {
+  retraction:'Knowledge of the past: past successes and failures, and the critical factors behind them.',
+  repositioning:'Knowledge of the present: present successes and failures, and the critical factors behind them.',
+  projection:'Prediction of the future: opportunities and risks, with key strategic actions and risk management strategies. Vision statements are derived from here.',
+};
+const COLS = {
+  retraction:[['successes','Past successes'],['success_factors','Critical success factors'],['failures','Past failures'],['failure_factors','Critical failure factors']],
+  repositioning:[['successes','Present successes'],['success_factors','Critical success factors'],['failures','Present failures'],['failure_factors','Critical failure factors']],
+  projection:[['opportunities','Predicted future opportunities'],['key_strategic_actions','Key strategic actions'],['risks','Predicted future risks'],['risk_strategies','Risk management strategies']],
+};
+const cellName = (b, c) => COLS[b].find(x => x[0] === c)[1];
+const mayCarryLevel = (b, c) => c === 'failure_factors' && b !== 'projection';
+const STAGE_LINE = {
+  Conception:'The leadership team conceives the vision. A genuine vision comes from intimacy with the work; it is conceived, never formulated.',
+  Composition:'The strategic plan is composed and documented from the vision, consultations and alignment work of the first three stages.',
+};
+
+/* ═════════ Sample records: Sample Water Utility ═════════ */
+const UNITS = { 'u-ops':'Operations', 'u-com':'Commercial', 'u-fin':'Finance' };
+const ROLES = {
+  hoo:{ label:'Joseph Tembo, Head of Operations', kind:'head', unit:'u-ops' },
+  spm:{ label:'Bwalya Musonda, Strategy office', kind:'office' },
+  md:{ label:'Chanda Mulenga, Executive', kind:'exec' },
+};
+/* The active plan, 2022–2026: KPIs, owners, targets and actuals. FY2024 and FY2025 are the approved placeholders (B5). */
+const SOURCE_PLAN = 'Strategic Plan 2022–2026';
+const KPIS = [
+  { id:'k1.1.1', code:'K1.1.1', name:'Collection efficiency', unit:'%', dir:'higher', baseline:78, owner:null,
+    years:{ 2024:{ target:82, actual:83 }, 2025:{ target:86, actual:87 }, 2026:{ target:90, actual:null } } },
+  { id:'k1.2.1', code:'K1.2.1', name:'Non-revenue water', unit:'%', dir:'lower', baseline:52, owner:'u-ops',
+    years:{ 2024:{ target:46, actual:50 }, 2025:{ target:43, actual:49 }, 2026:{ target:40, actual:47, asOf:'2026-06-30' } } },
+  { id:'k2.1.1', code:'K2.1.1', name:'Average hours of supply per day', unit:' hours', dir:'higher', baseline:14, owner:'u-ops',
+    years:{ 2026:{ target:18, actual:null } } },
+];
+const DEFICIENCIES = [
+  { id:'df-5', objective:'O1.2 Reduce non-revenue water', ownerUnit:'u-ops', level:'people', text:'Meter readers not trained to spot tampering', corrective:[] },
+  { id:'df-1', objective:'O1.2 Reduce non-revenue water', ownerUnit:'u-ops', level:'process', text:'Faulty and aged customer meters', corrective:['A1.2.1.3'] },
+];
+const CURRENT_FY = 2026;
+
+/* ═════════ Rules (pure): KPI status, P1 and P10 ═════════ */
+function elapsedShare(fy, now){
+  const s = Date.UTC(fy,0,1), e = Date.UTC(fy+1,0,1), [y,m,d] = now.split('-').map(Number), n = Date.UTC(y,m-1,d);
+  return Math.max(0, Math.min(1, (n - s) / (e - s)));
+}
+function kpiYear(k, fy){
+  const r = k.years[fy];
+  if (!r || r.actual == null) return { status:'no_data' };
+  const progress = (r.actual - k.baseline) / (r.target - k.baseline);
+  if (fy < CURRENT_FY) {
+    const met = k.dir === 'lower' ? r.actual <= r.target : r.actual >= r.target;
+    return { status: met ? 'target_met' : 'target_not_met', progress, r };
+  }
+  const ratio = progress / elapsedShare(fy, NOW);
+  return { status: ratio >= .9 ? 'on_track' : ratio >= .7 ? 'at_risk' : 'behind', progress, r };
+}
+const STATUS = { target_met:'Target met', target_not_met:'Target not met', on_track:'On track', at_risk:'At risk', behind:'Behind' };
+const statusTag = s => `<span class="tag ${s === 'target_met' || s === 'on_track' ? 't-ok' : 't-adv'}">${STATUS[s]}</span>`;
+
+/* ═════════ Selector: candidates from the active plan ═════════ */
+function allCandidates(){
+  const out = [];
+  for (const k of KPIS) for (const fy of Object.keys(k.years).map(Number)) {
+    const y = kpiYear(k, fy);
+    if (y.status === 'no_data') continue;
+    const past = fy < CURRENT_FY;
+    const good = y.status === 'target_met' || y.status === 'on_track';
+    const sentence = past ? `${k.name}: ${good ? 'target met' : 'target not met'} in FY${fy}`
+                          : `${k.name}: ${good ? 'on track' : y.status === 'at_risk' ? 'at risk' : 'behind'} in FY${fy} so far`;
+    out.push({ key:`kpi:${k.id}:${fy}`, unit:k.owner || 'office', band: past ? 'retraction' : 'repositioning', column: good ? 'successes' : 'failures',
+      text:sentence, kpi:k, fy, y });
+  }
+  for (const d of DEFICIENCIES) if (!d.corrective.length)
+    out.push({ key:`deficiency:${d.id}`, unit:d.ownerUnit, band:'repositioning', column:'failure_factors', text:d.text, level:d.level, def:d });
+  return out;
+}
+const candidatesFor = unit => allCandidates().filter(c => c.unit === unit && !S.acceptedKeys.has(c.key));
+
+/* ═════════ State ═════════ */
+const S = {
+  role:'hoo', stage:'conception', tab:'sheet', sheetUnit:'u-ops',
+  acceptedKeys:new Set(), dismissed:new Set(),
+  drawer:null, toast:null,
+  cards:[
+    { id:'q-r1', band:'retraction', column:'successes', text:'Metered connections rose from 58% to 81%', unit:'u-com', level:null, onOrg:true },
+    { id:'q-r2', band:'retraction', column:'success_factors', text:'Dedicated metering project team', unit:'u-ops', level:null, onOrg:true },
+    { id:'q-r3', band:'retraction', column:'failures', text:'Sanitation coverage 31% against a 45% target', unit:'u-ops', level:null, onOrg:true },
+    { id:'q-r4', band:'retraction', column:'failure_factors', text:'No funded sanitation activities in annual budgets', unit:'u-fin', level:null, onOrg:true },
+    { id:'q-r5', band:'retraction', column:'failure_factors', text:'Reading routes left without supervision', unit:'u-com', level:'people', onOrg:true, sample:true },
+    { id:'q-p1', band:'repositioning', column:'successes', text:'Supply hours up from 14 to 16 per day', unit:'u-ops', level:null, onOrg:true },
+    { id:'q-p2', band:'repositioning', column:'success_factors', text:'Weekly zonal supply schedules published', unit:'u-ops', level:null, onOrg:true },
+    { id:'q-p3', band:'repositioning', column:'failures', text:'Non-revenue water at 47% against a 40% target', unit:'u-com', level:null, onOrg:true },
+    { id:'q-p4', band:'repositioning', column:'failures', text:'High water losses in the distribution network', unit:'u-ops', level:null, onOrg:true },
+    { id:'q-p5', band:'repositioning', column:'failure_factors', text:'Leaks repaired only after customers complain', unit:'u-ops', level:'process', onOrg:true, sample:true },
+    { id:'q-j1', band:'projection', column:'opportunities', text:'Regulator’s tariff review window in 2028', unit:'u-fin', level:null, onOrg:true },
+    { id:'q-j2', band:'projection', column:'key_strategic_actions', text:'Cost-of-service study before the tariff application', unit:'u-fin', level:null, onOrg:true },
+    { id:'q-j3', band:'projection', column:'risks', text:'Drought reducing raw water yield', unit:'u-ops', level:null, onOrg:true },
+    { id:'q-j4', band:'projection', column:'risk_strategies', text:'Develop a second borehole field', unit:'u-ops', level:null, onOrg:true },
+  ],
+  /* Composition: draft objectives of the 2027–2031 plan and the cards linked to them. */
+  objectives:[
+    { id:'o-a', code:'O1.2', title:'Reduce non-revenue water', owner:'u-ops', cardIds:['q-p3','q-p5','q-r5'] },
+    { id:'o-b', code:'O3.1', title:'Increase household sanitation coverage', owner:'u-ops', cardIds:['q-r3','q-r4'] },
+  ],
+  rows:[],
+};
+const role = () => ROLES[S.role];
+const card = id => S.cards.find(c => c.id === id);
+const mayDraftCard = c => role().kind === 'office' || (role().kind === 'head' && c.unit === role().unit);
+const mayDraftRows = o => role().kind === 'office' || (role().kind === 'head' && o.owner === role().unit);
+const seesCardText = c => role().kind !== 'head' || c.unit === role().unit;
+
+/* Causes line: accepted organisation-sheet failure factors by level. */
+function causeLevels(){
+  const f = S.cards.filter(c => c.onOrg && mayCarryLevel(c.band, c.column));
+  const counts = Object.fromEntries(LEVELS.map(l => [l, f.filter(c => c.level === l).length]));
+  return { counts, notSet: f.filter(c => !c.level).length, total: f.length };
+}
+
+/* ═════════ Rendering ═════════ */
+function render(){
+  const r = role();
+  if (r.kind === 'exec' && S.tab === 'sheet') S.tab = 'board';
+  document.getElementById('app').innerHTML = `
+  <div class="shell">
+    <nav class="side" aria-label="Main">
+      <div class="brand"><span class="mark">C</span>CASPA™</div>
+      <div>
+        <div class="navbtn"><span class="dot" style="background:var(--side-fg)"></span>Home</div>
+        <div class="navbtn on"><span class="dot" style="background:var(--st)"></span>Strategy</div>
+        <div class="navbtn sub on">Forming the next plan</div>
+        <div class="navbtn"><span class="dot" style="background:var(--ca)"></span>Cascade</div>
+        <div class="navbtn"><span class="dot" style="background:#B85C38"></span>Plan</div>
+        <div class="navbtn"><span class="dot" style="background:#C2417A"></span>Performance</div>
+      </div>
+    </nav>
+    <div class="main">
+      <header class="top">
+        <div class="crumbs">Strategy › Forming the next plan › <b>${S.stage === 'conception' ? 'Conception' : 'Composition'}</b></div>
+        <label class="viewas">Viewing as
+          <select id="role" aria-label="Viewing as">${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${k === S.role ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}</select>
+        </label>
+      </header>
+      <main class="content">
+        <p class="proto">Prototype for review: 4Q Enhancement Specification v0.1. Only what is new is interactive. Card checking, consolidation and themes work as built. Records reset on reload.</p>
+        <div class="head">
+          <span class="eyebrow">Strategy · <button class="linkish" data-act="explain-stage" data-stage="${S.stage === 'conception' ? 'Conception' : 'Composition'}">${S.stage === 'conception' ? 'Conception' : 'Composition'}</button></span>
+          <h1>Strategic Plan 2027–2031</h1>
+          <p class="muted">${S.stage === 'conception' ? 'Record what the organisation has learned, past and present, and what it foresees, as the basis for the vision.' : 'Turn the confirmed vision and the 4Q review into goals, objectives and corrective work.'}</p>
+        </div>
+        <nav class="stages" aria-label="Stages">
+          <button class="stage" data-act="stage" data-stage="conception" ${S.stage === 'conception' ? 'aria-current="page"' : ''}>Conception</button>
+          <button class="stage" data-act="stage" data-stage="composition" ${S.stage === 'composition' ? 'aria-current="page"' : ''}>Composition</button>
+        </nav>
+        ${S.stage === 'conception' ? conception() : composition()}
+      </main>
+    </div>
+  </div>
+  ${S.drawer ? drawer() : ''}
+  ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+  bind();
+}
+
+function conception(){
+  const r = role();
+  const tabs = r.kind === 'exec' ? [['board','4Q board']] : [['sheet', r.kind === 'head' ? 'My department’s sheet' : 'Department sheets'], ['board','4Q board']];
+  return `<div class="tabs" role="tablist">${tabs.map(([k,l]) => `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</div>
+    ${S.tab === 'sheet' ? sheet() : board()}`;
+}
+
+/* ── Department sheet with suggestions ── */
+function sheet(){
+  const r = role();
+  const unit = r.kind === 'head' ? r.unit : S.sheetUnit;
+  const picker = r.kind === 'office' ? `<label class="viewas" style="border-style:solid">Sheet
+      <select id="sheetUnit">${[...Object.entries(UNITS), ['office','Records with no owner']].map(([k,v]) => `<option value="${k}" ${k === unit ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>` : '';
+  const cands = candidatesFor(unit);
+  const open = cands.filter(c => !S.dismissed.has(c.key));
+  const gone = cands.filter(c => S.dismissed.has(c.key));
+  const title = unit === 'office' ? 'Records with no owner' : UNITS[unit];
+  const cards = unit === 'office' ? S.cards.filter(c => c.fromKey && c.unit === 'office') : S.cards.filter(c => c.unit === unit);
+  return `
+  <div class="row"><h2>${esc(title)}</h2>${picker}</div>
+  ${suggestions(open, gone, unit)}
+  ${unit === 'office' ? `<p class="muted">Cards added here go straight to the organisation sheet, since no department owns these records.</p>` : ''}
+  <section class="ws" aria-label="${esc(title)} sheet">
+    ${BANDS.map(b => bandHtml(b, cards, { sheet:true })).join('')}
+  </section>`;
+}
+
+function suggestions(open, gone, unit){
+  if (!open.length && !gone.length) return `<section class="card lens"><h2>Suggested from your results</h2><p class="muted">Nothing to suggest from ${esc(SOURCE_PLAN)}.</p></section>`;
+  return `<section class="card lens" aria-labelledby="sg">
+    <div class="row"><h2 id="sg">Suggested from your results</h2><span class="muted small">From ${esc(SOURCE_PLAN)}</span></div>
+    <p class="muted">Results in ${esc(SOURCE_PLAN)} that may belong on this sheet. Add, edit or dismiss each one. Figures stay live from the records, so they are not copied into the card.</p>
+    <div>${open.length ? open.map(candRow).join('') : `<p class="muted">All suggestions handled.</p>`}</div>
+    ${gone.length ? `<details><summary class="linkish" style="display:inline-block">Show dismissed (${gone.length})</summary>
+      <div style="margin-top:8px">${gone.map(c => `<div class="row rowline" style="padding:8px 0;border-top:1px solid var(--line)"><span>${esc(c.text)}</span><button class="btn btn-quiet" data-act="restore" data-key="${c.key}">Restore</button></div>`).join('')}</div></details>` : ''}
+  </section>`;
+}
+
+function liveFigures(c){
+  if (c.kpi) {
+    const r = c.y.r, u = c.kpi.unit;
+    return `<div class="figs num"><span>${esc(c.kpi.code)}</span><span>Actual <b>${r.actual}${u}</b>${r.asOf ? ' at ' + dTxt(r.asOf) : ''}</span><span>Target <b>${r.target}${u}</b></span>${c.fy === CURRENT_FY ? `<span>Progress <b>${halfUp(c.y.progress * 100)}%</b></span>` : ''}${statusTag(c.y.status)}</div>`;
+  }
+  return `<div class="figs"><span>Decision map, ${esc(c.def.objective)}</span><span class="tag t-adv">No corrective activity yet</span></div>`;
+}
+
+function candRow(c){
+  return `<div class="cand">
+    <div><span class="tag t-info">${BAND_NAME[c.band]}</span><div class="small" style="margin-top:4px;font-weight:600">${cellName(c.band, c.column)}</div></div>
+    <div style="display:flex;flex-direction:column;gap:6px"><span>${esc(c.text)}</span>${liveFigures(c)}
+      ${c.level ? `<span class="small">Where the cause sits: <b style="color:var(--ca-t)">${SIXP[c.level]}</b>, carried from the decision map</span>` : ''}</div>
+    <div class="btns"><button class="btn btn-primary" data-act="accept" data-key="${c.key}">Add to sheet</button><button class="btn btn-quiet" data-act="edit-cand" data-key="${c.key}">Edit, then add</button><button class="btn btn-quiet" data-act="dismiss" data-key="${c.key}">Not relevant</button></div>
+  </div>`;
+}
+
+function bandHtml(b, cards, opt){
+  return `<div class="band">
+    <div class="bandhead"><button class="linkish" data-act="explain-band" data-band="${b}">${BAND_NAME[b]}</button></div>
+    <div class="cells">${COLS[b].map(([col, name]) => {
+      const here = cards.filter(c => c.band === b && c.column === col);
+      const own = opt.sheet ? here : here.filter(seesCardText);
+      const hidden = here.length - own.length;
+      return `<div class="cell"><div class="cellname">${name}</div>
+        ${own.map(c => cardHtml(c, opt)).join('')}
+        ${hidden ? `<div class="others">${hidden} ${hidden === 1 ? 'card' : 'cards'} from other departments</div>` : ''}
+        ${!here.length ? `<div class="empty">Nothing recorded yet</div>` : ''}</div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function cardHtml(c, opt){
+  const edit = mayDraftCard(c) && role().kind !== 'exec';
+  const from = c.fromKey ? allCandidates().find(x => x.key === c.fromKey) : null;
+  const meta = [opt.sheet ? null : (UNITS[c.unit] || 'Strategy office'), c.sample ? 'Sample wording for approval' : null, from ? 'From your results' : null].filter(Boolean).join(', ');
+  let lvl = '';
+  if (mayCarryLevel(c.band, c.column)) {
+    lvl = edit
+      ? `<div class="lvl"><span class="small muted">Where the cause sits</span><button class="lvlbtn" data-act="pick-level" data-id="${c.id}"><span>${c.level ? `<b>${SIXP[c.level]}</b>` : 'Not set'}</span><span class="small muted">Change</span></button></div>`
+      : `<div class="lvl"><span class="lvltext">Where the cause sits: ${c.level ? `<button class="linkish" style="color:var(--ca-t)" data-act="explain-level" data-level="${c.level}">${SIXP[c.level]}</button>` : '<span class="muted">Not set</span>'}</span></div>`;
+  }
+  const isFailure = c.column === 'failures';
+  const hasFactor = S.cards.some(x => x.factorFor === c.id);
+  const prompt = opt.sheet && edit && from && isFailure && !hasFactor
+    ? `<div class="prompt"><span class="small muted">What caused it? Record the cause as a critical failure factor.</span><button class="btn btn-quiet" data-act="add-factor" data-id="${c.id}">Add the critical failure factor</button></div>` : '';
+  const toOrg = opt.sheet && !c.onOrg
+    ? (role().kind === 'office' ? `<button class="btn btn-quiet" data-act="to-org" data-id="${c.id}">Add to organisation sheet</button>` : `<span class="tag t-info">Waiting for the Strategy office</span>`) : '';
+  return `<article class="qcard ${c.isNew ? 'new' : ''}">
+    <span>${esc(c.text)}</span>
+    ${from && from.kpi ? liveFigures(from) : ''}
+    ${meta ? `<span class="qmeta">${esc(meta)}</span>` : ''}
+    ${lvl}${prompt}${toOrg}
+  </article>`;
+}
+
+/* ── 4Q board with the causes line ── */
+function board(){
+  const org = S.cards.filter(c => c.onOrg);
+  const cl = causeLevels();
+  const withAny = LEVELS.filter(l => cl.counts[l]);
+  const none = LEVELS.filter(l => !cl.counts[l]);
+  const readOnly = role().kind === 'exec' ? `<p class="muted">You see every card and its cause level. The Strategy office and department heads curate the board.</p>` : '';
+  return `${readOnly}
+  <section class="ws" aria-label="Organisation 4Q board">
+    ${bandHtml('retraction', org, {})}
+    ${bandHtml('repositioning', org, {})}
+    <div class="causes" aria-label="Where the causes sit">
+      <h3>Where the causes sit</h3>
+      <div class="counts num">${withAny.map(l => `<span><button class="linkish" data-act="explain-level" data-level="${l}">${SIXP[l]}</button> ${cl.counts[l]}</span>`).join('')}
+        <span class="muted">Not set ${cl.notSet}</span></div>
+      ${none.length ? `<p class="small muted">None at: ${none.map(l => `<button class="linkish" style="font-weight:500" data-act="explain-level" data-level="${l}">${SIXP[l]}</button>`).join(', ')}</p>` : ''}
+      <p class="small muted">Counts the ${cl.total} critical failure factors on this board, in Retraction and Repositioning.</p>
+    </div>
+    ${bandHtml('projection', org, {})}
+  </section>`;
+}
+
+/* ── Composition: decision-map rows from the 4Q review ── */
+function composition(){
+  const r = role();
+  return `<p class="muted">Decision maps of the draft objectives. Each linked critical failure factor can become a decision-map row, keeping its level and a link back to the card.</p>
+  ${S.objectives.map(o => {
+    const may = mayDraftRows(o);
+    const factors = o.cardIds.map(card).filter(c => c && mayCarryLevel(c.band, c.column));
+    const others = o.cardIds.map(card).filter(c => c && !mayCarryLevel(c.band, c.column));
+    const rows = S.rows.filter(x => x.objectiveId === o.id);
+    return `<section class="card" aria-labelledby="h-${o.id}">
+      <div class="row"><h2 id="h-${o.id}">${esc(o.title)} <span class="muted small" style="font-weight:500">${esc(o.code)}</span></h2><span class="small muted">Owner: Head of Operations</span></div>
+      <h3>Critical failure factors linked to this objective</h3>
+      <div class="linked">${factors.map(c => {
+        const done = rows.find(x => x.cardId === c.id);
+        return `<div class="lrow"><div><span>${esc(c.text)}</span><div class="small muted">${BAND_NAME[c.band]}, Critical failure factors · Where the cause sits: ${c.level ? `<b style="color:var(--ca-t)">${SIXP[c.level]}</b>` : 'Not set'}</div></div>
+          <div>${done ? '<span class="tag t-ok">Added as deficiency</span>' : may ? `<button class="btn btn-primary" data-act="add-def" data-obj="${o.id}" data-id="${c.id}">Add as deficiency</button>` : ''}</div></div>`;
+      }).join('') || '<p class="muted">No critical failure factor is linked.</p>'}</div>
+      ${others.length ? `<p class="small muted">Also linked: ${others.map(c => esc(c.text)).join('; ')}. Outcomes are not added as deficiencies.</p>` : ''}
+      <h3>Decision map</h3>
+      ${rows.length ? `<div class="tablewrap"><table><thead><tr><th scope="col">Level</th><th scope="col">Deficiency</th><th scope="col">From</th><th scope="col">Corrective activity</th></tr></thead><tbody>
+        ${rows.map(x => `<tr><td><button class="linkish" style="color:var(--ca-t)" data-act="explain-level" data-level="${x.level}">${SIXP[x.level]}</button></td><td>${esc(x.text)}</td><td class="small">From the 4Q review: ${BAND_NAME[card(x.cardId).band]}, Critical failure factors</td><td><span class="tag t-adv">No corrective activity yet</span></td></tr>`).join('')}
+      </tbody></table></div>` : `<p class="muted">No rows yet.</p>`}
+      ${!may ? `<p class="small muted">${r.kind === 'exec' ? 'You can read the decision map. The objective’s owner, the Strategy office or a facilitator adds rows.' : 'The objective’s owner, the Strategy office or a facilitator adds rows.'}</p>` : ''}
+    </section>`;
+  }).join('')}`;
+}
+
+/* ── Drawers ── */
+function levelOptions(selected, allowNone){
+  return `<fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
+    <legend class="f" style="margin-bottom:8px">Where the cause sits</legend>
+    ${LEVELS.map(l => `<label class="opt"><input type="radio" name="lvl" value="${l}" ${selected === l ? 'checked' : ''}><span><b>${SIXP[l]}</b><br><span class="small">${SIXP_LINE[l]}</span><br><span class="small muted">Covers: ${SIXP_SCOPE[l]}</span></span></label>`).join('')}
+    ${allowNone ? `<label class="opt"><input type="radio" name="lvl" value="" ${!selected ? 'checked' : ''}><span><b>Not set</b><br><span class="small muted">Leave it open for now.</span></span></label>` : ''}
+  </fieldset>`;
+}
+function drawer(){
+  const d = S.drawer;
+  let body = '';
+  if (d.kind === 'explain') body = `<h2>${esc(d.title)}</h2><p>${esc(d.text)}</p>${d.scope ? `<p class="muted">Covers: ${esc(d.scope)}</p>` : ''}`;
+  if (d.kind === 'level') {
+    const c = card(d.id);
+    body = `<h2>Where the cause sits</h2><p>${esc(c.text)}</p><p class="small muted">${BAND_NAME[c.band]}, Critical failure factors</p>
+      ${levelOptions(c.level, true)}
+      <div class="btns"><button class="btn btn-primary" data-act="save-level">Save</button><button class="btn btn-quiet" data-act="close">Cancel</button></div>`;
+  }
+  if (d.kind === 'edit-cand') {
+    const c = allCandidates().find(x => x.key === d.key);
+    body = `<h2>Edit, then add</h2><p class="small muted">${BAND_NAME[c.band]}, ${cellName(c.band, c.column)}</p>
+      <label class="f" for="txt">Card text</label><textarea id="txt">${esc(c.text)}</textarea>
+      <p class="small muted">Figures belong in the records. They show live beside the card.</p>
+      <div class="btns"><button class="btn btn-primary" data-act="accept-edited">Add to sheet</button><button class="btn btn-quiet" data-act="close">Cancel</button></div>`;
+  }
+  if (d.kind === 'factor') {
+    const src = card(d.id);
+    body = `<h2>Add the critical failure factor</h2><p class="small muted">For: ${esc(src.text)}</p>
+      <p class="small">${BAND_NAME[src.band]}, Critical failure factors</p>
+      <label class="f" for="txt">What caused it?</label><textarea id="txt" placeholder="Write the cause in plain words">${esc(d.text || '')}</textarea>
+      ${d.error ? `<p class="err" role="alert">${esc(d.error)}</p>` : ''}
+      ${levelOptions(d.level || null, true)}
+      <div class="btns"><button class="btn btn-primary" data-act="save-factor">Add to sheet</button><button class="btn btn-quiet" data-act="close">Cancel</button></div>`;
+  }
+  if (d.kind === 'def') {
+    const c = card(d.id), o = S.objectives.find(x => x.id === d.obj);
+    body = `<h2>Add as deficiency</h2><p class="small muted">${esc(o.code)} ${esc(o.title)}</p>
+      <label class="f" for="txt">Deficiency</label><textarea id="txt">${esc(d.text ?? c.text)}</textarea>
+      ${!c.level ? `<p class="note">This card has no level yet. Every deficiency needs one, so choose where it occurs.</p>` : `<p class="small muted">The level comes from the card and can be changed here. The card stays as it is.</p>`}
+      ${d.error ? `<p class="err" role="alert">${esc(d.error)}</p>` : ''}
+      ${levelOptions(d.level ?? c.level, false)}
+      <div class="btns"><button class="btn btn-primary" data-act="save-def">Add to decision map</button><button class="btn btn-quiet" data-act="close">Cancel</button></div>`;
+  }
+  return `<div class="drawer-bg" data-act="close"></div><div class="drawer" role="dialog" aria-modal="true" aria-label="Details">${body}<button class="btn btn-quiet" data-act="close" style="align-self:flex-start">Close</button></div>`;
+}
+
+/* ═════════ Actions ═════════ */
+function toast(t){ S.toast = t; setTimeout(() => { S.toast = null; render(); }, 2600); }
+function addFromCandidate(c, text){
+  const unit = c.unit;
+  const n = { id:uid('q-n'), band:c.band, column:c.column, text, unit, level:c.level || null, onOrg: unit === 'office', fromKey:c.key, isNew:true };
+  S.cards.push(n); S.acceptedKeys.add(c.key);
+  toast(unit === 'office' ? 'Added to the organisation sheet' : 'Added to the sheet');
+}
+function act(a, el){
+  const key = el.dataset.key, id = el.dataset.id;
+  if (a === 'tab') S.tab = el.dataset.tab;
+  if (a === 'stage') S.stage = el.dataset.stage;
+  if (a === 'close') S.drawer = null;
+  if (a === 'accept') addFromCandidate(allCandidates().find(x => x.key === key), allCandidates().find(x => x.key === key).text);
+  if (a === 'dismiss') { S.dismissed.add(key); toast('Dismissed. You can restore it from “Show dismissed”.'); }
+  if (a === 'restore') S.dismissed.delete(key);
+  if (a === 'edit-cand') S.drawer = { kind:'edit-cand', key };
+  if (a === 'accept-edited') { const t = document.getElementById('txt').value.trim(); const c = allCandidates().find(x => x.key === S.drawer.key); if (t) { addFromCandidate(c, t); S.drawer = null; } }
+  if (a === 'pick-level') S.drawer = { kind:'level', id };
+  if (a === 'save-level') { const v = document.querySelector('input[name=lvl]:checked')?.value || null; card(S.drawer.id).level = v; S.drawer = null; toast(v ? `Cause level set: ${SIXP[v]}` : 'Cause level cleared'); }
+  if (a === 'add-factor') S.drawer = { kind:'factor', id };
+  if (a === 'save-factor') {
+    const t = document.getElementById('txt').value.trim();
+    if (!t) { S.drawer.error = 'Write the cause before adding the card.'; S.drawer.level = document.querySelector('input[name=lvl]:checked')?.value || null; }
+    else { const src = card(S.drawer.id); const v = document.querySelector('input[name=lvl]:checked')?.value || null;
+      S.cards.push({ id:uid('q-n'), band:src.band, column:'failure_factors', text:t, unit:src.unit, level:v, onOrg: src.unit === 'office', factorFor:src.id, isNew:true });
+      S.drawer = null; toast('Critical failure factor added'); }
+  }
+  if (a === 'to-org') { card(id).onOrg = true; toast('Added to the organisation sheet'); }
+  if (a === 'add-def') S.drawer = { kind:'def', id, obj:el.dataset.obj };
+  if (a === 'save-def') {
+    const t = document.getElementById('txt').value.trim(); const v = document.querySelector('input[name=lvl]:checked')?.value;
+    if (!t || !v) { S.drawer.error = !v ? 'Choose where the deficiency occurs.' : 'Write the deficiency.'; S.drawer.text = t; S.drawer.level = v || null; }
+    else { S.rows.push({ objectiveId:S.drawer.obj, cardId:S.drawer.id, text:t, level:v }); S.drawer = null; toast('Added to the decision map'); }
+  }
+  if (a === 'explain-level') { const l = el.dataset.level; S.drawer = { kind:'explain', title:SIXP[l], text:SIXP_LINE[l], scope:SIXP_SCOPE[l] }; }
+  if (a === 'explain-band') { const b = el.dataset.band; S.drawer = { kind:'explain', title:BAND_NAME[b], text:BAND_LINE[b] }; }
+  if (a === 'explain-stage') { const s = el.dataset.stage; S.drawer = { kind:'explain', title:s, text:STAGE_LINE[s] }; }
+  render();
+  if (S.drawer) { const f = document.querySelector('.drawer textarea, .drawer input:checked, .drawer input, .drawer button'); f && f.focus(); }
+}
+function bind(){
+  document.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); act(el.dataset.act, el); }));
+  const r = document.getElementById('role'); r && r.addEventListener('change', () => { S.role = r.value; S.drawer = null; if (ROLES[S.role].kind === 'head') S.tab = 'sheet'; render(); });
+  const u = document.getElementById('sheetUnit'); u && u.addEventListener('change', () => { S.sheetUnit = u.value; render(); });
+  document.querySelectorAll('.opt input').forEach(i => i.addEventListener('click', e => e.stopPropagation()));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.drawer) { S.drawer = null; render(); } });
+render();
+</script>
+</body>
+</html>
