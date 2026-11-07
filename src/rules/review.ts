@@ -5,7 +5,7 @@
  */
 import type { ISODate, PerformanceContract, Review } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
-import { rateContract } from './rating';
+import { rateContract, schemeFor } from './rating';
 
 export type ReviewStep = 'awaiting_self' | 'awaiting_supervisor' | 'being_checked' | 'awaiting_acknowledgement' | 'acknowledged';
 
@@ -40,6 +40,9 @@ export function reviewerPositionOf(s: Store, c: PerformanceContract, now: ISODat
 /** True when a completed review has a flag (scored 1, or above the high-achievement level) not yet accepted. */
 export function needsCheck(s: Store, r: Review, now: ISODate): boolean {
   if (r.status !== 'completed' || r.reviewerCheck) return false;
+  // v1.15 (C3): where the policy says so, the next-level reviewer countersigns every review.
+  const c = s.contracts.find((x) => x.id === r.contractId);
+  if (c && schemeFor(s, c).countersignAll) return true;
   return (rateContract(s, r.contractId, { now })?.flags.length ?? 0) > 0;
 }
 
@@ -53,6 +56,7 @@ export function stepOf(s: Store, r: Review, now: ISODate): ReviewStep {
 export type CompleteBlock =
   | { kind: 'waiting_for_hr'; contractObjectiveId: string }
   | { kind: 'not_scored'; contractObjectiveId: string }
+  | { kind: 'attribute_not_scored'; attributeId: string }
   | { kind: 'no_assessment' };
 
 /** What must be fixed before the supervisor completes a review (step 3). */
@@ -62,7 +66,14 @@ export function completeBlocks(s: Store, r: Review, assessment: string, now: ISO
   for (const o of rating?.objectives ?? []) {
     const request = r.notAssessable.find((n) => n.contractObjectiveId === o.contractObjectiveId);
     if (request && !request.hrApproval) out.push({ kind: 'waiting_for_hr', contractObjectiveId: o.contractObjectiveId });
-    else if (o.basis !== 'not_assessable' && o.score === null) out.push({ kind: 'not_scored', contractObjectiveId: o.contractObjectiveId });
+    // v1.15: under weighted points an objective has no band score; it needs a verified figure either way.
+    else if (o.basis !== 'not_assessable' && o.basis !== 'verified') out.push({ kind: 'not_scored', contractObjectiveId: o.contractObjectiveId });
+  }
+  // v1.15 (B): every personal attribute needs the supervisor's score before the review is completed.
+  const c = s.contracts.find((x) => x.id === r.contractId);
+  const sc = c ? schemeFor(s, c) : null;
+  if (sc?.competencySection.enabled) for (const a of sc.competencySection.attributes ?? []) {
+    if (!r.competencyRatings.some((x) => x.attributeId === a.id && x.justification.trim() !== '')) out.push({ kind: 'attribute_not_scored', attributeId: a.id });
   }
   if (!assessment.trim()) out.push({ kind: 'no_assessment' });
   return out;
