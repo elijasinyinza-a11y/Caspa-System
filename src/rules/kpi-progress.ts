@@ -5,6 +5,7 @@
 import type { Goal, ISODate, Kpi, Objective } from '../contract/caspa-data-contract';
 import { kpiBaseline } from './baseline';
 import type { Store } from '../data/access/store';
+import { fromShares } from './targets';
 
 export interface ProgressContext {
   financialYear: number;
@@ -73,7 +74,9 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 /** P2: the actual for the year to date — latest reading, sum, or average. Null when no reading (P6). */
 export const kpiActual = (s: Store, k: Kpi, ctx: ProgressContext): number | null => {
   const { start } = financialYearBounds(ctx.financialYear, s.organisation.financialYearStartMonth);
-  const readings = s.kpiActuals
+  // TG-4 (v0.25.0): a KPI broken down and combined this year takes its figure from its verified shares, complete periods only.
+  const shares = fromShares(s, k.id, ctx.financialYear as never, start, ctx.now);
+  const readings = shares ? shares.periods.map((p) => ({ periodEnd: p.periodEnd, value: p.value })) : s.kpiActuals
     .filter((a) => a.kpiId === k.id && a.periodEnd >= start && a.periodEnd <= ctx.now)
     .sort((a, b) => (a.periodEnd < b.periodEnd ? -1 : a.periodEnd > b.periodEnd ? 1 : 0));
   if (readings.length === 0) return null;

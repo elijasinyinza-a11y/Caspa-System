@@ -46,7 +46,12 @@ export function dependencyFlags(s: Store, d: Dependency, fy: number, now: ISODat
     const level = s.activities.find((x) => x.id === id)?.decisionLevel;
     if (d.neededBy < now && !dependencyDone(s, d, now)) out.push('late');
     if (level && HIGHER.has(level)) out.push('higher_level');
-  } else if (d.neededBy < now && !dependencyDone(s, d, now)) out.push('late');
+  } else {
+    // v0.25.0: a share with no owner is carried by nobody.
+    const sh = s.kpiShares.find((x) => x.id === (d.on as { shareId: string }).shareId);
+    if (!sh?.ownerPositionId) out.push('not_carried');
+    if (d.neededBy < now && !dependencyDone(s, d, now)) out.push('late');
+  }
   return out;
 }
 
