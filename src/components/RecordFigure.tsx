@@ -28,6 +28,8 @@ export function RecordFigure({ kind, id, aggregation }: { kind: 'activity' | 'kp
   const opener = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (open) first.current?.focus(); }, [open]);
   if (!form) return null;
+  // F2: a KPI whose figure comes from its shares this year takes no readings of its own.
+  if (form.fromShares) return <p className="border-t border-border pt-3 text-13 text-muted">{en.targets.fromSharesClosed}</p>;
   const title = kind === 'activity' ? R.activityTitle : R.kpiTitle;
   const unit = form.unit;
   const already = form.recorded[period];

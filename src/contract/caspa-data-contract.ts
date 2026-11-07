@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.16
+ * CASPA™ data contract — v1.17
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,10 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.17 (7 November 2026, Elijah; Finish Targets Specification v0.1): one record and one row, for TG-9.
+ *     - ActivityProposal: new work proposed from a KPI share, confirmed into Cascade by the Strategy office or returned.
+ *     - PERMISSIONS.ActivityProposal: view by the share's owner, their supervisor, the objective's owner and the Strategy
+ *       office; propose by the share's owner or their supervisor; approve by the Strategy office.
  * v1.16 (6 November 2026, Elijah; 4Q Enhancement Specification v0.1): fields only.
  *     - FourQEntry.causeLevel: where a critical failure factor's cause sits (one 6P level), optional.
  *     - FourQEntry.basis: the record a card was suggested from (a KPI's year, or a decision-map row), so figures stay live.
@@ -545,6 +549,30 @@ export interface KpiShare extends OrgScoped, Audited {
   ownerPositionId: Id<'Position'> | null;
   target: number;
   weight: number | null; // for 'weighted'; planned, set with the breakdown (TG-2)
+}
+
+/**
+ * v1.17 (TG-9): new work proposed from a share, for a Cascade KPI. Kept apart from activities, so nothing waiting for a
+ * decision appears in Cascade, budgets, checks or coverage. Confirming creates an ordinary activity under the KPI.
+ */
+export interface ActivityProposal extends OrgScoped, Audited {
+  id: Id<'ActivityProposal'>;
+  shareId: Id<'KpiShare'>;
+  kpiId: Id<'Kpi'>;
+  financialYear: FinancialYear;
+  title: string;
+  decisionLevel: SixPLevel; // required (F5): an activity cannot be published without one
+  quantityTarget: { value: number; unit: string } | null;
+  ownerPositionId: Id<'Position'>;
+  evidence: string; // means of verification
+  reason: string; // why it is needed
+  sent: Stamp;
+  /** What was sent, kept when the Strategy office corrects it before confirming. */
+  asSent: { title: string; decisionLevel: SixPLevel; quantityTarget: { value: number; unit: string } | null; ownerPositionId: Id<'Position'> } | null;
+  outcome: 'waiting' | 'confirmed' | 'returned' | 'withdrawn';
+  decided: Stamp | null;
+  returnReason: string | null;
+  activityId: Id<'Activity'> | null;
 }
 
 /** A share's reading for a period; counts only once verified by the owner's supervisor (TG-3). */
@@ -1041,6 +1069,7 @@ export const PERMISSIONS: PermissionMatrix = {
   KpiShare: { view: ['all_members'], draft: ['owner', 'strategy_office'] },
   ShareReading: { view: ['all_members'], draft: ['owner'], approve: ['supervisor'] },
   Dependency: { view: ['all_members'], draft: ['supervisor', 'owner'] }, // v1.14: the drafting supervisor, or a share's owner
+  ActivityProposal: { view: ['owner', 'supervisor', 'objective_owner', 'strategy_office'], propose: ['owner', 'supervisor'], approve: ['strategy_office'] }, // v1.17 (TG-9)
   SurveyResponse: { view: ['strategy_office', 'executive', 'owner'], draft: ['self'] },
   SurveyReceipt: { view: ['self', 'strategy_office'], draft: ['self'] },
   Workshop: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
