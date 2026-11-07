@@ -16,6 +16,7 @@ const DEV_DATES = ['2026-10-18', '2027-01-04'] as ISODate[];
 import { OrganisationPage } from './organisation/OrganisationPage';
 import { PlanDocumentPrint } from './PlanDocument';
 import { BoardPaperPrint } from './Communication';
+import { PrintPage } from './Print';
 import { Strategy, StrategyEntryPage } from './Strategy';
 import { HandoverPage } from './organisation/Vacancies';
 import { SAMPLE_NOW } from '../data/sample/seed';
@@ -99,6 +100,7 @@ export function App() {
     : route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'strategy' ? <StrategyEntryPage key={`${org.orgId}:${viewing}:${hrefFor(route)}`} entry={route.entry} stage={route.stage} tab={route.tab} goalId={route.goalId} />
+    : route.kind === 'print' ? <PrintPage key={`${org.orgId}:${viewing}:${route.doc}:${route.id}`} doc={route.doc} id={route.id} />
     : route.kind === 'boardPaper' ? <BoardPaperPrint key={`${org.orgId}:${viewing}:${route.goalId}`} goalId={route.goalId} />
     : route.kind === 'contracts' ? <ContractsPage key={`${org.orgId}:${viewing}:${route.contractId ?? ''}`} tab={route.tab} contractId={route.contractId} />
     : route.kind === 'targets' ? <TargetsPage key={`${org.orgId}:${viewing}:${route.breakdownId ?? ''}:${route.shareId ?? ''}:${route.setup ?? ''}`} breakdownId={route.breakdownId} shareId={route.shareId} setup={route.setup} />

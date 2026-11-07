@@ -51,7 +51,7 @@ function Score({ r }: { r: RatingView }) {
   if (r.overall === null || !r.label) return <span className="text-14 text-muted">{en.team.notScored}</span>;
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <span className="tabular text-14 font-semibold text-navy">{en.rating.score(formatScore(r.overall), r.label)}</span>
+      <span className="tabular text-14 font-semibold text-navy">{en.rating.score(r.method === 'weighted_points' ? `${r.overall.toFixed(2)}%` : formatScore(r.overall), r.label)}</span>
       <span className="inline-flex items-center rounded-full border border-info-border bg-info-bg px-2 py-0.5 text-12 font-semibold text-info-text">
         {r.provisional ? en.rating.provisional : en.rating.final}
       </span>
@@ -145,6 +145,7 @@ function HrView({ hr }: { hr: HrSummary }) {
       </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Tile label={en.hrHome.reviews} value={formatNumber(hr.reviews.open + hr.reviews.selfSubmitted)} note={en.hrHome.reviewsNote(hr.reviews.open, hr.reviews.selfSubmitted)} />
+        <Tile label={en.hrHome.received} value={formatNumber(hr.received.contracts + hr.received.assessments)} note={en.hrHome.receivedNote(hr.received.contracts, hr.received.assessments)} />
       </div>
       <Section id="scored" title={en.hrHome.scored} note={en.rating.provisionalNote}>
         {hr.scored.length === 0 ? (

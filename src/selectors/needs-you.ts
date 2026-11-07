@@ -28,7 +28,7 @@ export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: For
 /** Performance › Progress updates (v0.18.0): a tab, and on Mine the objective whose form opens. */
 export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
 /** v0.20.0: Performance › Reviews, at one review or a tab. */
-export type ReviewsLink = { kind: 'reviews'; reviewId?: string; tab?: 'mine' | 'team' | 'check' | 'round' };
+export type ReviewsLink = { kind: 'reviews'; reviewId?: string; tab?: 'mine' | 'team' | 'check' | 'round' | 'policy' };
 export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | { kind: 'contracts'; contractId?: string; tab?: 'mine' | 'team' | 'check' | 'overview' } | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 

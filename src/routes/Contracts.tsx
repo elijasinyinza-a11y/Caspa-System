@@ -65,6 +65,9 @@ function Objective({ o, edit, contractId }: { o: ObjectiveView; edit: boolean; c
   const id = useId();
   const [qty, setQty] = useState(o.quantity === null ? '' : String(o.quantity));
   const [weight, setWeight] = useState(String(o.weight));
+  const [mov, setMov] = useState(o.meansOfVerification ?? '');
+  const [periods, setPeriods] = useState(o.periodTargets.map((p) => ({ periodEnd: p.periodEnd as string, label: p.label, value: p.value === null ? '' : String(p.value) })));
+  const savePeriods = (next: typeof periods) => act(repo.contracts.updateObjective(o.id, { periodTargets: next.map((p) => ({ periodEnd: p.periodEnd, value: p.value.trim() === '' ? null : Number(p.value.replace(/[ ,]/g, '')) })) }), C.toasts.saved);
   const [dep, setDep] = useState<{ on: string; by: string; note: string } | null>(null);
   const act = (r: { ok: boolean; error?: string }, ok: string) => say(r.ok ? ok : C.errors[r.error ?? 'not_allowed'] ?? null);
   const sources = dep ? repo.contracts.sources(contractId) : null;
@@ -78,6 +81,18 @@ function Objective({ o, edit, contractId }: { o: ObjectiveView; edit: boolean; c
           <div><label htmlFor={`${id}-w`} className={label}>{C.weight}</label><input id={`${id}-w`} inputMode="numeric" value={weight} onChange={(e) => setWeight(e.target.value)} onBlur={() => act(repo.contracts.updateObjective(o.id, { weight: Number(weight) || 0 }), C.toasts.saved)} className={input} /></div>
         </div>
       ) : <p className="tabular text-14">{o.quantity !== null ? `${formatNumber(o.quantity)} ${o.unit} · ` : ''}{C.weight.replace(' (%)', '')} {o.weight}%</p>}
+      {edit && o.quantity !== null && (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {periods.map((p, k) => (
+            <div key={p.periodEnd}><label htmlFor={`${id}-p${k}`} className={label}>{C.periodTarget(p.label)}{o.unit ? ` (${o.unit})` : ''}</label>
+              <input id={`${id}-p${k}`} inputMode="numeric" value={p.value} onChange={(e) => { const n = [...periods]; n[k] = { ...p, value: e.target.value }; setPeriods(n); }} onBlur={() => savePeriods(periods)} className={input} /></div>
+          ))}
+        </div>
+      )}
+      {!edit && o.periodTargets.some((p) => p.value !== null) && <p className="tabular text-13 text-muted">{C.periodTargetsShown(o.periodTargets.filter((p) => p.value !== null).map((p) => `${p.label} ${formatNumber(p.value!)}`).join(', '))}</p>}
+      {edit ? (
+        <div className="mt-2"><label htmlFor={`${id}-mv`} className={label}>{C.mov}</label><input id={`${id}-mv`} value={mov} onChange={(e) => setMov(e.target.value)} onBlur={() => act(repo.contracts.updateObjective(o.id, { meansOfVerification: mov }), C.toasts.saved)} className={input} /></div>
+      ) : o.meansOfVerification && <p className="text-13 text-muted">{C.movShown(o.meansOfVerification)}</p>}
       {o.deps.map((d) => (
         <div key={d.id} className="mt-2 rounded-lg bg-cream px-3 py-2 text-13">
           <p>{d.text}</p>
@@ -155,6 +170,9 @@ function Contract({ c, fy, as }: { c: ContractView; fy: string; as: 'employee' |
         {as === 'reviewer' && <p className="mt-1 text-13 text-muted">{C.check.drafted(c.supervisor)}</p>}
         <ul className="mt-2">{c.objectives.map((o) => <Objective key={`${o.id}:${o.weight}:${o.quantity}`} o={o} edit={c.can.edit} contractId={c.id} />)}</ul>
         <p className="tabular mt-2 text-14 font-semibold text-navy">{C.weights(c.weightTotal)}</p>
+        <p className="text-14">{c.split.attributesPct > 0 ? C.split(c.split.targetsPct, c.split.attributesPct) : C.splitTargetsOnly} <span className="text-muted">{c.split.methodText}.</span></p>
+        {c.split.attributes.length > 0 && <p className="text-13 text-muted">{C.attributesShown(c.split.attributes.map((a) => a.name).join(', '))}</p>}
+        {(c.step === 'signed' || c.step === 'issued') && <p className="mt-2"><a className="inline-flex min-h-11 items-center font-semibold text-navy underline" href={hrefFor({ kind: 'print', doc: 'contract', id: c.id })}>{C.print}</a></p>}
         {c.can.edit && !adding && <div className="mt-2"><button type="button" className={btn} onClick={() => setAdding(true)}>{C.add}</button></div>}
       </div>
       {adding && <AddObjective contractId={c.id} onDone={() => setAdding(false)} />}
@@ -214,6 +232,13 @@ function Overview({ o, fy }: { o: NonNullable<ReturnType<ReturnType<typeof useAp
         <table className="tabular mt-2 w-full border-collapse text-14"><thead><tr className="border-b border-border"><th scope="col" className="py-2 text-left font-semibold text-muted">{C.overview.status}</th><th scope="col" className="py-2 text-right font-semibold text-muted">{C.overview.count}</th></tr></thead>
           <tbody><tr className="border-b border-border"><td className="py-2">{C.overview.none}</td><td className="py-2 text-right">{o.none}</td></tr>{o.byStep.map((x) => <tr key={x.step} className="border-b border-border"><td className="py-2">{C.step[x.step]}</td><td className="py-2 text-right">{x.n}</td></tr>)}</tbody></table>
       </section>
+      {o.received.length > 0 && (
+        <section className={`${card} mt-3`} aria-labelledby={`${id}-rc`}>
+          <h3 id={`${id}-rc`} className="text-16 font-bold text-navy">{C.received(o.received.length)}</h3>
+          <p className="text-13 text-muted">{C.receivedNote}</p>
+          <ul className="divide-y divide-border">{o.received.map((x) => <li key={x.id} className="flex flex-wrap items-center justify-between gap-2 py-2"><span><b className="text-navy">{x.person}</b> <span className="text-13 text-muted">{x.position}</span></span><a className={btn} href={hrefFor({ kind: 'print', doc: 'contract', id: x.id })}>{C.print}<span className="sr-only">: {x.person}</span></a></li>)}</ul>
+        </section>
+      )}
       <section className={`${card} mt-3`} aria-labelledby={`${id}-l`}>
         <h3 id={`${id}-l`} className="text-16 font-bold text-navy">{C.overview.limits}</h3>
         <div className="mt-2"><label htmlFor={`${id}-s`} className={label}>{C.overview.standing}</label><input id={`${id}-s`} inputMode="numeric" value={standing} onChange={(e) => setStanding(e.target.value)} className={input} /></div>

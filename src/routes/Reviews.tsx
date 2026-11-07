@@ -12,6 +12,7 @@ import { formatDate, formatFinancialYear, formatNumber, formatPercent } from '..
 import { en } from '../strings/en';
 import { btn, card, Chip, input, label, primary } from './organisation/ui';
 import { hrefFor } from './router';
+import { ScoringPolicy } from './ScoringPolicy';
 
 const R = en.reviews;
 /** "mid-year", "year-end" or "quarter 2" (TG-11). */
@@ -43,6 +44,7 @@ export function ReviewsPage({ tab, reviewId }: { tab?: ReviewTab; reviewId?: str
       {on === 'mine' && p.mine.map((r) => <Review key={r.id} r={r} share={p.yearShare} fy={formatFinancialYear(p.financialYear, repo.settings().financialYearStartMonth)} as="employee" />)}
       {on === 'team' && <Team rows={p.team} open={single && p.team.some((x) => x.id === single.id) ? single.id : null} share={p.yearShare} />}
       {on === 'check' && (p.check.length ? p.check.map((r) => <Review key={r.id} r={r} share={p.yearShare} as="reviewer" />) : <p className={`${card} text-14 text-muted`}>{R.check.empty}</p>)}
+      {on === 'policy' && <ScoringPolicy />}
       {on === 'round' && p.round && <Round rv={p.round} fy={formatFinancialYear(p.financialYear, repo.settings().financialYearStartMonth)} />}
     </>
   );
@@ -52,11 +54,13 @@ function Lines({ r, share, supervise, employeeAsk = false }: { r: ReviewView; sh
   return (
     <>
       <ul className="mt-2">
-        {r.objectives.map((o) => <Line key={o.id} o={o} reviewId={r.id} supervise={supervise} employeeAsk={employeeAsk} />)}
+        {r.objectives.map((o) => <Line key={o.id} o={o} reviewId={r.id} supervise={supervise && r.method === 'bands'} employeeAsk={employeeAsk} points={r.method === 'weighted_points'} />)}
       </ul>
       {r.overall ? (
         <>
-          <p className="mt-3 text-16 text-text">{R.overall(r.overall.score.toFixed(2), r.overall.label)} <span className="font-semibold">{r.overall.provisional ? R.provisional : R.final}</span></p>
+          <p className="mt-3 text-16 text-text">{R.overall(r.overall.display, r.overall.label)} <span className="font-semibold">{r.overall.provisional ? R.provisional : R.final}</span></p>
+          {r.method === 'bands' && r.overall.percent !== null && <p className="tabular text-13 text-muted">{R.total.percent(`${r.overall.percent.toFixed(2)}%`)}</p>}
+          <p className="text-13 text-muted">{r.methodText}.</p>
           {r.scoredWeightPct < r.totalWeightPct && <p className="text-13 text-muted">{R.partial(r.scoredWeightPct)}</p>}
           {(r.kind === 'mid_year' || r.kind === 'quarterly') && <p className="text-13 text-muted">{R.midYear(formatPercent(share))}</p>}
         </>
@@ -65,7 +69,7 @@ function Lines({ r, share, supervise, employeeAsk = false }: { r: ReviewView; sh
   );
 }
 
-function Line({ o, reviewId, supervise, employeeAsk }: { o: ObjectiveLine; reviewId: string; supervise: boolean; employeeAsk: boolean }) {
+function Line({ o, reviewId, supervise, employeeAsk, points }: { o: ObjectiveLine; reviewId: string; supervise: boolean; employeeAsk: boolean; points: boolean }) {
   const { repo, say } = useApp();
   const id = useId();
   const [delta, setDelta] = useState<-1 | 0 | 1>(o.adjustment?.delta ?? 0);
@@ -74,13 +78,15 @@ function Line({ o, reviewId, supervise, employeeAsk }: { o: ObjectiveLine; revie
   const fig = (n: number | null) => (n === null ? '—' : formatNumber(n));
   const pct = o.achievement === null ? (o.done === 0 && o.lower ? '∞' : '—') : formatPercent(o.achievement);
   const main = o.cantAssess?.accepted ? O.cantAssess(o.cantAssess.reason)
-    : o.score === null ? (o.basis === 'no_quantity' ? O.noQuantity : O.notScored)
-    : `${o.lower ? O.lower(fig(o.done), fig(o.target), pct) : O.verified(fig(o.done), fig(o.target), pct)} ${O.score(o.score, o.label ?? '')}`;
+    : o.basis !== 'verified' ? (o.basis === 'no_quantity' ? O.noQuantity : O.notScored)
+    : `${o.lower ? O.lower(fig(o.done), fig(o.target), pct) : O.verified(fig(o.done), fig(o.target), pct)} ${points ? R.points((o.points ?? 0).toFixed(2)) + '.' : O.score(o.score ?? 0, o.label ?? '')}`;
   const act = (res: { ok: boolean; error?: string }, ok: string) => say(res.ok ? ok : R.errors[res.error ?? 'not_allowed'] ?? null);
   return (
     <li className="border-t border-border py-3">
       <p className="font-bold text-navy">{o.title}</p>
       <p className="tabular text-14 text-text">{main}</p>
+      {o.fullYearTarget !== null && o.target !== null && o.fullYearTarget !== o.target && <p className="tabular text-13 text-muted">{R.periodTarget(fig(o.target), fig(o.fullYearTarget))}</p>}
+      {o.selfDone !== null && o.selfDone !== o.done && <p className="tabular text-13 text-muted">{R.selfReported(fig(o.selfDone))}</p>}
       {o.adjustment && <p className="text-13 text-muted">{O.moved(o.adjustment.delta > 0 ? 'up' : 'down', o.adjustment.by, o.adjustment.reason)}</p>}
       {o.cantAssess && !o.cantAssess.accepted && <p className="text-13 text-muted">{O.cantAssessAsked(o.cantAssess.reason)}</p>}
       {o.lower && <p className="text-13 text-muted">{O.lowerNote}</p>}
@@ -140,8 +146,11 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
         <p className="mt-1"><Chip tone={stepTone}>{R.step[r.step]}</Chip></p>
         {as === 'reviewer' && r.flags.map((f, i) => <p key={i} className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text"><b>{R.check.flag[f.kind]}</b> {f.title}</p>)}
         <Lines r={r} share={share} supervise={r.can.supervise} employeeAsk={as === 'employee' && (r.step === 'awaiting_self' || r.step === 'awaiting_supervisor')} />
+        {r.step !== 'awaiting_self' && r.step !== 'awaiting_supervisor' && r.step !== 'waiting_to_send' && <p className="mt-2"><a className="inline-flex min-h-11 items-center font-semibold text-navy underline" href={hrefFor({ kind: 'print', doc: 'review', id: r.id })}>{R.print}<span className="sr-only">: {r.person}</span></a></p>}
         {r.history.length > 0 && <p className="tabular mt-2 text-13 text-muted">{R.history} {r.history.map((h) => R.historyItem(kindLabel(h.kind, h.periodEnd), h.score === null ? '—' : h.score.toFixed(2))).join(' · ')}</p>}
       </div>
+
+      {r.attributes.enabled && <Attributes r={r} as={as} />}
 
       <div className={`${card} mt-3`}>
         <h3 className="text-16 font-bold text-navy">{R.self.title}</h3>
@@ -169,6 +178,7 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
             <>
               <label htmlFor={`${id}-a`} className={`${label} mt-2 block`}>{R.sup.label}</label>
               <textarea id={`${id}-a`} rows={5} value={assessment} onChange={(e) => setAssessment(e.target.value)} className={`${input} py-2`} />
+              <Notes r={r} />
               {r.finalPending > 0 && <p className="mt-2 rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text">{R.finalPending(r.finalPending)}</p>}
               {r.blocks.length > 0 && <div className="mt-2 rounded-lg border border-block-border bg-block-bg p-3 text-14 text-block-text"><p className="font-semibold">{R.blocks.title}</p><ul className="list-disc pl-5">{r.blocks.map((b) => <li key={b}>{b}</li>)}</ul></div>}
               <div className="mt-2"><button type="button" className={primary} onClick={() => { const x = repo.reviews.complete(r.id, assessment); say(x.ok ? (x.note ? R.toasts.completedCheck(x.note) : R.toasts.completed) : x.error === 'blocked' ? (assessment.trim() ? R.errors.blocked! : R.blocks.no_assessment) : R.errors[x.error] ?? null); }}>{R.sup.complete}</button></div>
@@ -179,11 +189,17 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
                 <div className="mt-2"><button type="button" className={btn} onClick={() => act(repo.reviews.sendBack(r.id, reason), R.toasts.sentBack)}>{R.sup.sendBackDo}</button></div>
               </details>
             </>
-          ) : <p className="mt-1 whitespace-pre-line border-l-4 border-border pl-3 text-14">{r.assessment}</p>}
+          ) : <>
+            <p className="mt-1 whitespace-pre-line border-l-4 border-border pl-3 text-14">{r.assessment}</p>
+            {r.contributions && <><h4 className="mt-3 text-14 font-semibold text-navy">{R.notes.contributionsShown}</h4><p className="whitespace-pre-line text-14">{r.contributions}</p></>}
+            {r.followUp && <><h4 className="mt-3 text-14 font-semibold text-navy">{R.notes.followUpShown}</h4><p className="whitespace-pre-line text-14">{r.followUp}</p></>}
+          </>}
         </div>
       )}
 
-      {r.can.check && (
+      {r.can.check && r.countersign.required && <Countersign r={r} />}
+      {r.countersign.done && r.countersign.required && <p className="mt-3 text-14">{R.countersign.done(r.countersign.done.by, r.countersign.done.agrees, r.countersign.done.reason)}</p>}
+      {r.can.check && !r.countersign.required && (
         <div className={`${card} mt-3`}>
           <div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => act(repo.reviews.accept(r.id), R.toasts.accepted)}>{R.check.accept}</button></div>
           <details className="mt-2">
@@ -207,6 +223,91 @@ function Review({ r, share, fy, as }: { r: ReviewView; share: number; fy?: strin
       )}
       {as === 'employee' && r.step === 'being_checked' && <p className="mt-3 text-14 text-muted">{R.ack.wait}</p>}
       {r.acknowledgement && <p className="mt-3 text-14"><Chip tone="complete">{R.ack.done}</Chip> {r.acknowledgement.disagreement ? (as === 'employee' ? R.ack.withNote(r.acknowledgement.disagreement) : R.ack.withNoteOther(r.acknowledgement.disagreement)) : ''}</p>}
+    </section>
+  );
+}
+
+/** v0.23.0: personal attributes. The employee may add their own score while writing the self-assessment; the supervisor scores each with a comment. */
+function Attributes({ r, as }: { r: ReviewView; as: 'employee' | 'supervisor' | 'reviewer' }) {
+  const { repo, say } = useApp();
+  const id = useId();
+  const A = R.attrs;
+  const a = r.attributes;
+  const [draft, setDraft] = useState<Record<string, { score: string; why: string }>>(() => Object.fromEntries(a.lines.map((l) => [l.id, { score: l.score ? String(l.score) : '', why: l.justification }])));
+  const act = (res: { ok: boolean; error?: string }, ok: string) => say(res.ok ? ok : R.errors[res.error ?? 'not_allowed'] ?? null);
+  const supervise = r.can.supervise;
+  const selfEdit = as === 'employee' && r.can.writeSelf;
+  return (
+    <section className={`${card} mt-3`} aria-labelledby={`${id}-h`}>
+      <h3 id={`${id}-h`} className="text-16 font-bold text-navy">{A.title}</h3>
+      <p className="text-13 text-muted">{supervise ? A.shareSup(a.weightPct) : A.share(a.weightPct)}</p>
+      <ul className="mt-2">
+        {a.lines.map((l) => (
+          <li key={l.id} className="border-t border-border py-3">
+            <p className="font-bold text-navy">{l.name}</p>
+            <p className="text-13 text-muted">{l.measures}</p>
+            <details className="mt-1"><summary className="inline-flex min-h-11 cursor-pointer items-center text-14 font-semibold text-navy">{A.levels}</summary>
+              <dl className="text-13">{l.levels.map((d, j) => <div key={j} className="mt-1"><dt className="font-semibold">{5 - j} {a.levelLabels[j]}</dt><dd>{d}</dd></div>)}</dl></details>
+            {selfEdit ? (
+              <div className="mt-1 max-w-60"><label htmlFor={`${id}-s-${l.id}`} className={label}>{A.self}</label>
+                <select id={`${id}-s-${l.id}`} className={input} value={l.selfScore ?? ''} onChange={(e) => act(repo.reviews.selfRateAttribute(r.id, l.id, e.target.value ? Number(e.target.value) : null), R.toasts.saved)}>
+                  <option value="">{A.noSelf}</option>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} {a.levelLabels[5 - n]}</option>)}
+                </select></div>
+            ) : l.selfScore !== null && <p className="text-13">{as === 'employee' ? A.yourScore(`${l.selfScore} ${a.levelLabels[5 - l.selfScore] ?? ''}`) : A.theirSelf(`${l.selfScore} ${a.levelLabels[5 - l.selfScore] ?? ''}`)}</p>}
+            {supervise ? (
+              <div className="mt-2 grid gap-2 sm:grid-cols-[10rem_1fr]">
+                <div><label htmlFor={`${id}-v-${l.id}`} className={label}>{A.sup}</label>
+                  <select id={`${id}-v-${l.id}`} className={input} value={draft[l.id]?.score ?? ''} onChange={(e) => setDraft({ ...draft, [l.id]: { score: e.target.value, why: draft[l.id]?.why ?? '' } })}>
+                    <option value="" />{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} {a.levelLabels[5 - n]}</option>)}
+                  </select></div>
+                <div><label htmlFor={`${id}-w-${l.id}`} className={label}>{A.comment}</label><input id={`${id}-w-${l.id}`} className={input} value={draft[l.id]?.why ?? ''} onChange={(e) => setDraft({ ...draft, [l.id]: { score: draft[l.id]?.score ?? '', why: e.target.value } })} /></div>
+                <div className="sm:col-span-2"><button type="button" className={btn} onClick={() => act(repo.reviews.rateAttribute(r.id, l.id, Number(draft[l.id]?.score), draft[l.id]?.why ?? ''), R.toasts.saved)}>{A.save}<span className="sr-only">: {l.name}</span></button></div>
+              </div>
+            ) : <p className="tabular mt-1 text-14">{l.score !== null ? <><b>{A.scored(l.score, l.scoreLabel ?? '')}</b>{l.justification ? ` · ${l.justification}` : ''}</> : <span className="text-muted">{as === 'employee' && r.step !== 'acknowledged' && r.step !== 'awaiting_acknowledgement' ? A.hidden : A.notYet}</span>}</p>}
+          </li>
+        ))}
+      </ul>
+      {a.percent !== null && <p className="tabular mt-2 text-14 font-semibold text-navy">{A.total(a.sum, a.max, `${a.percent.toFixed(1)}%`)}</p>}
+    </section>
+  );
+}
+
+/** v0.23.0 (C4, C5): the supervisor's notes beside the assessment; never scored. */
+function Notes({ r }: { r: ReviewView }) {
+  const { repo, say } = useApp();
+  const id = useId();
+  const [c, setC] = useState(r.contributions ?? '');
+  const [f, setF] = useState(r.followUp ?? '');
+  return (
+    <div className="mt-3 space-y-2">
+      <div><label htmlFor={`${id}-c`} className={label}>{R.notes.contributions}</label><textarea id={`${id}-c`} rows={2} value={c} onChange={(e) => setC(e.target.value)} className={`${input} py-2`} /></div>
+      <div><label htmlFor={`${id}-f`} className={label}>{R.notes.followUp}</label><textarea id={`${id}-f`} rows={2} value={f} onChange={(e) => setF(e.target.value)} className={`${input} py-2`} /></div>
+      <button type="button" className={btn} onClick={() => { const x = repo.reviews.saveNotes(r.id, { contributions: c, followUp: f }); say(x.ok ? R.toasts.saved : R.errors[x.error] ?? null); }}>{R.notes.save}</button>
+    </div>
+  );
+}
+
+/** v0.23.0 (C3): countersigning every review, where the policy says so: agree, or disagree with reasons. */
+function Countersign({ r }: { r: ReviewView }) {
+  const { repo, say } = useApp();
+  const id = useId();
+  const [agrees, setAgrees] = useState(true);
+  const [reason, setReason] = useState('');
+  const C = R.countersign;
+  return (
+    <section className={`${card} mt-3`} aria-labelledby={`${id}-h`}>
+      <h3 id={`${id}-h`} className="text-16 font-bold text-navy">{C.title}</h3>
+      <p className="text-13 text-muted">{C.note}</p>
+      <fieldset className="mt-2"><legend className="sr-only">{C.title}</legend>
+        <label className="flex min-h-11 items-center gap-3"><input type="radio" className="h-5 w-5" name={`${id}-a`} checked={agrees} onChange={() => setAgrees(true)} />{C.agree}</label>
+        <label className="flex min-h-11 items-center gap-3"><input type="radio" className="h-5 w-5" name={`${id}-a`} checked={!agrees} onChange={() => setAgrees(false)} />{C.disagree}</label>
+      </fieldset>
+      <label htmlFor={`${id}-r`} className={label}>{C.reason}</label>
+      <textarea id={`${id}-r`} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} className={`${input} py-2`} />
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button type="button" className={primary} onClick={() => { const x = repo.reviews.countersign(r.id, agrees, reason); say(x.ok ? R.toasts.countersigned : R.errors[x.error] ?? null); }}>{C.do}</button>
+        <button type="button" className={btn} onClick={() => { const x = repo.reviews.returnToSupervisor(r.id, reason); say(x.ok ? R.toasts.returned : R.errors[x.error] ?? null); }}>{R.check.returnTo(r.supervisor)}</button>
+      </div>
     </section>
   );
 }
@@ -273,6 +374,13 @@ function Round({ rv, fy }: { rv: RoundView; fy: string }) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+      {rv.received.length > 0 && (
+        <section className={`${card} mt-3`} aria-labelledby="hr-received">
+          <h3 id="hr-received" className="text-16 font-bold text-navy">{R.round.received(rv.received.length)}</h3>
+          <p className="text-13 text-muted">{R.round.receivedNote}</p>
+          <ul className="divide-y divide-border">{rv.received.map((x) => <li key={x.id} className="flex flex-wrap items-center justify-between gap-2 py-2"><span><b className="text-navy">{x.person}</b> <span className="text-13 text-muted">{R.kind[x.kind]}</span></span><a className={btn} href={hrefFor({ kind: 'print', doc: 'review', id: x.id })}>{R.print}<span className="sr-only">: {x.person}</span></a></li>)}</ul>
         </section>
       )}
       {rv.open?.kind === 'annual' && (

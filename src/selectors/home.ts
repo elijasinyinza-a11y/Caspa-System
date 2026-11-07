@@ -105,6 +105,8 @@ export function financeSummary(s: Store, fy: number, access: Access): FinanceSum
 
 export interface RatingView {
   overall: number | null;
+  /** v0.23.0: weighted points read as a percentage, bands as a score out of 5. */
+  method: 'bands' | 'weighted_points';
   label: string | null;
   provisional: boolean;
   scoredWeightPct: number;
@@ -114,7 +116,7 @@ export interface RatingView {
 }
 
 const ratingView = (r: ContractRating): RatingView => ({
-  overall: r.overall, label: r.label, provisional: r.provisional, scoredWeightPct: r.scoredWeightPct, totalWeightPct: r.totalWeightPct,
+  overall: r.overall, method: r.method, label: r.label, provisional: r.provisional, scoredWeightPct: r.scoredWeightPct, totalWeightPct: r.totalWeightPct,
   floorApplied: r.floorApplied, flags: r.flags.length,
 });
 
@@ -218,6 +220,8 @@ export function myContracts(s: Store, v: Viewer, ctx: ProgressContext, access: A
 export interface HrSummary {
   contracts: { signed: number; issued: number; draft: number; none: number };
   reviews: { open: number; selfSubmitted: number };
+  /** v0.23.0: HR is the final recipient of signed contracts and final assessments; arrival is enough. */
+  received: { contracts: number; assessments: number };
   scored: { contractId: string; person: string; position: string; rating: RatingView }[];
 }
 
@@ -247,6 +251,7 @@ export function hrSummary(s: Store, ctx: ProgressContext, access: Access): HrSum
       none: heldWithout.length,
     },
     reviews: { open: reviews.filter((r) => r.status === 'open').length, selfSubmitted: reviews.filter((r) => r.status === 'self_submitted').length },
+    received: { contracts: contracts.filter((c) => c.status === 'signed').length, assessments: reviews.filter((r) => r.finalResult).length },
     scored,
   };
 }

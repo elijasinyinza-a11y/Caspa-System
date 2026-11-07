@@ -30,6 +30,8 @@ export type Route =
   | { kind: 'strategy'; entry: StrategyEntry; stage?: FormingStage; tab?: string; goalId?: string }
   /** A goal's board version printed as a short board paper, #/board-paper/<goalId> (D16-7). */
   | { kind: 'boardPaper'; goalId: string }
+  /** v0.23.0: a signed contract or a review, printed (A4 landscape), #/print/contract/<id> or #/print/review/<id>. */
+  | { kind: 'print'; doc: 'contract' | 'review'; id: string }
   /**
    * Performance › Progress updates (v0.18.0, section 39): #/performance/progress opens where the work is; the tabs
    * have their own addresses, #/performance/progress/mine (optionally /<contractObjectiveId>, whose form opens) and
@@ -39,7 +41,7 @@ export type Route =
   /** Staff survey (v0.19.0): answering, #/survey/<roundId>, and the organisation's results, #/survey/<roundId>/results. */
   | { kind: 'survey'; roundId: string; results?: boolean }
   /** Performance › Reviews (v0.20.0): #/performance/reviews, a tab (/mine, /team, /check, /round), or one review (/r/<id>). */
-  | { kind: 'reviews'; tab?: 'mine' | 'team' | 'check' | 'round'; reviewId?: string }
+  | { kind: 'reviews'; tab?: 'mine' | 'team' | 'check' | 'round' | 'policy'; reviewId?: string }
   /** Performance › Targets (v0.21.0): the list, one breakdown (/b/<id>), or one share (/s/<id>). */
   | { kind: 'targets'; breakdownId?: string; shareId?: string; setup?: string }
   /** Performance › Contracts (v0.22.0): a tab, or one contract (/c/<id>). */
@@ -50,6 +52,7 @@ export const hrefFor = (r: Route): string =>
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
+  : r.kind === 'print' ? `#/print/${r.doc}/${encodeURIComponent(r.id)}`
   : r.kind === 'contracts' ? (r.contractId ? `#/performance/contracts/c/${encodeURIComponent(r.contractId)}` : `#/performance/contracts${r.tab ? `/${r.tab}` : ''}`)
   : r.kind === 'targets' ? (r.shareId ? `#/performance/targets/s/${encodeURIComponent(r.shareId)}` : r.breakdownId ? `#/performance/targets/b/${encodeURIComponent(r.breakdownId)}` : r.setup ? `#/performance/targets/new/${encodeURIComponent(r.setup)}` : '#/performance/targets')
   : r.kind === 'reviews' ? (r.reviewId ? `#/performance/reviews/r/${encodeURIComponent(r.reviewId)}` : `#/performance/reviews${r.tab ? `/${r.tab}` : ''}`)
@@ -104,7 +107,7 @@ export const parseRoute = (hash: string): Route => {
   }
   if (parts[0] === 'performance' && parts[1] === 'reviews') {
     if (parts[2] === 'r' && parts[3]) return { kind: 'reviews', reviewId: decodeURIComponent(parts[3]) };
-    const tab = (['mine', 'team', 'check', 'round'] as const).find((x) => x === parts[2]);
+    const tab = (['mine', 'team', 'check', 'round', 'policy'] as const).find((x) => x === parts[2]);
     return tab ? { kind: 'reviews', tab } : { kind: 'reviews' };
   }
   if (parts[0] === 'survey' && parts[1]) return { kind: 'survey', roundId: decodeURIComponent(parts[1]), results: parts[2] === 'results' ? true : undefined };
@@ -113,6 +116,7 @@ export const parseRoute = (hash: string): Route => {
     return { kind: 'progress', tab, objectiveId: tab === 'mine' && parts[3] ? decodeURIComponent(parts[3]) : undefined };
   }
   if (parts[0] === 'board-paper' && parts[1]) return { kind: 'boardPaper', goalId: decodeURIComponent(parts[1]) };
+  if (parts[0] === 'print' && (parts[1] === 'contract' || parts[1] === 'review') && parts[2]) return { kind: 'print', doc: parts[1], id: decodeURIComponent(parts[2]) };
   if (parts[0] === 'organisation') {
     if (parts[1] === 'handover' && parts[2]) return { kind: 'org', handover: decodeURIComponent(parts[2]) };
     return parts[1] === 'vacancies' || parts[1] === 'people' ? { kind: 'org', tab: parts[1] } : { kind: 'org' };
