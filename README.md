@@ -41,6 +41,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 16. Targets: KPI shares, combining rule, standing duties, quarterly reviews (BUILD-BRIEF sections 42–43, in the archive) — done (v0.21.0)
 17. Contracts: drafting, issuing, signing, revising, dependencies (BUILD-BRIEF sections 44 and 46, in the archive) — done (v0.22.0)
 18. Scoring policy, personal attributes, printed contract and assessment (BUILD-BRIEF section 47, in the archive) — done (v0.23.0)
+19. 4Q enhancement: cause levels on failure factors, suggested cards from results (BUILD-BRIEF section 48, in the archive) — done (v0.24.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -59,8 +60,19 @@ and a consultant. In the NGO one person holds both Finance and HR, so its queue 
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (771 tests). Next: the 4Q enhancement (4Q Enhancement Specification
-  v0.1, contract v1.16) as v0.24.0; then the candidates in `NEXT.md`.
+- Start from this zip: `npm install`, `npm run verify` (782 tests). Choose the next slice with Elijah from `NEXT.md`.
+
+## 4Q enhancement (v0.24.0)
+
+- BUILD-BRIEF section 48 (in `DECISIONS-ARCHIVE.md`); 4Q Enhancement Specification v0.1. Contract v1.16, fields only.
+  782 tests (11 in `src/data/access/four-q.test.ts`).
+- Code: rules `src/rules/conception.ts` (`mayCarryLevel`, `causeLevels`, `mergeLevel`); selector
+  `src/selectors/four-q-candidates.ts`; data access `src/data/access/conception.ts` (cause levels, suggestions) and
+  `src/data/access/composition.ts` (`addRowFromCard`); screens `src/routes/Conception.tsx` and `src/routes/Composition.tsx`.
+- Try it on Sample Water Utility: as Strategy office, Strategy › Forming the next plan › Conception: "Suggested from your
+  results" lists Operations' four and the two with no owner; add "behind in FY2026 so far" and the duplicate check names
+  "High water losses in the distribution network". As Finance, open Finance's part and set where the cause sits on "No
+  funded sanitation activities". Accept and consolidate, and the board shows "Where the causes sit".
 
 ## Scoring policy and printouts (v0.23.0)
 
