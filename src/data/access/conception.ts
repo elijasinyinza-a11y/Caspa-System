@@ -7,12 +7,15 @@
  * - VisionStatement: written and confirmed by the Executive only, always by hand (the AI never drafts it); seen by all.
  * Every AI call is logged as an AiTask; every AI-produced card is a draft until a person accepts or corrects it.
  */
-import type { AiTask, AuditEntry, DraftMeta, FourQCell, FourQEntry, GateEvent, Id, ISODate, ISODateTime, SourceDocument, StrategicPlan, VisionStatement } from '../../contract/caspa-data-contract';
+import type { AiTask, AuditEntry, DraftMeta, FourQCell, FourQEntry, GateEvent, Id, ISODate, ISODateTime, SixPLevel, SourceDocument, StrategicPlan, VisionStatement } from '../../contract/caspa-data-contract';
 import { aiStub, type AiDraft } from '../../ai';
 import {
   canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentSheet, departmentState, entriesOf, filledCells, isAccepted, isLive,
   keptSeparate, KEEP_SEPARATE_ACTION, pairKey, sameCell, submissionOf, SUBMIT_ACTION, visionChecks, visionMustKey, type DepartmentState, type VisionMust,
+  causeLevels, mayCarryLevel, mergeLevel, SIX_P_ORDER,
 } from '../../rules/conception';
+import { DISMISS_ACTION, dismissedKeys, fourQCandidates, RESTORE_ACTION, sourcePlan, type FourQCandidate } from '../../selectors/four-q-candidates';
+import { financialYearOf } from './viewer';
 import { formationInProgress, formingPlan } from '../../rules/formation';
 import { dateInZone } from '../../selectors/format';
 import { en } from '../../strings/en';
@@ -35,7 +38,15 @@ export interface CardView {
   merged: number;
   /** Whether this viewer may accept, correct, reject or edit it. */
   canDecide: boolean;
+  /** v0.24.0 (A): where the cause sits, for critical failure factors; null when not set. */
+  causeLevel: SixPLevel | null;
+  carriesLevel: boolean;
+  /** v0.24.0 (B): the record it was suggested from, with its figures live. */
+  basis: CandidateFigures | null;
 }
+export interface CandidateFigures { kind: 'kpi' | 'deficiency'; code: string; name: string; financialYear: number | null; actual: number | null; target: number | null; progress: number | null; outcome: string | null; objective: string | null }
+export interface CandidateView { key: string; cell: FourQCell; text: string; level: SixPLevel | null; figures: CandidateFigures }
+export interface CandidateSheet { unitId: string | null; name: string; open: CandidateView[]; dismissed: CandidateView[]; source: string }
 
 export interface DepartmentView extends DepartmentState {
   head: string | null;
@@ -63,6 +74,10 @@ export interface ConceptionPage {
   departments: DepartmentView[];
   /** The departments this viewer answers for (F-2). */
   myDepartments: string[];
+  /** v0.24.0 (B): suggestions from the plan in force, per sheet this viewer may add to; the Strategy office also gets records with no owner. */
+  candidates: CandidateSheet[];
+  /** v0.24.0 (A3): accepted critical failure factors on the organisation sheet, by level. */
+  causes: { counts: Record<SixPLevel, number>; notSet: number; total: number };
   documents: { id: string; title: string; kind: SourceDocument['kind']; fileRef: string; drafted: number }[];
   vision: {
     vision: string;
@@ -75,7 +90,7 @@ export interface ConceptionPage {
   };
 }
 
-export type ConceptionError = 'not_allowed' | 'not_found' | 'required' | 'ai_off' | 'not_ready' | 'locked' | 'same_cell';
+export type ConceptionError = 'not_allowed' | 'not_found' | 'required' | 'ai_off' | 'not_ready' | 'locked' | 'same_cell' | 'no_level';
 export type ConceptionResult<T = object> = ({ ok: true } & T) | { ok: false; error: ConceptionError };
 
 export interface ConceptionAccess {
@@ -94,6 +109,12 @@ export interface ConceptionAccess {
   summarise(): Promise<ConceptionResult<{ draft: AiDraft }>>;
   saveVision(input: { vision: string; mission: string }): ConceptionResult;
   confirmVision(): ConceptionResult<{ outcome: GateEvent['outcome']; checks: VisionMust[] }>;
+  /** v0.24.0 (A): set or clear where a critical failure factor's cause sits. */
+  setCauseLevel(cardId: string, level: SixPLevel | null): ConceptionResult;
+  /** v0.24.0 (B): add a suggestion to its sheet (optionally reworded); returns any card it may repeat (AI suggestion). */
+  acceptCandidate(key: string, text?: string): Promise<ConceptionResult<{ id: string; mayRepeat: string | null }>>;
+  dismissCandidate(key: string): ConceptionResult;
+  restoreCandidate(key: string): ConceptionResult;
 }
 
 interface Ctx {
@@ -149,7 +170,34 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
   const view = (e: FourQEntry, p: StrategicPlan): CardView => ({
     id: e.id, cell: e.cell, text: e.text, units: e.raisedByUnitIds.map((u) => unitName(u)), source: sourceOf(e), evidence: e.evidence,
     state: e.draft.state, scope: e.scope, merged: entriesOf(s, p.id).filter((x) => x.mergedIntoId === e.id).length, canDecide: p.status === 'draft' && decides(e),
+    causeLevel: e.causeLevel ?? null, carriesLevel: mayCarryLevel(e.cell), basis: e.basis ? figuresOfBasis(e.basis) : null,
   });
+  // v0.24.0: figures shown live from the record a suggestion came from; never copied into the card.
+  const fyNow = () => financialYearOf(ctx.now, s.organisation.financialYearStartMonth);
+  const allCandidates = (p: StrategicPlan) => fourQCandidates(s, p.id, { now: ctx.now, financialYear: fyNow() });
+  const figuresOf = (c: FourQCandidate): CandidateFigures => c.kpi
+    ? { kind: 'kpi', code: c.kpi.code, name: c.kpi.name, financialYear: c.kpi.financialYear, actual: c.kpi.actual, target: c.kpi.target, progress: c.kpi.progress, outcome: c.kpi.outcome, objective: null }
+    : { kind: 'deficiency', code: '', name: c.deficiency!.description, financialYear: null, actual: null, target: null, progress: null, outcome: null, objective: c.deficiency!.objective };
+  const figuresOfBasis = (b: NonNullable<FourQEntry['basis']>): CandidateFigures | null => {
+    if (b.type === 'deficiency') {
+      const d = s.deficiencies.find((x) => x.id === b.deficiencyId);
+      const o = d && s.objectives.find((x) => x.id === d.objectiveId);
+      return d ? { kind: 'deficiency', code: '', name: d.description, financialYear: null, actual: null, target: null, progress: null, outcome: d.correctiveActivityIds.length ? null : 'unaddressed', objective: o ? `${o.code} ${o.title}` : null } : null;
+    }
+    const k = s.kpis.find((x) => x.id === b.kpiId);
+    if (!k) return null;
+    // The same computation as the suggestion, for the same year: live from the KPI's records.
+    const p = plan();
+    const c = p ? fourQCandidates({ ...s, fourQEntries: s.fourQEntries.filter((e) => e.planId !== p.id) }, p.id, { now: ctx.now, financialYear: fyNow() }).find((x) => x.key === `kpi:${b.kpiId}:${b.financialYear}`) : undefined;
+    return c ? figuresOf(c) : { kind: 'kpi', code: k.code, name: k.name, financialYear: b.financialYear, actual: null, target: null, progress: null, outcome: null, objective: null };
+  };
+  const sentence = (c: FourQCandidate): string => {
+    if (!c.kpi) return c.deficiency!.description;
+    const Q = en.fourQ.candidate;
+    return c.kpi.closed ? (c.kpi.outcome === 'target_met' ? Q.met(c.kpi.name, c.kpi.financialYear) : Q.notMet(c.kpi.name, c.kpi.financialYear)) : Q.soFar(c.kpi.name, c.kpi.outcome, c.kpi.financialYear);
+  };
+  /** Who may add to a sheet: its department's head, or the Strategy office and facilitators (who also hold records with no owner). */
+  const addsTo = (unitId: string | null) => curates || (unitId !== null && mine().includes(unitId));
   const touch = (e: FourQEntry, before: unknown, action = 'update') => {
     e.updated = stamp();
     audit(action, { type: 'FourQEntry', id: e.id }, before, structuredClone(e));
@@ -209,6 +257,19 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
         };
       }),
       myDepartments: [...heads],
+      candidates: locked ? [] : (() => {
+        const all = allCandidates(p);
+        const sheets: (string | null)[] = [...new Set(all.map((c) => c.unitId))].filter(addsTo).sort((a, b) => (a === null ? 1 : b === null ? -1 : unitName(a).localeCompare(unitName(b))));
+        const src = sourcePlan(s);
+        // D6-5: decision-map rows reach only those who may read deficiencies.
+        const readsDef = (c: FourQCandidate) => c.kind === 'kpi' || can(s, viewer, 'view', { type: 'Deficiency', id: c.deficiency!.id });
+        return sheets.map((u) => {
+          const gone = dismissedKeys(s, p.id, u);
+          const mine2 = all.filter((c) => c.unitId === u && readsDef(c)).map((c) => ({ key: c.key, cell: c.cell, text: sentence(c), level: c.level, figures: figuresOf(c) }));
+          return { unitId: u, name: u === null ? en.fourQ.candidate.noOwner : unitName(u), open: mine2.filter((c) => !gone.has(c.key)), dismissed: mine2.filter((c) => gone.has(c.key)), source: src?.title ?? '' };
+        }).filter((x) => x.open.length + x.dismissed.length > 0);
+      })(),
+      causes: causeLevels(s, p.id),
       documents: seesAll ? s.sourceDocuments.filter((d) => isFormationDoc(p.id, d.id) || draftedFrom(p.id, d.id) > 0).map((d) => ({
         id: d.id, title: d.title, kind: d.kind, fileRef: d.fileRef,
         drafted: draftedFrom(p.id, d.id),
@@ -357,6 +418,8 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       if (!sameCell(keep.cell, gone.cell)) return deny('same_cell');
       const [kb, gb] = [structuredClone(keep), structuredClone(gone)];
       keep.raisedByUnitIds = [...new Set([...keep.raisedByUnitIds, ...gone.raisedByUnitIds])];
+      // v0.24.0: the card kept keeps its level, or takes the other's; both are in the audit entry when they differed.
+      if (mayCarryLevel(keep.cell)) { const m = mergeLevel(keep, gone); keep.causeLevel = m.level; }
       // A merged-in card that a person accepted counts for the card it joins.
       if (keep.draft.state === 'ai_draft' && isAccepted(gone)) keep.draft = { ...keep.draft, state: 'accepted', decided: stamp() };
       gone.mergedIntoId = keep.id;
@@ -371,6 +434,70 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       if (!curates) return deny();
       if (!p || !s.fourQEntries.some((x) => x.id === aId) || !s.fourQEntries.some((x) => x.id === bId)) return deny('not_found');
       audit(KEEP_SEPARATE_ACTION, { type: 'FourQEntry', id: aId }, null, { planId: p.id, otherId: bId });
+      changed();
+      return { ok: true };
+    },
+
+    setCauseLevel(cardId, level) {
+      const p = plan();
+      const e = p && s.fourQEntries.find((x) => x.id === cardId && x.planId === p.id && isLive(x));
+      if (!p || !e) return deny('not_found');
+      if (p.status !== 'draft') return deny('locked');
+      if (!decides(e) || !mayCarryLevel(e.cell)) return deny();
+      if (level !== null && !SIX_P_ORDER.includes(level)) return deny('required');
+      const before = structuredClone(e);
+      e.causeLevel = level;
+      touch(e, before, 'cause_level');
+      changed();
+      return { ok: true };
+    },
+
+    async acceptCandidate(key, text) {
+      const p = plan();
+      if (!p || p.status !== 'draft') return deny('not_found');
+      const c = allCandidates(p).find((x) => x.key === key);
+      if (!c || !addsTo(c.unitId)) return deny();
+      if (c.kind === 'deficiency' && !can(s, viewer, 'view', { type: 'Deficiency', id: c.deficiency!.id })) return deny();
+      const words = (text ?? sentence(c)).trim();
+      if (!words) return deny('required');
+      const e = newCard(p, {
+        cell: c.cell, text: words, units: c.unitId ? [c.unitId] : [], scope: c.unitId ? 'department' : 'organisation', evidence: null,
+        draft: { state: 'human', provenance: { kind: 'manual' }, decided: stamp() } as DraftMeta,
+      });
+      e.basis = c.kpi ? { type: 'kpi_year', kpiId: c.kpi.id as never, financialYear: c.kpi.financialYear as never } : { type: 'deficiency', deficiencyId: c.deficiency!.id as never };
+      if (c.level) e.causeLevel = c.level;
+      changed();
+      // The existing duplicate check (an AI suggestion; people decide), against live cards in the same section.
+      let mayRepeat: string | null = null;
+      if (s.organisation.settings.aiEnabled) {
+        const others = entriesOf(s, p.id).filter((x) => x.id !== e.id && isLive(x) && sameCell(x.cell, e.cell) && (x.scope === 'organisation' || x.raisedByUnitIds.some((u) => e.raisedByUnitIds.includes(u))));
+        if (others.length) {
+          const t = task('merge', [e, ...others].map((x) => ({ type: 'FourQEntry', id: x.id })));
+          const r = await aiStub.suggestDuplicates([e, ...others].map((x) => ({ id: x.id, cell: x.cell, text: x.text })));
+          const hit = r.pairs.find(([a, b]) => a === e.id || b === e.id);
+          const other = hit && others.find((x) => x.id === (hit[0] === e.id ? hit[1] : hit[0]));
+          if (other) { mayRepeat = other.text; t.outputRefs = [{ type: 'FourQEntry', id: e.id }, { type: 'FourQEntry', id: other.id }]; }
+        }
+      }
+      return { ok: true, id: e.id, mayRepeat };
+    },
+
+    dismissCandidate(key) {
+      const p = plan();
+      const c = p && allCandidates(p).find((x) => x.key === key);
+      if (!p || !c) return deny('not_found');
+      if (!addsTo(c.unitId)) return deny();
+      audit(DISMISS_ACTION, { type: 'StrategicPlan', id: p.id }, null, { planId: p.id, key, unitId: c.unitId });
+      changed();
+      return { ok: true };
+    },
+
+    restoreCandidate(key) {
+      const p = plan();
+      const c = p && allCandidates(p).find((x) => x.key === key);
+      if (!p || !c) return deny('not_found');
+      if (!addsTo(c.unitId)) return deny();
+      audit(RESTORE_ACTION, { type: 'StrategicPlan', id: p.id }, null, { planId: p.id, key, unitId: c.unitId });
       changed();
       return { ok: true };
     },

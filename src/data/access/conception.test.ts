@@ -30,7 +30,7 @@ describe('who sees which cards', () => {
     const f = fresh();
     const exec = f.as('executive').conception.page()!;
     expect(exec.seesAll).toBe(true);
-    expect(exec.departments.map((d) => [d.name, d.sheet.length])).toEqual([['Finance', 3], ['Operations', 7], ['Commercial', 2]]);
+    expect(exec.departments.map((d) => [d.name, d.sheet.length])).toEqual([['Finance', 3], ['Operations', 8], ['Commercial', 3]]);
     const fin = f.as('finance').conception.page()!;
     expect(fin.seesAll).toBe(false);
     expect(fin.myDepartments).toEqual(['u-fin']);
@@ -43,7 +43,7 @@ describe('who sees which cards', () => {
     consolidateAll(f);
     const fin = f.as('finance').conception.page()!;
     expect(fin.board.flatMap((c) => c.cards).every((c) => c.units.includes('Finance'))).toBe(true);
-    expect(fin.hiddenOnBoard).toBe(9);
+    expect(fin.hiddenOnBoard).toBe(11);
     expect(f.as('executive').conception.page()!.hiddenOnBoard).toBe(0);
   });
   it('an employee sees no cards and no departments, but may read the vision once written', () => {
@@ -158,7 +158,7 @@ describe('sending a sheet and consolidating', () => {
     const f = fresh();
     const so = f.as('strategy').conception;
     expect(so.page()!.documents.map((d) => [d.title, d.drafted])).toEqual([
-      ['Strategic Plan 2022–2026', 1], ['Annual Report 2025', 3], ['Performance Report 2025', 3], ['Water Supply Licence', 0], ['Regulatory notice: tariff review 2028', 2],
+      ['Strategic Plan 2022–2026', 1], ['Annual Report 2025', 3], ['Performance Report 2025', 5], ['Water Supply Licence', 0], ['Regulatory notice: tariff review 2028', 2],
     ]);
     expect(f.as('finance').conception.addDocument({ title: 'x', kind: 'other', fileName: 'x.pdf' })).toEqual({ ok: false, error: 'not_allowed' });
     const add = so.addDocument({ title: 'Board paper on tariffs', kind: 'board_paper', fileName: 'board.pdf' });
@@ -174,14 +174,14 @@ describe('sending a sheet and consolidating', () => {
 describe('vision and mission (vision.confirm)', () => {
   const fillAll = (f: ReturnType<typeof fresh>) => {
     consolidateAll(f);
-    // The seeded drafts leave one section empty; a card from the 4Q review session fills it.
+    // v0.24.0: the seeded drafts now fill every section; a card from the 4Q review session is added as well.
     f.as('strategy').conception.addCard({ cell: cell('repositioning.failure_factors'), text: 'Readers skip remote meters on long routes', unitId: null, evidence: null });
   };
   it('writing opens only when every section has an accepted card, and only the Executive writes', () => {
     const f = fresh();
     expect(f.as('executive').conception.saveVision({ vision: 'v', mission: '' })).toEqual({ ok: false, error: 'not_ready' });
     consolidateAll(f);
-    expect(f.as('executive').conception.page()!.filled).toBe(11);
+    expect(f.as('executive').conception.page()!.filled).toBe(12);
     fillAll(f);
     expect(f.as('executive').conception.page()!.vision.open).toBe(true);
     expect(f.as('strategy').conception.saveVision({ vision: 'v', mission: '' })).toEqual({ ok: false, error: 'not_allowed' });
@@ -229,7 +229,7 @@ describe('“Needs you” while Conception is open', () => {
     const titles = (r: Role) => f.as(r).home().needsYou.filter((n) => n.key.startsWith('conception:') || n.key.startsWith('approve:vision')).map((n) => n.title);
     expect(titles('finance')).toEqual(['Check 3 AI-drafted cards for Finance']);
     // Commercial's head is vacant, so its two drafts go to the Strategy office with nothing yet consolidated.
-    expect(titles('strategy')).toEqual(['Check 2 AI-drafted cards on the 4Q board']);
+    expect(titles('strategy')).toEqual(['Check 3 AI-drafted cards on the 4Q board']);
     for (const id of ['q-2027-r4', 'q-2027-j1', 'q-2027-j2']) f.as('finance').conception.updateCard(id, { decision: 'accept' });
     expect(titles('finance')).toEqual(['Send Finance’s 4Q cards to the Strategy office']);
     f.as('finance').conception.submitDepartment('u-fin');

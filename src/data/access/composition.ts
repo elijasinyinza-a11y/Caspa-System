@@ -80,8 +80,10 @@ export interface RowView {
   fromAi: boolean;
   /** An AI draft the owner has not yet accepted. */
   draft: boolean;
-  corrective: { id: string; code: string; title: string; year: number; level: SixPLevel | null }[];
+  corrective: { id: string; code: string; title: string; year: number; level: SixPLevel | null}[];
   canEdit: boolean;
+  /** v0.24.0: the 4Q band of the critical failure factor this row came from. */
+  fromCard: 'retraction' | 'repositioning' | null;
 }
 
 export interface ObjectiveView {
@@ -105,6 +107,8 @@ export interface ObjectiveView {
   rows: RowView[] | null;
   rowCount: number;
   canEditRows: boolean;
+  /** v0.24.0 (A): linked critical failure factors that can become decision-map rows, with their level; null without access. */
+  factors: { id: string; text: string; band: 'retraction' | 'repositioning'; level: SixPLevel | null; rowId: string | null }[] | null;
   /** The AI's note on the wording, from the last review; a suggestion, never a check. */
   wording: string | null;
 }
@@ -209,6 +213,8 @@ export interface CompositionAccess {
   setEnvelope(goalId: string | null, year: number, amountMinor: number | null): CompositionResult;
   suggestRows(objectiveId: string): Promise<CompositionResult<{ added: number }>>;
   addRow(objectiveId: string, input: { description: string; level: SixPLevel }): CompositionResult<{ id: string }>;
+  /** v0.24.0 (A): a linked critical failure factor becomes a decision-map row, keeping a link back to the card. */
+  addRowFromCard(objectiveId: string, cardId: string, input: { description: string; level: SixPLevel | null }): CompositionResult<{ id: string }>;
   acceptRow(id: string): CompositionResult;
   addCorrective(rowId: string, input: CorrectiveInput): CompositionResult<{ id: string; code: string }>;
   unlinkCorrective(rowId: string, activityId: string): CompositionResult;
@@ -332,8 +338,14 @@ export function createCompositionAccess(ctx: Ctx): CompositionAccess {
       canConfirm: isOpen(p) && isExec && !isDecided(k.draft),
     };
   };
+  const factorsOf = (o: Objective): ObjectiveView['factors'] => {
+    if (!seesRows(o.id) || !o.fourQEntryIds.every(seesCard)) return null;
+    return o.fourQEntryIds.map((id) => s.fourQEntries.find((e) => e.id === id)).filter((e): e is NonNullable<typeof e> => !!e && e.cell.band !== 'projection' && e.cell.column === 'failure_factors')
+      .map((e) => ({ id: e.id, text: e.text, band: e.cell.band as 'retraction' | 'repositioning', level: e.causeLevel ?? null, rowId: s.deficiencies.find((d) => d.objectiveId === o.id && d.fourQEntryId === e.id)?.id ?? null }));
+  };
   const rowView = (p: StrategicPlan, d: Deficiency): RowView => ({
     id: d.id, description: d.description, level: d.level, fromAi: d.draft.provenance.kind !== 'manual', draft: d.draft.state === 'ai_draft',
+    fromCard: (() => { const e = d.fourQEntryId ? s.fourQEntries.find((x) => x.id === d.fourQEntryId) : undefined; return e && e.cell.band !== 'projection' ? e.cell.band : null; })(),
     corrective: d.correctiveActivityIds.map((aid) => s.activities.find((a) => a.id === aid)).filter((a): a is Activity => !!a)
       .map((a) => ({ id: a.id, code: a.code, title: a.title, year: a.financialYear, level: a.decisionLevel })),
     canEdit: isOpen(p) && mayRows(d.objectiveId),
@@ -347,6 +359,7 @@ export function createCompositionAccess(ctx: Ctx): CompositionAccess {
       proposedBy: o.proposedByPositionId ? labelOf(o.proposedByPositionId) : null,
       fromAi: o.draft.provenance.kind !== 'manual', confirmed: isDecided(o.draft),
       cards: cardRefs(o.fourQEntryIds), cardCount: o.fourQEntryIds.length,
+      factors: factorsOf(o),
       canEdit: isOpen(p) && (runs || isProposer),
       canConfirm: isOpen(p) && isExec && !isDecided(o.draft),
       kpis: r().kpis.filter((k) => k.objectiveId === o.id).sort(byCode).map((k) => kpiView(p, k)),
@@ -867,9 +880,11 @@ export function createCompositionAccess(ctx: Ctx): CompositionAccess {
       let added = 0;
       for (const row of out.rows) {
         if (s.deficiencies.some((d) => d.objectiveId === o.id && d.description === row.description)) continue;
+        // v0.24.0: a card with a cause level keeps it; the AI's level is used only for untagged cards.
+        const card = s.fourQEntries.find((e) => e.id === row.cardId);
         const d: Deficiency = {
-          ...base(), id: nextId('df', s.deficiencies) as Id<'Deficiency'>, objectiveId: o.id, level: row.level, description: row.description,
-          probableCause: '', effects: '', correctiveActivityIds: [], timeframe: '', draft: aiDraft(t),
+          ...base(), id: nextId('df', s.deficiencies) as Id<'Deficiency'>, objectiveId: o.id, level: card?.causeLevel ?? row.level, description: row.description,
+          probableCause: '', effects: '', correctiveActivityIds: [], timeframe: '', draft: aiDraft(t), fourQEntryId: card && card.cell.column === 'failure_factors' ? card.id : null,
         };
         s.deficiencies.push(d);
         t.outputRefs.push({ type: 'Deficiency', id: d.id });
@@ -889,6 +904,28 @@ export function createCompositionAccess(ctx: Ctx): CompositionAccess {
       const d: Deficiency = {
         ...base(), id: nextId('df', s.deficiencies) as Id<'Deficiency'>, objectiveId: o.id, level: input.level, description: input.description.trim(),
         probableCause: '', effects: '', correctiveActivityIds: [], timeframe: '', draft: decidedNow(),
+      };
+      s.deficiencies.push(d);
+      record('Deficiency', d.id, d);
+      changed();
+      return { ok: true, id: d.id };
+    },
+    addRowFromCard(objectiveId, cardId, input) {
+      const g = opened();
+      if ('error' in g) return deny(g.error);
+      const o = objectiveOf(objectiveId);
+      if (!o) return deny('not_found');
+      if (!mayRows(o.id)) return deny();
+      const card = o.fourQEntryIds.includes(cardId as never) ? s.fourQEntries.find((e) => e.id === cardId) : undefined;
+      if (!card || card.cell.band === 'projection' || card.cell.column !== 'failure_factors') return deny('not_found');
+      if (!input.description.trim()) return deny('required');
+      // Every deficiency needs a level: the card's, or the one chosen here.
+      const level = input.level ?? card.causeLevel ?? null;
+      if (!level) return deny('required');
+      if (s.deficiencies.some((d) => d.objectiveId === o.id && d.fourQEntryId === card.id)) return deny('not_allowed' as never);
+      const d: Deficiency = {
+        ...base(), id: nextId('df', s.deficiencies) as Id<'Deficiency'>, objectiveId: o.id, level, description: input.description.trim(),
+        probableCause: '', effects: '', correctiveActivityIds: [], timeframe: '', draft: decidedNow(), fourQEntryId: card.id,
       };
       s.deficiencies.push(d);
       record('Deficiency', d.id, d);

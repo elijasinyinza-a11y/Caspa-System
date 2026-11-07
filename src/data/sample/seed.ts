@@ -12,7 +12,7 @@ import {
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
-import type { FinancialYear } from '../../contract/caspa-data-contract';
+import type { FinancialYear, KpiTarget } from '../../contract/caspa-data-contract';
 import './composition'; // part 11d: the AI stub's approved sample wording for this organisation
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 import { en } from '../../strings/en';
@@ -131,6 +131,9 @@ const formationCards: FourQEntry[] = [
   drafted('j2', { band: 'projection', column: 'key_strategic_actions' }, 'Cost-of-service study before the tariff application', 'u-fin', { doc: 'sd-2027-5', page: 4 }),
   drafted('j3', { band: 'projection', column: 'risks' }, 'Drought reducing raw water yield', 'u-ops', { doc: 'sd-2027-3', page: 27 }),
   drafted('j4', { band: 'projection', column: 'risk_strategies' }, 'Develop a second borehole field', 'u-ops', { doc: 'sd-2027-1', page: 41 }),
+  // v0.24.0 (4Q Enhancement Specification v0.1): two critical failure factors with cause levels; wording approved 6 November 2026.
+  { ...drafted('r5', { band: 'retraction', column: 'failure_factors' }, 'Reading routes left without supervision', 'u-com', { doc: 'sd-2027-3', page: 18 }), causeLevel: 'people' },
+  { ...drafted('p5', { band: 'repositioning', column: 'failure_factors' }, 'Leaks repaired only after customers complain', 'u-ops', { doc: 'sd-2027-3', page: 9 }), causeLevel: 'process' },
 ];
 const formationAi: AiTask = {
   orgId, id: EXTRACT, kind: 'extract', requested: draftedStamp, model: 'stub',
@@ -356,8 +359,12 @@ function seedStore(): Store {
     ],
     kpiTargets: [
       ['1.1.1', 90], ['1.2.1', 40], ['2.1.1', 18], ['3.1.1', 36], ['4.1.1', 70],
-    ].map(([k, t]) => ({ ...base, id: id(`kt-${k}-${FY}`), kpiId: id(`k${k}`), financialYear: FY, target: t as number })),
-    kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 }],
+    ].map(([k, t]): KpiTarget => ({ ...base, id: id(`kt-${k}-${FY}`), kpiId: id(`k${k}`), financialYear: FY, target: t as number })).concat(
+      // v0.24.0 (B5): the closed years' targets under the plan in force.
+      ([['1.1.1', 2024, 82], ['1.1.1', 2025, 86], ['1.2.1', 2024, 46], ['1.2.1', 2025, 43]] as const).map(([k, y, t]): KpiTarget => ({ ...base, id: id<'KpiTarget'>(`kt-${k}-${y}`), kpiId: id<'Kpi'>(`k${k}`), financialYear: y as never, target: t }))),
+    kpiActuals: [{ ...base, id: id('ka-1.2.1-2026-06'), kpiId: id('k1.2.1'), periodEnd: d('2026-06-30'), value: 47 },
+      // v0.24.0 (B5, approved 6 November 2026): year-end results for FY2024 and FY2025, so Retraction has suggestions.
+      ...([['1.1.1', 2024, 83], ['1.1.1', 2025, 87], ['1.2.1', 2024, 50], ['1.2.1', 2025, 49]] as const).map(([k, y, v]) => ({ ...base, id: id<'KpiActual'>(`ka-${k}-${y}-12`), kpiId: id<'Kpi'>(`k${k}`), periodEnd: d(`${y}-12-31`), value: v }))],
     baselineMeasures: formationBaselines,
     consultationRounds: [], consultationInputs: [], complianceItems: formationCompliance,
     resourceEnvelopes: [], themes: [], indicativeCosts: [], planDocuments: [], communicationRecords, surveyRounds, surveyResponses, surveyReceipts, kpiBreakdowns: [], kpiShares: [], shareReadings: [], dependencies: draftDependencies,

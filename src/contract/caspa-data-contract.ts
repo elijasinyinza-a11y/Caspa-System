@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.15
+ * CASPA™ data contract — v1.16
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,10 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.16 (6 November 2026, Elijah; 4Q Enhancement Specification v0.1): fields only.
+ *     - FourQEntry.causeLevel: where a critical failure factor's cause sits (one 6P level), optional.
+ *     - FourQEntry.basis: the record a card was suggested from (a KPI's year, or a decision-map row), so figures stay live.
+ *     - Deficiency.fourQEntryId: the 4Q card a decision-map row came from.
  * v1.15 (6 November 2026, Elijah; Scoring Policy and Personal Attributes Specification v0.1): fields only.
  *     - RatingScheme: scoringMethod, achievementCap, countersignAll, flagScoredOne, appliesFromYear, approval;
  *       competencySection gains levelLabels and attributes (personal attributes with five level descriptions).
@@ -407,6 +411,10 @@ export interface FourQEntry extends OrgScoped, Audited {
   mergedIntoId: Id<'FourQEntry'> | null; // consolidation keeps the original
   evidence: string | null;
   draft: DraftMeta;
+  /** v1.16 (Part A): where the cause sits, for critical failure factors only (Retraction and Repositioning). Optional. */
+  causeLevel?: SixPLevel | null;
+  /** v1.16 (Part B): the record this card was suggested from; its figures are shown live from it, never copied. */
+  basis?: { type: 'kpi_year'; kpiId: Id<'Kpi'>; financialYear: FinancialYear } | { type: 'deficiency'; deficiencyId: Id<'Deficiency'> } | null;
 }
 
 export interface Theme extends OrgScoped, Audited {
@@ -739,6 +747,7 @@ export interface Deficiency extends OrgScoped, Audited {
   correctiveActivityIds: Id<'Activity'>[]; // empty = unaddressed
   timeframe: string;
   draft: DraftMeta; // v1.1: the AI may draft rows with a suggested level; the owner confirms
+  fourQEntryId?: Id<'FourQEntry'> | null; // v1.16 (A5): the critical failure factor this row came from
 }
 
 /* ───────────────────────── Cycles and gates (C3, C7) ───────────────────────── */
