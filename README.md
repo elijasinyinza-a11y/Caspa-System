@@ -42,6 +42,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 17. Contracts: drafting, issuing, signing, revising, dependencies (BUILD-BRIEF sections 44 and 46, in the archive) — done (v0.22.0)
 18. Scoring policy, personal attributes, printed contract and assessment (BUILD-BRIEF section 47, in the archive) — done (v0.23.0)
 19. 4Q enhancement: cause levels on failure factors, suggested cards from results (BUILD-BRIEF section 48, in the archive) — done (v0.24.0)
+20. Finish Targets: corporate figure from shares, proposing new work, To verify with shares, share dependencies (BUILD-BRIEF section 49, in the archive) — done (v0.25.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -60,7 +61,20 @@ and a consultant. In the NGO one person holds both Finance and HR, so its queue 
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (782 tests). Choose the next slice with Elijah from `NEXT.md`.
+- Start from this zip: `npm install`, `npm run verify` (793 tests). Next in the agreed sequence: onboarding and the first
+  usability test round (see `NEXT.md`).
+
+## Finish Targets (v0.25.0)
+
+- BUILD-BRIEF section 49 (in `DECISIONS-ARCHIVE.md`); Finish Targets Specification v0.1. Contract v1.17 (`ActivityProposal`).
+  793 tests (11 in `src/data/access/finish-targets.test.ts`).
+- Code: rules `src/rules/targets.ts` (`fromShares`, `suggestedCombine`, `unusualCombine`) and `src/rules/kpi-progress.ts`;
+  data access `src/data/access/targets.ts` (proposals, share dependencies, the Cascade line) and `progress.ts` (share
+  readings in To verify); screens `src/routes/Targets.tsx`, `src/routes/Performance.tsx`, `src/components/TargetsLine.tsx`.
+- Try it on Sample Scale Test Organisation: as Strategy office, Performance › Targets opens with "New work proposed into
+  Cascade"; confirm it (A2.1.1.7) or return it. As HR (the share owner's supervisor), To verify lists the share reading;
+  the second department's share page has "Propose new work" and "This share depends on". On Sample Packaging
+  Manufacturer, material waste in Cascade reads "From shares".
 
 ## 4Q enhancement (v0.24.0)
 
