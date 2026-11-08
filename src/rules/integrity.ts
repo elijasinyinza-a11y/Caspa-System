@@ -24,6 +24,9 @@ export const RULES = {
   // Part 11d (D11d-8): checks at plan confirmation for a formed plan, computed by src/rules/composition.ts.
   riskUnaddressed: { id: 'STRUCT-4Q-RISK-UNADDRESSED', source: 'structural', description: 'A critical failure factor or predicted future risk is not addressed by any goal or objective', blocksAt: [] },
   goalNoObjective: { id: 'STRUCT-GOAL-NO-OBJECTIVE', source: 'structural', description: 'Goal has no accepted objective', blocksAt: [] },
+  // v0.26.0 (contract v1.20): the plan-size guide, set by HR, off by default; worth checking only, never blocking.
+  objectiveManyKpis: { id: 'GUIDE-OBJECTIVE-MANY-KPIS', source: 'structural', description: 'Objective has more KPIs than the plan-size guide suggests', blocksAt: [] },
+  kpiManyActivities: { id: 'GUIDE-KPI-MANY-ACTIVITIES', source: 'structural', description: 'KPI has more activities than the plan-size guide suggests', blocksAt: [] },
 } as const satisfies Record<string, IntegrityRule>;
 
 type RuleKey = keyof typeof RULES;
@@ -87,6 +90,20 @@ export function computeFindings(s: Store, ctx: CheckContext): Finding[] {
   }
   for (const o of objectives) {
     if (!kpis.some((k) => k.objectiveId === o.id)) push('objectiveNoKpi', { type: 'Objective', id: o.id }, en.findings.objectiveNoKpi(terms, o.code, o.title), [o.ownerPositionId]);
+  }
+  // The plan-size guide (v1.20): only when HR has set a number.
+  const guide = s.organisation.settings.planSizeGuide;
+  if (guide?.kpisPerObjective != null) {
+    for (const o of objectives) {
+      const n = kpis.filter((k) => k.objectiveId === o.id).length;
+      if (n > guide.kpisPerObjective) push('objectiveManyKpis', { type: 'Objective', id: o.id }, en.findings.objectiveManyKpis(terms, o.code, o.title, n, guide.kpisPerObjective), [o.ownerPositionId]);
+    }
+  }
+  if (guide?.activitiesPerKpi != null) {
+    for (const k of kpis) {
+      const n = activities.filter((a) => a.kpiId === k.id).length;
+      if (n > guide.activitiesPerKpi) push('kpiManyActivities', { type: 'Kpi', id: k.id }, en.findings.kpiManyActivities(terms, k.code, k.name, n, guide.activitiesPerKpi), [k.ownerPositionId ?? objectiveOfKpi(s, k)?.ownerPositionId]);
+    }
   }
   for (const df of s.deficiencies) {
     if (objectiveIds.has(df.objectiveId) && df.correctiveActivityIds.length === 0) {

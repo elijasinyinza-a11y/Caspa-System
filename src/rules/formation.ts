@@ -84,7 +84,7 @@ export function agenda(s: Store, plan: StrategicPlan): AgendaItem[] {
     const d = sessionDate(w);
     if (d) out.push({ kind: 'session', date: d, workshopId: w.id, purposes: w.purposes, format: w.format });
   }
-  for (const d of deadlinesOf(s, plan.id)) out.push({ kind: 'deadline', date: d.dueOn, deadlineId: d.id, label: d.label, ownerPositionIds: d.ownerPositionIds });
+  for (const d of deadlinesOf(s, plan.id)) if (d.dueOn) out.push({ kind: 'deadline', date: d.dueOn, deadlineId: d.id, label: d.label, ownerPositionIds: d.ownerPositionIds });
   if (plan.calendar?.visionTargetOn) out.push({ kind: 'gate_target', date: plan.calendar.visionTargetOn, gate: 'vision.confirm' });
   if (plan.calendar?.planTargetOn) out.push({ kind: 'gate_target', date: plan.calendar.planTargetOn, gate: 'plan.confirm' });
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -108,9 +108,12 @@ export function formationChecks(s: Store, plan: StrategicPlan): FormationCheck[]
   return out;
 }
 
-/** A stage moves forward only: not started → open → complete. Stages may overlap; only the two gates are enforced. */
+/**
+ * Stages: not started → open → closed (complete), and a closed stage may be reopened (Forming Schedule Specification
+ * v0.1). Stages may overlap; only the two confirmations are enforced.
+ */
 export const canMoveStage = (from: 'not_started' | 'open' | 'complete', to: 'open' | 'complete') =>
-  (from === 'not_started' && to === 'open') || (from === 'open' && to === 'complete');
+  (from === 'not_started' && to === 'open') || (from === 'open' && to === 'complete') || (from === 'complete' && to === 'open');
 
 /** The formed plan being prepared: a draft formed plan, newest first. */
 export const formingPlan = (s: Store): StrategicPlan | null => [...s.plans].reverse().find((p) => p.entryDoor === 'formed' && p.status === 'draft') ?? null;
@@ -127,7 +130,7 @@ export function escalated(s: Store, now: ISODate): { deadlineId: string; label: 
   const out: ReturnType<typeof escalated> = [];
   for (const d of s.formationDeadlines) {
     const plan = s.plans.find((p) => p.id === d.planId);
-    if (d.completed || !plan?.calendar?.published) continue;
+    if (d.completed || !d.dueOn || !plan?.calendar?.published) continue;
     const late = (Date.parse(`${now}T00:00:00Z`) - Date.parse(`${d.dueOn}T00:00:00Z`)) / 86_400_000;
     if (late <= days) continue;
     for (const o of d.ownerPositionIds) {

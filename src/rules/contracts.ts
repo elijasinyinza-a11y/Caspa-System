@@ -12,7 +12,8 @@ export type DraftCheck =
   | { kind: 'standing_duties'; pct: number; limit: number }
   | { kind: 'single_limit'; contractObjectiveId: string; pct: number; limit: number }
   | { kind: 'over_activity'; activityId: string; total: number; planned: number }
-  | { kind: 'dependency'; dependencyId: string; flags: DependencyFlag[] };
+  | { kind: 'dependency'; dependencyId: string; flags: DependencyFlag[] }
+  | { kind: 'many_objectives'; count: number; limit: number }; // v1.20: plan-size guide, worth checking only
 export type DependencyFlag = 'not_carried' | 'late' | 'higher_level';
 
 /** Higher decision levels where a dependency is shown as decided above most positions; a fact, not a judgement (CT, section 3). */
@@ -73,6 +74,8 @@ export function draftChecks(s: Store, contractId: string, now: ISODate): { mustF
     const planned = carriedQuantity(s, id, c.financialYear);
     if (a?.quantityTarget && planned > a.quantityTarget.value) worth.push({ kind: 'over_activity', activityId: id, total: a.quantityTarget.value, planned });
   }
+  const perContract = s.organisation.settings.planSizeGuide?.objectivesPerContract ?? null;
+  if (perContract !== null && cos.length > perContract) worth.push({ kind: 'many_objectives', count: cos.length, limit: perContract });
   const coIds = new Set(cos.map((co) => co.id as string));
   for (const d of s.dependencies.filter((x) => 'contractObjectiveId' in x.from && coIds.has((x.from as { contractObjectiveId: string }).contractObjectiveId))) {
     const flags = dependencyFlags(s, d, c.financialYear, now);

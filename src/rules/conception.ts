@@ -26,8 +26,8 @@ export const cellOfKey = (k: string): FourQCell | null => CELLS.find((c) => cell
 
 /** A card counts once a person has accepted it or written it themselves. */
 export const isAccepted = (e: FourQEntry) => e.draft.state === 'accepted' || e.draft.state === 'human';
-/** Cards still in play: not merged into another, not rejected. */
-export const isLive = (e: FourQEntry) => e.mergedIntoId === null && e.draft.state !== 'rejected';
+/** Cards still in play: not merged into another, not rejected, not removed (v1.20). */
+export const isLive = (e: FourQEntry) => e.mergedIntoId === null && e.draft.state !== 'rejected' && !e.removed;
 export const entriesOf = (s: Store, planId: string) => s.fourQEntries.filter((e) => e.planId === planId);
 export const organisationSheet = (s: Store, planId: string) => entriesOf(s, planId).filter((e) => e.scope === 'organisation' && isLive(e));
 export const departmentSheet = (s: Store, planId: string, unitId: string) =>
@@ -84,7 +84,7 @@ export function departmentState(s: Store, planId: string, unitId: string): Depar
     interviewed: !!interviewOf(s, planId, unitId),
     toCheck: sheet.filter((e) => e.draft.state === 'ai_draft').length,
     waiting: sheet.filter(isAccepted).length,
-    consolidated: entriesOf(s, planId).filter((e) => e.scope === 'organisation' && isAccepted(e) && e.raisedByUnitIds.includes(unitId as never)).length,
+    consolidated: entriesOf(s, planId).filter((e) => e.scope === 'organisation' && !e.removed && isAccepted(e) && e.raisedByUnitIds.includes(unitId as never)).length,
     submitted: !!submissionOf(s, planId, unitId),
   };
 }
@@ -150,4 +150,34 @@ export function causeLevels(s: Store, planId: string): { counts: Record<SixPLeve
 export function mergeLevel(keep: FourQEntry, gone: FourQEntry): { level: SixPLevel | null; differed: boolean } {
   const a = keep.causeLevel ?? null, b = gone.causeLevel ?? null;
   return { level: a ?? b, differed: a !== null && b !== null && a !== b };
+}
+
+/* ── v0.26.0: 4Q group work (4Q Group Work Specification v0.1; contract v1.19) and removing a card (contract v1.20) ── */
+
+/** A card a group's scribe entered, still waiting for the Strategy office's review. It never counts until accepted. */
+export const isGroupCard = (e: FourQEntry) => !!e.fromGroup;
+export const awaitsReview = (e: FourQEntry) => isGroupCard(e) && e.draft.state === 'ai_draft' && isLive(e);
+
+/** The records a card is linked to, by id: themes, goals and objectives. A linked card cannot be removed. */
+export function cardLinks(s: Store, id: string): { themes: number; goals: number; objectives: number } {
+  return {
+    themes: s.themes.filter((x) => x.fourQEntryIds.includes(id as never)).length,
+    goals: s.goals.filter((x) => x.fourQEntryIds.includes(id as never)).length,
+    objectives: s.objectives.filter((x) => x.fourQEntryIds.includes(id as never)).length,
+  };
+}
+
+/**
+ * Removing a card (v1.20): only a card a person typed or accepted; never while it is linked to a theme, goal or
+ * objective; never once the plan is confirmed; always with a reason. Drafts are rejected instead, not removed.
+ */
+export type RemoveRefusal = 'not_live' | 'not_accepted' | 'linked' | 'locked' | 'reason';
+export function removeRefusal(s: Store, plan: StrategicPlan, e: FourQEntry, reason: string): RemoveRefusal | null {
+  if (plan.status !== 'draft') return 'locked';
+  if (!isLive(e)) return 'not_live';
+  if (!isAccepted(e)) return 'not_accepted';
+  const l = cardLinks(s, e.id);
+  if (l.themes + l.goals + l.objectives > 0) return 'linked';
+  if (!reason.trim()) return 'reason';
+  return null;
 }
