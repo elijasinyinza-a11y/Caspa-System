@@ -3,6 +3,7 @@
  * stored records: what each position holds, and the vacant and acting positions in a fixed order of what stops
  * soonest (H1). Nothing is stored and no score is computed. Permissions are applied by the data-access layer.
  */
+import { deadlineDone } from '../rules/schedule';
 import type { Finding, ISODate } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { computeFindings } from '../rules/integrity';
@@ -106,8 +107,9 @@ export function positionHoldings(s: Store, ix: HoldingsIndex, positionId: string
   const ownedObjectives = new Set(ix.objectives.filter((o) => o.ownerPositionId === positionId).map((o) => o.id as string));
   const defs = s.deficiencies.filter((d) => ownedObjectives.has(d.objectiveId));
   const dated: Holdings['dated'] = [
-    ...s.formationDeadlines.filter((d) => !d.completed && d.ownerPositionIds.includes(positionId as never)).map((d) => ({ kind: 'formation_deadline' as const, label: d.label, due: d.dueOn })),
-    ...s.workshops.flatMap((w) => w.decisionLog.flatMap((l) => l.actions.filter((x) => x.ownerPositionId === positionId).map((x) => ({ kind: 'decision_action' as const, label: x.text, due: x.dueOn })))),
+    // v1.18: undated and done items are not held; done is computed from records where they exist.
+    ...s.formationDeadlines.filter((d) => d.dueOn && !deadlineDone(s, d).done && d.ownerPositionIds.includes(positionId as never)).map((d) => ({ kind: 'formation_deadline' as const, label: d.label, due: d.dueOn! })),
+    ...s.workshops.flatMap((w) => w.decisionLog.flatMap((l) => l.actions.filter((x) => !x.done && x.ownerPositionId === positionId).map((x) => ({ kind: 'decision_action' as const, label: x.text, due: x.dueOn })))),
   ].sort((x, y) => (x.due < y.due ? -1 : 1));
   const ended = ix.lastEnded.get(positionId);
   return {

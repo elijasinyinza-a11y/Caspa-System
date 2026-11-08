@@ -246,6 +246,29 @@ function Overview({ o, fy }: { o: NonNullable<ReturnType<ReturnType<typeof useAp
         <label className="mt-2 flex min-h-11 items-center gap-3"><input type="checkbox" className="h-5 w-5" checked={show} onChange={(e) => setShow(e.target.checked)} />{C.overview.showDraft}</label>
         <div className="mt-2"><button type="button" className={primary} onClick={() => { const r = repo.contracts.saveLimits({ standing: Number(standing), single: single.trim() ? Number(single) : null, showDraft: show }); say(r.ok ? C.toasts.saved : C.errors[r.error] ?? null); }}>{C.overview.save}</button></div>
       </section>
+      <GuideForm o={o} />
     </>
+  );
+}
+
+/** v0.26.0 (contract v1.20): the plan-size guide, set by HR. Empty means off; more than a number is worth checking, never blocking. */
+function GuideForm({ o }: { o: NonNullable<ReturnType<ReturnType<typeof useApp>['repo']['contracts']['page']>['overview']> }) {
+  const { repo, say } = useApp();
+  const id = useId();
+  const P = en.planSize;
+  const str = (n: number | null) => (n === null ? '' : String(n));
+  const [v, setV] = useState({ kpisPerObjective: str(o.guide.kpisPerObjective), activitiesPerKpi: str(o.guide.activitiesPerKpi), objectivesPerContract: str(o.guide.objectivesPerContract) });
+  const num = (x: string) => (x.trim() ? Number(x) : null);
+  const fields = [['kpisPerObjective', P.kpisPerObjective], ['activitiesPerKpi', P.activitiesPerKpi], ['objectivesPerContract', P.objectivesPerContract]] as const;
+  return (
+    <section className={`${card} mt-3`} aria-labelledby={`${id}-g`}>
+      <h3 id={`${id}-g`} className="text-16 font-bold text-navy">{P.title}</h3>
+      <p className="text-13 text-muted">{P.intro}</p>
+      {fields.map(([k, l]) => (
+        <div key={k} className="mt-2"><label htmlFor={`${id}-${k}`} className={label}>{l}</label><input id={`${id}-${k}`} inputMode="numeric" aria-describedby={`${id}-gh`} value={v[k]} onChange={(e) => setV({ ...v, [k]: e.target.value })} className={input} /></div>
+      ))}
+      <p id={`${id}-gh`} className="mt-1 text-12 text-muted">{P.hint}</p>
+      <div className="mt-2"><button type="button" className={primary} onClick={() => { const r = repo.contracts.saveGuide({ kpisPerObjective: num(v.kpisPerObjective), activitiesPerKpi: num(v.activitiesPerKpi), objectivesPerContract: num(v.objectivesPerContract) }); say(r.ok ? P.saved : P.badNumber); }}>{P.save}</button></div>
+    </section>
   );
 }

@@ -25,6 +25,13 @@ describe('addresses under their workspace (NV-5)', () => {
     // Board papers keep their own address.
     expect(hrefFor({ kind: 'boardPaper', goalId: 'g1' })).toBe('#/board-paper/g1');
   });
+  it('v0.26.0: a group’s 4Q flip chart and the usability kit have their own addresses', () => {
+    round({ kind: 'flipchart', workshopId: 'ws-2027-4q', groupId: 'g1' });
+    round({ kind: 'usability' });
+    round({ kind: 'usability', start: 3 });
+    expect(hrefFor({ kind: 'flipchart', workshopId: 'ws-2027-4q', groupId: 'g1' })).toBe('#/flipchart/ws-2027-4q/g1');
+    expect(parseRoute('#/usability/start/x')).toEqual({ kind: 'usability' });
+  });
   it('treats an unknown stage as the entry itself', () => {
     expect(parseRoute('#/strategy/forming/nowhere')).toEqual({ kind: 'strategy', entry: 'forming', stage: undefined, tab: undefined });
   });

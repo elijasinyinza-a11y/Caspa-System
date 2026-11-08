@@ -5,9 +5,10 @@
  */
 import { useState, type ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
-import type { FormationPage, SessionView } from '../data/access/formation';
-import type { FormationStage, ISODate, WorkshopPurpose } from '../contract/caspa-data-contract';
-import { PURPOSES, STAGES, type AgendaItem, type Format } from '../rules/formation';
+import type { FormationPage, ScheduleItemView, SessionView } from '../data/access/formation';
+import type { FormationStage, FourQCell, ISODate, WorkshopPurpose } from '../contract/caspa-data-contract';
+import { BANDS, CELLS, cellKey, cellOfKey } from '../rules/conception';
+import { PURPOSES, STAGES, type Format } from '../rules/formation';
 import { formatDate, formatFinancialYear, formatNumber } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, input, label, plural, primary } from './organisation/ui';
@@ -22,7 +23,6 @@ const F = en.formation;
 const K = en.consultation;
 const FORMATS: Format[] = ['in_person', 'online', 'hybrid', 'async_review'];
 const sessionTitle = (purposes: WorkshopPurpose[]) => en.list(purposes.map((p) => F.purpose[p]!));
-const d = (x: ISODate | null) => (x ? formatDate(x) : '');
 
 /** Tabs within a sub-menu page: real links, so every view has its own address (NV-5). */
 export function PageTabs({ label: name, tabs, current }: { label: string; tabs: [string, string, string][]; current: string }) {
@@ -38,10 +38,10 @@ export function PageTabs({ label: name, tabs, current }: { label: string; tabs: 
 }
 
 /** Strategy overview: setting up the next plan, or a pointer to it while it is being formed (part 11a, NV-9). */
-export function NextPlanCard() {
+export function NextPlanCard({ open = false, onCancel }: { open?: boolean; onCancel?: () => void } = {}) {
   const { repo } = useApp();
   const f = repo.formation.page();
-  const [setup, setSetup] = useState(false);
+  const [setup, setSetup] = useState(open);
   const forming = repo.menu().strategy.some((e) => e.entry === 'forming');
   if (f.plan) {
     if (!forming) return null;
@@ -55,9 +55,9 @@ export function NextPlanCard() {
   }
   return (
     <section className={`${card} mt-6`} aria-labelledby="next-plan">
-      <h2 id="next-plan" className="text-18 font-bold text-navy">{F.nextPlan}</h2>
+      <h2 id="next-plan" className="text-18 font-bold text-navy">{f.activePlan ? F.nextPlan : en.onboarding.formDoor}</h2>
       {f.activePlan && <p className="mt-1 text-14 text-muted">{F.nextPlanText(f.activePlan.title)}</p>}
-      {setup && f.canSetUp ? <SetupForm f={f} onDone={() => setSetup(false)} /> : f.canSetUp
+      {setup && f.canSetUp ? <SetupForm f={f} onDone={() => { setSetup(false); onCancel?.(); }} /> : f.canSetUp
         ? <button type="button" className={`${primary} mt-3`} onClick={() => setSetup(true)}>{F.nextPlanStart}</button>
         : <p className="mt-2 text-14">{F.nextPlanOthers}</p>}
     </section>
@@ -87,9 +87,10 @@ export function FormingPage({ stage, tab }: { stage?: FormingStage; tab?: string
   let body: ReactNode = null;
   let current = '';
   if (st === 'overview') {
-    tabs = (['stages', 'calendar', 'sessions'] as const).map((k) => [k, en.menu.overviewTabs[k], at('overview', k)]);
-    current = tab && tabs.some(([k]) => k === tab) ? tab : 'stages';
-    body = current === 'calendar' ? <Calendar f={f} /> : current === 'sessions' ? <Sessions f={f} /> : <Tracker f={f} openCalendar={() => navigate({ kind: 'strategy', entry: 'forming', stage: 'overview', tab: 'calendar' })} />;
+    // v0.26.0: the schedule replaces the stage list and the calendar; their old addresses open the schedule.
+    tabs = (['schedule', 'sessions'] as const).map((k) => [k, en.menu.overviewTabs[k], at('overview', k)]);
+    current = tab === 'sessions' ? 'sessions' : 'schedule';
+    body = current === 'sessions' ? <Sessions f={f} /> : <Schedule f={f} />;
   } else if (st === 'conception' && c) {
     tabs = [
       ...(mine.length ? [['mine', mine.length === 1 ? C.mine(mine[0]!.name) : C.mineMany, at('conception', 'mine')] as [string, string, string]] : []),
@@ -217,18 +218,7 @@ function SetupForm({ f, onDone }: { f: FormationPage; onDone: () => void }) {
   );
 }
 
-/* ───────── The formation tracker ───────── */
-
-function agendaLabel(i: AgendaItem, f: FormationPage): { label: string; kind: string } {
-  const C = F.calendar;
-  switch (i.kind) {
-    case 'stage_opens': return { label: C.opens(F.stage[i.stage]!), kind: C.stageKind };
-    case 'stage_closes': return { label: C.closes(F.stage[i.stage]!), kind: C.stageKind };
-    case 'session': return { label: sessionTitle(i.purposes), kind: C.sessionKind(F.format[i.format]!) };
-    case 'deadline': return { label: i.label, kind: C.deadlineKind(en.list(i.ownerPositionIds.map((id) => f.positions.find((x) => x.id === id)?.label ?? id))) };
-    case 'gate_target': return { label: F.gates[i.gate]!, kind: C.gateKind };
-  }
-}
+/* ───────── The forming schedule (Forming Schedule Specification v0.1) ───────── */
 
 /** Part 11c: how far Consultation and Confirmation have got, as in the prototype's formation home. Counts only. */
 function Progress() {
@@ -253,64 +243,94 @@ function Progress() {
   );
 }
 
-function Tracker({ f, openCalendar }: { f: FormationPage; openCalendar: () => void }) {
-  const { repo } = useApp();
+const MONTH = (m: string) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const itemTitle = (i: ScheduleItemView) =>
+  i.source.type === 'deadline' ? i.label ?? '' : i.source.type === 'session' ? Sch.sessionTitle(sessionTitle(i.purposes)) : F.gates[i.source.gate]!;
+const itemOwner = (i: ScheduleItemView) => (i.source.type === 'deadline' ? en.list(i.owners) : i.source.type === 'session' ? Sch.ownerOffice : Sch.ownerExecutive);
+const Sch = F.schedule;
+
+/** Strategy › Forming the next plan › Overview: the schedule of meetings and milestones, with the stage strip. */
+function Schedule({ f }: { f: FormationPage }) {
+  const { repo, say } = useApp();
   const p = f.plan!;
+  const sc = f.schedule;
   const T = F.tracker;
-  const today = f.today;
-  const upcoming = f.agenda.filter((i) => i.date >= today).slice(0, 6);
+  const [stage, setStage] = useState<FormationStage | null>(null);
+  const [adding, setAdding] = useState(false);
   const checkText = (c: FormationPage['checks'][number]) =>
     c.kind === 'purpose_uncovered' ? T.checks.purpose_uncovered(F.purpose[c.purpose]!) : c.kind === 'stage_dates_backwards' ? T.checks.stage_dates_backwards(F.stage[c.stage]!) : T.checks[c.kind];
+  const seen = f.seesDraft || !!p.published;
+  const st = stage ? p.stages.find((x) => x.stage === stage)! : null;
+  const move = (to: 'open' | 'complete') => { if (!stage) return; const r = repo.formation.moveStage(stage, to); if (r.ok) say(Sch.stageMoved[to](F.stage[stage]!)); };
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <section className={card}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-16 font-bold text-navy">{T.calendar}</h3>
-          <Chip tone={p.published ? 'complete' : 'advisory'}>{p.published ? T.published(formatDate(p.published.on)) : T.notPublished}</Chip>
+    <div className="space-y-4">
+      <p className="text-14">{sc.next ? <>{Sch.next(itemTitle(sc.next), formatDate(sc.next.date!))}</> : seen && !sc.empty ? Sch.nothingNext : null}</p>
+      <section className={card} aria-labelledby="st-h">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 id="st-h" className="text-16 font-bold text-navy">{Sch.stagesTitle}</h3>
+          <span className="text-12 text-muted">{Sch.stagesNote}</span>
         </div>
-        {!p.preparer ? <p className="mt-2 text-14">{T.noPreparer}</p> : p.published ? (
-          <>
-            <p className="mt-1 text-13 text-muted">{T.preparedBy(p.preparer.name)} {T.comingUp}</p>
-            {upcoming.length ? (
-              <ul className="mt-1 divide-y divide-border">
-                {upcoming.map((i, n) => { const a = agendaLabel(i, f); return <li key={n} className="flex flex-wrap justify-between gap-2 py-2 text-14"><span><b>{a.label}</b> <span className="text-12 text-muted">{a.kind}</span></span><span className="tabular">{formatDate(i.date)}</span></li>; })}
-              </ul>
-            ) : <p className="mt-1 text-14 text-muted">{T.nothingUpcoming}</p>}
-          </>
-        ) : <p className="mt-2 text-14 text-muted">{T.notYet(p.preparer.name)}</p>}
-        {(f.seesDraft || p.published) && (
-          <button type="button" className={`${btn} mt-3`} onClick={openCalendar}>{f.isPreparer ? (p.published ? T.editCalendar : T.prepare) : T.openCalendar}</button>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+          {p.stages.map((x) => (
+            <button key={x.stage} type="button" aria-expanded={stage === x.stage} onClick={() => setStage(stage === x.stage ? null : (x.stage as FormationStage))}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 text-14 ${stage === x.stage ? 'border-navy bg-info-bg' : 'border-control bg-white'} text-navy`}>
+              <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${x.status === 'open' ? 'bg-navy' : x.status === 'complete' ? 'border-2 border-navy' : 'border border-control'}`} />
+              <b>{F.stage[x.stage]}</b><span className="text-12 text-muted">{Sch.stageChip[x.status]}</span>
+            </button>
+          ))}
+        </div>
+        {st && stage && (
+          <div className="mt-3 rounded-lg bg-cream p-3">
+            <p className="text-13"><span className="font-semibold">{F.stage[stage]}: </span>{en.book.sevenCStage[F.stage[stage]!]?.text}</p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-14">{Sch.stageItems(F.stage[stage]!, plural(sc.counts[stage], 'scheduleItem'), Sch.stageNow[st.status]!)}</span>
+              {sc.canMoveStages && (st.status === 'open'
+                ? <button type="button" className={btn} onClick={() => move('complete')}>{Sch.closeStage(F.stage[stage]!)}</button>
+                : <button type="button" className={primary} onClick={() => move('open')}>{st.status === 'complete' ? Sch.reopenStage(F.stage[stage]!) : Sch.openStage(F.stage[stage]!)}</button>)}
+            </div>
+          </div>
         )}
       </section>
-      <section className={card}>
-        <h3 className="text-16 font-bold text-navy">{T.stages}</h3>
-        <p className="mt-1 text-12 text-muted">{T.stagesNote}</p>
-        <ul className="mt-2 divide-y divide-border">
-          {p.stages.map((st) => (
-            <li key={st.stage} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <span className="text-14"><b>{F.stage[st.stage]}</b> <span className="text-12 text-muted">{st.startsOn && st.endsOn ? T.dates(d(st.startsOn), d(st.endsOn)) : T.noDates}</span></span>
-              <span className="flex flex-wrap items-center gap-2">
-                <Chip tone={st.status === 'complete' ? 'complete' : st.status === 'open' ? 'advisory' : 'info'}>{F.stageStatus[st.status]}</Chip>
-                {f.canSetUp && st.status === 'not_started' && <button type="button" className={btn} onClick={() => repo.formation.moveStage(st.stage as FormationStage, 'open')}>{T.open}</button>}
-                {f.canSetUp && st.status === 'open' && <button type="button" className={btn} onClick={() => repo.formation.moveStage(st.stage as FormationStage, 'complete')}>{T.complete}</button>}
-              </span>
-            </li>
-          ))}
-          {(['vision.confirm', 'plan.confirm'] as const).map((g) => {
-            const target = g === 'vision.confirm' ? p.visionTargetOn : p.planTargetOn;
-            const done = g === 'vision.confirm' ? p.visionConfirmedOn : null;
-            return (
-              <li key={g} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="text-14"><b>{T.gate(F.gates[g]!)}</b> <span className="text-12 text-muted">{target ? T.target(d(target)) : T.noTarget}</span></span>
-                {done ? <Chip tone="complete">{T.passedOn(d(done))}</Chip> : <Chip tone="info">{T.notYetPassed}</Chip>}
-              </li>
-            );
-          })}
-        </ul>
+
+      <section className={card} aria-labelledby="sc-h">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 id="sc-h" className="text-16 font-bold text-navy">{Sch.title}</h3>
+          <span className="flex flex-wrap items-center gap-2">
+            {p.preparer && <Chip tone={p.published ? 'complete' : 'info'}>{p.published ? T.published(formatDate(p.published.on)) : T.notPublished}</Chip>}
+            {sc.canEdit && !sc.empty && <button type="button" className={btn} aria-expanded={adding} onClick={() => setAdding(!adding)}>{Sch.add}</button>}
+            {f.isPreparer && !sc.empty && <button type="button" className={primary} onClick={() => { if (repo.formation.publishCalendar().ok) say(F.calendar.published); }}>{p.published ? F.calendar.republish : F.calendar.publish}</button>}
+          </span>
+        </div>
+        {!p.preparer && <p className="mt-2 text-14">{T.noPreparer}</p>}
+        {!seen && p.preparer && <p className="mt-2 text-14 text-muted">{T.notYet(p.preparer.name)}</p>}
+        {adding && <AddItem f={f} onDone={() => setAdding(false)} />}
+        {seen && sc.empty && (
+          <div className="mt-3 rounded-lg border border-dashed border-control p-4">
+            <p className="text-14 font-semibold text-navy">{Sch.empty}</p>
+            {sc.canBuild ? (
+              <>
+                <p className="mt-1 text-13 text-muted">{Sch.emptyNote}</p>
+                <button type="button" className={`${primary} mt-3`} onClick={() => { const r = repo.formation.buildSchedule(); if (r.ok) say(Sch.built); }}>{Sch.build}</button>
+              </>
+            ) : p.preparer ? <p className="mt-1 text-13 text-muted">{Sch.emptyOthers(p.preparer.name)}</p> : null}
+          </div>
+        )}
+        {sc.months.map((m) => (
+          <div key={m.month} className="mt-4">
+            <h4 className="text-16 font-bold text-navy">{MONTH(m.month)}</h4>
+            <ul className="mt-1 divide-y divide-border">{m.items.map((i) => <ItemRow key={i.key} i={i} />)}</ul>
+          </div>
+        ))}
+        {sc.undated.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-16 font-bold text-navy">{Sch.notScheduled(formatNumber(sc.undated.length))}</h4>
+            <ul className="mt-1 divide-y divide-border">{sc.undated.map((i) => <ItemRow key={i.key} i={i} />)}</ul>
+          </div>
+        )}
       </section>
       {f.seesDraft && <Progress />}
       {f.checks.length > 0 && (
-        <section className={`${card} xl:col-span-2`}>
+        <section className={card}>
           <h3 className="text-16 font-bold text-navy">{T.worth}</h3>
           {f.checks.map((c, i) => <CheckBox key={i} tone="advisory" title={T.worth}>{checkText(c)}</CheckBox>)}
         </section>
@@ -319,106 +339,91 @@ function Tracker({ f, openCalendar }: { f: FormationPage; openCalendar: () => vo
   );
 }
 
-/* ───────── The formation calendar (preparer-built) ───────── */
-
-function Calendar({ f }: { f: FormationPage }) {
-  const { repo } = useApp();
-  const p = f.plan!;
-  const ed = f.isPreparer;
-  const C = F.calendar;
-  const [dates, setDates] = useState(() => Object.fromEntries(p.stages.map((s) => [s.stage, { startsOn: s.startsOn, endsOn: s.endsOn }])) as Record<FormationStage, { startsOn: ISODate | null; endsOn: ISODate | null }>);
-  const [vision, setVision] = useState<ISODate | null>(p.visionTargetOn);
-  const [planT, setPlanT] = useState<ISODate | null>(p.planTargetOn);
-  const [note, setNote] = useState<string | null>(null);
-  const [dl, setDl] = useState({ label: '', owner: 'heads', due: '' });
-  const heads = f.departmentHeads;
-  if (!f.seesDraft && !p.published) return <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{C.notPublishedOthers}</p>;
-  const dateInput = (id: string, value: ISODate | null, set: (v: ISODate | null) => void, aria: string) => (
-    <input id={id} type="date" aria-label={aria} className={`${input} max-w-[11rem]`} disabled={!ed} value={value ?? ''} onChange={(e) => set((e.target.value || null) as ISODate | null)} />
-  );
-  const saveDates = () => {
-    const r = repo.formation.saveCalendar({ stages: dates, visionTargetOn: vision, planTargetOn: planT });
-    setNote(r.ok ? C.saved : r.error === 'dates' ? C.datesError : null);
+function ItemRow({ i }: { i: ScheduleItemView }) {
+  const { repo, say } = useApp();
+  const [edit, setEdit] = useState(false);
+  const [name, setName] = useState(i.label ?? '');
+  const title = itemTitle(i);
+  const setDate = (v: string) => {
+    const on = (v || null) as ISODate | null;
+    const r = i.source.type === 'session' ? repo.formation.updateSession(i.source.id, { scheduledOn: on })
+      : i.source.type === 'deadline' ? repo.formation.updateDeadline(i.source.id, { dueOn: on }) : repo.formation.setGateTarget(i.source.gate, on);
+    if (r.ok) say(Sch.dateSet);
   };
-  const addDeadline = () => {
-    const owners = dl.owner === 'heads' ? repo.formation.departmentHeads() : [dl.owner];
-    const r = repo.formation.addDeadline({ label: dl.label, ownerPositionIds: owners, dueOn: dl.due as ISODate });
-    if (r.ok) { setDl({ label: '', owner: 'heads', due: '' }); setNote(null); } else setNote(C.required);
-  };
-  const months = [...new Set(f.agenda.map((i) => i.date.slice(0, 7)))];
+  const statusChip = i.status === 'done' ? <Chip tone="complete">{Sch.status.done}</Chip>
+    : i.status === 'overdue' ? <Chip tone="block">{Sch.status.overdue}</Chip>
+    : i.status === 'today' ? <Chip tone="advisory">{Sch.status.today}</Chip>
+    : i.status === 'soon' ? <Chip tone="advisory">{Sch.status.soon(i.inDays!)}</Chip> : null;
+  const linked = i.linked === 'session' ? Sch.linked.session : i.linked ? Sch.linked[i.linked] : null;
+  const [y, m, dd] = i.date ? i.date.split('-') : [];
   return (
-    <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="min-w-0 flex-[1_1_15rem] text-14">{p.preparer ? C.intro(p.preparer.name, ed) : F.tracker.noPreparer}</p>
-        {ed && <button type="button" className={primary} onClick={() => { if (repo.formation.publishCalendar().ok) setNote(C.published); }}>{p.published ? C.republish : C.publish}</button>}
+    <li className={`flex flex-wrap items-start gap-3 py-3 ${i.kind === 'confirmation' ? 'border-l-4 border-l-navy pl-3' : ''}`}>
+      <div className="w-14 shrink-0 text-center">
+        {i.date ? <><b className="tabular block text-18 text-navy">{Number(dd)}</b><span className="text-12 text-muted">{new Date(`${y}-${m}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })}</span></> : <span className="text-12 text-muted">{Sch.noDate}</span>}
       </div>
-      {note && <p role="status" className="mt-2 rounded-lg border border-complete-border bg-complete-bg px-4 py-2 text-14 text-complete-text">{note}</p>}
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <section className={card}>
-            <h3 className="text-16 font-bold text-navy">{C.stageDates}</h3>
-            <ul className="mt-2 divide-y divide-border">
-              {STAGES.map((st) => (
-                <li key={st} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <b className="text-14">{F.stage[st]}</b>
-                  <span className="flex flex-wrap items-center gap-2">
-                    {dateInput(`cs-${st}`, dates[st].startsOn, (v) => setDates({ ...dates, [st]: { ...dates[st], startsOn: v } }), C.from(F.stage[st]!))}
-                    <span className="text-12 text-muted">–</span>
-                    {dateInput(`ce-${st}`, dates[st].endsOn, (v) => setDates({ ...dates, [st]: { ...dates[st], endsOn: v } }), C.to(F.stage[st]!))}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section className={card}>
-            <h3 className="text-16 font-bold text-navy">{C.gateTargets}</h3>
-            <p className="mt-1 text-12 text-muted">{C.gateNote}</p>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 py-1"><b className="text-14">{F.gates['vision.confirm']}</b>{dateInput('g-vision', vision, setVision, F.gates['vision.confirm']!)}</div>
-            <div className="flex flex-wrap items-center justify-between gap-2 py-1"><b className="text-14">{F.gates['plan.confirm']}</b>{dateInput('g-plan', planT, setPlanT, F.gates['plan.confirm']!)}</div>
-            {ed && <button type="button" className={`${btn} mt-3`} onClick={saveDates}>{C.save}</button>}
-          </section>
-          <section className={card}>
-            <h3 className="text-16 font-bold text-navy">{C.deadlines}</h3>
-            {f.deadlines.length ? (
-              <ul className="mt-2 divide-y divide-border">
-                {f.deadlines.map((x) => (
-                  <li key={x.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                    <span className="min-w-0 flex-[1_1_12rem] text-14"><b>{x.label}</b><span className="block text-12 text-muted">{en.list(x.owners)}</span></span>
-                    <span className="flex items-center gap-2">
-                      <span className="tabular text-14">{formatDate(x.dueOn)}</span>
-                      {ed && <button type="button" className={btn} onClick={() => repo.formation.removeDeadline(x.id)}>{C.remove}</button>}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="mt-1 text-14 text-muted">{C.noDeadlines}</p>}
-            {ed && (
-              <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
-                <div className="sm:col-span-2"><label htmlFor="dl-label" className={label}>{C.deadline}</label><input id="dl-label" className={input} placeholder={C.deadlinePlaceholder} value={dl.label} onChange={(e) => setDl({ ...dl, label: e.target.value })} /></div>
-                <div><label htmlFor="dl-owner" className={label}>{C.owners}</label>
-                  <select id="dl-owner" className={input} value={dl.owner} onChange={(e) => setDl({ ...dl, owner: e.target.value })}>
-                    <option value="heads">{C.ownersAllHeads(formatNumber(heads))}</option>
-                    {f.positions.map((x) => <option key={x.id} value={x.id}>{x.label} ({x.holder ?? en.onboarding.vacant})</option>)}
-                  </select></div>
-                <div><label htmlFor="dl-due" className={label}>{C.due}</label><input id="dl-due" type="date" className={input} value={dl.due} onChange={(e) => setDl({ ...dl, due: e.target.value })} /></div>
-                <div className="sm:col-span-2"><button type="button" className={btn} onClick={addDeadline}>{C.addDeadline}</button></div>
-              </div>
+      <div className="min-w-0 flex-[1_1_14rem]">
+        <p className="text-14 font-semibold text-navy">{title}</p>
+        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-12 text-muted">
+          <span>{F.stage[i.stage]}</span><span>{Sch.kind[i.kind]}</span><span>{itemOwner(i)}</span>
+          {i.kind === 'confirmation' && <span className="font-semibold text-navy">{Sch.enforced}</span>}
+          {i.needsBoard && <span className="font-semibold text-navy">{Sch.needsBoard}</span>}
+        </p>
+        {linked && <p className="mt-1 text-12 text-muted">{typeof linked === 'function' ? linked(sessionTitle(i.purposes)) : linked}</p>}
+        {edit && (
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            {i.canSetDate && i.date && (
+              <div><label htmlFor={`cd-${i.key}`} className={label}>{Sch.dateFor(title)}</label><input id={`cd-${i.key}`} type="date" className={`${input} w-40`} value={i.date} onChange={(e) => setDate(e.target.value)} /></div>
             )}
-            <p className="mt-2 text-12 text-muted">{C.deadlineNote}</p>
-          </section>
-        </div>
-        <section className={card}>
-          <h3 className="text-16 font-bold text-navy">{C.agenda}</h3>
-          {months.length ? months.map((m) => (
-            <div key={m} className="mt-3">
-              <b className="text-14">{new Date(`${m}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</b>
-              <ul className="divide-y divide-border">
-                {f.agenda.filter((i) => i.date.startsWith(m)).map((i, n) => { const a = agendaLabel(i, f); return <li key={n} className="flex flex-wrap justify-between gap-2 py-2 text-14"><span>{a.label}<span className="block text-12 text-muted">{a.kind}</span></span><span className="tabular text-13">{formatDate(i.date)}</span></li>; })}
-              </ul>
-            </div>
-          )) : <p className="mt-1 text-14 text-muted">{C.agendaEmpty}</p>}
-        </section>
+            {i.canSetDate && i.date && i.source.type === 'gate' && <button type="button" className={btn} onClick={() => setDate('')}>{Sch.clearDate}</button>}
+            {i.canEdit && (
+              <>
+                <div className="min-w-0 flex-[1_1_12rem]"><label htmlFor={`rn-${i.key}`} className={label}>{Sch.rename}</label><input id={`rn-${i.key}`} className={input} value={name} onChange={(e) => setName(e.target.value)} /></div>
+                <button type="button" className={btn} onClick={() => { if (i.source.type === 'deadline' && repo.formation.updateDeadline(i.source.id, { label: name }).ok) setEdit(false); }}>{Sch.save}</button>
+                <button type="button" className={btn} onClick={() => { if (i.source.type === 'deadline') repo.formation.removeDeadline(i.source.id); }}>{Sch.remove}<span className="sr-only">: {title}</span></button>
+              </>
+            )}
+          </div>
+        )}
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {statusChip}
+        {i.canSetDate && !i.date && (
+          <>
+            <label htmlFor={`dt-${i.key}`} className="sr-only">{Sch.dateFor(title)}</label>
+            <input id={`dt-${i.key}`} type="date" className={`${input} w-40`} value={i.date ?? ''} onChange={(e) => setDate(e.target.value)} />
+          </>
+        )}
+        {i.canMarkDone && <button type="button" className={btn} onClick={() => { if (i.source.type === 'deadline' && repo.formation.markDeadlineDone(i.source.id).ok) say(Sch.markedDone); }}>{Sch.markDone}<span className="sr-only">{Sch.markDoneFor(title)}</span></button>}
+        {(i.canEdit || (i.canSetDate && !!i.date)) && <button type="button" className={btn} aria-expanded={edit} onClick={() => setEdit(!edit)}>{en.formation.groups.edit}<span className="sr-only">: {title}</span></button>}
+      </div>
+    </li>
+  );
+}
+
+function AddItem({ f, onDone }: { f: FormationPage; onDone: () => void }) {
+  const { repo, say } = useApp();
+  const [v, setV] = useState({ what: '', kind: 'meeting' as 'meeting' | 'milestone', stage: 'conception' as FormationStage, date: '', owner: f.plan?.processOwner?.positionId ?? 'heads' });
+  const [error, setError] = useState(false);
+  const save = () => {
+    const owners = v.owner === 'heads' ? repo.formation.departmentHeads() : v.owner ? [v.owner] : [];
+    const r = repo.formation.addDeadline({ label: v.what, ownerPositionIds: owners, dueOn: (v.date || null) as ISODate | null, kind: v.kind, stage: v.stage });
+    if (r.ok) { say(Sch.added); onDone(); } else setError(true);
+  };
+  return (
+    <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-3 rounded-lg bg-cream p-3 sm:grid-cols-2">
+      {error && <p role="alert" className="text-13 text-block-text sm:col-span-2">{Sch.required}</p>}
+      <div className="sm:col-span-2"><label htmlFor="ai-what" className={label}>{Sch.what}</label><input id="ai-what" className={input} placeholder={Sch.whatPlaceholder} value={v.what} onChange={(e) => setV({ ...v, what: e.target.value })} /></div>
+      <div><label htmlFor="ai-kind" className={label}>{Sch.kindLabel}</label>
+        <select id="ai-kind" className={input} value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value as 'meeting' | 'milestone' })}><option value="meeting">{Sch.kind.meeting}</option><option value="milestone">{Sch.kind.milestone}</option></select></div>
+      <div><label htmlFor="ai-stage" className={label}>{Sch.stageLabel}</label>
+        <select id="ai-stage" className={input} value={v.stage} onChange={(e) => setV({ ...v, stage: e.target.value as FormationStage })}>{STAGES.map((x) => <option key={x} value={x}>{F.stage[x]}</option>)}</select></div>
+      <div><label htmlFor="ai-date" className={label}>{Sch.dateOptional}</label><input id="ai-date" type="date" className={input} value={v.date} onChange={(e) => setV({ ...v, date: e.target.value })} /></div>
+      <div><label htmlFor="ai-owner" className={label}>{Sch.ownerLabel}</label>
+        <select id="ai-owner" className={input} value={v.owner} onChange={(e) => setV({ ...v, owner: e.target.value })}>
+          <option value="heads">{F.calendar.ownersAllHeads(formatNumber(f.departmentHeads))}</option>
+          {f.positions.map((x) => <option key={x.id} value={x.id}>{x.label} ({x.holder ?? en.onboarding.vacant})</option>)}
+        </select></div>
+      <div className="flex flex-wrap gap-2 sm:col-span-2"><button type="button" className={primary} onClick={save}>{Sch.addButton}</button><button type="button" className={btn} onClick={onDone}>{Sch.cancel}</button></div>
     </div>
   );
 }
@@ -515,10 +520,24 @@ function SessionCard({ w, f, editable }: { w: SessionView; f: FormationPage; edi
           <button type="button" className={btn} onClick={() => repo.formation.cancelSession(w.id)}>{S.cancel}</button>
         </div>
       )}
+      {w.purposes.includes('four_q_review') && (w.groups.length > 0 || w.canManageGroups) && <Groups w={w} f={f} />}
       <div className="mt-3 border-t border-border pt-2">
         <b className="text-14">{S.decisionLog}</b>
         {w.decisionLog.length ? w.decisionLog.map((l, i) => (
-          <p key={i} className="mt-1 text-14">{l.decision}. {l.actions.map((a) => <span key={a.text} className="text-muted">{S.actionLine(a.text, a.owner, formatDate(a.dueOn))} </span>)}</p>
+          <div key={i} className="mt-1 text-14">
+            <p>{l.decision}.</p>
+            <ul className="mt-1 space-y-1">
+              {l.actions.map((a) => (
+                <li key={`${a.logIndex}:${a.actionIndex}`} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 flex-[1_1_14rem] text-muted">{S.actionLine(a.text, a.owner, formatDate(a.dueOn))}{a.done ? ` ${F.actions.doneLine(a.done.by, formatDate(a.done.on))}` : ''}</span>
+                  <span className="flex items-center gap-2">
+                    {a.done && <Chip tone="complete">{F.actions.done}</Chip>}
+                    {a.canClose && <button type="button" className={btn} onClick={() => repo.formation.setActionDone(w.id, a.logIndex, a.actionIndex, !a.done)}>{a.done ? F.actions.reopen : F.actions.markDone}<span className="sr-only">: {a.text}</span></button>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )) : <p className="mt-1 text-13 text-muted">{S.noDecisions}</p>}
         {editable && (
           <>
@@ -545,3 +564,101 @@ function SessionCard({ w, f, editable }: { w: SessionView; f: FormationPage; edi
   );
 }
 
+
+/* ───────── v1.19: groups in the 4Q review session (4Q Group Work Specification v0.1) ───────── */
+
+function Groups({ w, f }: { w: SessionView; f: FormationPage }) {
+  const { repo, say } = useApp();
+  const G = F.groups;
+  const [editing, setEditing] = useState<string | 'new' | null>(null);
+  return (
+    <div className="mt-3 border-t border-border pt-2">
+      <b className="text-14">{G.title}</b>
+      <p className="text-12 text-muted">{G.intro}</p>
+      {w.groups.length ? (
+        <ul className="mt-2 divide-y divide-border">
+          {w.groups.map((g) => (
+            <li key={g.id} className="py-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <span className="min-w-0 flex-[1_1_14rem] text-14">
+                  <b className="text-navy">{g.name}</b> · {partLabel(g.cells)}
+                  <span className="block text-12 text-muted">{G.scribeLine(g.scribe.name)}{g.memberNames.length ? ` · ${en.list(g.memberNames)}` : ''}</span>
+                  {g.closed && <span className="block text-12 text-muted">{G.closedNote(g.closed.by, formatDate(g.closed.on))}</span>}
+                </span>
+                <span className="flex flex-wrap items-center gap-2">
+                  <Chip tone="info">{g.closed ? G.closed : G.entering}</Chip>
+                  {g.toReview > 0 && <Chip tone="advisory">{G.toReview(formatNumber(g.toReview))}</Chip>}
+                  <a className={btn} href={hrefFor({ kind: 'flipchart', workshopId: w.id, groupId: g.id })}>{G.flipChart(g.name)}</a>
+                  {w.canManageGroups && !g.closed && <button type="button" className={btn} onClick={() => setEditing(g.id)}>{G.edit}<span className="sr-only">: {g.name}</span></button>}
+                  {w.canCloseGroups && (g.closed
+                    ? <button type="button" className={btn} title={G.reopenNote} onClick={() => { if (repo.formation.setGroupClosed(w.id, g.id, false).ok) say(G.reopenNote); }}>{G.reopen}<span className="sr-only">: {g.name}</span></button>
+                    : <button type="button" className={btn} onClick={() => repo.formation.setGroupClosed(w.id, g.id, true)}>{G.close}<span className="sr-only">: {g.name}</span></button>)}
+                </span>
+              </div>
+              {editing === g.id && <GroupForm w={w} f={f} groupId={g.id} onDone={() => setEditing(null)} />}
+            </li>
+          ))}
+        </ul>
+      ) : <p className="mt-1 text-13 text-muted">{G.none}</p>}
+      {w.canManageGroups && (editing === 'new' ? <GroupForm w={w} f={f} onDone={() => setEditing(null)} /> : <button type="button" className={`${btn} mt-2`} onClick={() => setEditing('new')}>{G.add}</button>)}
+    </div>
+  );
+}
+
+const partLabel = (cells: FourQCell[]) => {
+  const bands = [...new Set(cells.map((c) => c.band))];
+  if (bands.length === 1 && CELLS.filter((c) => c.band === bands[0]).every((c) => cells.some((x) => cellKey(x) === cellKey(c))) && cells.length === 4) return F.groups.band(en.fourQ.band[bands[0]!]);
+  return en.list(cells.map((c) => `${en.fourQ.band[c.band]}: ${en.fourQ.cellName(c)}`));
+};
+
+function GroupForm({ w, f, groupId, onDone }: { w: SessionView; f: FormationPage; groupId?: string; onDone: () => void }) {
+  const { repo } = useApp();
+  const G = F.groups;
+  const g = groupId ? w.groups.find((x) => x.id === groupId) : undefined;
+  const [name, setName] = useState(g?.name ?? `Group ${w.groups.length + 1}`);
+  const [cells, setCells] = useState<string[]>(g ? g.cells.map(cellKey) : []);
+  const [scribe, setScribe] = useState(g?.scribe.membershipId ?? '');
+  const [members, setMembers] = useState(g ? g.memberNames.join(', ') : '');
+  const [error, setError] = useState<string | null>(null);
+  const id = groupId ?? 'new';
+  const toggle = (k: string, on: boolean) => setCells(on ? [...cells, k] : cells.filter((x) => x !== k));
+  const save = () => {
+    const input = { name, cells: cells.map((k) => cellOfKey(k)!).filter(Boolean), scribeMembershipId: scribe, memberNames: members.split(',').map((x) => x.trim()).filter(Boolean) };
+    const r = groupId ? repo.formation.updateGroup(w.id, groupId, input) : repo.formation.addGroup(w.id, input);
+    if (r.ok) onDone(); else setError(r.error === 'cells' ? G.cellsError : G.required);
+  };
+  return (
+    <div className="mt-2 rounded-lg bg-cream p-3">
+      {error && <p role="alert" className="text-13 text-block-text">{error}</p>}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
+        <div><label htmlFor={`gn-${id}`} className={label}>{G.name}</label><input id={`gn-${id}`} className={input} placeholder={G.namePlaceholder} value={name} onChange={(e) => setName(e.target.value)} /></div>
+        <div><label htmlFor={`gs-${id}`} className={label}>{G.scribe}</label>
+          <select id={`gs-${id}`} className={input} aria-describedby={`gsh-${id}`} value={scribe} onChange={(e) => setScribe(e.target.value)}>
+            <option value="">{F.setup.none}</option>
+            {f.members.map((m) => <option key={m.membershipId} value={m.membershipId}>{m.name}</option>)}
+          </select>
+          <p id={`gsh-${id}`} className="mt-1 text-12 text-muted">{G.scribeNote}</p></div>
+      </div>
+      <fieldset className="mt-3">
+        <legend className={label}>{G.part}</legend>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {BANDS.map((b) => {
+            const keys = CELLS.filter((c) => c.band === b).map(cellKey);
+            return <button key={b} type="button" className={btn} onClick={() => setCells(keys)}>{G.band(en.fourQ.band[b])}</button>;
+          })}
+        </div>
+        <p className="mt-2 text-12 text-muted">{G.sections}</p>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-x-4 sm:grid-cols-2">
+          {CELLS.map((c) => (
+            <label key={cellKey(c)} className="flex min-h-11 items-center gap-2 text-14">
+              <input type="checkbox" className="h-5 w-5 shrink-0" checked={cells.includes(cellKey(c))} onChange={(e) => toggle(cellKey(c), e.target.checked)} />
+              {en.fourQ.band[c.band]}: {en.fourQ.cellName(c)}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="mt-2"><label htmlFor={`gm-${id}`} className={label}>{G.members}</label><input id={`gm-${id}`} className={input} placeholder={G.membersPlaceholder} value={members} onChange={(e) => setMembers(e.target.value)} /></div>
+      <div className="mt-3 flex flex-wrap gap-2"><button type="button" className={primary} onClick={save}>{G.save}</button><button type="button" className={btn} onClick={onDone}>{G.cancel}</button></div>
+    </div>
+  );
+}

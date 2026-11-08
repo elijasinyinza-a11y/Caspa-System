@@ -8,8 +8,9 @@ import type { Store } from '../data/access/store';
 import type { Viewer } from '../data/access/viewer';
 import { blockersAt, computeFindings } from '../rules/integrity';
 import { rateContract } from '../rules/rating';
-import { escalated, formingPlan } from '../rules/formation';
-import { canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentState, entriesOf, filledCells, isLive, visionConfirmed } from '../rules/conception';
+import { escalated, formingPlan, formationInProgress } from '../rules/formation';
+import { deadlineDone } from '../rules/schedule';
+import { awaitsReview, canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentState, entriesOf, filledCells, isLive, visionConfirmed } from '../rules/conception';
 import { composition, isDecided } from '../rules/composition';
 import { sentBy } from '../rules/onboarding';
 import { goalsNeedingRecord } from '../rules/communication';
@@ -29,7 +30,7 @@ export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: For
 export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
 /** v0.20.0: Performance › Reviews, at one review or a tab. */
 export type ReviewsLink = { kind: 'reviews'; reviewId?: string; tab?: 'mine' | 'team' | 'check' | 'round' | 'policy' };
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | { kind: 'contracts'; contractId?: string; tab?: 'mine' | 'team' | 'check' | 'overview' } | null;
+export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'flipchart'; workshopId: string; groupId: string } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | { kind: 'contracts'; contractId?: string; tab?: 'mine' | 'team' | 'check' | 'overview' } | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {
@@ -182,7 +183,8 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
   /* Formation deadlines, once the calendar is published. */
   for (const d of s.formationDeadlines) {
     const plan = s.plans.find((p) => p.id === d.planId);
-    if (d.completed || !plan?.calendar?.published || !d.ownerPositionIds.some(mine)) continue;
+    // v1.18: only dated items, and only until done (computed from records where they exist).
+    if (!d.dueOn || deadlineDone(s, d).done || !plan?.calendar?.published || !d.ownerPositionIds.some(mine)) continue;
     if (!input.canView({ type: 'FormationDeadline', id: d.id })) continue;
     add({ key: `formation:${d.id}`, kind: 'deadline', title: d.label, detail: plan.title, due: d.dueOn, severity: null, as: null, link: at('forming', 'overview') });
   }
@@ -190,7 +192,7 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
   /* Formation (part 11a): the calendar preparer prepares and publishes the calendar. */
   for (const p of s.plans.filter((x) => x.entryDoor === 'formed' && x.status === 'draft')) {
     if (p.calendar?.preparerMembershipId === v.membershipId && !p.calendar.published) {
-      add({ key: `formation:prepare:${p.id}`, kind: 'deadline', title: en.formation.needs.prepare(p.title), detail: null, due: p.calendar.visionTargetOn, severity: null, as: null, link: at('forming', 'overview', 'calendar') });
+      add({ key: `formation:prepare:${p.id}`, kind: 'deadline', title: en.formation.needs.prepare(p.title), detail: null, due: p.calendar.visionTargetOn, severity: null, as: null, link: at('forming', 'overview') });
     }
   }
   /* Conception (part 11b), while the stage is open and the vision is not yet confirmed. */
@@ -210,7 +212,10 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
     // The Strategy office: AI drafts on the organisation sheet or on a department sheet with no head, and accepted cards to bring together.
     if (v.roles.includes('strategy_office')) {
       const headless = new Set(departments(s).filter((d) => !d.headPositionId || !holderOf(s, d.headPositionId, now)?.person).map((d) => d.unitId));
-      const drafts = entriesOf(s, forming.id).filter((e) => isLive(e) && e.draft.state === 'ai_draft' && (e.scope === 'organisation' || e.raisedByUnitIds.some((u) => headless.has(u)))).length;
+      const drafts = entriesOf(s, forming.id).filter((e) => isLive(e) && !e.fromGroup && e.draft.state === 'ai_draft' && (e.scope === 'organisation' || e.raisedByUnitIds.some((u) => headless.has(u)))).length;
+      // v1.19: group cards waiting for review are the Strategy office's to accept, edit, merge or reject.
+      const groupCards = entriesOf(s, forming.id).filter(awaitsReview).length;
+      if (groupCards) add({ key: `conception:groups:${forming.id}`, kind: 'deadline', title: C.groupCards(count(groupCards, 'card')), detail: forming.title, due, severity: null, as: 'strategy_office', link: at('forming', 'conception', 'board') });
       if (drafts) add({ key: `conception:curate:${forming.id}`, kind: 'deadline', title: C.curate(count(drafts, 'aiCard')), detail: forming.title, due, severity: null, as: 'strategy_office', link: at('forming', 'conception', 'board') });
       for (const d of departments(s)) {
         const st = departmentState(s, forming.id, d.unitId);
@@ -288,6 +293,8 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
   /* Overdue formation deadlines reach the owner's supervisor after the organisation's escalation days. */
   for (const e of escalated(s, now)) {
     if (!mine(e.supervisorPositionId)) continue;
+    const dl = s.formationDeadlines.find((x) => x.id === e.deadlineId);
+    if (dl && deadlineDone(s, dl).done) continue;
     const owner = s.positions.find((x) => x.id === e.ownerPositionId)?.title ?? '';
     add({ key: `formation:escalated:${e.deadlineId}:${e.ownerPositionId}`, kind: 'deadline', title: en.formation.needs.escalated(e.label, owner), detail: null, due: e.dueOn, severity: null, as: 'supervisor', link: at('forming', 'overview') });
   }
@@ -308,10 +315,21 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
   for (const w of s.workshops.filter((x) => x.status === 'held')) {
     w.decisionLog.forEach((entry, i) =>
       entry.actions.forEach((a, j) => {
-        if (!mine(a.ownerPositionId)) return;
+        if (!mine(a.ownerPositionId) || a.done) return; // v1.18: a done action leaves "Needs you"
         add({ key: `action:${w.id}:${i}:${j}`, kind: 'decision_action', title: a.text, detail: entry.decision, due: a.dueOn, severity: null, as: null, link: at('forming', 'overview', 'sessions') });
       }),
     );
+  }
+
+  /* v1.19: a group's scribe enters its cards on the group's 4Q flip chart while the group is open. */
+  const inForm = formationInProgress(s);
+  if (inForm?.status === 'draft') {
+    for (const w of s.workshops.filter((x) => x.planId === inForm.id && x.status !== 'cancelled')) {
+      for (const g of w.groups ?? []) {
+        if (g.scribeMembershipId !== v.membershipId || g.closed) continue;
+        add({ key: `flipchart:${w.id}:${g.id}`, kind: 'deadline', title: en.conception.needs.flipChart(g.name), detail: inForm.title, due: w.scheduledOn, severity: null, as: null, link: { kind: 'flipchart', workshopId: w.id, groupId: g.id } });
+      }
+    }
   }
 
   /* Findings routed to the person's positions. A blocking finding takes the due date of the earliest step it blocks. */

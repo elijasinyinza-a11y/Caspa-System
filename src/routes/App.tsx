@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlipChartPage } from './FlipChart';
+import { UsabilityPage } from './Usability';
+import { USABILITY_ORG_INDEX, USABILITY_TASKS } from '../data/sample/usability-tasks';
 import { AppContext, type DevRole } from '../components/AppContext';
 import { BottomBar } from '../components/BottomBar';
 import { IntegrityDrawer } from '../components/IntegrityDrawer';
@@ -79,6 +82,17 @@ export function App() {
     navigate({ kind: 'workspace', w: 'home' }); // record links belong to one organisation
   };
 
+  // v0.26.0: a usability task starts here after a reload, in the demo organisation and the role the kit sets.
+  useEffect(() => {
+    if (route.kind !== 'usability' || !route.start) return;
+    const t = USABILITY_TASKS.find((x) => x.no === route.start);
+    if (!t) return;
+    setOrgIdState(orgs[USABILITY_ORG_INDEX]!.orgId);
+    setRole(t.role);
+    navigate({ kind: 'workspace', w: 'home' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on the start address
+  }, [route]);
+
   // A person never lands on a workspace their roles do not include. Node pages are open to all members.
   useEffect(() => {
     if (route.kind === 'workspace' && !repo.workspaces().includes(route.w)) navigate({ kind: 'workspace', w: 'home' });
@@ -108,6 +122,8 @@ export function App() {
     : route.kind === 'survey' ? (route.results ? <SurveyStaffResults key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} /> : <SurveyAnswer key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} />)
     : route.kind === 'progress' ? <ProgressUpdates key={`${org.orgId}:${viewing}`} tab={route.tab} objectiveId={route.objectiveId} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
+    : route.kind === 'flipchart' ? <FlipChartPage key={`${org.orgId}:${viewing}:${route.workshopId}:${route.groupId}`} workshopId={route.workshopId} groupId={route.groupId} />
+    : route.kind === 'usability' ? <UsabilityPage key={org.orgId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />
     : route.w === 'plan' ? <Budget key={`${org.orgId}:${viewing}`} />

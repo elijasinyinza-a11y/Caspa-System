@@ -11,7 +11,7 @@ import { formatDate, formatFinancialYear, formatMoney, formatNumber, formatPerce
 import type { NodeRef } from '../selectors/node';
 import { en } from '../strings/en';
 import { nodeHref } from './router';
-import { FirstQuestion, GettingStarted, openPlanSetup } from './Strategy';
+import { FirstQuestion, GettingStarted, openFormSetup, openPlanSetup } from './Strategy';
 
 type Terms = ReturnType<ReturnType<typeof useApp>['repo']['settings']>['termLabels'];
 
@@ -301,7 +301,7 @@ function Onboarding() {
   return (
     <>
       {!page.plan && page.structureConfirmed && (page.canSetUp || page.isExecutive || page.steps.length > 0) && (
-        <div className="mt-6"><FirstQuestion page={page} onImport={() => { openPlanSetup(); navigate({ kind: 'workspace', w: 'strategy' }); }} /></div>
+        <div className="mt-6"><FirstQuestion page={page} onImport={() => { openPlanSetup(); navigate({ kind: 'workspace', w: 'strategy' }); }} onForm={() => { openFormSetup(); navigate({ kind: 'workspace', w: 'strategy' }); }} /></div>
       )}
       <GettingStarted />
     </>

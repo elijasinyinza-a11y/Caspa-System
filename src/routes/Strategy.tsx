@@ -1,6 +1,6 @@
 /**
  * The Strategy workspace in slice 8: onboarding's import door (Onboarding Specification v0.1, O1 to O9).
- * The formation stages arrive with the Strategy formation slice; until then "Form a new strategy" is "Coming later" (O6).
+ * "Form a new strategy" opens formation's plan setup (v0.26.0; O6's "Coming later" lifted now the stages exist).
  */
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
@@ -23,6 +23,9 @@ const O = en.onboarding;
 /** Set by "Bring your existing plan" on Home, so the Strategy workspace opens straight on plan setup. */
 let openSetupNext = false;
 export const openPlanSetup = () => { openSetupNext = true; };
+/** v0.26.0: set by "Form a new strategy" on Home, so the Strategy workspace opens on formation's plan setup. */
+let openFormNext = false;
+export const openFormSetup = () => { openFormNext = true; };
 
 export function Strategy() {
   const { repo } = useApp();
@@ -30,6 +33,7 @@ export function Strategy() {
   const page = ob.page();
   const [note, setNote] = useState<string | null>(null);
   const [setup, setSetup] = useState(() => { const v = openSetupNext; openSetupNext = false; return v; });
+  const [forming, setForming] = useState(() => { const v = openFormNext; openFormNext = false; return v; });
   return (
     <>
       <WorkspaceHeader w="strategy" title={en.nav.strategy} intro={en.workspaceIntro.strategy} />
@@ -37,7 +41,11 @@ export function Strategy() {
       {note && <p role="status" className="mb-4 rounded-lg border border-complete-border bg-complete-bg px-4 py-3 text-14 text-complete-text">{note}</p>}
       {!page.plan ? (
         setup && page.canSetUp ? <SetupForm page={page} onDone={(m) => { setSetup(false); setNote(m); }} onCancel={() => setSetup(false)} />
-          : <FirstQuestion page={page} onImport={() => setSetup(true)} />
+          : forming && page.canSetUp ? <NextPlanCard open onCancel={() => setForming(false)} />
+          : <FirstQuestion page={page} onImport={() => setSetup(true)} onForm={() => setForming(true)} />
+      ) : page.plan.door === 'formed' && page.plan.status === 'draft' ? (
+        // v0.26.0 (O6 lifted): a first plan formed through the five stages lives in Forming the next plan.
+        <NextPlanCard />
       ) : (
         <>
           <PlanView page={page} setNote={setNote} />
@@ -73,7 +81,7 @@ export function StrategyEntryPage({ entry, stage, tab, goalId }: { entry: Strate
 
 /* ───────── The first question (O1, O6) ───────── */
 
-export function FirstQuestion({ page, onImport }: { page: OnboardingPage; onImport: () => void }) {
+export function FirstQuestion({ page, onImport, onForm }: { page: OnboardingPage; onImport: () => void; onForm: () => void }) {
   const sees = page.canSetUp || page.isExecutive || page.steps.length > 0;
   if (!sees) return <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{O.beingPrepared}</p>;
   const door = 'flex min-h-44 flex-col gap-2 rounded-xl border border-border border-t-4 bg-white p-5 text-left';
@@ -86,10 +94,9 @@ export function FirstQuestion({ page, onImport }: { page: OnboardingPage; onImpo
           <span className="text-22 font-bold text-navy">{O.importDoor}</span>
           <span className="text-14 text-text">{O.importDoorText}</span>
         </button>
-        <button type="button" disabled aria-describedby="form-later" className={`${door} cursor-not-allowed opacity-75`}>
+        <button type="button" disabled={!page.canSetUp} onClick={onForm} className={`${door} border-t-strategy-mark hover:border-navy disabled:cursor-not-allowed disabled:opacity-75`}>
           <span className="text-22 font-bold text-navy">{O.formDoor}</span>
           <span className="text-14 text-text">{O.formDoorText}</span>
-          <span id="form-later"><Chip tone="info">{O.comingLater}</Chip></span>
         </button>
       </div>
     </section>

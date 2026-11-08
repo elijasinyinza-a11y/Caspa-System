@@ -21,7 +21,9 @@ const cellName = (c: FourQCell) => en.fourQ.cell(c);
 
 /* ───────── One card ───────── */
 
-function StateChip({ state }: { state: CardView['state'] }) {
+function StateChip({ state, c }: { state: CardView['state']; c?: CardView }) {
+  // v1.19: a group's card waiting for review is never shown as an AI draft.
+  if (c?.toReview && c.group) return <Chip tone="advisory">{C.card.toReview(c.group.name)}</Chip>;
   if (state === 'ai_draft') return <Chip tone="advisory">{C.card.aiDraft}</Chip>;
   if (state === 'accepted') return <Chip tone="complete">{C.card.accepted}</Chip>;
   if (state === 'human') return <Chip tone="complete">{C.card.written}</Chip>;
@@ -34,6 +36,13 @@ export function Card({ c, large = false, onDone }: { c: CardView; large?: boolea
   const [text, setText] = useState(c.text);
   const [error, setError] = useState<string | null>(null);
   const draft = c.state === 'ai_draft';
+  const [removing, setRemoving] = useState(false);
+  const [reason, setReason] = useState('');
+  const { say } = useApp();
+  const remove = () => {
+    const r = repo.conception.removeCard(c.id, reason);
+    if (r.ok) { setRemoving(false); say(C.card.removed); } else setError(r.error === 'reason' ? C.card.reasonRequired : r.error === 'linked' ? C.card.linked : C.card.cantRemove);
+  };
   const save = () => {
     const r = repo.conception.updateCard(c.id, { text });
     if (r.ok) { setEditing(false); setError(null); onDone?.(null); } else setError(C.card.required);
@@ -58,14 +67,29 @@ export function Card({ c, large = false, onDone }: { c: CardView; large?: boolea
       {c.carriesLevel && !large && <CauseLevel c={c} />}
       {c.carriesLevel && large && c.causeLevel && <span className="text-14 text-white">{C.cause.label}: {en.sixP[c.causeLevel]}</span>}
       <span className="flex flex-wrap items-center gap-2">
-        <StateChip state={c.state} />
+        <StateChip state={c.state} c={c} />
+        {c.group && !c.toReview && <span className="text-12 text-muted">{c.group.name}</span>}
         {c.merged > 0 && <span className="text-12 text-muted">{C.card.merged(formatNumber(c.merged))}</span>}
       </span>
-      {c.canDecide && !editing && !large && (
+      {c.canDecide && !editing && !removing && (!large || c.toReview) && (
         <div className="flex flex-wrap gap-2" role="group" aria-label={C.card.actionsFor(c.text)}>
           {draft && <button type="button" className={primary} onClick={() => { repo.conception.updateCard(c.id, { decision: 'accept' }); onDone?.(null); }}>{C.card.accept}</button>}
-          <button type="button" className={btn} onClick={() => setEditing(true)}>{draft ? C.card.correct : C.card.edit}</button>
+          <button type="button" className={btn} onClick={() => setEditing(true)}>{c.toReview ? C.card.edit : draft ? C.card.correct : C.card.edit}</button>
           {draft && <button type="button" className={btn} onClick={() => { repo.conception.updateCard(c.id, { decision: 'reject' }); onDone?.(null); }}>{C.card.reject}</button>}
+          {c.canRemove && <button type="button" className={btn} onClick={() => { setRemoving(true); setError(null); }}>{C.card.remove}</button>}
+        </div>
+      )}
+      {c.removeBlocked === 'linked' && !large && <span className="text-12 text-muted">{C.card.linked}</span>}
+      {removing && (
+        <div>
+          <label htmlFor={`rm-${c.id}`} className={label}>{C.card.reason}</label>
+          <p id={`rmh-${c.id}`} className="text-12 text-muted">{C.card.reasonHint}</p>
+          <input id={`rm-${c.id}`} aria-describedby={`rmh-${c.id}`} className={input} value={reason} onChange={(e) => setReason(e.target.value)} />
+          {error && <p role="alert" className="mt-1 text-13 text-block-text">{error}</p>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className={primary} onClick={remove}>{C.card.removeConfirm}</button>
+            <button type="button" className={btn} onClick={() => { setRemoving(false); setError(null); }}>{C.card.cancel}</button>
+          </div>
         </div>
       )}
     </div>
@@ -246,7 +270,25 @@ function Progress({ c, openVision }: { c: ConceptionPage; openVision?: () => voi
   );
 }
 
-function BoardBands({ c, focus, large = false }: { c: ConceptionPage; focus: Band | 'all'; large?: boolean }) {
+/** v1.19: "To review" shows only group cards waiting for the Strategy office, all groups or one. */
+type ReviewFilter = 'all' | 'review' | string;
+const shownBy = (f: ReviewFilter) => (x: CardView) => f === 'all' || (x.toReview && (f === 'review' || `${x.group?.workshopId}:${x.group?.groupId}` === f));
+
+function ReviewPicker({ c, value, set, dark = false }: { c: ConceptionPage; value: ReviewFilter; set: (f: ReviewFilter) => void; dark?: boolean }) {
+  if (!c.groups.length) return null;
+  const total = c.groups.reduce((n, g) => n + g.toReview, 0);
+  const opts: [ReviewFilter, string][] = [['all', C.board.allCards], ['review', C.board.toReview(formatNumber(total))], ...c.groups.map((g) => [`${g.workshopId}:${g.groupId}`, C.board.groupToReview(g.name, formatNumber(g.toReview))] as [string, string])];
+  return (
+    <div role="group" aria-label={C.board.show} className="flex flex-wrap gap-2">
+      {opts.map(([k, l]) => (
+        <button key={k} type="button" aria-pressed={value === k} onClick={() => set(k)}
+          className={`min-h-11 rounded-lg px-4 text-14 font-semibold ${value === k ? (dark ? 'bg-white text-navy' : 'bg-navy text-white') : (dark ? 'border border-border text-white' : 'border border-control bg-white text-navy hover:border-navy')}`}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+function BoardBands({ c, focus, large = false, review = 'all' }: { c: ConceptionPage; focus: Band | 'all'; large?: boolean; review?: ReviewFilter }) {
   return (
     <>
       {BANDS.filter((b) => focus === 'all' || focus === b).map((b) => (
@@ -258,7 +300,7 @@ function BoardBands({ c, focus, large = false }: { c: ConceptionPage; focus: Ban
             {c.board.filter((x) => x.cell.band === b).map((x) => (
               <div key={cellKey(x.cell)} className="flex min-w-0 flex-col gap-2">
                 <h4 className={`${large ? 'text-18 text-white' : 'text-14 text-navy'} font-semibold`}>{en.fourQ.cellName(x.cell)}</h4>
-                {x.cards.map((card) => <Card key={card.id} c={card} large={large} />)}
+                {x.cards.filter(shownBy(review)).map((card) => <Card key={card.id} c={card} large={large} />)}
                 {!x.filled && <p className={`rounded-lg border border-dashed p-3 ${large ? 'border-border text-14 text-white' : 'border-control text-13 text-muted'}`}>{C.board.empty}</p>}
               </div>
             ))}
@@ -286,6 +328,7 @@ function FocusPicker({ focus, setFocus, dark = false }: { focus: Band | 'all'; s
 export function Board({ c, openVision }: { c: ConceptionPage; openVision: () => void }) {
   const [focus, setFocus] = useState<Band | 'all'>('all');
   const [workshop, setWorkshop] = useState(false);
+  const [review, setReview] = useState<ReviewFilter>('all');
   return (
     <div className="flex flex-col gap-4">
       {c.stage === 'not_started' && <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{C.stageNotOpen}</p>}
@@ -302,12 +345,14 @@ export function Board({ c, openVision }: { c: ConceptionPage; openVision: () => 
         <div className="mt-3"><Progress c={c} openVision={openVision} /></div>
         {c.hiddenOnBoard > 0 && <p className="mt-2 text-13 text-muted">{C.board.hidden(formatNumber(c.hiddenOnBoard))}</p>}
         <div className="mt-3"><FocusPicker focus={focus} setFocus={setFocus} /></div>
+        {c.groups.length > 0 && <div className="mt-2"><ReviewPicker c={c} value={review} set={setReview} /><p className="mt-1 text-12 text-muted">{C.board.groupNote}</p></div>}
       </div>
-      <BoardBands c={c} focus={focus} />
+      <BoardBands c={c} focus={focus} review={review} />
       {c.canCurate && <Suggestions c={c} unitId="all" />}
       {c.canCurate && <Duplicates c={c} />}
       {c.canCurate && <AddCard unitId={null} title={C.add.title} intro={C.add.intro} idPrefix="board" />}
       {c.seesAll && <DepartmentSheets c={c} />}
+      {c.removed.length > 0 && <Removed c={c} />}
       {workshop && <WorkshopView c={c} onClose={() => setWorkshop(false)} />}
     </div>
   );
@@ -315,8 +360,27 @@ export function Board({ c, openVision }: { c: ConceptionPage; openVision: () => 
 
 /* ───────── Workshop view: full screen, large type, minimal controls ───────── */
 
+/** v1.20: cards taken off the board, kept in the record with their reasons. */
+function Removed({ c }: { c: ConceptionPage }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className={card} aria-labelledby="removed-h">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 id="removed-h" className="text-16 font-bold text-navy">{C.card.removedTitle(formatNumber(c.removed.length))}</h3>
+        <button type="button" className={btn} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? C.card.hideRemoved : C.card.showRemoved}</button>
+      </div>
+      {open && (
+        <ul className="mt-2 divide-y divide-border">
+          {c.removed.map((x) => <li key={x.id} className="py-2 text-14"><b className="text-navy">{x.text}</b><span className="block text-12 text-muted">{cellName(x.cell)} · {C.card.removedLine(x.by, formatDate(x.on), x.reason)}</span></li>)}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function WorkshopView({ c, onClose }: { c: ConceptionPage; onClose: () => void }) {
   const [focus, setFocus] = useState<Band | 'all'>('all');
+  const [review, setReview] = useState<ReviewFilter>('all');
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
@@ -343,7 +407,8 @@ function WorkshopView({ c, onClose }: { c: ConceptionPage; onClose: () => void }
           <FocusPicker focus={focus} setFocus={setFocus} dark />
           <p className="text-18 font-semibold text-white">{C.board.progress(formatNumber(c.filled), formatNumber(CELLS.length))}</p>
         </div>
-        <BoardBands c={c} focus={focus} large />
+        <ReviewPicker c={c} value={review} set={setReview} dark />
+        <BoardBands c={c} focus={focus} large review={review} />
         {c.canCurate && <div className="text-text"><AddCard unitId={null} title={C.add.sessionTitle} intro={C.add.intro} idPrefix="ws" /></div>}
       </div>
     </div>
