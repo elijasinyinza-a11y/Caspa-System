@@ -84,7 +84,8 @@ export function NeedsYou({ items }: { items: NeedsYouItem[] }) {
     }
     const href = link.kind === "progress" ? hrefFor({ kind: "progress", tab: link.tab, objectiveId: link.objectiveId })
       : link.kind === "communication" ? hrefFor({ kind: "strategy", entry: "communication", goalId: link.goalId })
-      : link.kind === "strategy" ? hrefFor({ kind: "strategy", entry: link.entry, stage: link.stage, tab: link.tab }) : fixHref(link);
+      : link.kind === "strategy" ? hrefFor({ kind: "strategy", entry: link.entry, stage: link.stage, tab: link.tab })
+      : link.kind === "flipchart" ? hrefFor({ kind: "flipchart", workshopId: link.workshopId, groupId: link.groupId }) : fixHref(link);
     return (
       <a href={href} className={cls}>
         {en.needsYou.open}

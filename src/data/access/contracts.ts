@@ -3,6 +3,7 @@
  * Drafting by the position's supervisor, the next-level reviewer's check before issue where a dependency is worth
  * checking (CT-5), signing with the employee's note (CT-6), and revising as a new version (CT-8).
  */
+import { guideOf, type PlanSizeGuide } from '../../rules/plan-size';
 import type { ContractObjective, Dependency, FinancialYear, ISODate, ISODateTime, PerformanceContract } from '../../contract/caspa-data-contract';
 import { carriedQuantity, dependencyFlags, draftChecks, makesCircle, type DraftCheck } from '../../rules/contracts';
 import { reviewPeriodEnd, schemeFor } from '../../rules/rating';
@@ -39,7 +40,7 @@ export type ContractResult = { ok: true; outcome?: 'issued' | 'sent_for_check' |
 
 export interface ContractsAccess {
   hasAny(): boolean;
-  page(): { tabs: ContractTab[]; opensOn: ContractTab; mine: ContractView[]; team: TeamRow[]; check: ContractView[]; overview: { byStep: { step: string; n: number }[]; none: number; limits: { standing: number; single: number | null; showDraft: boolean }; received: { id: string; person: string; position: string; signedAt: string }[] } | null };
+  page(): { tabs: ContractTab[]; opensOn: ContractTab; mine: ContractView[]; team: TeamRow[]; check: ContractView[]; overview: { byStep: { step: string; n: number }[]; none: number; limits: { standing: number; single: number | null; showDraft: boolean }; guide: PlanSizeGuide; received: { id: string; person: string; position: string; signedAt: string }[] } | null };
   contract(id: string): ContractView | null;
   sources(contractId: string): { activities: { id: string; label: string; remaining: number | null; unit: string }[]; shares: { id: string; label: string }[]; breakdowns: { id: string; label: string }[]; dependable: { id: string; label: string }[] };
   createDraft(positionId: string): ContractResult;
@@ -54,6 +55,8 @@ export interface ContractsAccess {
   sign(id: string, note: string): ContractResult;
   revise(id: string): ContractResult;
   saveLimits(l: { standing: number; single: number | null; showDraft: boolean }): ContractResult;
+  /** v1.20: the plan-size guide, set by HR; off (null) by default, worth checking only. */
+  saveGuide(g: PlanSizeGuide): { ok: true } | { ok: false; error: 'not_allowed' | 'bad_number' };
   needs(): NeedsYouItem[];
   dependsLines(contractObjectiveId: string): string[];
 }
@@ -101,6 +104,7 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
       case 'standing_duties': return C.checks.standing(ch.pct, ch.limit);
       case 'single_limit': return C.checks.single(t(ch.contractObjectiveId), ch.pct, ch.limit);
       case 'over_activity': { const a = act(ch.activityId); return C.checks.overActivity(a ? `${a.code}` : '', ch.planned.toLocaleString('en-GB'), ch.total.toLocaleString('en-GB'), a?.quantityTarget?.unit ?? ''); }
+      case 'many_objectives': return C.checks.manyObjectives(ch.count, ch.limit);
       case 'dependency': { const d = s.dependencies.find((x) => x.id === ch.dependencyId)!; const co = cos.find((x) => x.id === (d.from as { contractObjectiveId: string }).contractObjectiveId); return C.checks.dependency(co?.title ?? '', depText(d), ch.flags.map((f) => flagText(f, d)).join('; ')); }
     }
   };
@@ -201,6 +205,7 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
         byStep: steps.map((x) => ({ step: x, n: yearContracts().filter((ct) => ct.status !== 'closed' && step(ct) === x).length })),
         none: s.positions.filter((p) => holdersOf(s, p.id, now).length && !yearContracts().some((ct) => ct.positionId === p.id && ct.status !== 'closed')).length,
         limits: { standing: s.organisation.settings.standingDutyLimitPct, single: s.organisation.settings.singleObjectiveLimitPct, showDraft: s.organisation.settings.showDraftToEmployee },
+        guide: guideOf(s),
         // v0.23.0: HR is the final recipient of every signed contract; arrival is enough, nothing is recorded.
         received: yearContracts().filter((ct) => ct.status === 'signed').map((ct) => ({ id: ct.id as string, person: person(ct.personId), position: posTitle(ct.positionId), signedAt: [ct.signedByEmployee?.at ?? '', ct.signedBySupervisor?.at ?? ''].sort().pop() ?? '' })).sort((a, b) => (a.signedAt < b.signedAt ? 1 : -1)),
       } : null;
@@ -361,6 +366,17 @@ export function createContractsAccess(c: Ctx): ContractsAccess {
       audit('revise', 'PerformanceContract', nid, { version: version - 1 }, { version });
       c.changed();
       return { ok: true, id: nid };
+    },
+    saveGuide(g) {
+      // v1.20: the PlanSizeGuide row, drafted by HR. Each number is a whole number of at least 1, or null (off).
+      if (!isHr) return { ok: false, error: 'not_allowed' };
+      const ok = (n: number | null) => n === null || (Number.isInteger(n) && n >= 1 && n <= 999);
+      if (!ok(g.kpisPerObjective) || !ok(g.activitiesPerKpi) || !ok(g.objectivesPerContract)) return { ok: false, error: 'bad_number' };
+      const before = guideOf(s);
+      s.organisation.settings.planSizeGuide = { kpisPerObjective: g.kpisPerObjective, activitiesPerKpi: g.activitiesPerKpi, objectivesPerContract: g.objectivesPerContract };
+      audit('update', 'Organisation', s.organisation.id, { planSizeGuide: before }, { planSizeGuide: guideOf(s) });
+      c.changed();
+      return { ok: true };
     },
     saveLimits(l) {
       if (!isHr) return { ok: false, error: 'not_allowed' };

@@ -12,8 +12,9 @@ import { aiStub, type AiDraft } from '../../ai';
 import {
   canSubmitDepartment, CELLS, departments, departmentsHeadedBy, departmentSheet, departmentState, entriesOf, filledCells, isAccepted, isLive,
   keptSeparate, KEEP_SEPARATE_ACTION, pairKey, sameCell, submissionOf, SUBMIT_ACTION, visionChecks, visionMustKey, type DepartmentState, type VisionMust,
-  causeLevels, mayCarryLevel, mergeLevel, SIX_P_ORDER,
+  causeLevels, mayCarryLevel, mergeLevel, SIX_P_ORDER, awaitsReview, removeRefusal, type RemoveRefusal,
 } from '../../rules/conception';
+import type { Device } from './device';
 import { DISMISS_ACTION, dismissedKeys, fourQCandidates, RESTORE_ACTION, sourcePlan, type FourQCandidate } from '../../selectors/four-q-candidates';
 import { financialYearOf } from './viewer';
 import { formationInProgress, formingPlan } from '../../rules/formation';
@@ -41,6 +42,12 @@ export interface CardView {
   /** v0.24.0 (A): where the cause sits, for critical failure factors; null when not set. */
   causeLevel: SixPLevel | null;
   carriesLevel: boolean;
+  /** v1.19: the group it came from, and whether it still waits for the Strategy office's review. */
+  group: { workshopId: string; groupId: string; name: string } | null;
+  toReview: boolean;
+  /** v1.20: whether this viewer may remove it now, and why not when it is otherwise theirs to remove. */
+  canRemove: boolean;
+  removeBlocked: 'linked' | null;
   /** v0.24.0 (B): the record it was suggested from, with its figures live. */
   basis: CandidateFigures | null;
 }
@@ -79,6 +86,12 @@ export interface ConceptionPage {
   /** v0.24.0 (A3): accepted critical failure factors on the organisation sheet, by level. */
   causes: { counts: Record<SixPLevel, number>; notSet: number; total: number };
   documents: { id: string; title: string; kind: SourceDocument['kind']; fileRef: string; drafted: number }[];
+  /** v1.19: the 4Q review session's groups, with how many of their cards wait for review (for the "To review" filter). */
+  groups: { workshopId: string; groupId: string; name: string; toReview: number }[];
+  /** Only the Strategy office accepts, edits, merges or rejects group cards (a facilitator cannot). */
+  reviewsGroups: boolean;
+  /** v1.20: cards taken off the board, kept in the record, for those who see every card. */
+  removed: { id: string; cell: FourQCell; text: string; reason: string; by: string; on: ISODate }[];
   vision: {
     vision: string;
     mission: string;
@@ -90,7 +103,20 @@ export interface ConceptionPage {
   };
 }
 
-export type ConceptionError = 'not_allowed' | 'not_found' | 'required' | 'ai_off' | 'not_ready' | 'locked' | 'same_cell' | 'no_level';
+export type ConceptionError = 'not_allowed' | 'not_found' | 'required' | 'ai_off' | 'not_ready' | 'locked' | 'same_cell' | 'no_level' | 'closed' | 'cell' | RemoveRefusal;
+
+/** v1.19: a group's 4Q flip chart, for its scribe. */
+export interface FlipChartPage {
+  workshopId: string; groupId: string; name: string; planTitle: string; sessionLabel: string;
+  cells: FourQCell[];
+  closed: boolean;
+  /** Only the scribe enters; the Strategy office may look. */
+  isScribe: boolean;
+  cards: { id: string; cell: FourQCell; text: string; evidence: string | null; state: 'to_review' | 'accepted' | 'rejected'; canChange: boolean }[];
+  /** Saved on this device while offline, sent when it reconnects. */
+  waiting: { key: string; cell: FourQCell; text: string }[];
+  offline: boolean;
+}
 export type ConceptionResult<T = object> = ({ ok: true } & T) | { ok: false; error: ConceptionError };
 
 export interface ConceptionAccess {
@@ -115,16 +141,26 @@ export interface ConceptionAccess {
   acceptCandidate(key: string, text?: string): Promise<ConceptionResult<{ id: string; mayRepeat: string | null }>>;
   dismissCandidate(key: string): ConceptionResult;
   restoreCandidate(key: string): ConceptionResult;
+  /** v1.20: take a typed or accepted card off the board, with a reason. Kept in the record. */
+  removeCard(id: string, reason: string): ConceptionResult;
+  /** v1.19: a group's 4Q flip chart; null for anyone but its scribe and the Strategy office. */
+  flipChart(workshopId: string, groupId: string): FlipChartPage | null;
+  addGroupCard(workshopId: string, groupId: string, input: { cell: FourQCell; text: string; evidence: string | null }): ConceptionResult<{ id?: string; queued?: boolean }>;
+  updateGroupCard(id: string, input: { text: string; evidence: string | null }): ConceptionResult;
+  deleteGroupCard(id: string): ConceptionResult;
+  /** Sends group cards saved on this device while offline. */
+  sendWaiting(): number;
 }
 
 interface Ctx {
   s: Store; viewer: Viewer; now: ISODate; clock: () => ISODateTime;
   audit: (action: string, entity: { type: string; id: string }, before: unknown, after: unknown) => AuditEntry;
   onChange?: () => void;
+  device?: Device;
 }
 
 export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
-  const { s, viewer, clock, audit } = ctx;
+  const { s, viewer, clock, audit, device } = ctx;
   const has = (r: string) => viewer.roles.includes(r as never);
   const curates = has('strategy_office') || has('facilitator');
   const seesAll = curates || has('executive');
@@ -150,8 +186,18 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
     return a ? s.people.find((p) => p.id === a.personId)?.fullName ?? null : null;
   };
   const sees = (e: FourQEntry) => can(s, viewer, 'view', { type: 'FourQEntry', id: e.id });
-  /** Department heads act on department cards their unit raised; consolidated cards belong to the curators. */
-  const decides = (e: FourQEntry) => curates || (e.scope === 'department' && can(s, viewer, 'draft', { type: 'FourQEntry', id: e.id }));
+  /**
+   * Department heads act on department cards their unit raised; consolidated cards belong to the curators. A group's
+   * card waiting for review is the Strategy office's alone to accept, edit, merge or reject (v1.19).
+   */
+  const office = has('strategy_office');
+  const decides = (e: FourQEntry) => (awaitsReview(e) ? office : curates || (e.scope === 'department' && can(s, viewer, 'draft', { type: 'FourQEntry', id: e.id })));
+  const groupOf = (e: FourQEntry) => {
+    if (!e.fromGroup) return null;
+    const w = s.workshops.find((x) => x.id === e.fromGroup!.workshopId);
+    const g = w?.groups?.find((x) => x.id === e.fromGroup!.groupId);
+    return { workshopId: e.fromGroup.workshopId as string, groupId: e.fromGroup.groupId, name: g?.name ?? '' };
+  };
   const tz = s.organisation.timeZone;
 
   const sourceOf = (e: FourQEntry): string => {
@@ -165,12 +211,16 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       return en.conception.source.interview(unitName(task?.inputRefs.find((r) => r.type === 'OrgUnit')?.id ?? ''));
     }
     if (p.kind === 'ai_suggestion') return en.conception.source.suggestion;
+    if (e.fromGroup) return en.conception.source.group(groupOf(e)?.name ?? '');
     return e.raisedByUnitIds.length ? en.conception.source.addedBy(en.list(e.raisedByUnitIds.map((u) => unitName(u)))) : en.conception.source.session;
   };
   const view = (e: FourQEntry, p: StrategicPlan): CardView => ({
     id: e.id, cell: e.cell, text: e.text, units: e.raisedByUnitIds.map((u) => unitName(u)), source: sourceOf(e), evidence: e.evidence,
     state: e.draft.state, scope: e.scope, merged: entriesOf(s, p.id).filter((x) => x.mergedIntoId === e.id).length, canDecide: p.status === 'draft' && decides(e),
     causeLevel: e.causeLevel ?? null, carriesLevel: mayCarryLevel(e.cell), basis: e.basis ? figuresOfBasis(e.basis) : null,
+    group: groupOf(e), toReview: awaitsReview(e),
+    canRemove: p.status === 'draft' && decides(e) && isAccepted(e) && removeRefusal(s, p, e, 'x') === null,
+    removeBlocked: p.status === 'draft' && decides(e) && isAccepted(e) && removeRefusal(s, p, e, 'x') === 'linked' ? 'linked' : null,
   });
   // v0.24.0: figures shown live from the record a suggestion came from; never copied into the card.
   const fyNow = () => financialYearOf(ctx.now, s.organisation.financialYearStartMonth);
@@ -215,6 +265,29 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
     s.fourQEntries.push(e);
     audit('create', { type: 'FourQEntry', id: e.id }, null, structuredClone(e));
     return e;
+  };
+  /** A group of a 4Q review session of the plan being formed. */
+  const groupFor = (workshopId: string, groupId: string) => {
+    const p = formationInProgress(s);
+    const w = p && s.workshops.find((x) => x.id === workshopId && x.planId === p.id && x.status !== 'cancelled' && x.purposes.includes('four_q_review'));
+    const g = w?.groups?.find((x) => x.id === groupId);
+    return p && w && g ? { p, w, g } : null;
+  };
+  /** A group card goes to the board as a draft that needs checking: it never counts until the Strategy office accepts it. */
+  const groupCard = (p: StrategicPlan, workshopId: string, groupId: string, input: { cell: FourQCell; text: string; evidence: string | null }, offline = false) => {
+    const e = newCard(p, { cell: input.cell, text: input.text, units: [], scope: 'organisation', evidence: input.evidence, draft: { state: 'ai_draft', provenance: { kind: 'manual' }, decided: null } });
+    e.fromGroup = { workshopId: workshopId as Id<'Workshop'>, groupId };
+    if (offline) audit('sync', { type: 'FourQEntry', id: e.id }, null, { savedOffline: true });
+    return e;
+  };
+  const scribesCard = (id: string): { ok: true; e: FourQEntry } | { ok: false; error: ConceptionError } => {
+    const e = s.fourQEntries.find((x) => x.id === id);
+    const found = e?.fromGroup ? groupFor(e.fromGroup.workshopId, e.fromGroup.groupId) : null;
+    if (!e || !found) return { ok: false, error: 'not_found' };
+    if (found.g.scribeMembershipId !== viewer.membershipId) return { ok: false, error: 'not_allowed' };
+    if (found.g.closed || found.p.status !== 'draft') return { ok: false, error: 'closed' };
+    if (!awaitsReview(e)) return { ok: false, error: 'locked' };
+    return { ok: true, e };
   };
   /**
    * Documents given for this formation: recorded with the plan when added, or read by an AI task for this plan,
@@ -270,6 +343,14 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
         }).filter((x) => x.open.length + x.dismissed.length > 0);
       })(),
       causes: causeLevels(s, p.id),
+      groups: s.workshops.filter((w) => w.planId === p.id && w.status !== 'cancelled').flatMap((w) => (w.groups ?? []).map((g) => ({
+        workshopId: w.id as string, groupId: g.id, name: g.name,
+        toReview: entriesOf(s, p.id).filter((e) => awaitsReview(e) && e.fromGroup!.workshopId === w.id && e.fromGroup!.groupId === g.id).length,
+      }))),
+      reviewsGroups: office && !locked,
+      removed: seesAll ? entriesOf(s, p.id).filter((e) => e.removed && sees(e)).map((e) => ({
+        id: e.id, cell: e.cell, text: e.text, reason: e.removed!.reason, by: personOf(e.removed!.by.byMembershipId), on: dateInZone(e.removed!.by.at, tz),
+      })) : [],
       documents: seesAll ? s.sourceDocuments.filter((d) => isFormationDoc(p.id, d.id) || draftedFrom(p.id, d.id) > 0).map((d) => ({
         id: d.id, title: d.title, kind: d.kind, fileRef: d.fileRef,
         drafted: draftedFrom(p.id, d.id),
@@ -416,6 +497,8 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       const gone = p && s.fourQEntries.find((x) => x.id === mergeId && x.planId === p.id && x.scope === 'organisation' && isLive(x));
       if (!keep || !gone || keep.id === gone.id) return deny('not_found');
       if (!sameCell(keep.cell, gone.cell)) return deny('same_cell');
+      // A group card waiting for review is merged only by the Strategy office (v1.19).
+      if ((awaitsReview(keep) || awaitsReview(gone)) && !office) return deny();
       const [kb, gb] = [structuredClone(keep), structuredClone(gone)];
       keep.raisedByUnitIds = [...new Set([...keep.raisedByUnitIds, ...gone.raisedByUnitIds])];
       // v0.24.0: the card kept keeps its level, or takes the other's; both are in the audit entry when they differed.
@@ -500,6 +583,97 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       audit(RESTORE_ACTION, { type: 'StrategicPlan', id: p.id }, null, { planId: p.id, key, unitId: c.unitId });
       changed();
       return { ok: true };
+    },
+
+    removeCard(id, reason) {
+      // A confirmed plan's board is still found, so the refusal says why (locked) rather than not found.
+      const p = formationInProgress(s);
+      const e = p && s.fourQEntries.find((x) => x.id === id && x.planId === p.id);
+      if (!p || !e) return deny('not_found');
+      if (!decides(e)) return deny();
+      const why = removeRefusal(s, p, e, reason);
+      if (why) return deny(why);
+      const before = structuredClone(e);
+      e.removed = { by: stamp(), reason: reason.trim() };
+      touch(e, before, 'remove');
+      changed();
+      return { ok: true };
+    },
+
+    flipChart(workshopId, groupId) {
+      const found = groupFor(workshopId, groupId);
+      if (!found) return null;
+      const { p, w, g } = found;
+      const scribe = g.scribeMembershipId === viewer.membershipId;
+      if (!scribe && !office) return null;
+      const mine = entriesOf(s, p.id).filter((e) => e.fromGroup?.workshopId === w.id && e.fromGroup.groupId === g.id && !e.removed && e.mergedIntoId === null);
+      const open = !g.closed && p.status === 'draft';
+      return {
+        workshopId, groupId, name: g.name, planTitle: p.title, sessionLabel: en.list(w.purposes.map((x) => en.formation.purpose[x]!)),
+        cells: g.cells, closed: !!g.closed, isScribe: scribe,
+        cards: mine.map((e) => ({
+          id: e.id, cell: e.cell, text: e.text, evidence: e.evidence,
+          state: e.draft.state === 'ai_draft' ? 'to_review' as const : e.draft.state === 'rejected' ? 'rejected' as const : 'accepted' as const,
+          canChange: scribe && open && e.draft.state === 'ai_draft',
+        })),
+        waiting: (device?.groupCards ?? []).filter((x) => x.membershipId === viewer.membershipId && x.workshopId === workshopId && x.groupId === groupId).map((x) => ({ key: x.key, cell: x.cell, text: x.text })),
+        offline: !!device?.offline[viewer.membershipId],
+      };
+    },
+
+    addGroupCard(workshopId, groupId, input) {
+      const found = groupFor(workshopId, groupId);
+      if (!found) return deny('not_found');
+      const { p, w, g } = found;
+      if (g.scribeMembershipId !== viewer.membershipId) return deny();
+      if (g.closed || p.status !== 'draft') return deny('closed');
+      if (!g.cells.some((c) => sameCell(c, input.cell))) return deny('cell');
+      if (!input.text.trim()) return deny('required');
+      if (device?.offline[viewer.membershipId]) {
+        device.groupCards = [...(device.groupCards ?? []), { key: `gc-${device.seq++}`, membershipId: viewer.membershipId, workshopId, groupId, cell: { ...input.cell }, text: input.text.trim(), evidence: input.evidence?.trim() || null }];
+        changed();
+        return { ok: true, queued: true };
+      }
+      const e = groupCard(p, w.id, g.id, input);
+      changed();
+      return { ok: true, id: e.id };
+    },
+
+    updateGroupCard(id, input) {
+      const r = scribesCard(id);
+      if (!r.ok) return r;
+      if (!input.text.trim()) return deny('required');
+      const e = r.e;
+      const before = structuredClone(e);
+      e.text = input.text.trim();
+      e.evidence = input.evidence?.trim() || null;
+      touch(e, before);
+      changed();
+      return { ok: true };
+    },
+
+    deleteGroupCard(id) {
+      const r = scribesCard(id);
+      if (!r.ok) return r;
+      // A card still waiting for review never counted; the scribe may take it back. The audit entry keeps it.
+      s.fourQEntries.splice(s.fourQEntries.indexOf(r.e), 1);
+      audit('delete', { type: 'FourQEntry', id }, structuredClone(r.e), null);
+      changed();
+      return { ok: true };
+    },
+
+    sendWaiting() {
+      if (!device) return 0;
+      const me = viewer.membershipId;
+      let n = 0;
+      for (const x of (device.groupCards ?? []).filter((c) => c.membershipId === me)) {
+        const found = groupFor(x.workshopId, x.groupId);
+        // Sent only while the group is still open; a card for a closed group stays out (the scribe sees why on the flip chart).
+        if (found && found.g.scribeMembershipId === me && !found.g.closed && found.g.cells.some((c) => sameCell(c, x.cell))) { groupCard(found.p, found.w.id, found.g.id, { cell: x.cell, text: x.text, evidence: x.evidence }, true); n++; }
+      }
+      device.groupCards = (device.groupCards ?? []).filter((c) => c.membershipId !== me);
+      if (n) changed();
+      return n;
     },
 
     async summarise() {

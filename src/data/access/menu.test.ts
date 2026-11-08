@@ -4,9 +4,11 @@ import { MENU_CAP, openStageOf, strategyMenu } from '../../selectors/nav';
 import { ALL_DEV_ROLES } from '../sample/all';
 import { createReviewOrgs, devMembership, type ReviewOrg } from '../sample/review';
 import { createMemoryRepository } from './repository';
+import { clearSampleSchedule } from '../sample/schedule-samples';
 
 const NOW = '2026-10-18' as ISODate;
 const orgs = createReviewOrgs();
+clearSampleSchedule(orgs[0]!.store); // the menu as before v0.26.0's sample schedule opened Conception
 const stores = orgs.map((o) => o.store);
 const labels = (r: ReturnType<typeof createMemoryRepository>) => r.menu().strategy.map((e) => e.label);
 

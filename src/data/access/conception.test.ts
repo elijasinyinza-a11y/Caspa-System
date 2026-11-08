@@ -2,14 +2,17 @@
 import type { FourQCell, ISODate } from '../../contract/caspa-data-contract';
 import { CELLS, cellKey } from '../../rules/conception';
 import { createReviewOrgs, devMembership, type ReviewOrg } from '../sample/review';
+import { clearSampleSchedule } from '../sample/schedule-samples';
 import { createMemoryRepository } from './repository';
 
 const NOW = '2026-10-18' as ISODate;
 const SWU = 'org-sample-water';
 type Role = Parameters<typeof devMembership>[1];
 
+// These tests start Conception from nothing; the sample schedule and groups (v0.26.0) are taken out first.
 const fresh = (orgId = SWU) => {
   const orgs = createReviewOrgs();
+  clearSampleSchedule(orgs.find((o) => o.orgId === SWU)!.store);
   const org = orgs.find((o) => o.orgId === orgId)! as ReviewOrg;
   const repoFor = (membershipId: string) => createMemoryRepository(orgs.map((o) => o.store), orgId, membershipId, NOW);
   const as = (role: Role) => repoFor(devMembership(org, role, NOW)!);

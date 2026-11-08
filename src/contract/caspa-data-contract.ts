@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.17
+ * CASPA™ data contract — v1.20
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,24 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.20 (7 November 2026, Elijah; onboarding slice, v0.26.0): fields and one permission row.
+ *     - FourQEntry.removed: a typed or accepted card taken off the board by whoever may edit it, with the reason. The
+ *       card is kept; it no longer counts or shows, and a suggestion it came from is not offered again.
+ *     - Organisation.settings.planSizeGuide: KPIs per objective, activities per KPI and objectives per contract. Each
+ *       null (off) by default; when set, more than the number is worth checking, never blocking.
+ *     - PERMISSIONS.PlanSizeGuide: seen by all members, set by HR (the second setting HR holds, after the rating scheme).
+ * v1.19 (7 November 2026, Elijah; 4Q Group Work Specification v0.1): fields only.
+ *     - Workshop.groups: groups in the 4Q review session, each with the sections it works on, one scribe (a member),
+ *       the other members by name only, and when it was closed for review.
+ *     - FourQEntry.fromGroup: the session and group a card came from. A group card is stored as a draft that needs
+ *       checking (state 'ai_draft' with manual provenance; never shown as an AI draft) until the Strategy office
+ *       accepts, edits, merges or rejects it. Only the group's scribe adds, changes or deletes its cards while the group
+ *       is open, enforced in the data-access layer; no other member signs in.
+ * v1.18 (7 November 2026, Elijah; Forming Schedule Specification v0.1): fields only.
+ *     - FormationDeadline.dueOn may be null ("Not yet scheduled"); stage and kind (milestone or meeting); doneWhen, when
+ *       a record says it is done (department sheets submitted, consultation closed), otherwise null.
+ *     - Workshop.decisionLog[].actions[].done: closed by the person the action is assigned to, or the Strategy office;
+ *       a done action can be reopened by the same people (audit entries).
  * v1.17 (7 November 2026, Elijah; Finish Targets Specification v0.1): one record and one row, for TG-9.
  *     - ActivityProposal: new work proposed from a KPI share, confirmed into Cascade by the Strategy office or returned.
  *     - PERMISSIONS.ActivityProposal: view by the share's owner, their supervisor, the objective's owner and the Strategy
@@ -277,6 +295,8 @@ export interface Organisation extends Audited {
      * Default: every assigned role ticked and 'whole'.
      */
     structureView: { fullViewRoles: AssignedRole[]; others: 'whole' | 'answers_for' | 'own_line' };
+    /** v1.20: plan-size guide, set by HR. null = off (the default). More than the number is worth checking, never blocking. */
+    planSizeGuide?: { kpisPerObjective: number | null; activitiesPerKpi: number | null; objectivesPerContract: number | null };
   };
 }
 
@@ -374,8 +394,13 @@ export interface FormationDeadline extends OrgScoped, Audited {
   planId: Id<'StrategicPlan'>;
   label: string;
   ownerPositionIds: Id<'Position'>[];
-  dueOn: ISODate;
+  dueOn: ISODate | null; // v1.18: null = not yet scheduled
+  /** v1.18: marked done by an owner or the Strategy office, for items with no record behind them (doneWhen null). */
   completed: Stamp | null;
+  stage: FormationStage; // v1.18
+  kind: 'milestone' | 'meeting'; // v1.18: meetings that are not sessions, such as a board meeting
+  /** v1.18: when a record says this is done, computed; null means it is marked done by hand. */
+  doneWhen: 'department_sheets_submitted' | 'consultation_closed' | null;
 }
 
 /** Changes to a confirmed plan: proposed, then confirmed by an Executive (new version). */
@@ -419,6 +444,10 @@ export interface FourQEntry extends OrgScoped, Audited {
   causeLevel?: SixPLevel | null;
   /** v1.16 (Part B): the record this card was suggested from; its figures are shown live from it, never copied. */
   basis?: { type: 'kpi_year'; kpiId: Id<'Kpi'>; financialYear: FinancialYear } | { type: 'deficiency'; deficiencyId: Id<'Deficiency'> } | null;
+  /** v1.19: the 4Q review session and group this card came from. */
+  fromGroup?: { workshopId: Id<'Workshop'>; groupId: string } | null;
+  /** v1.20: taken off the board with a reason. Kept in the record; no longer counts. */
+  removed?: { by: Stamp; reason: string } | null;
 }
 
 export interface Theme extends OrgScoped, Audited {
@@ -634,8 +663,20 @@ export interface Workshop extends OrgScoped, Audited {
   status: 'planned' | 'held' | 'cancelled';
   decisionLog: {
     decision: string;
-    actions: { text: string; ownerPositionId: Id<'Position'>; dueOn: ISODate }[]; // actions feed "Needs you"
+    actions: { text: string; ownerPositionId: Id<'Position'>; dueOn: ISODate; done: Stamp | null }[]; // actions feed "Needs you" until done (v1.18)
   }[];
+  /** v1.19: groups in the 4Q review session; each scribe enters the group's cards for review. */
+  groups?: WorkshopGroup[];
+}
+
+/** v1.19 (4Q Group Work Specification v0.1): one group of a 4Q review session. */
+export interface WorkshopGroup {
+  id: string;
+  name: string; // "Group 1"
+  cells: FourQCell[]; // a band, or one or more sections
+  scribeMembershipId: Id<'Membership'>;
+  memberNames: string[]; // for the record only; they need no sign-in
+  closed: Stamp | null; // closed for review by the Strategy office; reopening sets it back to null (audit entries)
 }
 
 /**
@@ -1077,6 +1118,7 @@ export const PERMISSIONS: PermissionMatrix = {
   // Calendar edits are further limited to the assigned preparer (StrategicPlan.calendar.preparerMembershipId).
   PlanRevision: { view: ['all_members'], propose: ['strategy_office', 'owner'], confirm: ['executive'] },
   RatingScheme: { view: ['hr', 'executive'], draft: ['hr'], approve: ['executive'] },
+  PlanSizeGuide: { view: ['all_members'], draft: ['hr'] }, // v1.20: Organisation.settings.planSizeGuide
   OrgUnit: { view: ['all_members'], draft: ['org_admin'] },
   Position: { view: ['all_members'], draft: ['org_admin'] },
   Membership: { view: ['org_admin'], draft: ['org_admin'] },

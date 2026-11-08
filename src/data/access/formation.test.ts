@@ -3,11 +3,14 @@ import type { ISODate } from '../../contract/caspa-data-contract';
 import { departmentHeadPositions, leadershipPositions, packageAdds } from '../../rules/formation';
 import { createReviewOrgs, devMembership, type ReviewOrg } from '../sample/review';
 import { createMemoryRepository } from './repository';
+import { clearSampleSchedule } from '../sample/schedule-samples';
 
 const NOW = '2026-10-18' as ISODate;
 const SWU = 'org-sample-water';
+// These tests start formation from nothing; the sample schedule (v0.26.0) is taken out first.
 const fresh = () => {
   const orgs = createReviewOrgs();
+  clearSampleSchedule(orgs.find((o) => o.orgId === SWU)!.store);
   const as = (role: Parameters<typeof devMembership>[1]) => {
     const org = orgs.find((o) => o.orgId === SWU)! as ReviewOrg;
     return createMemoryRepository(orgs.map((o) => o.store), SWU, devMembership(org, role, NOW)!, NOW);
@@ -35,7 +38,7 @@ describe('setting up the next plan (F-1)', () => {
     expect(page.preparerOptions.map((x) => x.name)).toEqual(['Bwalya Musonda']);
     expect(page.activePlan?.title).toBe('Strategic Plan 2022–2026');
   });
-  it('stages move forward only, and only the Strategy office moves them', () => {
+  it('stages open and close, a closed stage can be reopened, and only the Strategy office moves them', () => {
     const f = fresh();
     setUp(f);
     const so = f.as('strategy').formation;
@@ -43,6 +46,9 @@ describe('setting up the next plan (F-1)', () => {
     expect(so.moveStage('conception', 'open')).toEqual({ ok: true });
     expect(f.as('executive').formation.moveStage('conception', 'complete')).toEqual({ ok: false, error: 'not_allowed' });
     expect(so.moveStage('conception', 'complete')).toEqual({ ok: true });
+    // v0.26.0 (Forming Schedule Specification v0.1): Reopen.
+    expect(so.moveStage('conception', 'open')).toEqual({ ok: true });
+    expect(so.moveStage('conception', 'open')).toEqual({ ok: false, error: 'stage_order' });
   });
 });
 

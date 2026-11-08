@@ -300,6 +300,10 @@ export const SAMPLE_EXPLANATIONS: Record<string, string> = {
     "Critical failure factors and predicted risks on the 4Q board are the things the plan most needs to answer. This one is not linked to any goal or objective, so the plan does not yet say how it will be dealt with. Link it to the goal or objective that addresses it, or record why it is left aside.",
   [RULES.goalNoObjective.id]:
     "A goal becomes work only through its objectives. This goal has no confirmed objective yet, so nothing below it can be measured or funded. Adding an objective, and having the Executive confirm it, clears the check.",
+  [RULES.objectiveManyKpis.id]:
+    "Your organisation's plan-size guide suggests a limit on how many measures one objective carries, because a long list is hard to report on and to act on. This is only worth checking: keep them all if each one is needed, or mark it as checked with your reason.",
+  [RULES.kpiManyActivities.id]:
+    "Your organisation's plan-size guide suggests a limit on how many activities sit under one KPI. Many small activities can be hard to fund, assign and track. This is only worth checking: combine them if that helps, or mark it as checked with your reason.",
   [RULES.envelopeExceeded.id]:
     "The indicative costs under this goal add up to more than the resources set aside for it. Reducing the costs, or revising the envelope, brings them back in line.",
 };

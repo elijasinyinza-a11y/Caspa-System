@@ -75,7 +75,9 @@ export interface Device {
   reviewSelf: { membershipId: string; reviewId: string; text: string }[];
   /** v0.21.0 (TG-3): share readings recorded offline. */
   shareReadings: { membershipId: string; shareId: string; periodEnd: string; value: number }[];
+  /** v0.26.0 (4Q group work): cards a group's scribe typed offline, sent when back online. */
+  groupCards: { key: string; membershipId: string; workshopId: string; groupId: string; cell: import('../../contract/caspa-data-contract').FourQCell; text: string; evidence: string | null }[];
   seq: number;
 }
 
-export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], reviewSelf: [], shareReadings: [], seq: 1 });
+export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], reviewSelf: [], shareReadings: [], groupCards: [], seq: 1 });

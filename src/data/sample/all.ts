@@ -9,15 +9,17 @@ import { createScale } from './scale';
 import { createSeed, DEV_ROLE_MEMBERSHIPS, ORG } from './seed';
 import { addSampleSurvey } from './survey-samples';
 import { addSampleTargets } from './targets-samples';
+import { addSampleSchedule } from './schedule-samples';
 
 export type BaseDevRole = 'executive' | 'strategy' | 'finance' | 'hr' | 'supervisor' | 'employee';
 /**
  * Every development role switch: the six roles, the organisation administrator (D7-13), and, where one exists, the
  * compliance officer (part 11c), a consultant, and the employee's next-level reviewer (v0.20.0, RV-8).
  */
-export type DevRole = BaseDevRole | 'admin' | 'compliance' | 'consultant' | 'reviewer';
+export type DevRole = BaseDevRole | 'admin' | 'compliance' | 'consultant' | 'reviewer' | 'kpiOwner';
 export const DEV_ROLES: BaseDevRole[] = ['executive', 'strategy', 'finance', 'hr', 'supervisor', 'employee'];
-export const ALL_DEV_ROLES: DevRole[] = [...DEV_ROLES, 'admin', 'compliance', 'consultant', 'reviewer'];
+// v0.26.0: a KPI owner with no assigned role (in Sample Water Utility, the Head of Operations).
+export const ALL_DEV_ROLES: DevRole[] = [...DEV_ROLES, 'kpiOwner', 'admin', 'compliance', 'consultant', 'reviewer'];
 
 export interface SampleOrg {
   orgId: string;
@@ -34,5 +36,6 @@ export const createSampleOrgs = (): SampleOrg[] => [
   if (o.store.organisation.name.includes('Health NGO')) addSampleSurvey(o.store, { title: 'Start of year, 2026/27', opensOn: '2026-07-13', closesOn: '2026-08-07', answers: 3 });
   if (o.store.organisation.name.includes('Scale Test')) addSampleSurvey(o.store, { title: 'Start of year, 2026', opensOn: '2026-02-09', closesOn: '2026-03-06', answers: 'all' });
   addSampleTargets(o.store); // v0.21.0 (src/data/sample/targets-samples.ts)
+  if (o.orgId === ORG) addSampleSchedule(o.store); // v0.26.0 (src/data/sample/schedule-samples.ts)
   return o;
 });

@@ -630,13 +630,14 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
 
   // One device for progress and the survey: going back online sends what waits for both (OP-7, SV-8).
   const device = options.device ?? createDevice();
+  device.groupCards ??= [];
   const repo: Repository = {
     viewer,
     financialYear,
     structure: createOrganisationAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange, shownFinding: concerned }),
     onboarding: createOnboardingAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
     formation: createFormationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
-    conception: createConceptionAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
+    conception: createConceptionAccess({ s, viewer, now, clock, audit, onChange: options.onChange, device }),
     consultation: createConsultationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     composition: createCompositionAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     planDocument: createPlanDocumentAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
@@ -785,7 +786,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   };
   // Going back online sends survey answers waiting on this device too (SV-8); progress reports its own result.
   const setOffline = repo.progress.setOffline;
-  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) { repo.survey.sendWaiting(); repo.reviews.sendWaiting(); repo.targets.sendWaiting(); } return r; };
+  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) { repo.survey.sendWaiting(); repo.reviews.sendWaiting(); repo.targets.sendWaiting(); repo.conception.sendWaiting(); } return r; };
   repo.printouts = createPrintoutsAccess({ s, viewer, now, contracts: repo.contracts, reviews: repo.reviews });
   return repo;
 }

@@ -35,6 +35,7 @@ export function RoleSwitcher() {
       >
         {dev.dates.map((d) => <option key={d} value={d}>{formatDate(d)}</option>)}
       </select>
+      <a href="#/usability" className="hidden min-h-11 items-center rounded-lg border border-control bg-white px-2 text-13 font-semibold text-navy 2xl:inline-flex">{en.usability.devLink}</a>
     </div>
   );
 }

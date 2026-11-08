@@ -39,6 +39,16 @@ export function devMembership(org: ReviewOrg, role: DevRole, now: string): strin
       const holder = s.assignments.find((a) => a.positionId === pos && a.from <= now && (a.to === null || a.to >= now));
       return holder ? (active.find((m) => m.personId === holder.personId)?.id ?? null) : null;
     }
+    case 'kpiOwner': {
+      // v0.26.0: whoever holds the position owning the most KPIs of the active plan, among people with no assigned role.
+      const active2 = new Set(s.plans.filter((p) => p.status === 'active').map((p) => p.id as string));
+      const objectives = new Set(s.objectives.filter((o) => s.goals.some((g) => g.id === o.goalId && active2.has(g.planId))).map((o) => o.id as string));
+      const owned = new Map<string, number>();
+      for (const k of s.kpis) if (k.ownerPositionId && objectives.has(k.objectiveId)) owned.set(k.ownerPositionId, (owned.get(k.ownerPositionId) ?? 0) + 1);
+      const candidates = active.filter((m) => m.roles.length === 0).map((m) => ({ m, n: Math.max(0, ...held(m.personId).map((p) => owned.get(p) ?? 0)) })).filter((x) => x.n > 0);
+      candidates.sort((a, b) => b.n - a.n || (a.m.id < b.m.id ? -1 : 1));
+      return candidates[0]?.m.id ?? null;
+    }
     case 'supervisor':
     case 'employee': {
       const managers = new Set(s.positions.flatMap((p) => (p.reportsToPositionId ? [p.reportsToPositionId as string] : [])));
