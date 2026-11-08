@@ -3,7 +3,7 @@
 The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` first (standing
 rules and the open slice), then `NEXT.md` (work in progress). Earlier decisions are in `DECISIONS-ARCHIVE.md`,
-with their section numbers unchanged. The data contract is v1.10.
+with their section numbers unchanged. The data contract is v1.20.
 
 ## Run
 
@@ -43,6 +43,7 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 18. Scoring policy, personal attributes, printed contract and assessment (BUILD-BRIEF section 47, in the archive) — done (v0.23.0)
 19. 4Q enhancement: cause levels on failure factors, suggested cards from results (BUILD-BRIEF section 48, in the archive) — done (v0.24.0)
 20. Finish Targets: corporate figure from shares, proposing new work, To verify with shares, share dependencies (BUILD-BRIEF section 49, in the archive) — done (v0.25.0)
+21. Onboarding: the second door, the forming schedule, the 4Q flip chart, Remove card, the plan-size guide and the usability-test kit (BUILD-BRIEF section 50) — done (v0.26.0)
 14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
 
 Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
@@ -57,12 +58,24 @@ the Executive of Sample Water Utility belongs to all four, so the organisation s
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
-and a consultant. In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
+and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Head of Operations). In the NGO one person holds both Finance and HR, so its queue shows items merged across roles.
 
 ## Next chat
 
 - Start from this zip: `npm install`, `npm run verify` (793 tests). Next in the agreed sequence: onboarding and the first
   usability test round (see `NEXT.md`).
+
+## Onboarding, forming schedule and 4Q group work (v0.26.0)
+
+- BUILD-BRIEF section 50. Contract v1.18 to v1.20. 843 tests (50 new): `src/rules/schedule.test.ts`, `src/data/access/schedule.test.ts`,
+  `src/data/access/four-q-groups.test.ts`, `src/data/access/onboarding-slice.test.ts`, router.
+- Try it on Sample Water Utility, as Strategy office: Strategy › Forming the next plan opens on the schedule. Tap a stage chip; "Department
+  sheets due" says it is done when every department has sent its sheet. On Sessions, the 4Q review has three groups.
+- As Supervisor (Group 1's scribe), "Needs you" opens Group 1's 4Q flip chart; add a card (try "Work offline" first, then go back online).
+  As Strategy office, the 4Q board's "To review" filter shows the group cards: accept, edit or reject; once accepted a card can be removed
+  with a reason.
+- As HR: Performance › Contracts › Overview › Plan-size guide; set activities per KPI to 3 and K1.2.1 shows as worth checking.
+- Usability test: `#/usability` (or the link beside the role switcher on a wide screen).
 
 ## Finish Targets (v0.25.0)
 

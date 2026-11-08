@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: 4Q group work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--navy:#0D1B2A;--navy2:#16283B;--panel:#223D56;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;--line:#EDECEA;--side:#C8D1DB;
+  --st:#378ADD;--st-t:#1A5A9E;--st-l:#EBF3FC;--ok:#067647;--ok-l:#ECFDF3;--ok-b:#ABEFC6;--adv:#7A2E0E;--adv-l:#FFFAEB;--adv-b:#F5C26B;--info:#EDECEA;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.45}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:26px;margin:0;color:var(--navy)} h2{font-size:18px;margin:0;color:var(--navy)} p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 20px 96px;display:flex;flex-direction:column;gap:14px}
+.proto{border:1px dashed var(--control);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted);background:#fff;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.proto select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;max-width:100%}
+.eyebrow{font-size:13px;font-weight:600;color:var(--st-t)}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:600;cursor:pointer}
+.btn-primary{background:var(--navy);color:#fff} .btn-quiet{border-color:var(--control);font-weight:500}
+.tag{display:inline-flex;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-grp{background:var(--st-l);color:var(--st-t)} .t-rev{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)} .t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)} .t-info{background:var(--info);color:var(--navy)}
+.groups{list-style:none;margin:0;padding:0} .groups li{border-top:1px solid var(--line);padding:10px 0} .groups li:first-child{border-top:0}
+input,textarea,select.in{width:100%;min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:#fff;color:var(--text)}
+textarea{min-height:64px;resize:vertical}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.ws{background:var(--navy);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.band{background:var(--navy2);border-radius:12px;padding:12px}
+.band h3{color:#fff;margin:0 0 8px;font-size:16px}
+.cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.cell{display:flex;flex-direction:column;gap:8px;min-width:0}
+.cellname{font-size:12px;font-weight:600;color:var(--side)}
+.q{background:#fff;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;border:2px solid #fff}
+.q.rev{border-color:var(--adv-b)}
+.q .acts{display:flex;gap:6px;flex-wrap:wrap}
+.q .acts .btn{min-height:44px;padding:0 10px;font-size:13px}
+.empty{border:2px dashed var(--panel);border-radius:10px;padding:8px;font-size:12px;color:var(--side)}
+.filter{display:flex;gap:6px;flex-wrap:wrap}
+.fbtn{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:#fff;font-weight:600;cursor:pointer;color:var(--text)}
+.fbtn[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.sec{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.mine{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.mine li{background:var(--cream);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;max-width:90vw;z-index:9}
+@media (max-width:900px){.cells{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.cells{grid-template-columns:1fr} h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+'use strict';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+/* Table 2 of the book: band-specific cell names. */
+const BANDS = [
+  ['Retraction', ['Past successes', 'Critical success factors', 'Past failures', 'Critical failure factors']],
+  ['Repositioning', ['Present successes', 'Critical success factors', 'Present failures', 'Critical failure factors']],
+  ['Projection', ['Predicted future opportunities', 'Key strategic actions', 'Predicted future risks', 'Risk management strategies']],
+];
+const ROLES = { so: 'Bwalya Musonda, Strategy office', g1: 'Mutale Zulu, scribe for Group 1', g2: 'Grace Mwila, scribe for Group 2', fac: 'A facilitator' };
+let n = 50;
+const fresh = () => ({
+  role: 'so', filter: 'all', toast: null, edit: null,
+  groups: [
+    { id: 'g1', name: 'Group 1', band: 'Retraction', scribe: 'Mutale Zulu', members: 'Head of Commercial, two district managers, a billing officer', closed: false },
+    { id: 'g2', name: 'Group 2', band: 'Repositioning', scribe: 'Grace Mwila', members: 'Head of Operations, the water quality officer, two supervisors', closed: false },
+    { id: 'g3', name: 'Group 3', band: 'Projection', scribe: 'Bwalya Musonda', members: 'Managing Director, Head of Finance, HR Manager', closed: false },
+  ],
+  cards: [
+    { id: 1, band: 'Retraction', cell: 'Past successes', text: 'Metered connections rose from 58% to 81%', group: null, state: 'accepted' },
+    { id: 2, band: 'Retraction', cell: 'Past failures', text: 'Sanitation coverage stayed below target', group: 'g1', state: 'review' },
+    { id: 3, band: 'Retraction', cell: 'Critical failure factors', text: 'No funded sanitation activities in annual budgets', group: 'g1', state: 'review' },
+    { id: 4, band: 'Repositioning', cell: 'Present failures', text: 'High water losses in the distribution network', group: 'g2', state: 'review' },
+    { id: 5, band: 'Repositioning', cell: 'Present failures', text: 'Water losses still too high in the network', group: 'g2', state: 'review' },
+    { id: 6, band: 'Projection', cell: 'Predicted future risks', text: 'Drought reducing raw water yield', group: 'g3', state: 'review' },
+  ],
+});
+let S = fresh();
+const grp = (id) => S.groups.find((g) => g.id === id);
+const say = (t) => { S.toast = t; setTimeout(() => { S.toast = null; render(); }, 2400); };
+
+function render() {
+  const view = S.role === 'g1' || S.role === 'g2' ? scribe(S.role) : board();
+  document.getElementById('app').innerHTML = `
+    <div class="proto"><span>Lean prototype: 4Q group work in the 4Q review session, 4 November 2026. One scribe per group; nobody else signs in.</span>
+      <label>Viewing as <select id="role">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === S.role ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label></div>
+    <div><span class="eyebrow">Strategy · Conception</span><h1>4Q review session</h1><p class="muted">Strategic Plan 2027–2031 · Sample Water Utility</p></div>
+    ${view}
+    ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+  bind();
+}
+
+function groupsCard() {
+  const so = S.role === 'so';
+  return `<section class="card" aria-labelledby="gh"><div class="row"><h2 id="gh">Groups</h2>${so ? '<span class="small muted">Set up by the Strategy office. Each group’s scribe enters its cards.</span>' : ''}</div>
+    <ul class="groups">${S.groups.map((g) => {
+      const waiting = S.cards.filter((c) => c.group === g.id && c.state === 'review').length;
+      return `<li class="row"><span><b>${g.name}</b> · ${g.band} <span class="small muted" style="display:block">Scribe: ${esc(g.scribe)} · ${esc(g.members)}</span></span>
+        <span class="row"><span class="tag ${g.closed ? 't-info' : 't-grp'}">${g.closed ? 'Closed for review' : 'Entering cards'}</span>${waiting ? `<span class="tag t-rev">${waiting} to review</span>` : ''}
+        ${so && !g.closed ? `<button class="btn btn-quiet" data-act="close" data-g="${g.id}">Close for review<span style="position:absolute;left:-9999px">: ${g.name}</span></button>` : ''}</span></li>`;
+    }).join('')}</ul></section>`;
+}
+
+function scribe(gid) {
+  const g = grp(gid);
+  const cells = BANDS.find((b) => b[0] === g.band)[1];
+  const mine = S.cards.filter((c) => c.group === gid);
+  return `<section class="card" aria-labelledby="sh"><h2 id="sh">${g.name}: ${g.band}</h2>
+    <p class="small muted">Type the cards your group agrees. They go to the 4Q board for the plenary review; nothing counts until the Strategy office accepts it. Saved on this device if the connection drops, and sent when it returns.</p>
+    ${g.closed ? '<p class="tag t-info" style="align-self:flex-start">Closed for review: no more changes from this group.</p>' : ''}
+    ${cells.map((cell) => {
+      const list = mine.filter((c) => c.cell === cell);
+      return `<div class="sec"><b class="small" style="color:var(--navy)">${cell}</b>
+        ${list.length ? `<ul class="mine">${list.map((c) => `<li><span>${esc(c.text)}</span>${!g.closed && c.state === 'review' ? `<button class="btn btn-quiet" data-act="del" data-id="${c.id}">Delete<span style="position:absolute;left:-9999px">: ${esc(c.text)}</span></button>` : `<span class="tag ${c.state === 'accepted' ? 't-ok' : 't-info'}">${c.state === 'accepted' ? 'Accepted' : c.state === 'rejected' ? 'Not taken' : 'To review'}</span>`}</li>`).join('')}</ul>` : '<p class="small muted">No cards yet.</p>'}
+        ${!g.closed ? `<div class="row" style="align-items:flex-end"><div style="flex:1;min-width:200px"><label class="f" for="t-${cell}">New card</label><input id="t-${cell}" data-cell="${esc(cell)}"></div><button class="btn btn-primary" data-act="add" data-cell="${esc(cell)}">Add<span style="position:absolute;left:-9999px"> to ${cell}</span></button></div>` : ''}
+      </div>`;
+    }).join('')}
+  </section>`;
+}
+
+function board() {
+  const so = S.role === 'so';
+  const shown = (c) => c.state !== 'rejected' && (S.filter === 'all' || (S.filter === 'review' ? c.state === 'review' : c.group === S.filter && c.state === 'review'));
+  const toReview = S.cards.filter((c) => c.state === 'review').length;
+  return `${groupsCard()}
+    <section class="card" aria-labelledby="bh">
+      <div class="row"><h2 id="bh">4Q board</h2><span class="small muted">${toReview} to review. Group cards do not fill a section until accepted.</span></div>
+      <div class="filter" role="group" aria-label="Show">${[['all', 'All cards'], ['review', 'To review'], ...S.groups.map((g) => [g.id, `${g.name} to review`])].map(([k, l]) => `<button class="fbtn" aria-pressed="${S.filter === k}" data-act="filter" data-f="${k}">${l}</button>`).join('')}</div>
+      ${S.role === 'fac' ? '<p class="small">A facilitator can run the groups and lead the walk-through, but the Strategy office accepts cards.</p>' : ''}
+      <div class="ws">${BANDS.map(([band, cells]) => `<div class="band"><h3>${band}</h3><div class="cells">${cells.map((cell) => {
+        const list = S.cards.filter((c) => c.band === band && c.cell === cell && shown(c));
+        return `<div class="cell"><div class="cellname">${cell}</div>${list.map((c) => cardHtml(c, so)).join('') || '<div class="empty">Nothing yet</div>'}</div>`;
+      }).join('')}</div></div>`).join('')}</div>
+    </section>`;
+}
+function cardHtml(c, so) {
+  const g = c.group ? grp(c.group) : null;
+  const dup = c.state === 'review' && S.cards.some((x) => x.id !== c.id && x.state !== 'rejected' && x.band === c.band && x.cell === c.cell && /water losses/i.test(x.text) && /water losses/i.test(c.text));
+  if (S.edit === c.id) return `<div class="q rev"><label class="f" for="e${c.id}">Card text</label><textarea id="e${c.id}">${esc(c.text)}</textarea><div class="acts"><button class="btn btn-primary" data-act="save" data-id="${c.id}">Accept as edited</button><button class="btn btn-quiet" data-act="cancel">Cancel</button></div></div>`;
+  return `<div class="q ${c.state === 'review' ? 'rev' : ''}"><span>${esc(c.text)}</span>
+    ${g ? `<span class="tag ${c.state === 'review' ? 't-rev' : 't-grp'}">${g.name}${c.state === 'review' ? ' · to review' : ''}</span>` : ''}
+    ${dup ? '<span class="small" style="color:var(--adv)">May repeat another card here (AI suggestion).</span>' : ''}
+    ${so && c.state === 'review' ? `<div class="acts"><button class="btn btn-primary" data-act="accept" data-id="${c.id}">Accept</button><button class="btn btn-quiet" data-act="edit" data-id="${c.id}">Edit</button>${dup ? `<button class="btn btn-quiet" data-act="merge" data-id="${c.id}">Merge</button>` : ''}<button class="btn btn-quiet" data-act="reject" data-id="${c.id}">Reject</button></div>` : ''}</div>`;
+}
+
+function act(a, el) {
+  const id = Number(el.dataset.id);
+  const card = S.cards.find((c) => c.id === id);
+  if (a === 'filter') S.filter = el.dataset.f;
+  if (a === 'close') { grp(el.dataset.g).closed = true; say(`${grp(el.dataset.g).name} closed for review.`); }
+  if (a === 'add') { const inp = document.querySelector(`input[data-cell="${CSS.escape(el.dataset.cell)}"]`); const t = inp.value.trim(); if (!t) return; const g = grp(S.role); S.cards.push({ id: n++, band: g.band, cell: el.dataset.cell, text: t, group: g.id, state: 'review' }); say('Added to the board for review.'); }
+  if (a === 'del') { S.cards = S.cards.filter((c) => c.id !== id); say('Deleted.'); }
+  if (a === 'accept') { card.state = 'accepted'; say('Accepted.'); }
+  if (a === 'reject') { card.state = 'rejected'; say('Rejected. It stays in the record.'); }
+  if (a === 'edit') S.edit = id;
+  if (a === 'cancel') S.edit = null;
+  if (a === 'save') { card.text = document.getElementById(`e${id}`).value.trim() || card.text; card.state = 'accepted'; S.edit = null; say('Accepted as edited.'); }
+  if (a === 'merge') { const other = S.cards.find((x) => x.id !== id && x.band === card.band && x.cell === card.cell && x.state !== 'rejected' && /water losses/i.test(x.text)); card.state = 'rejected'; if (other) other.state = 'accepted'; say('Merged into the other card, which is accepted.'); }
+  render();
+}
+function bind() {
+  document.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', () => act(el.dataset.act, el)));
+  document.getElementById('role').addEventListener('change', (e) => { S.role = e.target.value; S.edit = null; render(); });
+}
+render();
+</script>
+</body>
+</html>
