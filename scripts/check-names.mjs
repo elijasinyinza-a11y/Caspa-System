@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 const FORBIDDEN = [
   /Karis Strategy/i, /Karis Cascade/i, /Cascade Engine/i, /Karis Plan/i, /Karis Performance/i,
-  /KarisLearning/i, /Karis D.Cesion/i, /\bSLI\b/, /Strategy Leadership Index/i,
+  /KarisLearning/i, /Karis ?Mind/i, /Karis D.Cesion/i, /\bSLI\b/, /Strategy Leadership Index/i,
   /\bLpWSC\b/i, /Luapula/i,
 ];
 const roots = ['src', 'index.html'];

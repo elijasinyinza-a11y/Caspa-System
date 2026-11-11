@@ -17,12 +17,12 @@ The build is done in Claude chat sessions within the CASPA™ Project. Each slic
 ## 2. Rules you must never break
 
 1. **One source of truth.** Every total, percentage, count, progress figure, status and finding is computed from stored records by a selector or the rules engine. Never hard-code a figure in a component. Never store a computed value.
-2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.10 now; each revision is made only on Elijah's decision and listed in its header). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
+2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.20 now; each revision is made only on Elijah's decision and listed in its header). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
 3. **Rules engine separate from screens.** Integrity rules, gates, KPI progress and ratings are pure TypeScript functions in `src/rules`. No React, no I/O, no dates from the system clock (pass "now" in). They must run unchanged on a server later.
 4. **The AI is stubbed.** Anything AI does (explain a finding, draft text, extract from documents) goes through `src/ai`, which in this build returns fixed sample text labelled "AI draft". The AI never decides, scores, confirms or clears anything.
 5. **Permissions are enforced in the data-access layer**, not only hidden in the UI. A screen asking for data it may not see gets the restricted version (e.g. "funded" instead of an amount).
 6. **No invented framework content.** The 6P decision levels are Principle, Process, People, Policy, Procedure, Practices ("Procedure" as in the book, decided 28 October 2026; the contract key stays `procedures`), with the scopes in `SIX_P_SCOPE`. The 7Cs are Conception, Consultation, Confirmation, Composition, Communication, Coordination, Controlling. Framework explanations on screen use only the confirmed lines in `en.book` (section 20); where wording is needed and not confirmed, use a visible placeholder: `[from the book]`, which a pilot build rejects. Friction signals are not part of this build. Leadership assessments are described generically ("expert input, such as a leadership assessment report"); no assessment product is named in screens, data or copy.
-7. **Names.** The product is CASPA™. Never use: Karis Strategy, Karis Cascade, Cascade Engine, Karis Plan, Karis Performance, KarisLearning, Karis D'Cesion, SLI. Never name any real organisation in data, copy or comments. The sample organisation is **Sample Water Utility**.
+7. **Names.** The product is CASPA™. Never use: Karis Strategy, Karis Cascade, Cascade Engine, Karis Plan, Karis Performance, KarisLearning, Karis D'Cesion, SLI, KarisMind (the company is Karislabs Technologies; decided November 2026). Never name any real organisation in data, copy or comments. The sample organisation is **Sample Water Utility**.
 8. **Tokens only.** No colour, font or font size outside the token set in section 5.
 
 ## 3. Stack
@@ -34,7 +34,7 @@ The build is done in Claude chat sessions within the CASPA™ Project. Each slic
 - No component library; small in-house components
 - Vitest for `src/rules` and `src/selectors`
 - ESLint and Prettier
-- GitHub when ready. A later move to Next.js for the backend phase rewrites routing only; contract, data access, rules, selectors, AI stub and components carry over unchanged
+- The code is kept on GitHub (uploaded through GitHub's web page) and deployed on Vercel. `.github/workflows/verify.yml` runs `npm run verify` and the build on every upload (v0.26.1). A later move to Next.js for the backend phase rewrites routing only; contract, data access, rules, selectors, AI stub and components carry over unchanged
 
 ## 4. Repository layout
 
@@ -69,7 +69,7 @@ Light mode only. DM Sans only, weights 400–700. Tabular figures in tables and 
 | border | #D5D2CA | Dividers (decorative only) |
 | control | #8A867D | Input and control borders |
 | focus | #007F84 | Focus ring, 3px, 2px offset |
-| brand-cyan | #00B2B8 | KarisMind™ logo only — never text, buttons or outlines |
+| brand-cyan | #00B2B8 | Karislabs Technologies mark only — never text, buttons or outlines |
 
 Component colours are for identity only (labels, card top edges, nav markers). Never for status or buttons.
 
@@ -154,7 +154,7 @@ Every finding names what it blocks in plain words (for example "Blocks budget su
 
 ## 9. Screens, in order
 
-Build each as its own pull request. Elijah will share screenshots of the approved canvas; match them. Where a screenshot differs from this brief — for example older scorecard perspective labels such as "Service Delivery" — this brief wins.
+These are the first ten screens as first planned, all built; every slice since is listed in `README.md`, and what comes next is in `NEXT.md`. Build each as its own pull request. Elijah will share screenshots of the approved canvas; match them. Where a screenshot differs from this brief — for example older scorecard perspective labels such as "Service Delivery" — this brief wins.
 
 Every workspace header carries its place in the 7Cs: Strategy (Conception to Communication), Cascade and Plan (Coordination), Performance and the role dashboards (Controlling). The phone layout (screen 8) is built responsively from the first screen, not added at the end.
 
@@ -169,7 +169,7 @@ Every workspace header carries its place in the 7Cs: Strategy (Conception to Com
 9. **Vacancies and handover:** as section 26.
 10. **Phone layout:** at 390px the sidebar becomes a bottom bar limited to the role's items.
 
-Strategy formation screens are the **next** slice. They are specified in the approved *CASPA™ Strategy Formation Specification v1.0* as amended by section 13 and shown in the approved Strategy workspace prototype, `reference/caspa-strategy-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). That slice covers plan setup and both doors, the preparer-built formation calendar, the 4Q board and workshop mode, the department checklist and AI interview, vision and mission, consultation, the baseline and compliance registers, the plan composer with its checks and confirmation gate, the plan document, communication records and sessions with decision logs. Offline progress capture follows after it.
+Strategy formation screens were built as slice 11 (v0.11.0 to v0.16.0). They are specified in the approved *CASPA™ Strategy Formation Specification v1.0* as amended by section 13 and shown in the approved Strategy workspace prototype, `reference/caspa-strategy-prototype.html` (open it in a browser; it is the behaviour to match, not code to copy). That slice covers plan setup and both doors, the preparer-built formation calendar, the 4Q board and workshop mode, the department checklist and AI interview, vision and mission, consultation, the baseline and compliance registers, the plan composer with its checks and confirmation gate, the plan document, communication records and sessions with decision logs. Offline progress capture followed as slice 13 (v0.18.0).
 
 ## 10. Quality bar
 

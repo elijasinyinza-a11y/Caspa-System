@@ -1,6 +1,6 @@
 # Next session
 
-v0.26.0 delivered 8 November 2026: `npm run verify` clean, 843 tests. Decisions in BUILD-BRIEF section 50; v0.25.0 in section 49
+v0.26.1 delivered 10 November 2026 (housekeeping only; v0.26.0 delivered 8 November 2026): `npm run verify` clean, 843 tests. Decisions in BUILD-BRIEF section 50; v0.25.0 in section 49
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next
@@ -46,3 +46,24 @@ several units shows each unit's part only through contracts today).
 - Which 6P levels a position may be held to (for an authority rule); today the level is only shown as a fact.
 - Staff survey "Why we ask" book lines; the survey tool's later refinement.
 - Spending-against-results thresholds. (Decision-log action completion is settled by the forming schedule, item 1.)
+
+## Review of 10 November 2026: findings to settle with Elijah
+A review of the whole build at v0.26.0. The quick corrections were made in v0.26.1 (README). The rest are proposals;
+none is decided, and none changes the agreed sequence unless Elijah says so.
+
+1. **Usability round.** Its five tasks cover finding and reading, and one budget fix. Proposed: a second set of tasks for
+   making things (issue a contract, record and verify progress, set up a structure from the spreadsheet, add a 4Q card),
+   and putting one real plan, with names removed, through the import door.
+2. **The backend seam.** `Repository` is synchronous and the screens call it directly (about 200 distinct calls, almost
+   no loading or failure states). With permissions enforced on a server, every read becomes a request, so the brief's
+   "rewrites routing only" (section 3) will not hold as written. Proposed: a backend-readiness specification before file
+   exchange, covering page-shaped loads, loading and failure states, and two people changing the same record.
+3. **Screens are not tested.** Routes and components have the router test only. Proposed: a few browser tests that walk
+   the README "Try it" scripts, and an automated accessibility check.
+4. **Scale.** Sample Scale Test Organisation has 288 activities but 18 positions and one contract. Proposed: a generated
+   organisation of about 1,000 staff with contracts and progress updates, with time limits on Home, Cascade and Reviews.
+5. **Contract freeze review** before the backend, after the open rules under "To settle with Elijah" are decided.
+6. **Is the cycle alive?** A view for the Strategy office of contracts issued, updates arriving and time to verify,
+   computed from existing records.
+7. **Project files and instructions** in the claude.ai Project are from v0.6 and point to a handoff file that is not
+   there; replace them with this repository's zip and current instructions.

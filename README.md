@@ -1,6 +1,6 @@
 # CASPA™ frontend
 
-The strategy execution system of KarisMind™. Frontend-first build: the screens read an in-memory sample
+The strategy execution system of Karislabs Technologies. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` first (standing
 rules and the open slice), then `NEXT.md` (work in progress). Earlier decisions are in `DECISIONS-ARCHIVE.md`,
 with their section numbers unchanged. The data contract is v1.20.
@@ -15,7 +15,7 @@ with their section numbers unchanged. The data contract is v1.20.
 ## Continuing in a new chat
 
 Add the latest repository zip to the CASPA™ Project files. The next session copies it out, runs
-`npm install` and `npm run verify`, and continues with the next slice in BUILD-BRIEF.md section 9.
+`npm install` and `npm run verify`, and continues from `NEXT.md`.
 
 ## Slices
 
@@ -44,9 +44,6 @@ Add the latest repository zip to the CASPA™ Project files. The next session co
 19. 4Q enhancement: cause levels on failure factors, suggested cards from results (BUILD-BRIEF section 48, in the archive) — done (v0.24.0)
 20. Finish Targets: corporate figure from shares, proposing new work, To verify with shares, share dependencies (BUILD-BRIEF section 49, in the archive) — done (v0.25.0)
 21. Onboarding: the second door, the forming schedule, the 4Q flip chart, Remove card, the plan-size guide and the usability-test kit (BUILD-BRIEF section 50) — done (v0.26.0)
-14. Staff voice: a survey staff answer directly — direction and basis confirmed (BUILD-BRIEF section 38); specified after v0.18.0
-
-Specified 30 October 2026 as slice 9 (BUILD-BRIEF section 26).
 
 ## Sample organisations
 
@@ -62,8 +59,18 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (793 tests). Next in the agreed sequence: onboarding and the first
-  usability test round (see `NEXT.md`).
+- Start from this zip: `npm install`, `npm run verify` (843 tests). Next in the agreed sequence: the first usability test
+  round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Housekeeping (v0.26.1)
+
+- 10 November 2026, after a review of the whole build. No change to screens, rules, the contract or tests (843).
+- The company is named Karislabs Technologies in the sidebar, this file and the brief; `check-names` now rejects the
+  earlier company name. The brand-cyan token is for the Karislabs Technologies mark.
+- `.github/workflows/verify.yml` runs `npm run verify` and the build on every upload to GitHub, and keeps the built
+  `index.html` as a download. `.gitignore` keeps `node_modules` and `dist` out of the repository.
+- Corrections: the brief gave the contract as v1.10 in rule 2 (it is v1.20); this file gave 793 tests and listed slice
+  14 twice; the brief's section 9 still called Strategy formation the next slice.
 
 ## Onboarding, forming schedule and 4Q group work (v0.26.0)
 
