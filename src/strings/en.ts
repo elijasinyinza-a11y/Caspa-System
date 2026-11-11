@@ -16,7 +16,7 @@ export type WorkspaceKey = 'home' | 'strategy' | 'cascade' | 'plan' | 'performan
 
 export const en = {
   product: 'CASPA™',
-  parentBrand: 'KarisMind™',
+  parentBrand: 'Karislabs Technologies',
   skipToContent: 'Skip to main content',
   nav: {
     label: 'Main',
