@@ -1,6 +1,6 @@
 # Next session
 
-v0.26.1 delivered 10 November 2026 (housekeeping only; v0.26.0 delivered 8 November 2026): `npm run verify` clean, 843 tests. Decisions in BUILD-BRIEF section 50; v0.25.0 in section 49
+v0.26.2 delivered 11 November 2026 (small display fixes; v0.26.1 was housekeeping; v0.26.0 delivered 8 November 2026): `npm run verify` clean, 871 tests. Decisions in BUILD-BRIEF section 50; v0.25.0 in section 49
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next
@@ -67,3 +67,17 @@ none is decided, and none changes the agreed sequence unless Elijah says so.
    computed from existing records.
 7. **Project files and instructions** in the claude.ai Project are from v0.6 and point to a handoff file that is not
    there; replace them with this repository's zip and current instructions.
+
+## Workspace gaps found 11 November 2026 (while the usability round is prepared)
+Elijah is not ready to run the round yet. A look at all four workspaces as each role found these; the small display
+fixes are in v0.26.2. Each of the rest needs a short specification confirmed by Elijah before any build.
+
+1. **Cascade: a published cascade cannot be corrected** (no owner can be assigned, no title or target fixed, no activity
+   marked complete). Specification drafted 11 November 2026: *CASPA™ In-Year Cascade Changes Specification v0.1* (a doc
+   in the Project's chats), awaiting Elijah's decisions. Chosen first because the usability round runs into it.
+2. **Plan: nobody can add or edit a budget line**; lines exist only in sample data, and unit submissions
+   (`budget.submit_unit`) were never picked up. Needs Elijah's decision on where lines come from.
+3. **Strategy: the landing page shows no goals, reasons, vision or mission** for the active plan.
+4. **Performance: the Executive sees only direct reports**; nobody has an organisation-wide picture of contracts issued,
+   updates arriving and verification waiting.
+5. **Record pages: a KPI shows only its latest reading**, with no history or trend.

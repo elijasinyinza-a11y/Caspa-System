@@ -59,8 +59,19 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (843 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (871 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Small display fixes (v0.26.2)
+
+- 11 November 2026, from a look at all four workspaces as each role. Display only: no change to rules, permissions or the
+  contract. 871 tests (28 new: `src/strings/counts.test.ts`, `src/data/access/line-of-sight.test.ts`).
+- Counts of one read in the singular ("0 of 1 activity funded", "1 activity: 1 at Procedure"), on Home, Cascade, Plan
+  and record pages.
+- Performance: each commitment names the goal its activity serves ("Serves goal: …", from `ObjectiveCard.goal`), and one
+  line says what the mark on the bars means.
+- Executive's Home on a phone: goal progress comes before the three figures.
+- Next: the *CASPA™ In-Year Cascade Changes Specification v0.1* (a doc in the Project's chats), awaiting Elijah.
 
 ## Housekeeping (v0.26.1)
 
