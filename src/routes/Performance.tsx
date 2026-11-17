@@ -13,7 +13,7 @@ import { EntryRow } from '../components/SubMenu';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import type { ObjectiveCard, ProgressPage, RowState, UpdateRow, VerifyCard } from '../data/access/progress';
 import type { NodeRef } from '../selectors/node';
-import { formatDate, formatDateTime, formatFinancialYear, formatNumber } from '../selectors/format';
+import { formatDate, formatDateTime, formatFinancialYear, formatNumber, formatPercent } from '../selectors/format';
 import { en } from '../strings/en';
 import { hrefFor, nodeHref } from './router';
 
@@ -66,12 +66,22 @@ function Flag({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function PartOf({ o }: { o: { activity: NodeRef | null } }) {
+function PartOf({ o }: { o: { activity: NodeRef | null; goal?: NodeRef | null } }) {
+  const { repo } = useApp();
+  const goalTerm = repo.settings().termLabels.goal;
   if (!o.activity) return null;
+  const a = 'inline-flex min-h-11 items-center underline underline-offset-4 hover:text-navy';
   return (
-    <p className="text-13 text-muted">
-      {C.partOf}:{' '}
-      <a href={nodeHref(o.activity.kind, o.activity.id, 'performance')} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-navy">{o.activity.title}</a>
+    <p className="flex flex-wrap items-center gap-x-1 text-13 text-muted">
+      <span>{C.partOf}:</span>
+      <a href={nodeHref(o.activity.kind, o.activity.id, 'performance')} className={a}>{o.activity.title}</a>
+      {o.goal && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span>{C.serves(goalTerm.singular)}:</span>
+          <a href={nodeHref(o.goal.kind, o.goal.id, 'performance')} className={a}>{o.goal.title}</a>
+        </>
+      )}
     </p>
   );
 }
@@ -91,7 +101,8 @@ export function PerformanceLanding() {
       {l.mine && (
         <section aria-labelledby="your-contract">
           <h2 id="your-contract" className="text-18 font-bold text-navy">{C.yourContract(fy)}</h2>
-          <p className="mb-3 text-14 text-muted">{C.contractLine(l.mine.position, l.mine.signedOn ? formatDate(l.mine.signedOn) : '—', l.mine.verifier)}</p>
+          <p className="text-14 text-muted">{C.contractLine(l.mine.position, l.mine.signedOn ? formatDate(l.mine.signedOn) : '—', l.mine.verifier)}</p>
+          <p className="mb-3 text-13 text-muted">{C.markNote(formatPercent(l.expected))}</p>
           <div className="space-y-3">
             {l.mine.objectives.map((o) => (
               <section key={o.id} className={card} aria-label={o.title}>

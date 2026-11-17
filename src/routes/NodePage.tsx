@@ -245,24 +245,25 @@ function StrategyPanel({ n }: { n: NodeView }) {
   );
 }
 
-function cascadeSummary(n: NodeView, labels: Record<NodeKind, string>): string {
+function cascadeSummary(n: NodeView, labels: Record<NodeKind, string>, singular: Record<NodeKind, string>): string {
   const c = n.cascade;
   if (c.kind === 'activity') return c.level ? en.node.summary.level(en.sixP[c.level]) : en.node.summary.noLevel;
-  const childLabel = labels[c.kind === 'goal' ? 'objective' : c.kind === 'objective' ? 'kpi' : 'activity'];
+  const childKind = c.kind === 'goal' ? 'objective' : c.kind === 'objective' ? 'kpi' : 'activity';
+  const childLabel = labels[childKind];
   if (c.children.length === 0) return en.node.summary.noChildren(childLabel);
   const counts = new Map<string, number>();
   if (c.kind === 'kpi') {
     c.children.forEach((a) => { const k = a.level ? en.sixP[a.level] : en.noSixP; counts.set(k, (counts.get(k) ?? 0) + 1); });
-    return en.node.summary.children(c.children.length, childLabel, [...counts].map(([k, v]) => en.node.summary.levelCount(v, k)).join(', '));
+    return en.node.summary.children(c.children.length, singular[childKind], childLabel, [...counts].map(([k, v]) => en.node.summary.levelCount(v, k)).join(', '));
   }
   c.children.forEach((ch) => { const k = en.status[ch.progress.status]; counts.set(k, (counts.get(k) ?? 0) + 1); });
-  return en.node.summary.children(c.children.length, childLabel, [...counts].map(([k, v]) => en.node.summary.statusCount(v, k)).join(', '));
+  return en.node.summary.children(c.children.length, singular[childKind], childLabel, [...counts].map(([k, v]) => en.node.summary.statusCount(v, k)).join(', '));
 }
 
-function CascadePanel({ n, labels, kpiSingular }: { n: NodeView; labels: Record<NodeKind, string>; kpiSingular: string }) {
+function CascadePanel({ n, labels, singular, kpiSingular }: { n: NodeView; labels: Record<NodeKind, string>; singular: Record<NodeKind, string>; kpiSingular: string }) {
   const c = n.cascade;
   return (
-    <PanelCard p="cascade" summary={cascadeSummary(n, labels)}>
+    <PanelCard p="cascade" summary={cascadeSummary(n, labels, singular)}>
       {c.kind === 'goal' || c.kind === 'objective' ? (
         <>
           <ProgressBar share={c.progress.progress} expected={c.progress.expected} status={c.progress.status} label={n.ref.code} />
@@ -453,7 +454,7 @@ function GroupRow({ g, labels, line }: { g: PlanGroup; labels: Labels; line: Ter
   );
 }
 
-function PlanPanel({ n, labels, line }: { n: NodeView; labels: Labels; line: Term }) {
+function PlanPanel({ n, labels, singular, line }: { n: NodeView; labels: Labels; singular: Labels; line: Term }) {
   const p = n.plan;
   const one = n.ref.kind === 'activity';
   if (p.activities === 0) return <PanelCard p="plan" summary={en.node.summary.noActivities(labels.activity)} empty />;
@@ -463,12 +464,12 @@ function PlanPanel({ n, labels, line }: { n: NodeView; labels: Labels; line: Ter
     ? en.node.summary.cost(formatMoney(p.total), p.lines.length, line.singular, line.plural)
     : one
       ? (p.funded ? (p.hiddenLines > 0 ? en.node.summary.fundedOnly : en.node.funded) : en.node.summary.notFunded)
-      : en.node.summary.fundedOf(p.funded, p.activities, labels.activity);
+      : en.node.summary.fundedOf(p.funded, p.activities, singular.activity, labels.activity);
   return (
     <PanelCard p="plan" summary={summary}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <p className="text-16 font-semibold text-navy">
-          {one ? (p.funded ? en.node.funded : en.node.notFunded) : en.node.fundedOf(p.funded, p.activities, labels.activity)}
+          {one ? (p.funded ? en.node.funded : en.node.notFunded) : en.node.fundedOf(p.funded, p.activities, singular.activity, labels.activity)}
         </p>
         {p.groups && p.total && <p className="tabular text-18 font-bold text-navy">{formatMoney(p.total)}</p>}
       </div>
@@ -626,6 +627,7 @@ export function NodePage({ kind, id, from }: { kind: NodeKind; id: string; from?
     );
   }
   const labels: Record<NodeKind, string> = { goal: terms.goal.plural, objective: terms.objective.plural, kpi: terms.kpi.plural, activity: terms.activity.plural };
+  const singular: Record<NodeKind, string> = { goal: terms.goal.singular, objective: terms.objective.singular, kpi: terms.kpi.singular, activity: terms.activity.singular };
   return (
     <>
       <NextYearBar />
@@ -637,8 +639,8 @@ export function NodePage({ kind, id, from }: { kind: NodeKind; id: string; from?
       <Sections.Provider value={{ open, toggle: (p) => setOpen(open === p ? null : p) }}>
         <div className="grid gap-3">
           <StrategyPanel n={n} />
-          <CascadePanel n={n} labels={labels} kpiSingular={terms.kpi.singular} />
-          <PlanPanel n={n} labels={labels} line={terms.budgetLine} />
+          <CascadePanel n={n} labels={labels} singular={singular} kpiSingular={terms.kpi.singular} />
+          <PlanPanel n={n} labels={labels} singular={singular} line={terms.budgetLine} />
           <PerformancePanel n={n} co={terms.contractObjective} />
         </div>
       </Sections.Provider>

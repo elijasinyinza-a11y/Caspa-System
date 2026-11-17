@@ -66,17 +66,21 @@ function GoalHealthView({ h, rows, terms }: { h: HomeView; rows: GoalHealth[]; t
   const c = countFindings(repo.findings());
   const funded = rows.reduce((n, g) => n + g.funded, 0);
   const total = rows.reduce((n, g) => n + g.activities, 0);
-  return (
+  // On a phone the goals come before the three figures, so the headline is not a long scroll away (v0.26.2).
+  const tiles = (
     <>
-      <div className="grid gap-4 sm:grid-cols-3">
         <Tile label={terms.goal.plural} value={formatNumber(rows.length)} note={h.planTitle ?? undefined} />
         <Tile
           label={en.home.funded(terms.activity.plural)}
           value={total ? formatPercent(funded / total) : '—'}
-          note={en.home.fundedNote(funded, total, terms.activity.plural, terms.budgetLine.singular)}
+          note={en.home.fundedNote(funded, total, terms.activity.singular, terms.activity.plural, terms.budgetLine.singular)}
         />
         <Tile label={en.home.findings} value={formatNumber(c.open)} note={en.home.findingsNote(c.blocking, c.advisory, c.acknowledged)} onClick={openFindings} />
-      </div>
+    </>
+  );
+  return (
+    <>
+      <div className="hidden gap-4 sm:grid sm:grid-cols-3">{tiles}</div>
       <Section id="goal-progress" title={en.goalHealth.title(terms.goal.singular)} note={en.goalHealth.note(formatPercent(h.expected))}>
         <ul className="space-y-5">
           {rows.map((g) => (
@@ -90,14 +94,15 @@ function GoalHealthView({ h, rows, terms }: { h: HomeView; rows: GoalHealth[]; t
               <div className="min-w-0">
                 <ProgressBar share={g.progress.progress} expected={g.progress.expected} status={g.progress.status} label={`${g.ref.code} ${g.ref.title}`} />
                 <div className="mt-1 text-13 text-muted">
-                  {en.goalHealth.reporting(g.progress.reporting, g.progress.total, terms.objective.plural)} ·{' '}
-                  {g.activities ? en.goalHealth.funded(g.funded, g.activities, terms.activity.plural) : en.goalHealth.noActivities(terms.activity.plural)}
+                  {en.goalHealth.reporting(g.progress.reporting, g.progress.total, terms.objective.singular, terms.objective.plural)} ·{' '}
+                  {g.activities ? en.goalHealth.funded(g.funded, g.activities, terms.activity.singular, terms.activity.plural) : en.goalHealth.noActivities(terms.activity.plural)}
                 </div>
               </div>
             </li>
           ))}
         </ul>
       </Section>
+      <div className="mt-6 grid gap-4 sm:hidden">{tiles}</div>
     </>
   );
 }

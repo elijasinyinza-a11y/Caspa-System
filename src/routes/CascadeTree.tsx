@@ -40,7 +40,7 @@ function Signal({ n, c }: { n: TreeNode; c: RowCtx }) {
     if (n.ref.kind === 'activity') return <span className="text-13 text-muted">{n.funded ? en.cascadeTree.funded : en.cascadeTree.notFunded}</span>;
     // Funded status only: the tree never shows amounts, which stay in Plan for those who may see them.
     const acts = activitiesUnder(n);
-    return <span className="tabular text-13 text-text">{acts.length ? en.node.summary.fundedOf(acts.filter((a) => a.funded).length, acts.length, c.terms.activity.plural) : en.node.summary.noActivities(c.terms.activity.plural)}</span>;
+    return <span className="tabular text-13 text-text">{acts.length ? en.node.summary.fundedOf(acts.filter((a) => a.funded).length, acts.length, c.terms.activity.singular, c.terms.activity.plural) : en.node.summary.noActivities(c.terms.activity.plural)}</span>;
   }
   if (n.ref.kind === 'activity') return n.level ? <SixPChip level={n.level} /> : <span className="text-13 text-muted">{en.noSixP}</span>;
   if (!n.progress) return null;

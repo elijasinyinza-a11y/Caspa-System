@@ -129,7 +129,7 @@ function GoalRow({ g, terms }: { g: BudgetGoalGroup; terms: Terms }) {
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4">
         <p className="text-13 text-muted">
           {g.share !== null && <span className="tabular">{en.budget.share(formatPercent(g.share))}. </span>}
-          {g.activities > 0 ? en.budget.fundedActivities(g.funded, g.activities, terms.activity.plural) : en.budget.noLines}
+          {g.activities > 0 ? en.budget.fundedActivities(g.funded, g.activities, terms.activity.singular, terms.activity.plural) : en.budget.noLines}
           {g.hiddenLines > 0 && <>. {en.budget.hiddenLines(g.hiddenLines)}</>}
         </p>
         {visible > 0 && (
