@@ -14,7 +14,8 @@ import {
   marksFor, mayVerify, parseFigure, periodEnds, previousVerified, replacedBy, updateState, verifierPosition,
   type ArrivalError, type ProgressMark,
 } from '../../rules/progress';
-import { holderOf, refActivity, type NodeRef } from '../../selectors/node';
+import { holderOf, refActivity, refGoal, type NodeRef } from '../../selectors/node';
+import { goalOfActivity } from '../../rules/structure';
 import { dateInZone, formatDate } from '../../selectors/format';
 import type { NeedsYouItem } from '../../selectors/needs-you';
 import { en } from '../../strings/en';
@@ -31,6 +32,8 @@ export interface ObjectiveCard {
   unit: string;
   frequency: ReportingFrequency;
   activity: NodeRef | null;
+  /** The goal the source activity serves (line of sight), when this viewer may see it; null for a commitment with no activity. */
+  goal: NodeRef | null;
   verified: { done: number; periodEnd: ISODate } | null;
   /** True share of the personal target (verified only), clamped share for the bar, and P10 status against the year elapsed. */
   share: number | null;
@@ -210,6 +213,11 @@ export function createProgressAccess(c: Ctx): ProgressAccess {
     const a = s.activities.find((x) => x.id === co.sourceActivityId);
     return a ? refActivity(a) : null;
   };
+  const goalRef = (co: ContractObjective) => {
+    const a = s.activities.find((x) => x.id === co.sourceActivityId);
+    const g = a && goalOfActivity(s, a);
+    return g && can(s, v, 'view', { type: 'Goal', id: g.id }) ? refGoal(g) : null;
+  };
   const mine = () => device.outbox.filter((x): x is DeviceUpdate => x.kind === 'update' && x.membershipId === me);
   const myDecisions = () => device.outbox.filter((x): x is DeviceDecision => x.kind === 'decision' && x.membershipId === me);
   const isOffline = () => !!device.offline[me];
@@ -249,7 +257,7 @@ export function createProgressAccess(c: Ctx): ProgressAccess {
       else if (!u.returned) sentByPeriod[u.periodEnd] = u.quantityDone;
     }
     return {
-      id: co.id, title: titleOf(co), target, unit: unitOf(co), frequency: frequencyOf(s, co), activity: activityRef(co),
+      id: co.id, title: titleOf(co), target, unit: unitOf(co), frequency: frequencyOf(s, co), activity: activityRef(co), goal: goalRef(co),
       verified: ver && done !== null ? { done, periodEnd: ver.periodEnd } : null,
       share, clamped: share === null ? null : Math.min(1, Math.max(0, share)), status,
       periods: reportable(co),
