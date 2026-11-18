@@ -3,6 +3,8 @@
  * `reference/caspa-strategy-landing-prototype.html`). Read top to bottom: the plan, its vision and mission, your part,
  * the goals with progress and why each was chosen, then themes. Every figure comes from `repo.strategyLanding`.
  */
+import type { ValueInput } from '../rules/values';
+import { ValueListEditor, ValueListView, valuesReady } from './ValueList';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { ProgressBar } from '../components/Status';
@@ -48,26 +50,36 @@ function GoalCard({ g, t }: { g: LandingGoal; t: Terms }) {
   );
 }
 
-function RecordStatements({ onDone }: { onDone: (saved: boolean) => void }) {
+/** SL-4 and CV-5: the Executive records what the plan is missing, once. `mode` says whether that is everything or the values alone. */
+function RecordStatements({ mode, onDone }: { mode: 'all' | 'values'; onDone: (saved: boolean) => void }) {
   const { repo } = useApp();
   const [vision, setVision] = useState('');
   const [mission, setMission] = useState('');
+  const [values, setValues] = useState<ValueInput[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const all = mode === 'all';
   const save = () => {
-    const r = repo.strategyLanding.recordStatements(vision, mission);
+    const r = all ? repo.strategyLanding.recordStatements(vision, mission, values) : repo.strategyLanding.recordValues(values);
     if (r.ok) onDone(true); else setError(L.errors[r.error] ?? L.errors.not_allowed!);
   };
+  const ready = valuesReady(values) && (all ? !!vision.trim() && !!mission.trim() : values.length > 0);
   return (
     <section aria-labelledby="record-vm" className="space-y-3 rounded-xl border border-control bg-white p-5">
-      <h2 id="record-vm" className="text-18 font-bold text-navy">{L.record.title}</h2>
+      <h2 id="record-vm" className="text-18 font-bold text-navy">{all ? L.record.title : L.record.titleValues}</h2>
       <p className="text-13 text-muted">{L.record.note}</p>
-      <div><label htmlFor="vm-vision" className="text-14 font-semibold text-navy">{L.vision}</label>
-        <textarea id="vm-vision" value={vision} onChange={(e) => setVision(e.target.value)} className={field} /></div>
-      <div><label htmlFor="vm-mission" className="text-14 font-semibold text-navy">{L.mission}</label>
-        <textarea id="vm-mission" value={mission} onChange={(e) => setMission(e.target.value)} className={field} /></div>
+      {all && (
+        <>
+          <div><label htmlFor="vm-vision" className="text-14 font-semibold text-navy">{L.vision}</label>
+            <textarea id="vm-vision" value={vision} onChange={(e) => setVision(e.target.value)} className={field} /></div>
+          <div><label htmlFor="vm-mission" className="text-14 font-semibold text-navy">{L.mission}</label>
+            <textarea id="vm-mission" value={mission} onChange={(e) => setMission(e.target.value)} className={field} /></div>
+        </>
+      )}
+      <h3 className="pt-1 text-14 font-bold text-navy">{en.values.title}</h3>
+      <ValueListEditor values={values} onChange={setValues} idPrefix="rec-val" />
       {error && <p role="alert" className="text-13 font-semibold text-block-text">{error}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={save} disabled={!vision.trim() || !mission.trim()} className={primary}>{L.record.save}</button>
+        <button type="button" onClick={save} disabled={!ready} className={primary}>{L.record.save}</button>
         <button type="button" onClick={() => onDone(false)} className={btn}>{L.record.cancel}</button>
       </div>
     </section>
@@ -96,8 +108,8 @@ export function StrategyLanding() {
 
       <div role="status" aria-live="polite">{note && <p className="rounded-lg border border-complete-border bg-complete-bg px-4 py-3 text-14 font-semibold text-complete-text">{note}</p>}</div>
 
-      {(st.vision || st.mission) ? (
-        <section aria-label={L.direction}>
+      {(st.vision || st.mission || st.values.length > 0) && (
+        <section aria-label={L.direction} className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2">
             {([['vision', st.vision], ['mission', st.mission]] as const).map(([k, text]) => text && (
               <div key={k} className="rounded-xl border border-border bg-white px-5 py-4">
@@ -106,16 +118,24 @@ export function StrategyLanding() {
               </div>
             ))}
           </div>
-          {st.recorded && <p className="mt-2 text-12 text-muted">{L.recorded(st.recorded.by, formatDate(st.recorded.on))}</p>}
+          {/* v0.29.0 (CV-8): values beneath the vision and mission, each name in bold with its meaning. */}
+          {st.values.length > 0 && (
+            <div className="rounded-xl border border-border bg-white px-5 py-4">
+              <p className="mb-2 text-12 font-semibold uppercase tracking-wide text-strategy-text">{en.values.title}</p>
+              <ValueListView values={st.values} columns />
+            </div>
+          )}
+          {st.recorded && <p className="text-12 text-muted">{L.recorded(st.recorded.by, formatDate(st.recorded.on))}</p>}
         </section>
-      ) : v.canRecord && (
-        recording ? <RecordStatements onDone={(saved) => { setRecording(false); setNote(saved ? L.record.saved : null); }} /> : (
+      )}
+      {v.canRecord && (
+        recording ? <RecordStatements mode={v.canRecord} onDone={(saved) => { setRecording(false); setNote(saved ? L.record.saved : null); }} /> : (
           <section className={`${card} flex flex-wrap items-center justify-between gap-3`}>
             <div>
-              <h2 className="text-18 font-bold text-navy">{L.record.missing}</h2>
+              <h2 className="text-18 font-bold text-navy">{v.canRecord === 'all' ? L.record.missing : L.record.missingValues}</h2>
               <p className="text-13 text-muted">{L.record.missingNote}</p>
             </div>
-            <button type="button" onClick={() => { setRecording(true); setNote(null); }} className={btn}>{L.record.title}</button>
+            <button type="button" onClick={() => { setRecording(true); setNote(null); }} className={btn}>{v.canRecord === 'all' ? L.record.title : L.record.titleValues}</button>
           </section>
         )
       )}

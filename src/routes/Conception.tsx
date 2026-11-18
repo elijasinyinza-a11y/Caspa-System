@@ -4,6 +4,8 @@
  * documents and AI-drafted cards, consolidation, and vision and mission with their confirmation. Behaviour from the
  * approved Strategy workspace prototype (`reference/caspa-strategy-prototype.html`).
  */
+import type { ValueInput } from '../rules/values';
+import { ValueListEditor, ValueListView, valuesReady } from './ValueList';
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { BookLine, Explain, SixPChip } from '../components/Explain';
@@ -678,13 +680,15 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
   const v = c.vision;
   const [vision, setVision] = useState(v.vision);
   const [mission, setMission] = useState(v.mission);
+  // v0.29.0 (CV-2): start from the plan's values, or the current plan's while none are saved.
+  const [values, setValues] = useState<ValueInput[]>(v.values.length ? v.values : v.carried);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const editable = v.canWrite && v.open;
-  const save = () => { const r = repo.conception.saveVision({ vision, mission }); setNote(r.ok ? { ok: true, text: V.saved } : null); };
+  const save = () => { const r = repo.conception.saveVision({ vision, mission, values }); setNote(r.ok ? { ok: true, text: V.saved } : null); };
   const confirm = () => {
-    repo.conception.saveVision({ vision, mission });
+    repo.conception.saveVision({ vision, mission, values });
     const r = repo.conception.confirmVision();
     setConfirming(false);
     if (r.ok) { setBlocked(r.outcome === 'blocked'); setNote({ ok: r.outcome === 'passed', text: r.outcome === 'passed' ? V.passed : V.blocked }); }
@@ -705,6 +709,7 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
             <h4 className="mt-3 text-14 font-bold text-navy">{V.vision}</h4>
             <p className="mt-1 text-22 text-navy">“{v.vision}”</p>
             {v.mission && <><h4 className="mt-3 text-14 font-bold text-navy">{V.missionShown}</h4><p className="mt-1 text-16">{v.mission}</p></>}
+            {v.values.length > 0 && <><h4 className="mt-3 text-14 font-bold text-navy">{en.values.title}</h4><div className="mt-1"><ValueListView values={v.values} /></div></>}
             <p className="mt-3 text-13 text-muted">{V.confirmedNote}</p>
           </>
         ) : editable ? (
@@ -713,9 +718,15 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
             <textarea id="vm-vision" rows={3} className={`${input} py-2`} value={vision} onChange={(e) => setVision(e.target.value)} />
             <label htmlFor="vm-mission" className={`${label} mt-3`}>{V.mission}</label>
             <textarea id="vm-mission" rows={3} className={`${input} py-2`} value={mission} onChange={(e) => setMission(e.target.value)} />
+            <h4 className="mt-4 text-14 font-bold text-navy">{en.values.title}</h4>
+            {v.values.length === 0 && (
+              <p className="mt-1 rounded-lg bg-strategy-tint px-3 py-2 text-13">{v.carried.length ? en.values.carriedPlain : en.values.noneCarried}</p>
+            )}
+            <div className="mt-2"><ValueListEditor values={values} onChange={setValues} idPrefix="vm-val" /></div>
+            {values.length === 0 && <p className="mt-2 text-13 text-muted">{en.values.withoutValues}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" className={btn} onClick={save}>{V.save}</button>
-              <button type="button" className={primary} onClick={() => setConfirming(true)}>{V.confirm}</button>
+              <button type="button" className={btn} onClick={save} disabled={!valuesReady(values)}>{V.save}</button>
+              <button type="button" className={primary} onClick={() => setConfirming(true)} disabled={!valuesReady(values)}>{V.confirm}</button>
             </div>
           </>
         ) : (
@@ -724,6 +735,7 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
             {!v.canWrite && <p className="mt-3 text-13 text-muted">{V.onlyExecutive}</p>}
             {v.vision && <><p className="mt-3"><Chip tone="info">{V.draftLabel}</Chip></p><p className="mt-2 text-16 text-navy">“{v.vision}”</p></>}
             {v.mission && <p className="mt-2 text-14">{v.mission}</p>}
+            {v.values.length > 0 && <div className="mt-3"><ValueListView values={v.values} /></div>}
           </>
         )}
         {!v.confirmed && (blocked || (c.isExecutive && v.open)) && must.length > 0 && (

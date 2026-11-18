@@ -2,6 +2,8 @@
  * The Strategy workspace in slice 8: onboarding's import door (Onboarding Specification v0.1, O1 to O9).
  * "Form a new strategy" opens formation's plan setup (v0.26.0; O6's "Coming later" lifted now the stages exist).
  */
+import type { ValueInput } from '../rules/values';
+import { ValueListEditor, ValueListView, valuesReady } from './ValueList';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { Dialog } from '../components/Dialog';
@@ -612,6 +614,7 @@ function Vision({ page, setNote }: { page: OnboardingPage; setNote: (m: string |
   const { repo } = useApp();
   const [vision, setVision] = useState(page.vision);
   const [mission, setMission] = useState(page.mission);
+  const [values, setValues] = useState<ValueInput[]>(page.values);
   const V = O.vision;
   const canEdit = page.isExecutive && page.plan!.status === 'draft';
   return (
@@ -624,12 +627,16 @@ function Vision({ page, setNote }: { page: OnboardingPage; setNote: (m: string |
           <textarea id="vm-v" className={`${input} min-h-20 py-2`} value={vision} onChange={(e) => setVision(e.target.value)} />
           <label htmlFor="vm-m" className={`${label} mt-2`}>{V.mission}</label>
           <textarea id="vm-m" className={`${input} min-h-20 py-2`} value={mission} onChange={(e) => setMission(e.target.value)} />
-          <button type="button" className={`${btn} mt-2`} onClick={() => { repo.onboarding.saveVision('vision', vision); repo.onboarding.saveVision('mission', mission); setNote(V.saved); }}>{V.save}</button>
+          <h3 className="mt-4 text-14 font-bold text-navy">{en.values.title}</h3>
+          <p className="mt-1 text-12 text-muted">{en.values.importNote}</p>
+          <div className="mt-2"><ValueListEditor values={values} onChange={setValues} idPrefix="imp-val" /></div>
+          <button type="button" className={`${btn} mt-3`} disabled={!valuesReady(values)} onClick={() => { repo.onboarding.saveVision('vision', vision); repo.onboarding.saveVision('mission', mission); repo.onboarding.saveValues(values); setNote(V.saved); }}>{V.save}</button>
         </>
       ) : (
         <>
           <p className="mt-1 text-14"><b>{V.vision}:</b> {page.vision || <span className="text-muted">{V.onlyExecutive}</span>}</p>
           <p className="mt-1 text-14"><b>{V.mission}:</b> {page.mission || <span className="text-muted">{V.notRecorded}</span>}</p>
+          {page.values.length > 0 && <div className="mt-2"><p className="text-14 font-bold">{en.values.title}</p><ValueListView values={page.values} /></div>}
         </>
       )}
     </section>

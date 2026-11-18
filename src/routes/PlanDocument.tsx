@@ -3,6 +3,7 @@
  * version at #/plan-document. The narrative is stored; everything else is shown live from the records, in the order
  * set by PLAN_DOCUMENT_LAYOUT. Every figure comes from the selector; nothing is computed here.
  */
+import { ValueListView } from './ValueList';
 import { useState, type ReactNode } from 'react';
 import { useApp } from '../components/AppContext';
 import type { PlanDocumentPage, PlanDocumentResult, PlanDocumentSectionView } from '../data/access/plan-document';
@@ -97,6 +98,7 @@ export function PlanDocumentPrint() {
         <h2 className="text-22 font-bold text-navy">{D.heading.vision}</h2>
         <p className="mt-1 text-16">{c.vision}</p>
         {c.mission && <><h2 className="mt-4 text-22 font-bold text-navy">{D.heading.mission}</h2><p className="mt-1 text-16">{c.mission}</p></>}
+        {c.values.length > 0 && <><h2 className="mt-4 text-22 font-bold text-navy">{en.values.title}</h2><div className="mt-1"><ValueListView values={c.values} /></div></>}
       </section>
     ),
     summary: (

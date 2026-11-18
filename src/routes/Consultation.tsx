@@ -3,6 +3,7 @@
  * BUILD-BRIEF section 32). The consultation room, the baseline register and the compliance register. Behaviour from
  * the approved Strategy workspace prototype (`reference/caspa-strategy-prototype.html`).
  */
+import { ValueListView } from './ValueList';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { BookLine, Explain } from '../components/Explain';
@@ -42,6 +43,7 @@ export function Room({ r }: { r: RoomPage }) {
               <>
                 <p className="mt-2 text-22 text-navy">“{r.vision.vision}”</p>
                 {r.vision.mission && <p className="mt-2 text-14"><b className="text-navy">{R.mission}:</b> {r.vision.mission}</p>}
+                {r.vision.values.length > 0 && <div className="mt-2"><p className="text-14 font-bold text-navy">{en.values.title}</p><ValueListView values={r.vision.values} /></div>}
               </>
             ) : <p className="mt-2 text-14 text-muted">{R.visionNotYet}</p>}
           </section>

@@ -3,6 +3,7 @@
  * v1.15). HR drafts the next year's policy and sends it; the Executive approves or returns it. Matches
  * reference/caspa-scoring-policy-prototype.html. Every check comes from src/rules/policy.ts; "Try it" from scoreWith.
  */
+import type { ValueInput } from '../rules/values';
 import { useId, useState } from 'react';
 import { useApp } from '../components/AppContext';
 import type { ISODate } from '../contract/caspa-data-contract';
@@ -53,6 +54,30 @@ export function ScoringPolicy() {
 function StartButton({ fy }: { fy: string }) {
   const { repo, say } = useApp();
   return <div className="mt-3"><button type="button" className={primary} onClick={() => { const r = repo.policy.start(); say(r.ok ? P.saved : P.errors[r.error] ?? null); }}>{P.start(fy)}</button></div>;
+}
+
+/**
+ * v0.29.0 (CV-6): start a personal attribute from one of the active plan's values. It copies the name and meaning; HR
+ * writes the five level descriptions. No link is stored. Values already used as an attribute's name are not offered.
+ */
+function StartFromValue({ taken, onPick }: { taken: string[]; onPick: (v: ValueInput) => void }) {
+  const { repo } = useApp();
+  const values = repo.strategyLanding.landing()?.statements.values ?? [];
+  const used = new Set(taken.map((n) => n.trim().toLowerCase()));
+  const id = useId();
+  return (
+    <div className="max-w-md">
+      <label htmlFor={id} className={label}>{en.values.startFromValue}</label>
+      <select id={id} className={input} value="" disabled={!values.length} onChange={(e) => { const v = values[Number(e.target.value)]; if (v) onPick(v); }}>
+        <option value="">{en.values.chooseValue}</option>
+        {values.map((v, i) => {
+          const isUsed = used.has(v.name.trim().toLowerCase());
+          return <option key={i} value={i} disabled={isUsed}>{v.name}{isUsed ? ` (${en.values.alreadyAttribute})` : ''}</option>;
+        })}
+      </select>
+      <p className="mt-1 text-13 text-muted">{values.length ? en.values.startHint : en.values.noValues}</p>
+    </div>
+  );
 }
 
 /** A read-only summary of a policy: method, limit, levels, attributes and reviewer settings. */
@@ -159,6 +184,9 @@ function Draft({ v, fy }: { v: PolicyView; fy: string }) {
               </details>
             ))}
             {!dis && p.attrs.length < 8 && <button type="button" className={btn} onClick={() => set({ attrs: [...p.attrs, { id: `attr-${Date.now().toString(36)}`, name: '', measures: '', levels: ['', '', '', '', ''] }] })}>{P.attrs.add}</button>}
+            {!dis && p.attrs.length < 8 && (
+              <StartFromValue taken={p.attrs.map((a) => a.name)} onPick={(v) => set({ attrs: [...p.attrs, { id: `attr-${Date.now().toString(36)}`, name: v.name, measures: v.text, levels: ['', '', '', '', ''] }] })} />
+            )}
           </div>
         ) : <p className="mt-1 text-13 text-muted">{P.attrs.off}</p>}
       </section>
