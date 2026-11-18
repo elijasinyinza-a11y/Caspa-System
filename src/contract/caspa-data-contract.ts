@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.20
+ * CASPA™ data contract — v1.21
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,10 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.21 (18 November 2026, Elijah; Corporate Values Specification v0.1, CV-1 to CV-8): fields only.
+ *     - VisionStatement.kind gains 'value': a plan's corporate values, each with a name (up to 40 characters), its
+ *       meaning in `text` (up to 300) and its place in the list (`order`, from 1). Up to ten per plan, none required.
+ *       Same permission row as the vision and mission; never drafted by the AI (F1).
  * v1.20 (7 November 2026, Elijah; onboarding slice, v0.26.0): fields and one permission row.
  *     - FourQEntry.removed: a typed or accepted card taken off the board by whoever may edit it, with the reason. The
  *       card is kept; it no longer counts or shows, and a suggestion it came from is not offered again.
@@ -462,9 +466,13 @@ export interface Theme extends OrgScoped, Audited {
 export interface VisionStatement extends OrgScoped, Audited {
   id: Id<'VisionStatement'>;
   planId: Id<'StrategicPlan'>;
-  kind: 'vision' | 'mission';
-  text: string;
+  kind: 'vision' | 'mission' | 'value'; // v1.21: 'value'
+  text: string; // for a value: what it means
   confirmation: Confirmation | null; // gate vision.confirm
+  /** v1.21, values only: the value's name. */
+  name?: string;
+  /** v1.21, values only: its place in the list, from 1. */
+  order?: number;
 }
 
 export interface ConsultationRound extends OrgScoped, Audited {
