@@ -42,6 +42,7 @@ import { createReviewsAccess, type ReviewsAccess } from './reviews';
 import { createTargetsAccess, type TargetsAccess } from './targets';
 import { createContractsAccess, type ContractsAccess } from './contracts';
 import { createPolicyAccess, type PolicyAccess } from './policy';
+import { createInYearAccess, type InYearAccess } from './in-year';
 import { createPrintoutsAccess, type PrintoutsAccess } from './printouts';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
@@ -210,6 +211,8 @@ export interface Repository {
   activityLevel(activityId: string): ActivityLevelView | null;
   /** Change an activity's 6P level, with a reason kept in the audit entry (D6-6). */
   changeActivityLevel(activityId: string, to: SixPLevel, reason: string): { ok: true } | { ok: false; error: ChangeLevelError };
+  /** In-year changes to the published cascade (v0.27.0, IC-1 to IC-8): owners, details, completion and stopping. */
+  inYear: InYearAccess;
   /** Organisation setup and structure (slice 7): the draft before confirmation, the records after it. */
   structure: OrganisationAccess;
   /** Onboarding (slice 8): the first question, plan setup, the import door, confirmation and publication. */
@@ -649,6 +652,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     targets: createTargetsAccess({ s, viewer, now, financialYear, clock, device, changed: () => options.onChange?.() }),
     contracts: createContractsAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
     policy: createPolicyAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
+    inYear: createInYearAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
     printouts: undefined as unknown as PrintoutsAccess, // set below, once contracts and reviews exist
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {
