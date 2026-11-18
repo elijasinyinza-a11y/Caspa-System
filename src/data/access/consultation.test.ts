@@ -79,15 +79,15 @@ describe('consultation rounds', () => {
   });
   it('bring the audience into the Strategy workspace while open, and into “Needs you” until they have had their say', () => {
     const f = fresh();
-    expect(f.as('employee').workspaces()).not.toContain('strategy');
+    expect(f.as('employee').menu().strategy).toEqual([]); // v0.28.0: the landing only, no entries
     const id = openRound(f);
     const emp = f.as('employee');
-    expect(emp.workspaces()).toContain('strategy');
+    expect(emp.menu().strategy.map((e) => e.label)).toContain('say');
     expect(emp.home().needsYou.map((n) => n.title)).toContain('Have your say on Strategic Plan 2027–2031');
     expect(emp.consultation.addInput({ kind: 'idea', text: 'Let readers mark meters they can’t reach.' }).ok).toBe(true);
     expect(f.as('employee').home().needsYou.some((n) => n.key === `consult:say:${id}`)).toBe(false);
     f.as('strategy').consultation.moveRound(id, 'closed');
-    expect(f.as('employee').workspaces()).not.toContain('strategy');
+    expect(f.as('employee').menu().strategy.map((e) => e.label)).not.toContain('say'); // closed: back to the landing only
   });
 });
 

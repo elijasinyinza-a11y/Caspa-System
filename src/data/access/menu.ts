@@ -5,7 +5,7 @@
  */
 import { formationInProgress } from '../../rules/formation';
 import {
-  openStageOf, organisationMenu, performanceMenu, strategyMenu, type FormingStage, type MenuEntry, type RegisterTab, type StrategyMenuInput,
+  openStageOf, organisationMenu, performanceMenu, strategyMenu, type FormingStage, type MenuEntry, type RegisterTab, type StrategyMenuInput, worksInStrategy,
 } from '../../selectors/nav';
 import type { Repository } from './repository';
 import type { Store } from './store';
@@ -24,7 +24,8 @@ export interface Menu {
 }
 
 export function menuFor(repo: Repository, s: Store): Menu {
-  const has = repo.workspaces().includes('strategy');
+  // v0.28.0: everyone sees the Strategy landing; its entries keep the rule of who works in Strategy (SL-1).
+  const has = worksInStrategy(repo.viewer);
   const f = has ? repo.formation.page() : null;
   const c = has ? repo.conception.page() : null;
   const room = has ? repo.consultation.room() : null;

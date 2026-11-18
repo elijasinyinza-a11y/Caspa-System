@@ -43,6 +43,7 @@ import { createTargetsAccess, type TargetsAccess } from './targets';
 import { createContractsAccess, type ContractsAccess } from './contracts';
 import { createPolicyAccess, type PolicyAccess } from './policy';
 import { createInYearAccess, type InYearAccess } from './in-year';
+import { createStrategyLandingAccess, type StrategyLandingAccess } from './strategy-landing';
 import { createPrintoutsAccess, type PrintoutsAccess } from './printouts';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
@@ -213,6 +214,8 @@ export interface Repository {
   changeActivityLevel(activityId: string, to: SixPLevel, reason: string): { ok: true } | { ok: false; error: ChangeLevelError };
   /** In-year changes to the published cascade (v0.27.0, IC-1 to IC-8): owners, details, completion and stopping. */
   inYear: InYearAccess;
+  /** The Strategy landing (v0.28.0, SL-1 to SL-7): the active plan, its direction, your part and the goals. */
+  strategyLanding: StrategyLandingAccess;
   /** Organisation setup and structure (slice 7): the draft before confirmation, the records after it. */
   structure: OrganisationAccess;
   /** Onboarding (slice 8): the first question, plan setup, the import door, confirmation and publication. */
@@ -653,6 +656,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     contracts: createContractsAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
     policy: createPolicyAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
     inYear: createInYearAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
+    strategyLanding: createStrategyLandingAccess({ s, viewer, now, financialYear, clock, changed: () => options.onChange?.() }),
     printouts: undefined as unknown as PrintoutsAccess, // set below, once contracts and reviews exist
     firstYear: createFirstYearAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     structureConfirmed: () => {

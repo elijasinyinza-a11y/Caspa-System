@@ -17,8 +17,9 @@ describe('data access', () => {
   it('shows each role the workspaces in the approved shell', () => {
     expect(repo('executive').workspaces()).toEqual(['home', 'strategy', 'cascade', 'plan', 'performance']);
     expect(repo('finance').workspaces()).toEqual(['home', 'strategy', 'cascade', 'plan']);
-    expect(repo('supervisor').workspaces()).toEqual(['home', 'cascade', 'performance']);
-    expect(repo('employee').workspaces()).toEqual(['home', 'performance']);
+    // v0.28.0 (SL-1): the Strategy landing is open to every member, read-only.
+    expect(repo('supervisor').workspaces()).toEqual(['home', 'strategy', 'cascade', 'performance']);
+    expect(repo('employee').workspaces()).toEqual(['home', 'strategy', 'performance']);
   });
 
   it('gives each role only the findings it may see and is concerned with', () => {

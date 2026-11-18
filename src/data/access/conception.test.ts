@@ -56,10 +56,11 @@ describe('who sees which cards', () => {
     expect(emp.board.flatMap((c) => c.cards)).toEqual([]);
     expect(emp.vision.canWrite).toBe(false);
   });
-  it('department heads get the Strategy workspace while a plan is formed; others do not gain it', () => {
+  it('department heads work in Strategy while a plan is formed; others only read its landing (v0.28.0)', () => {
     const f = fresh();
-    expect(f.repoFor('m-hoo').workspaces()).toContain('strategy');
-    expect(f.as('employee').workspaces()).not.toContain('strategy');
+    expect(f.repoFor('m-hoo').menu().strategy.map((e) => e.entry)).toContain('forming');
+    expect(f.as('employee').workspaces()).toContain('strategy');
+    expect(f.as('employee').menu().strategy).toEqual([]);
   });
 });
 

@@ -73,7 +73,7 @@ describe('the usability results', () => {
   });
   it('holds the five tasks of the Clarity Specification’s kit, each with a role the demo has', () => {
     const f = fresh();
-    expect(USABILITY_TASKS.map((t) => t.no)).toEqual([1, 2, 3, 4, 5]);
+    expect(USABILITY_TASKS.map((t) => t.no)).toEqual([1, 2, 3, 4, 5, 6, 7]); // 6 and 7 added by SL-7
     for (const t of USABILITY_TASKS) expect(devMembership(f.org, t.role, NOW)).not.toBeNull();
   });
 });
