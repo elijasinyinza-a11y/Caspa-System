@@ -203,6 +203,10 @@ export const en = {
       `${t.objective.singular} ${c} “${x}” has ${n} ${lc(t.kpi.plural)}; the plan-size guide suggests at most ${max}.`,
     kpiManyActivities: (t: Terms, c: string, x: string, n: number, max: number) =>
       `${t.kpi.singular} ${c} “${x}” has ${n} ${lc(t.activity.plural)}; the plan-size guide suggests at most ${max}.`,
+    activityTargetBelowSigned: (t: Terms, c: string, x: string) =>
+      `${t.activity.singular} ${c} “${x}”: its quantity target is below what signed ${lc(t.contractObjective.plural)} carry.`,
+    commitmentActivityStopped: (t: Terms, x: string) => `“${x}”: the ${lc(t.activity.singular)} behind this signed ${lc(t.contractObjective.singular)} was stopped.`,
+    budgetLineActivityStopped: (t: Terms, d: string, c: string) => `${t.budgetLine.singular} “${d}” is linked to ${lc(t.activity.singular)} ${c}, which was stopped.`,
   },
   /** Verb-first next steps for findings that are fixed on a record (Clarity Specification, C6 and section 7). */
   fixStep: {
@@ -219,6 +223,9 @@ export const en = {
     'STRUCT-BUDGETLINE-NO-ACTIVITY': (title: string) => `Link the “${title}” budget line to an activity`,
     'GUIDE-OBJECTIVE-MANY-KPIS': (title: string) => `Check whether ${title} needs all its measures`,
     'GUIDE-KPI-MANY-ACTIVITIES': (title: string) => `Check whether ${title} needs all its activities`,
+    'STRUCT-ACTIVITY-TARGET-BELOW-SIGNED': (title: string) => `Check the signed contracts drawn from ${title}`,
+    'STRUCT-COMMITMENT-ACTIVITY-STOPPED': (title: string) => `Decide what to do about ${title}`,
+    'STRUCT-BUDGETLINE-ACTIVITY-STOPPED': (title: string) => `Move or remove the “${title}” budget line`,
   } as Record<string, (title: string) => string>,
   /**
    * The six levels of business decision making (Business Beyond the Strategic Plan, ch. 7). Never relabelled.
@@ -295,7 +302,7 @@ export const en = {
   frequency: { monthly: 'Monthly', quarterly: 'Quarterly', biannual: 'Twice a year', annual: 'Yearly' } satisfies Record<ReportingFrequency, string>,
   direction: { higher_is_better: 'Higher is better', lower_is_better: 'Lower is better', milestone: 'Milestones' } satisfies Record<Kpi['direction'], string>,
   aggregation: { latest: 'Latest reading', sum: 'Sum of readings', average: 'Average of readings' } satisfies Record<Kpi['aggregation'], string>,
-  activityStatus: { planned: 'Planned', in_progress: 'In progress', complete: 'Complete', archived: 'Archived' } satisfies Record<Activity['status'], string>,
+  activityStatus: { planned: 'Planned', in_progress: 'In progress', complete: 'Complete', archived: 'Stopped' } satisfies Record<Activity['status'], string>,
   fundingSource: {
     own_revenue: 'Own revenue', government_grant: 'Government grant', donor: 'Donor', loan: 'Loan', other: 'Other',
   } satisfies Record<BudgetLine['fundingSource'], string>,
@@ -460,13 +467,116 @@ export const en = {
     errors: {
       same_level: (level: string) => `Choose a level other than ${level}.`,
       reason_required: () => 'Add a reason.',
-      archived: () => 'An archived record cannot be changed.',
+      archived: () => 'A stopped activity cannot be changed. The Strategy office can restart it.',
       not_allowed: () => 'You can no longer change this. Your access may have changed.',
       not_found: () => 'This record is no longer here.',
     } as Record<string, (level: string) => string>,
     done: (level: string, n: number) => `Level changed to ${level}.${n ? ` ${n === 1 ? 'The signed commitment is' : 'The signed commitments are'} sent for review.` : ''}`,
     history: 'Level changes',
     historyItem: (from: string, to: string, by: string, on: string, reason: string) => `Changed from ${from} to ${to} by ${by}, ${on}: “${reason}”`,
+  },
+  /** In-year changes (v0.27.0, In-Year Cascade Changes Specification v0.1). Labels follow the organisation's terms. */
+  inYear: {
+    button: 'Make a change',
+    title: 'Make a change',
+    intro: 'Choose what to change. Only the changes you can make are listed.',
+    introOne: 'Choose the new owner, give a reason and save.',
+    legend: 'What to change',
+    choice: {
+      details: ['Correct the details', (t: Terms) => `Title, ${lc(en.inYear.evidence)} or reporting frequency of this ${lc(t.activity.singular)}`],
+      target: ['Change the quantity target', (_t: Terms, now: string) => `Now ${now}`],
+      owner: ['Change the owner', (_t: Terms, now: string) => `Now ${now}`],
+      level: ['Change the 6P decision level', (_t: Terms, now: string) => `Now ${now}`],
+      complete: ['Mark complete', () => 'The work is finished'],
+      reopen: ['Reopen', () => 'The work is not finished after all'],
+      stop: ['Stop this activity', () => 'The work will not be done this year'],
+      restart: ['Restart', () => 'Bring it back into the cascade this year'],
+    } as Record<string, [string, (t: Terms, now: string) => string]>,
+    titleField: 'Title',
+    evidence: 'Means of verification',
+    frequency: 'Reporting frequency',
+    target: (unit: string) => `Quantity target, in ${unit}`,
+    newOwner: 'New owner',
+    chooseOwner: 'Choose a position',
+    vacant: 'vacant',
+    acting: 'acting',
+    ownerHint: 'Positions own work, so it stays with the position when people move.',
+    noOwner: 'No owner',
+    reason: 'Reason',
+    reasonHint: 'Everyone who can see this record sees the reason in Changes this year.',
+    affects: 'This will affect',
+    save: { details: 'Save change', target: 'Save change', owner: 'Save change', level: 'Change level', complete: 'Mark complete', reopen: 'Reopen', stop: 'Stop this activity', restart: 'Restart' } as Record<string, string>,
+    cancel: 'Cancel',
+    stoppedNote: (t: Terms) => `This ${lc(t.activity.singular)} is stopped. Only the Strategy office can restart it.`,
+    ownersNote: (t: Terms) => `${t.goal.singular} and ${lc(t.objective.singular)} owners are changed by the Strategy office.`,
+    effect: {
+      commitmentsFlagged: (t: Terms, who: string, title: string, sup: string | null) =>
+        `${who}’s signed ${lc(t.contractObjective.singular)} “${title}” is flagged as worth checking, for them${sup ? ` and their supervisor, ${sup}` : ' and their supervisor'}. Their contract does not change.`,
+      commitmentsFlaggedOthers: (t: Terms, n: number) =>
+        n === 1
+          ? `1 signed ${lc(t.contractObjective.singular)} is flagged as worth checking, for its holder and their supervisor. The contract does not change.`
+          : `${n} signed ${lc(t.contractObjective.plural)} are flagged as worth checking, for their holders and supervisors. The contracts do not change.`,
+      commitmentsStay: (t: Terms, names: string[], others: number) => {
+        const n = names.length + others;
+        const who = names.length ? `${en.list(names)}${others ? ` and ${others} more` : ''}` : n === 1 ? 'Its holder' : 'Their holders';
+        return `${who} ${n === 1 ? 'keeps the signed' : 'keep the signed'} ${lc(n === 1 ? t.contractObjective.singular : t.contractObjective.plural)}. Commitments stay with the people who signed them.`;
+      },
+      noCommitment: (t: Terms) => `No signed ${lc(t.contractObjective.singular)} is affected.`,
+      noCommitmentDetails: (t: Terms) => `No signed ${lc(t.contractObjective.singular)} is affected. The means of verification and reporting frequency are not part of what people signed.`,
+      signedCarry: (t: Terms, signed: string, recorded: string | null) => `Signed ${lc(t.contractObjective.plural)} carry ${signed}.${recorded ? ` Recorded so far: ${recorded}.` : ' Nothing is recorded yet.'}`,
+      belowSigned: (signed: string, owner: string | null) =>
+        `The new target is below the ${signed} signed contracts carry. ${owner ? `${owner},` : 'The objective’s owner'} is flagged and may ask for the contracts to be revised.`,
+      recorded: (done: string, target: string, on: string | null, below: boolean) =>
+        `${done} of ${target} recorded${on ? `, as of ${on}` : ''}.${below ? ' Because that is below the target, a reason is needed.' : ''}`,
+      budgetFlagged: (t: Terms, n: number) =>
+        `${n === 1 ? `1 ${lc(t.budgetLine.singular)} is` : `${n} ${lc(t.budgetLine.plural)} are`} flagged as worth checking, for the budget holder and Finance. Amounts are shown only to budget holders.`,
+      budgetStay: (t: Terms, n: number) => `${n === 1 ? `The ${lc(t.budgetLine.singular)} stays` : `The ${n} ${lc(t.budgetLine.plural)} stay`} linked to this ${lc(t.activity.singular)}.`,
+      dependentsDone: (n: number) =>
+        `It counts as done for work that depends on it.${n === 0 ? ` No other work depends on it at present.` : n === 1 ? ' One piece of work depends on it.' : ` ${n} pieces of work depend on it.`}`,
+      dependentsNotDone: (n: number) => `Work that depends on it no longer counts it as done.${n === 0 ? ' No other work depends on it at present.' : ''}`,
+      noFigures: (t: Terms) => `No quantity or ${t.kpi.singular} reading is added. The completion figure stays as recorded.`,
+      leaves: (t: Terms) => `It leaves the cascade, ${lc(t.goal.singular)} and budget counts. Only the Strategy office can restart it.`,
+      returns: (t: Terms) => `It returns to the cascade, ${lc(t.goal.singular)} and budget counts.`,
+      stopFlagsClear: 'The flags raised when it was stopped clear.',
+      ownerSees: (what: string, position: string, person: string | null) =>
+        person ? `${person}, ${position}, sees this ${what} on their Home and in Needs you.` : `${position} is vacant, so nobody sees this ${what} on their Home until the position is filled or someone acts in it.`,
+      noOwnerClears: 'The “No owner yet” check clears.',
+    },
+    errors: {
+      no_change: 'Nothing has changed yet.',
+      title_required: 'Give it a title.',
+      evidence_required: 'Say how the work will be verified.',
+      target_invalid: 'Enter a whole number above zero.',
+      no_target: 'This has no quantity target to change.',
+      owner_unknown: 'Choose a position.',
+      reason_required: 'Add a reason.',
+      same_level: 'Choose a different level.',
+      stopped: 'A stopped activity cannot be changed. The Strategy office can restart it.',
+      not_stopped: 'This activity is not stopped.',
+      already_complete: 'This is already marked complete.',
+      not_complete: 'This is not marked complete.',
+      not_allowed: 'You can no longer make this change. Your access may have changed.',
+      not_found: 'This record is no longer here.',
+    } as Record<string, string>,
+    done: {
+      details: 'Saved. The details are corrected.',
+      target: (q: string) => `Saved. The target is now ${q}.`,
+      owner: (o: string) => `Saved. The owner is now ${o}.`,
+      level: (l: string) => `Saved. The level is now ${l}.`,
+      complete: 'Saved. It is marked complete.',
+      reopen: 'Saved. It is reopened.',
+      stop: 'Saved. It is stopped.',
+      restart: 'Saved. It is back in the cascade.',
+    },
+    history: 'Changes this year',
+    none: 'No changes this year.',
+    field: { title: 'Title', evidence: 'Means of verification', frequency: 'Reporting frequency', target: 'Quantity target', owner: 'Owner', level: '6P decision level', status: 'Status' } as Record<string, string>,
+    item: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    by: (by: string, on: string) => `${by} · ${on}`,
+    stopped: (n: number) => `${n} stopped`,
+    showStopped: (n: number) => `Show ${n} stopped`,
+    hideStopped: 'Hide stopped',
+    assignOwner: 'Assign owner',
   },
   node: {
     notFound: 'This record does not exist in this organisation, or it is not in the active plan. The link may belong to another organisation.',

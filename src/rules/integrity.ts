@@ -6,6 +6,7 @@ import type { Finding, GateCode, Id, IntegrityRule } from '../contract/caspa-dat
 import type { Store } from '../data/access/store';
 import { en } from '../strings/en';
 import { kpiBaseline } from './baseline';
+import { signedQuantity } from './cascade-edit';
 import { activityFingerprint } from './fingerprint';
 import { activitiesOfGoal, fundedActivityIds, linesOfVersion, objectiveOfActivity, objectiveOfKpi, accountablePositionOfUnit } from './structure';
 
@@ -27,6 +28,10 @@ export const RULES = {
   // v0.26.0 (contract v1.20): the plan-size guide, set by HR, off by default; worth checking only, never blocking.
   objectiveManyKpis: { id: 'GUIDE-OBJECTIVE-MANY-KPIS', source: 'structural', description: 'Objective has more KPIs than the plan-size guide suggests', blocksAt: [] },
   kpiManyActivities: { id: 'GUIDE-KPI-MANY-ACTIVITIES', source: 'structural', description: 'KPI has more activities than the plan-size guide suggests', blocksAt: [] },
+  // v0.27.0 (in-year changes, IC-6 and IC-7): worth checking only, never blocking.
+  activityTargetBelowSigned: { id: 'STRUCT-ACTIVITY-TARGET-BELOW-SIGNED', source: 'structural', description: "Activity's quantity target is below what signed contracts carry", blocksAt: [] },
+  commitmentActivityStopped: { id: 'STRUCT-COMMITMENT-ACTIVITY-STOPPED', source: 'structural', description: "A signed commitment's activity was stopped", blocksAt: [] },
+  budgetLineActivityStopped: { id: 'STRUCT-BUDGETLINE-ACTIVITY-STOPPED', source: 'structural', description: "Budget line's activity was stopped", blocksAt: [] },
 } as const satisfies Record<string, IntegrityRule>;
 
 type RuleKey = keyof typeof RULES;
@@ -118,6 +123,25 @@ export function computeFindings(s: Store, ctx: CheckContext): Finding[] {
       const supervisor = s.positions.find((p) => p.id === c.positionId)?.reportsToPositionId;
       push('contractUpstreamChanged', { type: 'ContractObjective', id: co.id }, en.findings.contractUpstreamChanged(terms, co.title), [c.positionId, supervisor]);
     }
+    // v0.27.0 (IC-6): the commitment stays as signed; its holder and supervisor decide what to do about it.
+    if (a.status === 'archived' && c.status !== 'closed' && kpiIds.has(a.kpiId)) {
+      const supervisor = s.positions.find((p) => p.id === c.positionId)?.reportsToPositionId;
+      push('commitmentActivityStopped', { type: 'ContractObjective', id: co.id }, en.findings.commitmentActivityStopped(terms, co.title), [c.positionId, supervisor]);
+    }
+  }
+  // v0.27.0 (IC-7): a target lowered below what signed contracts carry goes to the objective's owner.
+  for (const a of activities) {
+    if (a.quantityTarget && a.quantityTarget.value < signedQuantity(s, a.id, fy)) {
+      push('activityTargetBelowSigned', { type: 'Activity', id: a.id }, en.findings.activityTargetBelowSigned(terms, a.code, a.title), [objectiveOfActivity(s, a)?.ownerPositionId]);
+    }
+  }
+  // v0.27.0 (IC-6): a line still linked to a stopped activity goes to its budget holder and Finance.
+  const finance = s.memberships
+    .filter((m) => m.status === 'active' && m.roles.includes('finance'))
+    .flatMap((m) => s.assignments.filter((x) => x.personId === m.personId && x.to === null).map((x) => x.positionId as string));
+  for (const l of linesOfVersion(s, fy)) {
+    const a = l.activityId ? s.activities.find((x) => x.id === l.activityId) : undefined;
+    if (a && a.status === 'archived') push('budgetLineActivityStopped', { type: 'BudgetLine', id: l.id }, en.findings.budgetLineActivityStopped(terms, l.description, a.code), [accountablePositionOfUnit(s, l.holderUnitId), ...finance]);
   }
   return out;
 }
