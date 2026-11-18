@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36, 38 to 44 and 46 to 51 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36, 38 to 44 and 46 to 52 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -519,3 +519,18 @@ Sources: the *CASPA™ In-Year Cascade Changes Specification v0.1* (a doc in the
 - **IC-8, Changes this year.** One list in each record's Cascade section, newest first: what changed, from, to, reason, who and when. Read from the audit trail, never a separate record; it replaces the level history. Anyone who may view the record sees it.
 - **Screens.** "Make a change" in the Cascade section replaces "Change level"; the 6P level is one of its choices. Before saving, "This will affect" names the signed commitments the viewer may see and counts the rest. On a KPI with no owner, the check offers "Assign owner", which opens the panel at the owner. In the Cascade tree, a completed activity carries a Complete chip and a KPI's stopped activities sit behind "Show N stopped". The record heading shows Complete or Stopped.
 - **Code.** Rules in `src/rules/cascade-edit.ts` (refusals, effects, signed quantity) and `src/rules/integrity.ts` (the three checks); data access in `src/data/access/in-year.ts` (`repo.inYear`); screens in `src/routes/InYearChanges.tsx`. Tests: `src/data/access/in-year.test.ts`.
+
+## 52. Decisions on the Strategy landing (18 November 2026)
+
+Sources: the *CASPA™ Strategy Landing Specification v0.1* (a doc in the Project's chats); Elijah approved SL-1 to SL-7 as recommended on 18 November 2026, and the prototype (`reference/caspa-strategy-landing-prototype.html`) the same day. Built as v0.28.0. No contract change (v1.20).
+
+- **SL-1, open to every member.** Strategy is in every person's sidebar (`workspacesFor`) and its landing is read-only for them. Working in Strategy keeps the earlier rule, now `worksInStrategy` in `src/selectors/nav.ts` (Executive, Strategy office, Finance, facilitators, compliance, department heads while a plan is formed, a consultation's audience, communication writers): it decides the sub-menu entries, the Forming and Communication cards and the link to the Communication page. The four-entry cap (NV-9) is unaffected.
+- **The page, top to bottom.** The plan (title, period, "FY2026, year 5 of 5", status, confirmation); vision and mission when recorded; "Your part"; the goals; themes when the plan has any; then the Forming and Communication cards for those who work in Strategy (SL-6). The import door, plan setup and formation are unchanged.
+- **SL-2, grouping.** Goals sit under the organisation's perspectives in its order when it uses a scorecard, with "Other goals" last; otherwise one list in code order.
+- **Goal cards.** Code and title (linked to the record page), owner, the progress bar Home uses (same figure, expected-to-date mark), objective and KPI counts, and "Why it was chosen".
+- **SL-3, reasons.** As on record pages: in full, with the 4Q cell, for those who may read 4Q entries (`FourQEntry: view`); a count for everyone else; "No reason recorded" when there are none (BOOK-GOAL-NO-WHY).
+- **SL-4, vision and mission after publication.** When the active plan has neither, the Executive may record both once; they are saved as confirmed by the Executive (`VisionStatement` draft and confirm are both the Executive) and show to everyone. Later changes wait for plan revisions. The AI never drafts them (F1).
+- **SL-5, Your part.** For a signed contract this year: the goals its objectives serve, through their activity, share or breakdown, each linked. Nothing without a contract.
+- **SL-7, usability.** Tasks 6 (Strategy office: make the Head of Operations the owner of Collection efficiency) and 7 (employee: find which goal your work serves and how it is going) added to `#/usability`, same pass mark. Tasks 1 to 5 unchanged.
+- **Wording.** `lc` keeps acronyms such as "KPIs" as written inside sentences.
+- **Code.** `src/data/access/strategy-landing.ts` (`repo.strategyLanding`), `src/routes/StrategyLanding.tsx`; tests in `src/data/access/strategy-landing.test.ts`.

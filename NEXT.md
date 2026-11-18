@@ -1,6 +1,6 @@
 # Next session
 
-v0.28.0 delivered 18 November 2026 (the Strategy landing, BUILD-BRIEF section 52; v0.27.0 in-year cascade changes, section 51 in the archive, the same day): `npm run verify` clean, 903 tests. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
+v0.29.0 delivered 18 November 2026 (corporate values, BUILD-BRIEF section 53, contract v1.21; v0.28.0 the Strategy landing and v0.27.0 in-year changes the same day, sections 52 and 51 in the archive): `npm run verify` clean, 909 tests. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next

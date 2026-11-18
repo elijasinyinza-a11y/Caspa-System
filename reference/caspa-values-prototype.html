@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ Corporate Values</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: the CASPA™ shell around three screens where values are written or read: the Strategy landing, the forming
+   vision step and HR's scoring policy. Tokens are CASPA™ design tokens; light mode only in v1, so one palette. */
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84; --line:#EDECEA;
+  --panel:#223D56; --side-fg:#C8D1DB;
+  --st:#378ADD; --st-t:#1A5A9E; --st-l:#EBF3FC;
+  --ca:#7C5CBF; --pl:#B85C38; --pf:#C2417A; --pf-t:#9B2C63; --pf-l:#FBEAF2;
+  --blk:#B42318; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  --font:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--cream);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy);text-wrap:balance}
+h2{font-size:18px;margin:0;color:var(--navy);text-wrap:balance}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px} .xs{font-size:12px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:var(--white);padding:20px 12px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px}
+.mark{width:36px;height:36px;border-radius:8px;background:var(--white);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.brand b{display:block;font-size:16px}.brand span{font-size:12px;color:var(--side-fg)}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:var(--white);font-weight:600}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--white);border-bottom:1px solid var(--border);padding-block:10px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.crumbs{flex:1 1 200px;color:var(--muted);font-size:13px;min-width:0}
+.crumbs b{color:var(--navy);font-weight:600}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:var(--white);max-width:min(320px,70vw)}
+.content{padding-block:24px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));width:100%;max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.proto{background:var(--white);border:1px dashed var(--control);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.proto-row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.entries{display:flex;gap:8px;flex-wrap:wrap}
+.entry{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--white);font-weight:600;cursor:pointer}
+.entry[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btn-sm{min-height:40px;padding:0 10px;font-size:13px}
+.btn:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wsh .eyebrow{display:flex;gap:10px;align-items:center;font-size:13px}
+.wsh .eyebrow b{color:var(--st-t)}
+.wsh .eyebrow span{color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px}
+.wsh h1{margin-top:6px}
+.wsh p{margin-top:6px;font-size:16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.planhead{border-top:4px solid var(--st)}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.direction{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.statement{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
+.lab{font-size:12px;font-weight:600;color:var(--st-t);letter-spacing:.04em;text-transform:uppercase}
+.statement p.text{font-size:18px;line-height:1.4;color:var(--navy);font-weight:500;text-wrap:pretty}
+.values{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.values ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px 24px}
+.values li b{display:block;color:var(--navy);font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-weight:600;color:var(--navy)}
+.field input,.field textarea,.field select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:10px 12px;background:var(--white);width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.hint{font-size:13px;color:var(--muted)}
+.vrow{border:1px solid var(--border);border-radius:10px;padding:12px;display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px}
+.vrow .no{width:32px;height:32px;border-radius:999px;background:var(--st-l);color:var(--st-t);font-weight:700;display:flex;align-items:center;justify-content:center}
+.vrow .fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:10px}
+.notice{background:var(--st-l);border-radius:10px;padding:10px 14px;font-size:13px}
+.toast{border:1px solid var(--ok-b);background:var(--ok-l);color:var(--ok);border-radius:10px;padding:12px 14px;font-weight:600}
+.err{font-size:13px;color:var(--blk);font-weight:600}
+.attr{border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.attr .head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.attr b{color:var(--navy)}
+.levels{display:grid;gap:8px}
+@media (max-width:900px){.side{display:none}.top{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+@media (max-width:640px){.vrow .fields{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body style="margin:0">
+
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><div class="mark">C</div><div><b>CASPA™</b><span>Karislabs Technologies</span></div></div>
+    <div class="navbtn"><span class="dot" style="background:var(--white)"></span>Home</div>
+    <div class="navbtn" id="nav-st"><span class="dot" style="background:var(--st)"></span>Strategy</div>
+    <div class="navbtn"><span class="dot" style="background:var(--ca)"></span>Cascade</div>
+    <div class="navbtn" id="nav-pf"><span class="dot" style="background:var(--pf)"></span>Performance</div>
+  </nav>
+  <div class="main">
+    <header class="top">
+      <div class="crumbs" id="crumbs"></div>
+      <label class="viewas" for="role">Viewing as
+        <select id="role">
+          <option value="executive">Chanda Mulenga, Managing Director (Executive)</option>
+          <option value="strategy">Bwalya Musonda, Strategy and Planning Manager</option>
+          <option value="hr">Natasha Kabwe, Human Resources Manager (HR)</option>
+          <option value="employee">Mary Chileshe, Meter Reader, Zone B</option>
+        </select>
+      </label>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+</div>
+
+<script>
+const MAX = 10, NAME = 40, MEANING = 300;
+const SAMPLE = [
+  { name:'Integrity', text:'We do what we say, and account for what we spend.' },
+  { name:'Customer focus', text:'We put the people we serve at the centre of every decision.' },
+  { name:'Teamwork', text:'We share information and help each other deliver.' },
+  { name:'Accountability', text:'Each of us owns our results and reports them honestly.' },
+];
+const ATTRS = [
+  { name:'Teamwork', measures:'Working with others, sharing knowledge and supporting team decisions.' },
+  { name:'Time keeping', measures:'Meeting deadlines and keeping working hours.' },
+  { name:'Customer focus', measures:'Courtesy and care in dealing with customers and colleagues, and resolving complaints.' },
+];
+const LEVELS = ['Outstanding','Commendable','Satisfactory','Needs improvement','Unsatisfactory'];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const copy = (v) => v.map((x) => ({ ...x }));
+
+let S;
+function fresh() {
+  S = { role: S?.role ?? 'executive', screen: S?.screen ?? 'landing',
+    // Strategic Plan 2022–2026 (imported, active): no vision, mission or values yet (SL-4, CV-5).
+    live: { vision:null, mission:null, values:[], recording:false, draft:{ vision:'', mission:'', values:[] } },
+    // Strategic Plan 2027–2031 (being formed): values carried forward from the active plan once it has some (CV-2).
+    formed: { vision:'Safe, reliable water and sanitation for every household in our area.', mission:'We supply and treat water and manage sanitation efficiently and sustainably.', values:null, confirmed:false },
+    attrs: copy(ATTRS), newAttr:null, toast:null };
+}
+fresh();
+const isExec = () => S.role === 'executive';
+
+/* A list editor shared by the landing's record form and the forming vision step. `key` names the list in S. */
+function valueEditor(list, key, editable) {
+  if (!editable) {
+    return list.length ? `<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">${list.map((v) => `<li><b style="color:var(--navy)">${esc(v.name)}</b>: ${esc(v.text)}</li>`).join('')}</ol>` : '<p class="small muted">No values yet.</p>';
+  }
+  const rows = list.map((v, i) => `<div class="vrow" data-list="${key}" data-i="${i}">
+      <span class="no" aria-hidden="true">${i + 1}</span>
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+        <div class="fields">
+          <div class="field"><label for="${key}-n-${i}">Value ${i + 1}</label><input id="${key}-n-${i}" data-f="name" maxlength="${NAME}" value="${esc(v.name)}" placeholder="Integrity"><span class="hint">${v.name.length}/${NAME}</span></div>
+          <div class="field"><label for="${key}-t-${i}">What it means</label><textarea id="${key}-t-${i}" data-f="text" maxlength="${MEANING}" placeholder="One or two sentences">${esc(v.text)}</textarea><span class="hint">${v.text.length}/${MEANING}</span></div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-quiet btn-sm" data-move="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move value ${i + 1} up">Move up</button>
+          <button class="btn btn-quiet btn-sm" data-move="1" ${i === list.length - 1 ? 'disabled' : ''} aria-label="Move value ${i + 1} down">Move down</button>
+          <button class="btn btn-quiet btn-sm" data-remove aria-label="Remove value ${i + 1}">Remove</button>
+        </div>
+      </div></div>`).join('');
+  return `<div style="display:flex;flex-direction:column;gap:10px">${rows || '<p class="small muted">No values yet. Values are optional.</p>'}
+    <div class="btns"><button class="btn btn-sm" data-add="${key}" ${list.length >= MAX ? 'disabled' : ''}>Add a value</button><span class="hint">${list.length} of up to ${MAX}</span></div></div>`;
+}
+const complete = (list) => list.every((v) => v.name.trim() && v.text.trim());
+const listOf = (key) => key === 'live' ? S.live.draft.values : S.formed.values;
+
+function landing() {
+  const L = S.live;
+  const plan = `<section class="card planhead"><h2 style="font-size:22px">Strategic Plan 2022–2026</h2>
+    <p class="small muted">FY2022 to FY2026 · <b style="color:var(--text)">FY2026, year 5 of 5</b> <span class="tag t-ok">Active · cascade published</span></p>
+    <p class="small">Confirmed by Chanda Mulenga on 10 January 2022; board resolution BR/2021/14.</p></section>`;
+  let body = '';
+  const has = L.vision || L.mission;
+  if (has) {
+    body += `<section class="direction" aria-label="Vision and mission"><div class="statement"><span class="lab">Vision</span><p class="text">${esc(L.vision)}</p></div><div class="statement"><span class="lab">Mission</span><p class="text">${esc(L.mission)}</p></div></section>`;
+  }
+  if (L.values.length) {
+    body += `<section class="values" aria-labelledby="vals-h"><span class="lab" id="vals-h">Values</span><ol>${L.values.map((v) => `<li><b>${esc(v.name)}</b>${esc(v.text)}</li>`).join('')}</ol></section>`;
+  }
+  if (has || L.values.length) body += '<p class="xs muted">Recorded by Chanda Mulenga on 18 November 2026.</p>';
+  const missingAll = !has && !L.values.length, missingValues = has && !L.values.length;
+  if (isExec() && (missingAll || missingValues)) {
+    const title = missingAll ? 'Record the vision, mission and values' : 'Record the values';
+    if (!L.recording) {
+      body += `<section class="card" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between"><div><h2>${missingAll ? 'No vision, mission or values recorded' : 'No values recorded'}</h2><p class="small muted">This plan was brought in without them. As Executive you can record them once.</p></div><button class="btn" data-record>${title}</button></section>`;
+    } else {
+      const ok = (!missingAll || (L.draft.vision.trim() && L.draft.mission.trim())) && complete(L.draft.values) && (missingAll || L.draft.values.length > 0);
+      body += `<section class="card" aria-labelledby="rec-h"><h2 id="rec-h">${title}</h2>
+        <p class="hint">Once saved they show to everyone here, confirmed by you. Later changes go through a plan revision.</p>
+        ${missingAll ? `<div class="field"><label for="f-vision">Vision</label><textarea id="f-vision" data-d="vision">${esc(L.draft.vision)}</textarea></div>
+        <div class="field"><label for="f-mission">Mission</label><textarea id="f-mission" data-d="mission">${esc(L.draft.mission)}</textarea></div>` : ''}
+        <h3>Values</h3>${valueEditor(L.draft.values, 'live', true)}
+        <div class="btns"><button class="btn btn-primary" data-save ${ok ? '' : 'disabled'}>Save and confirm</button><button class="btn btn-quiet" data-cancel>Cancel</button></div></section>`;
+    }
+  }
+  const goals = `<section class="card"><h2>Goals</h2><p class="small muted">The four goals with their progress and reasons, as in v0.28.0, follow here.</p></section>`;
+  return plan + body + goals;
+}
+
+function forming() {
+  const F = S.formed;
+  if (F.values === null) F.values = copy(S.live.values); // CV-2: carried forward as a starting point
+  const edit = isExec() && !F.confirmed;
+  const carried = S.live.values.length && !F.confirmed;
+  const ok = F.vision.trim() && F.mission.trim() && complete(F.values);
+  return `<section class="card planhead"><p class="small muted">Forming the next plan · Conception</p><h2 style="font-size:22px">Strategic Plan 2027–2031: vision, mission and values</h2>
+      <p class="small">${F.confirmed ? '<span class="tag t-ok">Confirmed by Chanda Mulenga on 18 November 2026</span>' : 'Written by the Executive once the 4Q board is filled. Values are optional and confirmed with the vision.'}</p></section>
+    <section class="card">
+      <div class="field"><label for="fv">Vision</label>${edit ? `<textarea id="fv" data-fd="vision">${esc(F.vision)}</textarea>` : `<p>${esc(F.vision)}</p>`}</div>
+      <div class="field"><label for="fm">Mission</label>${edit ? `<textarea id="fm" data-fd="mission">${esc(F.mission)}</textarea>` : `<p>${esc(F.mission)}</p>`}</div>
+      <h3>Values</h3>
+      ${carried && edit ? '<p class="notice">Carried forward from Strategic Plan 2022–2026. Keep, edit or remove them.</p>' : ''}
+      ${!S.live.values.length && edit ? '<p class="notice">The current plan has no values to carry forward. Record them on the Strategy landing first, or add them here.</p>' : ''}
+      ${valueEditor(F.values, 'formed', edit)}
+      ${edit ? `<div class="btns"><button class="btn btn-primary" data-confirm ${ok ? '' : 'disabled'}>Confirm vision, mission and values</button>${F.values.length ? '' : '<span class="hint">With no values, plan confirmation will flag “No corporate values recorded” as worth checking.</span>'}</div>` : ''}
+      ${!isExec() && !F.confirmed ? '<p class="hint">Only the Executive writes and confirms these.</p>' : ''}
+    </section>`;
+}
+
+function scoring() {
+  const hr = S.role === 'hr';
+  const vals = S.live.values;
+  const used = new Set(S.attrs.map((a) => a.name.toLowerCase()));
+  const na = S.newAttr;
+  const levelsOk = na && na.levels.every((l) => l.trim());
+  return `<section class="card" style="border-top:4px solid var(--pf)"><p class="small muted">Performance · Scoring policy FY2026 (draft)</p><h2 style="font-size:22px">Personal attributes</h2>
+      <p class="small">Three to eight attributes, 5% of each contract's result. Each needs what it measures and five level descriptions.</p></section>
+    <section class="card">
+      ${S.attrs.map((a, i) => `<div class="attr"><div class="head"><b>${i + 1}. ${esc(a.name)}</b>${a.fromValue ? '<span class="tag t-info">Started from a value</span>' : ''}</div><p class="small">${esc(a.measures)}</p>${a.levels ? `<p class="xs muted">${a.levels.length} level descriptions written</p>` : '<p class="xs muted">5 level descriptions written</p>'}</div>`).join('')}
+      ${hr && !na ? `<div class="field" style="max-width:420px"><label for="from-value">Start from a value</label>
+          <select id="from-value" ${vals.length && S.attrs.length < 8 ? '' : 'disabled'}><option value="">Choose a value</option>${vals.map((v, i) => `<option value="${i}" ${used.has(v.name.toLowerCase()) ? 'disabled' : ''}>${esc(v.name)}${used.has(v.name.toLowerCase()) ? ' (already an attribute)' : ''}</option>`).join('')}</select>
+          <span class="hint">${vals.length ? 'Copies the value’s name and meaning. You write its five level descriptions.' : 'No values are recorded for the active plan yet.'}</span></div>` : ''}
+      ${hr && na ? `<div class="attr" style="border-color:var(--control)"><b>New attribute, from the value “${esc(na.name)}”</b>
+          <div class="field"><label for="na-name">Name</label><input id="na-name" data-na="name" value="${esc(na.name)}"></div>
+          <div class="field"><label for="na-m">What it measures</label><textarea id="na-m" data-na="measures">${esc(na.measures)}</textarea></div>
+          <div class="levels">${LEVELS.map((l, i) => `<div class="field"><label for="na-l${i}">${i + 1}. ${l}</label><textarea id="na-l${i}" data-lv="${i}" placeholder="What ${l.toLowerCase()} looks like">${esc(na.levels[i])}</textarea></div>`).join('')}</div>
+          <div class="btns"><button class="btn btn-primary" data-addattr ${levelsOk && na.name.trim() && na.measures.trim() ? '' : 'disabled'}>Add attribute</button><button class="btn btn-quiet" data-cancelattr>Cancel</button></div></div>` : ''}
+      ${!hr ? '<p class="hint">HR writes the scoring policy.</p>' : ''}
+    </section>`;
+}
+
+const SCREENS = [['landing','Strategy landing'],['forming','Forming: vision step'],['scoring','Scoring policy (HR)']];
+const CRUMBS = { landing:'Strategy', forming:'Strategy › Forming the next plan', scoring:'Performance › Scoring policy' };
+function render() {
+  document.getElementById('role').value = S.role;
+  document.getElementById('crumbs').innerHTML = `Sample Water Utility › <b>${CRUMBS[S.screen]}</b>`;
+  document.getElementById('nav-st').classList.toggle('on', S.screen !== 'scoring');
+  document.getElementById('nav-pf').classList.toggle('on', S.screen === 'scoring');
+  const body = { landing, forming, scoring }[S.screen]();
+  const head = S.screen === 'scoring' ? '' : `<div class="wsh"><div class="eyebrow"><b>■ Strategy</b><span>Conception to Communication</span></div><h1>Strategy</h1><p>The plan's goals and why they were chosen, formed here or imported.</p></div>`;
+  document.getElementById('app').innerHTML = `<div class="proto"><div class="proto-row"><p class="small"><b>Prototype.</b> Corporate Values Specification v0.1, CV-1 to CV-8 as accepted. Sample Water Utility, 18 November 2026. Nothing is saved.</p>
+      <div class="btns"><button class="btn btn-quiet btn-sm" data-sample>Fill sample values</button><button class="btn btn-quiet btn-sm" data-reset>Start again</button></div></div>
+    <div class="entries" role="group" aria-label="Screen">${SCREENS.map(([k, l]) => `<button class="entry" data-screen="${k}" aria-pressed="${S.screen === k}">${l}</button>`).join('')}</div>
+    <p class="xs muted">Suggested path: as Executive, record the vision, mission and values on the landing; open the forming step to see them carried forward; then as HR, start an attribute from “Integrity”.</p></div>
+    ${head}${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}${body}`;
+}
+
+const app = document.getElementById('app');
+app.addEventListener('click', (e) => {
+  const t = e.target.closest('button'); if (!t) return;
+  const row = t.closest('.vrow');
+  if (t.dataset.screen) { S.screen = t.dataset.screen; S.toast = null; }
+  else if ('reset' in t.dataset) fresh();
+  else if ('sample' in t.dataset) {
+    if (S.screen === 'landing' && S.live.recording) { S.live.draft.values = copy(SAMPLE); if (!S.live.vision) { S.live.draft.vision = 'Safe, reliable water and sanitation for every household in our area.'; S.live.draft.mission = 'We supply and treat water and manage sanitation efficiently and sustainably.'; } }
+    else if (S.screen === 'forming' && isExec() && !S.formed.confirmed) S.formed.values = copy(SAMPLE);
+    else { S.live.vision = 'Safe, reliable water and sanitation for every household in our area.'; S.live.mission = 'We supply and treat water and manage sanitation efficiently and sustainably.'; S.live.values = copy(SAMPLE); S.formed.values = null; S.toast = 'Sample values recorded on the active plan.'; }
+  }
+  else if ('record' in t.dataset) { S.live.recording = true; S.live.draft = { vision:'', mission:'', values:[] }; S.toast = null; }
+  else if ('cancel' in t.dataset) S.live.recording = false;
+  else if ('save' in t.dataset) {
+    const d = S.live.draft;
+    if (!S.live.vision) { S.live.vision = d.vision.trim(); S.live.mission = d.mission.trim(); }
+    S.live.values = d.values.map((v) => ({ name:v.name.trim(), text:v.text.trim() })); S.live.recording = false; S.formed.values = null;
+    S.toast = 'Saved. They now show to everyone on this page.';
+  }
+  else if (t.dataset.add) { listOf(t.dataset.add).push({ name:'', text:'' }); }
+  else if (row && t.dataset.move) { const l = listOf(row.dataset.list), i = +row.dataset.i, j = i + +t.dataset.move; [l[i], l[j]] = [l[j], l[i]]; }
+  else if (row && 'remove' in t.dataset) { listOf(row.dataset.list).splice(+row.dataset.i, 1); }
+  else if ('confirm' in t.dataset) { S.formed.values = S.formed.values.map((v) => ({ name:v.name.trim(), text:v.text.trim() })); S.formed.confirmed = true; S.toast = 'Confirmed. The vision, mission and values are locked for this plan.'; }
+  else if ('addattr' in t.dataset) { S.attrs.push({ ...S.newAttr, fromValue:true }); S.toast = `Added “${S.newAttr.name}” to the personal attributes.`; S.newAttr = null; }
+  else if ('cancelattr' in t.dataset) S.newAttr = null;
+  else return;
+  render();
+});
+app.addEventListener('input', (e) => {
+  const el = e.target, row = el.closest('.vrow');
+  if (row && el.dataset.f) { listOf(row.dataset.list)[+row.dataset.i][el.dataset.f] = el.value; }
+  else if (el.dataset.d) S.live.draft[el.dataset.d] = el.value;
+  else if (el.dataset.fd) S.formed[el.dataset.fd] = el.value;
+  else if (el.dataset.na) S.newAttr[el.dataset.na] = el.value;
+  else if (el.dataset.lv) S.newAttr.levels[+el.dataset.lv] = el.value;
+  else return;
+  const id = el.id, pos = el.selectionStart; render();
+  const again = document.getElementById(id); if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
+});
+app.addEventListener('change', (e) => {
+  if (e.target.id !== 'from-value' || e.target.value === '') return;
+  const v = S.live.values[+e.target.value];
+  S.newAttr = { name:v.name, measures:v.text, levels:['','','','',''] }; S.toast = null; render(); document.getElementById('na-l0')?.focus();
+});
+document.getElementById('role').addEventListener('change', (e) => { S.role = e.target.value; S.live.recording = false; S.newAttr = null; S.toast = null; render(); });
+render();
+</script>
+</body>
+</html>

@@ -1,10 +1,10 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. It holds the standing rules (sections 1 to 12) and the navigation rule (section 37). The Strategy landing (section 52) is built as v0.28.0; in-year cascade changes (section 51) were v0.27.0 and onboarding (section 50) v0.26.0, both now in the archive. The first usability round is next. Section 45 records the direction after the pilot. Section 12 says which source wins when sources disagree.
+Read this whole file before writing any code. It holds the standing rules (sections 1 to 12) and the navigation rule (section 37). Corporate values (section 53) are built as v0.29.0; the Strategy landing (section 52) was v0.28.0, now in the archive with sections 50 and 51. The first usability round is next. Section 45 records the direction after the pilot. Section 12 says which source wins when sources disagree.
 
 **Decision archive.** The decisions behind slices already built, sections 13 to 36, 38 to 44 and 46, are in `DECISIONS-ARCHIVE.md`, with their numbers unchanged: a reference to "BUILD-BRIEF section N" in code, tests or documents finds section N there. Search the archive when a question needs an earlier decision; it does not need to be read in full. When a slice is delivered, its section moves from this file to the archive (split agreed by Elijah on 4 November 2026; no decision changed).
 
-**Current state.** Data contract v1.20 (`src/contract/caspa-data-contract.ts`, whose header lists every revision). Slices and versions are listed in `README.md`; work in progress, and what comes next, is in `NEXT.md`.
+**Current state.** Data contract v1.21 (`src/contract/caspa-data-contract.ts`, whose header lists every revision). Slices and versions are listed in `README.md`; work in progress, and what comes next, is in `NEXT.md`.
 
 ## 1. What you are building
 
@@ -17,7 +17,7 @@ The build is done in Claude chat sessions within the CASPA™ Project. Each slic
 ## 2. Rules you must never break
 
 1. **One source of truth.** Every total, percentage, count, progress figure, status and finding is computed from stored records by a selector or the rules engine. Never hard-code a figure in a component. Never store a computed value.
-2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.20 now; each revision is made only on Elijah's decision and listed in its header). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
+2. **The contract is fixed.** `src/contract/caspa-data-contract.ts` is the data contract (v1.21 now; each revision is made only on Elijah's decision and listed in its header). Copy it in unchanged. If a screen seems to need a new field, stop and ask; do not add it.
 3. **Rules engine separate from screens.** Integrity rules, gates, KPI progress and ratings are pure TypeScript functions in `src/rules`. No React, no I/O, no dates from the system clock (pass "now" in). They must run unchanged on a server later.
 4. **The AI is stubbed.** Anything AI does (explain a finding, draft text, extract from documents) goes through `src/ai`, which in this build returns fixed sample text labelled "AI draft". The AI never decides, scores, confirms or clears anything.
 5. **Permissions are enforced in the data-access layer**, not only hidden in the UI. A screen asking for data it may not see gets the restricted version (e.g. "funded" instead of an amount).
@@ -211,17 +211,17 @@ Agreed with Elijah as a direction, to be specified after the pilot; nothing is b
 - **Needs first:** the backend, pilot organisations through at least one full cycle, and data good enough to learn from.
 
 
-## 52. Decisions on the Strategy landing (18 November 2026)
+## 53. Decisions on corporate values (18 November 2026)
 
-Sources: the *CASPA™ Strategy Landing Specification v0.1* (a doc in the Project's chats); Elijah approved SL-1 to SL-7 as recommended on 18 November 2026, and the prototype (`reference/caspa-strategy-landing-prototype.html`) the same day. Built as v0.28.0. No contract change (v1.20).
+Sources: the *CASPA™ Corporate Values Specification v0.1* (a doc in the Project's chats); Elijah accepted CV-1 to CV-8 as recommended on 18 November 2026, and approved the prototype (`reference/caspa-values-prototype.html`) the same day. Built as v0.29.0. Contract v1.21, fields only.
 
-- **SL-1, open to every member.** Strategy is in every person's sidebar (`workspacesFor`) and its landing is read-only for them. Working in Strategy keeps the earlier rule, now `worksInStrategy` in `src/selectors/nav.ts` (Executive, Strategy office, Finance, facilitators, compliance, department heads while a plan is formed, a consultation's audience, communication writers): it decides the sub-menu entries, the Forming and Communication cards and the link to the Communication page. The four-entry cap (NV-9) is unaffected.
-- **The page, top to bottom.** The plan (title, period, "FY2026, year 5 of 5", status, confirmation); vision and mission when recorded; "Your part"; the goals; themes when the plan has any; then the Forming and Communication cards for those who work in Strategy (SL-6). The import door, plan setup and formation are unchanged.
-- **SL-2, grouping.** Goals sit under the organisation's perspectives in its order when it uses a scorecard, with "Other goals" last; otherwise one list in code order.
-- **Goal cards.** Code and title (linked to the record page), owner, the progress bar Home uses (same figure, expected-to-date mark), objective and KPI counts, and "Why it was chosen".
-- **SL-3, reasons.** As on record pages: in full, with the 4Q cell, for those who may read 4Q entries (`FourQEntry: view`); a count for everyone else; "No reason recorded" when there are none (BOOK-GOAL-NO-WHY).
-- **SL-4, vision and mission after publication.** When the active plan has neither, the Executive may record both once; they are saved as confirmed by the Executive (`VisionStatement` draft and confirm are both the Executive) and show to everyone. Later changes wait for plan revisions. The AI never drafts them (F1).
-- **SL-5, Your part.** For a signed contract this year: the goals its objectives serve, through their activity, share or breakdown, each linked. Nothing without a contract.
-- **SL-7, usability.** Tasks 6 (Strategy office: make the Head of Operations the owner of Collection efficiency) and 7 (employee: find which goal your work serves and how it is going) added to `#/usability`, same pass mark. Tasks 1 to 5 unchanged.
-- **Wording.** `lc` keeps acronyms such as "KPIs" as written inside sentences.
-- **Code.** `src/data/access/strategy-landing.ts` (`repo.strategyLanding`), `src/routes/StrategyLanding.tsx`; tests in `src/data/access/strategy-landing.test.ts`.
+- **CV-1, a list.** Each value has a name (up to 40 characters) and what it means (up to 300). Stored as a `VisionStatement` of kind `value`, with `name` and `order`; same permission row as the vision and mission (`view: all_members`, `draft` and `confirm`: Executive). The AI never drafts them (F1).
+- **CV-2, per plan, carried forward.** Each plan has its own values. In the forming vision step, while the plan has none saved, the active plan's values are offered as a starting point.
+- **CV-3, confirmed with the vision, optional.** Forming: confirming the vision (`vision.confirm`) confirms the values. Import: typed into the vision step and confirmed with the plan (O9).
+- **CV-4, limits.** Up to ten, none required, every value named and explained, no two names the same (`src/rules/values.ts`, `valuesError`).
+- **CV-5, after publication.** The landing offers the Executive "Record the vision, mission and values" when the plan has none, or "Record the values" when it has a vision or mission but no values; once each. Later changes wait for plan revisions.
+- **CV-6, personal attributes.** In HR's draft scoring policy, "Start from a value" copies a value's name and meaning into a new attribute; HR writes its five level descriptions. No link is stored. Values already named as an attribute are not offered.
+- **CV-7, STRUCT-PLAN-NO-VALUES.** Worth checking at plan confirmation for a formed plan with no values, to the Executive and Strategy office; never blocking. Imported plans are not checked.
+- **CV-8, where values show.** Beneath the vision and mission on the Strategy landing, in two columns; in both vision steps; in the consultation room; and after the mission in the plan document.
+- **Sample data.** Unlike the specification's note, no sample plan is seeded with values: no sample plan has a vision either, so the landing's record form and the vision steps start empty.
+- **Code.** `src/rules/values.ts`; `src/data/access/values.ts` (one helper that saves a plan's list, used by forming, import and the landing); `src/routes/ValueList.tsx` (the editor and the read-only list). Tests in `src/data/access/values.test.ts`, with two assertions added to `onboarding.test.ts`.

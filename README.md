@@ -3,7 +3,7 @@
 The strategy execution system of Karislabs Technologies. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` first (standing
 rules and the open slice), then `NEXT.md` (work in progress). Earlier decisions are in `DECISIONS-ARCHIVE.md`,
-with their section numbers unchanged. The data contract is v1.20.
+with their section numbers unchanged. The data contract is v1.21.
 
 ## Run
 
@@ -59,8 +59,18 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (903 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (909 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Corporate values (v0.29.0)
+
+- 18 November 2026. BUILD-BRIEF section 53; *CASPA™ Corporate Values Specification v0.1*; prototype
+  `reference/caspa-values-prototype.html`. Contract v1.21, fields only. 909 tests (6 new in `src/data/access/values.test.ts`; the import-door test checks values too).
+- Each plan can hold up to ten corporate values, each a name and what it means, beside its vision and mission. They show on
+  the Strategy landing, in both vision steps, in the consultation room and in the plan document. HR can start a personal
+  attribute from a value.
+- Try it (Sample Water Utility): as Executive, open Strategy, "Record the vision, mission and values", add and reorder a few
+  values and save; view as anyone. As HR, open Performance › Reviews › Scoring policy and use "Start from a value".
 
 ## Strategy landing (v0.28.0)
 
