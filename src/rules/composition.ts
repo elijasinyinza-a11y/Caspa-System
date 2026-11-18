@@ -9,6 +9,7 @@
  * - Checks at plan confirmation (D11d-8, D11d-10): risks and failure factors no goal or objective addresses, goals
  *   with no confirmed objective, and indicative costs above the resource envelope (D11d-7), all worth checking.
  */
+import { valuesOf } from './values';
 import type { DraftMeta, Finding, FourQCell, FourQEntry, GateCode, Id, StrategicPlan } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { en } from '../strings/en';
@@ -122,7 +123,7 @@ export function envelopeChecks(s: Store, plan: StrategicPlan): EnvelopeCheck[] {
 export function compositionFindings(s: Store, plan: StrategicPlan): Finding[] {
   const out: Finding[] = [];
   const terms = s.organisation.termLabels;
-  const push = (rule: 'riskUnaddressed' | 'goalNoObjective' | 'envelopeExceeded', subject: { type: string; id: string }, message: string, route: (string | null | undefined)[]) => {
+  const push = (rule: 'riskUnaddressed' | 'goalNoObjective' | 'envelopeExceeded' | 'planNoValues', subject: { type: string; id: string }, message: string, route: (string | null | undefined)[]) => {
     const r = RULES[rule];
     const key = `${r.id}:${subject.type}:${subject.id}`;
     if (out.some((f) => f.key === key)) return;
@@ -138,6 +139,13 @@ export function compositionFindings(s: Store, plan: StrategicPlan): Finding[] {
     const g = c.goalId ? s.goals.find((x) => x.id === c.goalId) : undefined;
     if (g) push('envelopeExceeded', { type: 'Goal', id: g.id }, en.findings.envelopeExceeded(terms, g.code, g.title), [g.ownerPositionId]);
     else push('envelopeExceeded', { type: 'StrategicPlan', id: plan.id }, en.findings.planEnvelopeExceeded(plan.title), [plan.processOwnerPositionId]);
+  }
+  // v0.29.0 (CV-7): a formed plan with no corporate values, to the Executive and the Strategy office.
+  if (plan.entryDoor === 'formed' && valuesOf(s.visionStatements, plan.id).length === 0) {
+    const executives = s.memberships
+      .filter((m) => m.status === 'active' && m.roles.includes('executive'))
+      .flatMap((m) => s.assignments.filter((x) => x.personId === m.personId && x.to === null).map((x) => x.positionId as string));
+    push('planNoValues', { type: 'StrategicPlan', id: plan.id }, en.findings.planNoValues(plan.title), [plan.processOwnerPositionId, ...executives]);
   }
   return out;
 }

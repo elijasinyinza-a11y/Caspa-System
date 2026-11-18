@@ -304,6 +304,8 @@ export const SAMPLE_EXPLANATIONS: Record<string, string> = {
     "Your organisation's plan-size guide suggests a limit on how many measures one objective carries, because a long list is hard to report on and to act on. This is only worth checking: keep them all if each one is needed, or mark it as checked with your reason.",
   [RULES.kpiManyActivities.id]:
     "Your organisation's plan-size guide suggests a limit on how many activities sit under one KPI. Many small activities can be hard to fund, assign and track. This is only worth checking: combine them if that helps, or mark it as checked with your reason.",
+  [RULES.planNoValues.id]:
+    "This plan was formed without corporate values. Values are optional, but most plans state them beside the vision and mission. The Executive can add them in the vision step before confirming, or mark this as checked with a reason.",
   [RULES.activityTargetBelowSigned.id]:
     "This activity's quantity target was lowered below what people have already signed for in their contracts. Their contracts stay as signed. Check whether those commitments should be revised through a contract revision, or mark it as checked with your reason.",
   [RULES.commitmentActivityStopped.id]:

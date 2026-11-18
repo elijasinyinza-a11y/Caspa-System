@@ -25,6 +25,8 @@ export const RULES = {
   // Part 11d (D11d-8): checks at plan confirmation for a formed plan, computed by src/rules/composition.ts.
   riskUnaddressed: { id: 'STRUCT-4Q-RISK-UNADDRESSED', source: 'structural', description: 'A critical failure factor or predicted future risk is not addressed by any goal or objective', blocksAt: [] },
   goalNoObjective: { id: 'STRUCT-GOAL-NO-OBJECTIVE', source: 'structural', description: 'Goal has no accepted objective', blocksAt: [] },
+  // v0.29.0 (CV-7): a formed plan confirmed without corporate values; worth checking only, never blocking.
+  planNoValues: { id: 'STRUCT-PLAN-NO-VALUES', source: 'structural', description: 'Plan has no corporate values recorded', blocksAt: [] },
   // v0.26.0 (contract v1.20): the plan-size guide, set by HR, off by default; worth checking only, never blocking.
   objectiveManyKpis: { id: 'GUIDE-OBJECTIVE-MANY-KPIS', source: 'structural', description: 'Objective has more KPIs than the plan-size guide suggests', blocksAt: [] },
   kpiManyActivities: { id: 'GUIDE-KPI-MANY-ACTIVITIES', source: 'structural', description: 'KPI has more activities than the plan-size guide suggests', blocksAt: [] },
