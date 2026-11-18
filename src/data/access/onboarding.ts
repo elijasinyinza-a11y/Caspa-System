@@ -6,6 +6,8 @@
  * elsewhere until the Executive confirms it. Permissions follow the matrix: the Strategy office or a facilitator
  * drafts (O1), the Executive confirms and types the vision and mission (O9), the Strategy office publishes (O5).
  */
+import { valueInputs, valuesError, type ValueInput } from '../../rules/values';
+import { saveValues } from './values';
 import type {
   Activity, AuditEntry, BaselineMeasure, DraftMeta, GateEvent, Goal, Id, ISODate, ISODateTime, Kpi, KpiTarget, Objective, PerspectiveKey, SixPLevel,
   SourceDocument, AiTask, StrategicPlan, VisionStatement,
@@ -129,6 +131,8 @@ export interface OnboardingPage {
   noVisionOrMission: boolean;
   vision: string;
   mission: string;
+  /** v0.29.0: corporate values typed in at import (contract v1.21). */
+  values: ValueInput[];
   sheet: { rows: number; goals: number; objectives: number; kpis: number; activities: number } | null;
   ai: { fileName: string } | null;
   positions: { id: string; label: string; holder: string | null }[];
@@ -144,7 +148,7 @@ export interface ItemInput {
   title?: string; ownerPositionId?: string | null; perspective?: PerspectiveKey | null;
   baseline?: number | null; target?: number | null; level?: SixPLevel | null; quantity?: number | null; quantityUnit?: string;
 }
-export type OnboardingError = 'not_allowed' | 'not_found' | 'not_draft' | 'not_ready' | 'board_required' | 'same_person' | 'not_active' | 'blocked' | 'period';
+export type OnboardingError = 'not_allowed' | 'not_found' | 'not_draft' | 'not_ready' | 'board_required' | 'same_person' | 'not_active' | 'blocked' | 'period' | 'values';
 export type OnboardingResult<T = object> = ({ ok: true } & T) | { ok: false; error: OnboardingError; detail?: unknown };
 
 export interface OnboardingAccess {
@@ -160,6 +164,8 @@ export interface OnboardingAccess {
   validateBaseline(kpiId: string): OnboardingResult;
   validateAllBaselines(): OnboardingResult<{ count: number }>;
   saveVision(kind: 'vision' | 'mission', text: string): OnboardingResult;
+  /** v0.29.0: the imported plan's corporate values, typed in; confirmed with the plan (CV-3). */
+  saveValues(values: ValueInput[]): OnboardingResult;
   send(): OnboardingResult;
   confirm(board: { resolutionRef: string; date: ISODate } | null): OnboardingResult;
   publish(): OnboardingResult<{ blocking: number }>;
@@ -341,7 +347,7 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
       worth: (checks?.worth ?? []).map((f) => ({ key: f.key, message: f.message })),
       publishBlocks: (checks?.publishBlocks ?? []).map((f) => ({ key: f.key, message: f.message, subject: f.subject })),
       noVisionOrMission: checks?.noVisionOrMission ?? false,
-      vision: vs('vision'), mission: vs('mission'),
+      vision: vs('vision'), mission: vs('mission'), values: p ? valueInputs(s.visionStatements, p.id) : [],
       sheet: p && p.status === 'draft' ? n.sheet : null,
       ai: p && p.status === 'draft' ? n.ai : null,
       positions: s.positions.map((x) => ({ id: x.id, label: labelOf(x.id), holder: holderOf(x.id) })),
@@ -579,6 +585,16 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
         s.visionStatements.push(nv);
         audit('create', { type: 'VisionStatement', id: nv.id }, null, nv);
       }
+      changed();
+      return { ok: true };
+    },
+
+    saveValues(values) {
+      const p = draftPlan();
+      if (!isExecutive) return deny();
+      if (!p) return deny('not_draft');
+      if (valuesError(values)) return deny('values');
+      saveValues(s, p.id, values, stamp, audit);
       changed();
       return { ok: true };
     },

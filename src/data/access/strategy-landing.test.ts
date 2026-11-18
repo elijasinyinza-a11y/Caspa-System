@@ -59,15 +59,15 @@ describe('the landing', () => {
 describe('recording the vision and mission (SL-4)', () => {
   it('only the Executive, only when none are recorded, and then everyone sees them', () => {
     const { as, org } = setup();
-    expect(as('strategy').strategyLanding.landing()!.canRecord).toBe(false);
+    expect(as('strategy').strategyLanding.landing()!.canRecord).toBeNull();
     expect(as('strategy').strategyLanding.recordStatements('V', 'M')).toEqual({ ok: false, error: 'not_allowed' });
     const exec = as('executive').strategyLanding;
-    expect(exec.landing()!.canRecord).toBe(true);
+    expect(exec.landing()!.canRecord).toBe('all');
     expect(exec.recordStatements('Safe water for every household', ' ')).toEqual({ ok: false, error: 'text_required' });
     expect(exec.recordStatements('Safe water for every household', 'We supply and treat water')).toEqual({ ok: true });
     const seen = as('employee').strategyLanding.landing()!.statements;
-    expect(seen).toEqual({ vision: 'Safe water for every household', mission: 'We supply and treat water', recorded: { by: 'Chanda Mulenga', on: NOW } });
-    expect(as('executive').strategyLanding.landing()!.canRecord).toBe(false);
+    expect(seen).toEqual({ vision: 'Safe water for every household', mission: 'We supply and treat water', values: [], recorded: { by: 'Chanda Mulenga', on: NOW } });
+    expect(as('executive').strategyLanding.landing()!.canRecord).toBe('values'); // CV-5: values may still be added once
     expect(as('executive').strategyLanding.recordStatements('Again', 'Again')).toEqual({ ok: false, error: 'already_recorded' });
     expect(org.store.auditEntries.filter((e) => e.entity.type === 'VisionStatement' && e.action === 'confirm')).toHaveLength(2);
   });

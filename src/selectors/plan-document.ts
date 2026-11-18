@@ -5,6 +5,7 @@
  * The layout (which parts appear, in what order, under which headings) is kept here, in one place, so a document
  * template can later replace it without touching the content or the rules (section 35, later item).
  */
+import { valueInputs, type ValueInput } from '../rules/values';
 import type { FourQCell, StrategicPlan } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { kpiBaseline } from '../rules/baseline';
@@ -27,6 +28,8 @@ export const holdsFigure = (text: string, names: readonly string[] = []) =>
 export interface PlanDocumentContent {
   vision: string;
   mission: string;
+  /** v0.29.0: the confirmed corporate values, in order. */
+  values: ValueInput[];
   years: string[];
   /** The accepted cards of the organisation's 4Q board, by band and section. `cards` is null where they may not be read. */
   where: { band: string; sections: { name: string; cards: string[] | null; count: number }[] }[];
@@ -52,7 +55,7 @@ export function planDocumentContent(s: Store, plan: StrategicPlan, seesCard: (id
   const board = organisationSheet(s, plan.id).filter(isAccepted);
   const bands = [...new Set(CELLS.map((c) => c.band))];
   return {
-    vision, mission,
+    vision, mission, values: valueInputs(s.visionStatements.filter((x) => x.confirmation), plan.id),
     years: years.map((fy) => formatFinancialYear(fy, s.organisation.financialYearStartMonth)),
     where: bands.map((band) => ({
       band: en.fourQ.band[band],

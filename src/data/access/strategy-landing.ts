@@ -7,6 +7,8 @@
  * (`nodeView`'s strategy section), owners as record pages (`holderOf`). Everything shown is readable by all members
  * under the contract's matrix, except reasons, which follow `FourQEntry: view` (SL-3). No contract change.
  */
+import { valueInputs, valuesError, valuesOf, type ValueInput, type ValuesError } from '../../rules/values';
+import { saveValues } from './values';
 import type { FinancialYear, Goal, Id, ISODate, ISODateTime, VisionStatement } from '../../contract/caspa-data-contract';
 import { expectedToDate, goalProgress, type RollUp } from '../../rules/kpi-progress';
 import { goalOfActivity, objectiveOfKpi } from '../../rules/structure';
@@ -38,9 +40,12 @@ export interface StrategyLanding {
     year: { label: string; n: number; of: number } | null;
     confirmed: { by: string; on: ISODate; ref: string | null } | null;
   };
-  statements: { vision: string | null; mission: string | null; recorded: { by: string; on: ISODate } | null };
-  /** SL-4: the Executive, while the active plan has neither statement. */
-  canRecord: boolean;
+  statements: { vision: string | null; mission: string | null; values: ValueInput[]; recorded: { by: string; on: ISODate } | null };
+  /**
+   * What the Executive may record once (SL-4, CV-5): everything while the plan has no statements, the values alone
+   * while it has a vision or mission but no values, otherwise nothing.
+   */
+  canRecord: 'all' | 'values' | null;
   /** SL-5: the goals the viewer's signed commitments serve this year; null without a signed contract. */
   yourPart: NodeRef[] | null;
   /** SL-2: by perspective, in the organisation's order, when it uses a scorecard; otherwise one group with no label. */
@@ -50,13 +55,15 @@ export interface StrategyLanding {
   themes: { id: string; title: string }[];
 }
 
-export type RecordStatementsError = 'not_allowed' | 'already_recorded' | 'no_plan' | 'text_required';
+export type RecordStatementsError = 'not_allowed' | 'already_recorded' | 'no_plan' | 'text_required' | ValuesError;
 
 export interface StrategyLandingAccess {
   /** The landing for the active plan, limited to this viewer; null when there is no active plan. */
   landing(): StrategyLanding | null;
-  /** SL-4: the Executive records the vision and mission once, confirmed as saved. Later changes go through a plan revision. */
-  recordStatements(vision: string, mission: string): { ok: true } | { ok: false; error: RecordStatementsError };
+  /** SL-4, CV-5: the Executive records the vision, mission and any values once, confirmed as saved. Later changes go through a plan revision. */
+  recordStatements(vision: string, mission: string, values?: ValueInput[]): { ok: true } | { ok: false; error: RecordStatementsError };
+  /** CV-5: the Executive adds values once to a plan that has a vision or mission but no values. */
+  recordValues(values: ValueInput[]): { ok: true } | { ok: false; error: RecordStatementsError };
 }
 
 const byCode = (a: { code: string }, b: { code: string }) => a.code.localeCompare(b.code, 'en-GB', { numeric: true });
@@ -68,7 +75,9 @@ export function createStrategyLandingAccess(c: Ctx): StrategyLandingAccess {
   const active = () => s.plans.find((p) => p.status === 'active');
   const person = (membershipId: string) => s.people.find((p) => p.id === s.memberships.find((m) => m.id === membershipId)?.personId)?.fullName ?? '';
   const on = (at: string) => dateInZone(at, s.organisation.timeZone);
-  const statementsOf = (planId: string) => s.visionStatements.filter((x) => x.planId === planId && x.text.trim() !== '');
+  const statementsOf = (planId: string) => s.visionStatements.filter((x) => x.planId === planId && x.kind !== 'value' && x.text.trim() !== '');
+  const audit = (action: string, entity: { type: string; id: string }, before: unknown, after: unknown) =>
+    s.auditEntries.push({ id: `au-${s.auditEntries.length + 1}` as never, orgId: s.organisation.id, at: c.clock(), actorMembershipId: v.membershipId, action, entity, before, after });
 
   /** The goal behind a contract objective: through its activity, or through the share or breakdown it comes from. */
   const goalOfObjective = (co: Store['contractObjectives'][number]): Goal | undefined => {
@@ -111,7 +120,8 @@ export function createStrategyLandingAccess(c: Ctx): StrategyLandingAccess {
       const st = statementsOf(p.id);
       const vision = st.find((x) => x.kind === 'vision') ?? null;
       const mission = st.find((x) => x.kind === 'mission') ?? null;
-      const stamp = (vision ?? mission)?.confirmation ?? null;
+      const values = valuesOf(s.visionStatements, p.id);
+      const stamp = (vision ?? mission ?? values[0])?.confirmation ?? null;
 
       // SL-5: signed contracts this year held by the viewer, through any of their positions.
       const mine = s.contracts.filter((x) => x.financialYear === fy && x.status === 'signed' && (x.personId === v.personId || v.positionIds.includes(x.positionId)));
@@ -129,8 +139,8 @@ export function createStrategyLandingAccess(c: Ctx): StrategyLandingAccess {
           year: inPlan ? { label: formatFinancialYear(fy, start), n: fy - p.startYear + 1, of: p.endYear - p.startYear + 1 } : null,
           confirmed: p.confirmation ? { by: person(p.confirmation.byMembershipId), on: on(p.confirmation.at), ref: p.boardApproval?.resolutionRef ?? null } : null,
         },
-        statements: { vision: vision?.text ?? null, mission: mission?.text ?? null, recorded: stamp ? { by: person(stamp.byMembershipId), on: on(stamp.at) } : null },
-        canRecord: isExecutive && st.length === 0,
+        statements: { vision: vision?.text ?? null, mission: mission?.text ?? null, values: valueInputs(s.visionStatements, p.id), recorded: stamp ? { by: person(stamp.byMembershipId), on: on(stamp.at) } : null },
+        canRecord: !isExecutive ? null : st.length === 0 && values.length === 0 ? 'all' : values.length === 0 ? 'values' : null,
         yourPart: mine.length ? [...served.values()].sort(byCode) : null,
         groups,
         expected: expectedToDate(fy, start, now),
@@ -138,12 +148,27 @@ export function createStrategyLandingAccess(c: Ctx): StrategyLandingAccess {
       };
     },
 
-    recordStatements(vision, mission) {
+    recordValues(values) {
       const p = active();
       if (!p) return { ok: false, error: 'no_plan' };
       if (!isExecutive || !can(s, v, 'draft', { type: 'VisionStatement', id: p.id })) return { ok: false, error: 'not_allowed' };
-      if (statementsOf(p.id).length) return { ok: false, error: 'already_recorded' };
+      if (valuesOf(s.visionStatements, p.id).length) return { ok: false, error: 'already_recorded' };
+      if (!values.length) return { ok: false, error: 'name_required' };
+      const err = valuesError(values);
+      if (err) return { ok: false, error: err };
+      saveValues(s, p.id, values, () => ({ at: c.clock(), byMembershipId: v.membershipId }), audit, true);
+      c.changed();
+      return { ok: true };
+    },
+
+    recordStatements(vision, mission, values = []) {
+      const p = active();
+      if (!p) return { ok: false, error: 'no_plan' };
+      if (!isExecutive || !can(s, v, 'draft', { type: 'VisionStatement', id: p.id })) return { ok: false, error: 'not_allowed' };
+      if (statementsOf(p.id).length || valuesOf(s.visionStatements, p.id).length) return { ok: false, error: 'already_recorded' };
       if (!vision.trim() || !mission.trim()) return { ok: false, error: 'text_required' };
+      const verr = valuesError(values);
+      if (verr) return { ok: false, error: verr };
       const stamp = { at: c.clock(), byMembershipId: v.membershipId };
       for (const [kind, text] of [['vision', vision], ['mission', mission]] as const) {
         const old = s.visionStatements.find((x) => x.planId === p.id && x.kind === kind);
@@ -153,6 +178,7 @@ export function createStrategyLandingAccess(c: Ctx): StrategyLandingAccess {
         if (old) Object.assign(old, rec); else s.visionStatements.push(rec);
         s.auditEntries.push({ id: `au-${s.auditEntries.length + 1}` as never, orgId: s.organisation.id, at: stamp.at, actorMembershipId: v.membershipId, action: 'confirm', entity: { type: 'VisionStatement', id: rec.id }, before: null, after: { kind, text: rec.text, afterPublication: true } });
       }
+      if (values.length) saveValues(s, p.id, values, () => stamp, audit, true);
       c.changed();
       return { ok: true };
     },

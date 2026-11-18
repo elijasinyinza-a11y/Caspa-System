@@ -7,6 +7,8 @@
  * - VisionStatement: written and confirmed by the Executive only, always by hand (the AI never drafts it); seen by all.
  * Every AI call is logged as an AiTask; every AI-produced card is a draft until a person accepts or corrects it.
  */
+import { valueInputs, valuesError, valuesOf, type ValueInput } from '../../rules/values';
+import { saveValues } from './values';
 import type { AiTask, AuditEntry, DraftMeta, FourQCell, FourQEntry, GateEvent, Id, ISODate, ISODateTime, SixPLevel, SourceDocument, StrategicPlan, VisionStatement } from '../../contract/caspa-data-contract';
 import { aiStub, type AiDraft } from '../../ai';
 import {
@@ -95,6 +97,9 @@ export interface ConceptionPage {
   vision: {
     vision: string;
     mission: string;
+    /** v0.29.0 (contract v1.21): corporate values in order, and the active plan's to start from (CV-2). */
+    values: ValueInput[];
+    carried: ValueInput[];
     confirmed: { by: string; on: ISODate } | null;
     canWrite: boolean;
     /** Writing opens when every section of the organisation sheet has an accepted card. */
@@ -103,7 +108,7 @@ export interface ConceptionPage {
   };
 }
 
-export type ConceptionError = 'not_allowed' | 'not_found' | 'required' | 'ai_off' | 'not_ready' | 'locked' | 'same_cell' | 'no_level' | 'closed' | 'cell' | RemoveRefusal;
+export type ConceptionError = 'not_allowed' | 'not_found' | 'required' | 'ai_off' | 'not_ready' | 'locked' | 'same_cell' | 'no_level' | 'closed' | 'cell' | 'values' | RemoveRefusal;
 
 /** v1.19: a group's 4Q flip chart, for its scribe. */
 export interface FlipChartPage {
@@ -133,7 +138,8 @@ export interface ConceptionAccess {
   merge(keepId: string, mergeId: string): ConceptionResult;
   keepSeparate(aId: string, bId: string): ConceptionResult;
   summarise(): Promise<ConceptionResult<{ draft: AiDraft }>>;
-  saveVision(input: { vision: string; mission: string }): ConceptionResult;
+  /** v0.29.0: `values`, when given, replaces the plan's corporate values (CV-1 to CV-4). */
+  saveVision(input: { vision: string; mission: string; values?: ValueInput[] }): ConceptionResult;
   confirmVision(): ConceptionResult<{ outcome: GateEvent['outcome']; checks: VisionMust[] }>;
   /** v0.24.0 (A): set or clear where a critical failure factor's cause sits. */
   setCauseLevel(cardId: string, level: SixPLevel | null): ConceptionResult;
@@ -357,6 +363,10 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       })) : [],
       vision: {
         vision: vision?.text ?? '', mission: visionOf(p, 'mission')?.text ?? '',
+        // v0.29.0: the plan's values, or the active plan's as a starting point while none are saved (CV-2).
+        values: valueInputs(s.visionStatements, p.id),
+        carried: !vision?.confirmation && valuesOf(s.visionStatements, p.id).length === 0
+          ? valueInputs(s.visionStatements, s.plans.find((x) => x.status === 'active' && x.id !== p.id)?.id ?? '') : [],
         confirmed: vision?.confirmation ? { by: personOf(vision.confirmation.byMembershipId), on: dateInZone(vision.confirmation.at, tz) } : null,
         canWrite: can(s, viewer, 'draft', { type: 'VisionStatement', id: '' }) && !vision?.confirmation,
         open: filled === CELLS.length,
@@ -695,6 +705,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       if (!can(s, viewer, 'draft', { type: 'VisionStatement', id: '' })) return deny();
       if (visionOf(p, 'vision')?.confirmation) return deny('locked');
       if (filledCells(s, p.id).length < CELLS.length) return deny('not_ready');
+      if (input.values && valuesError(input.values)) return deny('values');
       for (const kind of ['vision', 'mission'] as const) {
         const text = input[kind].trim();
         const v = visionOf(p, kind);
@@ -711,6 +722,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
           audit('create', { type: 'VisionStatement', id: nv.id }, null, structuredClone(nv));
         }
       }
+      if (input.values) saveValues(s, p.id, input.values, stamp, audit);
       changed();
       return { ok: true };
     },

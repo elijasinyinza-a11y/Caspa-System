@@ -11,6 +11,7 @@
  *   department heads for their area; reviewed by the compliance officer only.
  * Every AI call is logged as an AiTask; every AI-drafted baseline is a draft until a person accepts or corrects it.
  */
+import { valueInputs, type ValueInput } from '../../rules/values';
 import type {
   AiTask, AuditEntry, BaselineMeasure, ComplianceItem, ConsultationInput, ConsultationRound, DraftMeta, Id, ISODate, ISODateTime, Provenance, StrategicPlan,
 } from '../../contract/caspa-data-contract';
@@ -71,7 +72,7 @@ export interface RoomPage {
   /** Units a department head may record a section meeting for: their departments and every unit below. */
   meetingUnits: { id: string; name: string }[];
   /** The vision as confirmed by leadership; shown at Consultation only once confirmed (prototype). */
-  vision: { vision: string; mission: string } | null;
+  vision: { vision: string; mission: string; values: ValueInput[] } | null;
   minGroup: number;
   /** For choosing a round's audience. */
   units: { id: string; name: string; parent: string | null }[];
@@ -323,7 +324,7 @@ export function createConsultationAccess(ctx: Ctx): ConsultationAccess {
         inputs: sees && r ? [...inputsOf(s, r.id)].reverse().map(inputView) : [],
         canComment: p.status === 'draft' && !!r && open && inAudience(s, r, viewer.positionIds as string[]),
         meetingUnits: open ? meetingUnits() : [],
-        vision: vision?.confirmation ? { vision: vision.text, mission: mission?.confirmation ? mission.text : '' } : null,
+        vision: vision?.confirmation ? { vision: vision.text, mission: mission?.confirmation ? mission.text : '', values: valueInputs(s.visionStatements.filter((x) => x.confirmation), p.id) } : null,
         minGroup: s.organisation.settings.consultationMinGroupSize,
         units: runs ? s.units.map((u) => ({ id: u.id as string, name: u.name, parent: u.parentId ? unitName(u.parentId) : null })) : [],
       };

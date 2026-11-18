@@ -99,6 +99,10 @@ describe('the import door, end to end, from the plan document', () => {
     const exec = r.as('executive').onboarding;
     expect(exec.saveVision('vision', 'A trusted organisation that serves every region well.')).toEqual({ ok: true });
     expect(exec.saveVision('mission', 'We deliver reliable services through capable people.')).toEqual({ ok: true });
+    // v0.29.0 (CV-3): values typed in by the Executive only; confirmed with the plan below.
+    expect(s.saveValues([{ name: 'Integrity', text: 'We do what we say.' }])).toMatchObject({ ok: false, error: 'not_allowed' });
+    expect(exec.saveValues([{ name: 'Integrity', text: 'We do what we say.' }, { name: 'Service', text: 'We put the people we serve first.' }])).toEqual({ ok: true });
+    expect(exec.page().values.map((v) => v.name)).toEqual(['Integrity', 'Service']);
     expect(exec.page().noVisionOrMission).toBe(false);
 
     // The Executive cannot confirm before it is sent; the Strategy office sends; it reaches the Executive's "Needs you".
