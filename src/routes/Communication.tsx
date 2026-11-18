@@ -3,6 +3,7 @@
  * (#/communication), the record on each goal's page under "Why this matters", the board paper (#/board-paper/<goalId>),
  * and the "Our strategic plan" card on Home. Everything shown comes from the data-access layer; nothing is computed here.
  */
+import { worksInStrategy } from '../selectors/nav';
 import { useEffect, useId, useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
@@ -111,7 +112,7 @@ function GoalRow({ g, goalLabel, startOpen }: { g: CommunicationGoalView; goalLa
 /* ───────── One goal's record: the page row and the goal's record page share it ───────── */
 
 export function GoalCommunication({ g, onGoalPage = false }: { g: CommunicationGoalView; onGoalPage?: boolean }) {
-  const reachesPage = useApp().repo.workspaces().includes('strategy');
+  const reachesPage = worksInStrategy(useApp().repo.viewer);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);

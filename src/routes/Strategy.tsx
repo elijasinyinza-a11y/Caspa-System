@@ -17,6 +17,8 @@ import { FormingPage, NextPlanCard, PlanDocumentEntry, RegistersPage } from './F
 import { EntryRow } from '../components/SubMenu';
 import type { FormingStage, StrategyEntry } from '../selectors/nav';
 import { CommunicationCard, CommunicationPage } from './Communication';
+import { StrategyLanding } from './StrategyLanding';
+import { worksInStrategy } from '../selectors/nav';
 
 const O = en.onboarding;
 
@@ -46,15 +48,18 @@ export function Strategy() {
       ) : page.plan.door === 'formed' && page.plan.status === 'draft' ? (
         // v0.26.0 (O6 lifted): a first plan formed through the five stages lives in Forming the next plan.
         <NextPlanCard />
-      ) : (
+      ) : page.plan.published ? (
         <>
-          <PlanView page={page} setNote={setNote} />
+          {/* v0.28.0 (SL-1 to SL-6): the strategy itself, for every member. */}
+          <StrategyLanding />
           {/* Part 11a: forming the next plan beside the running one; its pages are a sub-menu entry (NV-9). */}
-          {page.plan.published && <NextPlanCard />}
+          <NextPlanCard />
         </>
+      ) : (
+        <PlanView page={page} setNote={setNote} />
       )}
-      {/* Part 11e (D16-3): Communication does not depend on formation. */}
-      <CommunicationCard />
+      {/* Part 11e (D16-3): Communication does not depend on formation. Shown to those who work in Strategy (SL-6). */}
+      {worksInStrategy(repo.viewer) && <CommunicationCard />}
     </>
   );
 }
