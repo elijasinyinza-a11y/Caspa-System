@@ -59,8 +59,21 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (871 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (895 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## In-year cascade changes (v0.27.0)
+
+- 18 November 2026. BUILD-BRIEF section 51; *CASPA™ In-Year Cascade Changes Specification v0.1*; prototype
+  `reference/caspa-in-year-changes-prototype.html`. No contract change (v1.20). 895 tests (24 new, `src/data/access/in-year.test.ts`).
+- "Make a change" on goal, objective, KPI and activity pages, in the Cascade section, replaces "Change level". It lists only
+  the changes the viewer may make, shows "This will affect" before saving, and needs a reason. "Changes this year" follows.
+- Three new worth-checking checks: a target below what signed contracts carry, and a stopped activity behind a signed
+  commitment or a budget line.
+- Try it (Sample Water Utility): as Strategy office, open A1.2.1.3, Make a change, Change the quantity target to 300 and save;
+  the to-check count rises. As the KPI owner (Head of Operations) the same six choices appear; as the reviewer (Commercial
+  Manager, the activity's owner) only three. Open K1.1.1 and use "Assign owner" on its check. Stop A1.2.1.2 and find it under
+  "Show 1 stopped" in the Cascade tree.
 
 ## Small display fixes (v0.26.2)
 

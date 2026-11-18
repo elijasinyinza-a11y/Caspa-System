@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ In-Year Changes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: the CASPA™ shell (sidebar, top bar) around one record page; the change panel opens inside the Cascade section.
+   Tokens are CASPA™ design tokens (src/design/tokens.json). Light mode only in v1, so one palette, set explicitly. */
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84; --line:#EDECEA;
+  --panel:#223D56; --side-fg:#C8D1DB;
+  --st:#378ADD; --st-t:#1A5A9E;
+  --ca:#7C5CBF; --ca-t:#4A2D8F; --ca-l:#F2EEF9;
+  --pl:#B85C38; --pl-t:#8A3E22;
+  --pf:#C2417A; --pf-t:#9B2C63;
+  --blk:#B42318; --blk-l:#FEF3F2; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  --font:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--cream);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy);text-wrap:balance}
+h2{font-size:18px;margin:0;color:var(--navy)}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:13px} .xs{font-size:12px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:var(--white);padding:20px 12px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px}
+.mark{width:36px;height:36px;border-radius:8px;background:var(--white);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.brand b{display:block;font-size:16px}.brand span{font-size:12px;color:var(--side-fg)}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:var(--white);font-weight:600}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.sep{border-top:1px solid var(--panel);margin:10px 0}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--white);border-bottom:1px solid var(--border);padding-block:10px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.crumbs{flex:1 1 280px;color:var(--muted);font-size:13px;min-width:0}
+.crumbs b{color:var(--navy);font-weight:600}
+.checks{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.cnt{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;font-weight:700;font-size:12px;padding:0 6px}
+.c-blk{background:var(--blk);color:var(--white)} .c-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:var(--white);max-width:min(340px,70vw)}
+.content{padding-block:24px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));width:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.proto{background:var(--white);border:1px dashed var(--control);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.proto-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.entries{display:flex;gap:8px;flex-wrap:wrap}
+.entry{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--white);font-weight:600;cursor:pointer}
+.entry[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.head{border-top:4px solid var(--ca)}
+.eyebrow{font-size:13px;font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;color:var(--muted)}
+.meta strong{color:var(--text);font-weight:500}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-ca{background:var(--ca-l);color:var(--ca-t)} .t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)} .t-info{background:var(--info-l);color:var(--navy)}
+.sec{background:var(--white);border:1px solid var(--border);border-left:4px solid var(--ca);border-radius:12px}
+.sec[data-c="st"]{border-left-color:var(--st)} .sec[data-c="pl"]{border-left-color:var(--pl)} .sec[data-c="pf"]{border-left-color:var(--pf)}
+.sec-h{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;background:none;border:0;text-align:left;cursor:pointer;border-radius:12px}
+.sec-h .eyebrow{font-size:12px}
+.sec[data-c="st"] .eyebrow{color:var(--st-t)} .sec[data-c="ca"] .eyebrow{color:var(--ca-t)} .sec[data-c="pl"] .eyebrow{color:var(--pl-t)} .sec[data-c="pf"] .eyebrow{color:var(--pf-t)}
+.chev{width:20px;height:20px;flex:none;transition:transform .15s}
+.sec-h[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.sec-b{padding:0 20px 20px;display:flex;flex-direction:column;gap:16px}
+.levelbox{background:var(--ca-l);border-radius:8px;padding:12px 14px}
+.levelbox b{font-size:18px;color:var(--navy)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 24px}
+.lab{font-size:13px;color:var(--muted)}
+.bar{height:8px;background:var(--line);border-radius:999px;overflow:hidden;flex:1}
+.bar i{display:block;height:100%;background:var(--muted)}
+.barrow{display:flex;align-items:center;gap:16px}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-danger{background:var(--blk);border-color:var(--blk);color:var(--white)}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btn:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.link{background:none;border:0;padding:0;color:var(--navy);text-decoration:underline;text-underline-offset:3px;font-weight:600;cursor:pointer;min-height:44px}
+.panel{border:1px solid var(--control);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:16px;background:var(--white)}
+.choices{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.choice{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--white);cursor:pointer;min-height:56px}
+.choice b{color:var(--navy)}
+.choice[aria-pressed="true"]{border:2px solid var(--navy);padding:11px 13px;background:var(--cream)}
+.choice.stop b{color:var(--blk)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;color:var(--navy)}
+.field input,.field textarea,.field select{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:10px 12px;background:var(--white);width:100%}
+.field textarea{min-height:72px;resize:vertical}
+.hint{font-size:13px;color:var(--muted)}
+.err{font-size:13px;color:var(--blk);font-weight:600}
+.affect{border-radius:10px;background:var(--cream);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.affect h3{font-size:14px}
+.affect ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.affect li{display:flex;gap:10px;align-items:flex-start}
+.affect li::before{content:"";width:8px;height:8px;border-radius:2px;margin-top:6px;flex:none;background:var(--control)}
+.affect li.adv::before{background:var(--adv-b)}
+.toast{border:1px solid var(--ok-b);background:var(--ok-l);color:var(--ok);border-radius:10px;padding:12px 14px;font-weight:600}
+.banner{border:1px solid var(--adv-b);background:var(--adv-l);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.banner .row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.banner b{color:var(--adv)}
+.finding{background:var(--white);border:1px solid var(--adv-b);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.changes{list-style:none;margin:0;padding:0}
+.changes li{border-top:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:4px}
+.changes li:first-child{border-top:0}
+.changes .what{font-weight:600;color:var(--navy)}
+.tree{list-style:none;margin:0;padding:0}
+.tree li{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tree li:first-child{border-top:0}
+.tree .code{color:var(--muted);font-variant-numeric:tabular-nums;width:72px;flex:none}
+.tree .t{flex:1 1 220px;min-width:0}
+.tree li.stopped .t{color:var(--muted);text-decoration:line-through}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--border);padding-left:10px}
+@media (max-width:900px){.side{display:none}.top{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+</style>
+</head>
+<body style="margin:0">
+
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><div class="mark">C</div><div><b>CASPA™</b><span>Karislabs Technologies</span></div></div>
+    <div class="navbtn"><span class="dot" style="background:var(--white)"></span>Home</div>
+    <div class="navbtn"><span class="dot" style="background:var(--st)"></span>Strategy</div>
+    <div class="navbtn on"><span class="dot" style="background:var(--ca)"></span>Cascade</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pl)"></span>Plan</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pf)"></span>Performance</div>
+    <div class="sep"></div>
+    <div class="navbtn"><span class="dot" style="border:1.5px solid var(--side-fg)"></span>Organisation</div>
+  </nav>
+  <div class="main">
+    <header class="top">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="checks" id="checks"></div>
+      <label class="viewas" for="role">Viewing as
+        <select id="role">
+          <option value="strategy">Bwalya Musonda, Strategy and Planning Manager (Strategy office)</option>
+          <option value="objowner">Joseph Tembo, Head of Operations (owner of O1.2)</option>
+          <option value="actowner">Peter Mwansa, Commercial Manager (owner of A1.2.1.3)</option>
+          <option value="facilitator">Grace Mutale, consultant (facilitator)</option>
+          <option value="staff">Mary Chileshe, Meter Reader, Zone B</option>
+        </select>
+      </label>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+</div>
+
+<script>
+const TODAY = '18 October 2026';
+const POS = [
+  ['md','Managing Director','Chanda Mulenga'],['fin','Head of Finance','Ruth Phiri'],['hr','Human Resources Manager','Natasha Kabwe'],
+  ['spm','Strategy and Planning Manager','Bwalya Musonda'],['lco','Legal and Compliance Officer','Lillian Siame'],['hops','Head of Operations','Joseph Tembo'],
+  ['hcom','Head of Commercial',null],['cm','Commercial Manager','Peter Mwansa'],['co','Commercial Officer','Esther Banda'],
+  ['mra','Meter Reader, Zone A','Moses Lungu'],['mrb','Meter Reader, Zone B','Mary Chileshe'],['mrc','Meter Reader, Zone C','Daniel Sakala'],['bc','Billing Clerk','Agnes Mumba']];
+const ROLES = {
+  strategy:{name:'Bwalya Musonda',title:'Strategy and Planning Manager'}, objowner:{name:'Joseph Tembo',title:'Head of Operations'},
+  actowner:{name:'Peter Mwansa',title:'Commercial Manager'}, facilitator:{name:'Grace Mutale',title:'consultant (facilitator)'}, staff:{name:'Mary Chileshe',title:'Meter Reader, Zone B'}};
+const LEVELS = [['principle','Principle'],['process','Process'],['people','People'],['policy','Policy'],['procedure','Procedure'],['practices','Practices']];
+const FREQ = ['Monthly','Quarterly','Twice a year','Yearly'];
+const RECORDED = 620, CARRIED = 400;
+const COMMIT = 'Mary Chileshe’s signed commitment “Replace 400 faulty meters on route” is flagged as worth checking, for her and her supervisor Esther Banda. Her contract does not change.';
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const posOf = (id) => POS.find((p) => p[0] === id);
+const posLabel = (id) => { const p = posOf(id); return p ? (p[2] ? `${p[2]}, ${p[1]}` : `${p[1]} (vacant)`) : 'No owner yet'; };
+const levelName = (k) => LEVELS.find((l) => l[0] === k)[1];
+const fmt = (n) => n.toLocaleString('en-GB');
+
+let S;
+function fresh() {
+  S = { role: S?.role ?? 'strategy', screen: S?.screen ?? 'act',
+    act: { title:'Replace faulty customer meters', mov:'Meter replacement job cards matched to the customer register', freq:'Monthly', qty:1800, owner:'cm', status:'in_progress', level:'process' },
+    kpiOwner: null, objOwner: 'hcom', changes: { act:[], kpi:[], obj:[] }, flags: new Set(),
+    panel: null, toast: null, open: { act:'ca', kpi:'ca', obj:'ca' }, showStopped: false, findingOpen: true };
+}
+fresh();
+
+const upper = () => ['objowner','strategy','facilitator'].includes(S.role);
+function choicesFor(rec) {
+  const r = S.role, a = S.act;
+  if (rec === 'kpi') return r === 'strategy' ? ['owner'] : []; // objective owner of O1.1 is vacant in the sample
+  if (rec === 'obj') return r === 'strategy' ? ['owner'] : [];
+  if (a.status === 'stopped') return r === 'strategy' ? ['restart'] : [];
+  const any = upper() || r === 'actowner', c = [];
+  if (any) c.push('details');
+  if (upper()) c.push('qty', 'owner');
+  if (any) c.push('level', a.status === 'complete' ? 'reopen' : 'complete');
+  if (upper()) c.push('stop');
+  return c;
+}
+function choiceMeta(rec, k) {
+  const a = S.act;
+  const cur = rec === 'act' ? posLabel(a.owner) : rec === 'kpi' ? posLabel(S.kpiOwner) : posLabel(S.objOwner);
+  return {
+    details:['Correct the details','Title, means of verification or reporting frequency'],
+    qty:['Change the quantity target',`Now ${fmt(a.qty)} meters`],
+    owner:['Change the owner',`Now ${cur}`],
+    level:['Change the 6P decision level',`Now ${levelName(a.level)}`],
+    complete:['Mark complete','The work is finished'],
+    reopen:['Reopen','The work is not finished after all'],
+    stop:['Stop this activity','The work will not be done this year'],
+    restart:['Restart this activity','Bring it back into the cascade this year'],
+  }[k];
+}
+function draftFor(rec, k) {
+  const a = S.act;
+  if (k === 'details') return { title:a.title, mov:a.mov, freq:a.freq };
+  if (k === 'qty') return { qty:String(a.qty) };
+  if (k === 'owner') return { owner: rec === 'act' ? a.owner : rec === 'kpi' ? (S.kpiOwner ?? '') : S.objOwner };
+  if (k === 'level') return { level:a.level };
+  return {};
+}
+
+/** What a draft change would affect, whether it is ready, and whether it needs a reason. Pure over S. */
+function assess(p) {
+  const a = S.act, d = p.d, items = [], add = (t, tone) => items.push({ t, tone: tone || 'info' });
+  let valid = false, error = '', reason = true, flags = [];
+  const holder = (id) => { const x = posOf(id); return x ? (x[2] ? `${x[2]}, ${x[1]}` : null) : null; };
+  const ownerNote = (id, what) => { if (!id) return; const h = holder(id); if (h) add(`${h} sees ${what} on their Home and in Needs you.`); else add(`${posOf(id)[1]} is vacant, so nobody sees ${what} on their Home until the position is filled or someone acts in it.`, 'adv'); };
+  switch (p.choice) {
+    case 'details': {
+      const tChanged = d.title.trim() !== a.title, any = tChanged || d.mov.trim() !== a.mov || d.freq !== a.freq;
+      if (!d.title.trim()) error = 'Give the activity a title.'; else if (!d.mov.trim()) error = 'Say how the work will be verified.';
+      valid = any && !error;
+      if (tChanged) { add(COMMIT, 'adv'); flags.push('upstream'); } else add('No signed commitment is affected. Means of verification and reporting frequency are not part of what people signed.');
+      break; }
+    case 'qty': {
+      const v = Number(d.qty);
+      if (!/^\d+$/.test(d.qty.trim()) || v <= 0) error = 'Enter a whole number of meters above zero.';
+      valid = !error && v !== a.qty;
+      add(`Signed contracts carry ${fmt(CARRIED)} meters. Recorded so far: ${fmt(RECORDED)} meters, as of 30 June 2026.`);
+      if (valid) { add(COMMIT, 'adv'); flags.push('upstream'); }
+      if (valid && v < CARRIED) { add(`The new target is below the ${fmt(CARRIED)} meters signed contracts carry. Joseph Tembo, Head of Operations (objective owner), is flagged and may ask for the contract to be revised.`, 'adv'); flags.push('below'); }
+      break; }
+    case 'owner': {
+      const cur = p.rec === 'act' ? a.owner : p.rec === 'kpi' ? S.kpiOwner : S.objOwner;
+      valid = !!d.owner && d.owner !== cur;
+      if (p.rec === 'act') { add('Mary Chileshe keeps her signed commitment. Commitments stay with the people who signed them.'); add('The two budget lines stay linked to this activity.'); ownerNote(d.owner, 'this activity'); }
+      if (p.rec === 'kpi') { add('The “No owner yet” check clears.'); ownerNote(d.owner, 'this KPI'); }
+      if (p.rec === 'obj') ownerNote(d.owner, 'this objective and its KPI');
+      break; }
+    case 'level':
+      valid = d.level !== a.level;
+      if (valid) { add(COMMIT, 'adv'); flags.push('upstream'); } else add('Choose a different level.');
+      break;
+    case 'complete':
+      valid = true; reason = RECORDED < a.qty;
+      add(`${fmt(RECORDED)} of ${fmt(a.qty)} meters recorded, as of 30 June 2026.${reason ? ' Because that is below the target, a reason is needed.' : ''}`);
+      add('It counts as done for work that depends on it. No other work depends on it at present.');
+      add('No quantity or KPI reading is added. The completion figure stays as recorded.');
+      break;
+    case 'reopen':
+      valid = true; add('Work that depends on it no longer counts it as done. No other work depends on it at present.');
+      break;
+    case 'stop':
+      valid = true;
+      add(COMMIT, 'adv'); add('2 budget lines in the Commercial unit’s draft budget are flagged as worth checking, for the unit’s budget holder and Finance. Amounts are shown only to budget holders.', 'adv');
+      add('No other work depends on it.'); add('It leaves the cascade, goal and budget counts. Only the Strategy office can restart it.');
+      flags.push('stopC', 'stopB');
+      break;
+    case 'restart':
+      valid = true; add('It returns to the cascade, goal and budget counts.'); add('The two flags raised when it was stopped clear.');
+      break;
+  }
+  return { items, valid, error, reason, flags };
+}
+
+function save() {
+  const p = S.panel, A = assess(p), by = `${ROLES[S.role].name}, ${ROLES[S.role].title}`, reason = p.reason.trim(), a = S.act;
+  const log = (what, from, to) => S.changes[p.rec].unshift({ what, from, to, reason, by, on: TODAY });
+  let msg = '';
+  switch (p.choice) {
+    case 'details':
+      if (p.d.title.trim() !== a.title) log('Title', a.title, p.d.title.trim());
+      if (p.d.mov.trim() !== a.mov) log('Means of verification', a.mov, p.d.mov.trim());
+      if (p.d.freq !== a.freq) log('Reporting frequency', a.freq, p.d.freq);
+      Object.assign(a, { title:p.d.title.trim(), mov:p.d.mov.trim(), freq:p.d.freq }); msg = 'Saved. The details are corrected.'; break;
+    case 'qty': log('Quantity target', `${fmt(a.qty)} meters`, `${fmt(Number(p.d.qty))} meters`); a.qty = Number(p.d.qty);
+      if (a.qty >= CARRIED) S.flags.delete('below'); msg = `Saved. The target is now ${fmt(a.qty)} meters.`; break;
+    case 'owner': {
+      const cur = p.rec === 'act' ? a.owner : p.rec === 'kpi' ? S.kpiOwner : S.objOwner;
+      log('Owner', posLabel(cur), posLabel(p.d.owner));
+      if (p.rec === 'act') a.owner = p.d.owner; else if (p.rec === 'kpi') S.kpiOwner = p.d.owner; else S.objOwner = p.d.owner;
+      msg = `Saved. The owner is now ${posLabel(p.d.owner)}.`; break; }
+    case 'level': log('6P decision level', levelName(a.level), levelName(p.d.level)); a.level = p.d.level; msg = `Saved. The level is now ${levelName(a.level)}.`; break;
+    case 'complete': log('Status', 'In progress', 'Complete'); a.status = 'complete'; msg = 'Saved. The activity is marked complete.'; break;
+    case 'reopen': log('Status', 'Complete', 'In progress'); a.status = 'in_progress'; msg = 'Saved. The activity is reopened.'; break;
+    case 'stop': log('Status', a.status === 'complete' ? 'Complete' : 'In progress', 'Stopped'); a.status = 'stopped'; msg = 'Saved. The activity is stopped.'; break;
+    case 'restart': log('Status', 'Stopped', 'In progress'); a.status = 'in_progress'; S.flags.delete('stopC'); S.flags.delete('stopB'); msg = 'Saved. The activity is back in the cascade.'; break;
+  }
+  const before = S.flags.size; A.flags.forEach((f) => S.flags.add(f)); const n = S.flags.size - before;
+  if (n) msg += ` ${n} new worth-checking ${n === 1 ? 'flag' : 'flags'} raised.`;
+  S.toast = { rec: p.rec, msg }; S.panel = null; render();
+  document.getElementById('toast')?.focus();
+}
+
+/* ---------- rendering ---------- */
+const chev = '<svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+function section(rec, key, c, eyebrow, title, summary, body) {
+  const open = S.open[rec] === key;
+  return `<section class="sec" data-c="${c}"><button class="sec-h" data-sec="${rec}:${key}" aria-expanded="${open}">
+    <span><span class="eyebrow">${eyebrow}</span><h2>${title}</h2><span>${summary}</span></span>${chev}</button>
+    ${open ? `<div class="sec-b">${body}</div>` : ''}</section>`;
+}
+function changesList(rec) {
+  const L = S.changes[rec];
+  return `<div><h3>Changes this year</h3>${L.length ? `<ul class="changes">${L.map((c) => `<li><span class="what">${esc(c.what)}: ${esc(c.from)} → ${esc(c.to)}</span>
+    ${c.reason ? `<span>Reason: ${esc(c.reason)}</span>` : ''}<span class="xs muted">${esc(c.by)} · ${c.on}</span></li>`).join('')}</ul>` : '<p class="muted small" style="margin-top:6px">No changes this year.</p>'}</div>`;
+}
+function panelHtml(rec) {
+  const ch = choicesFor(rec);
+  if (!ch.length) return '';
+  const toast = S.toast?.rec === rec ? `<div class="toast" id="toast" tabindex="-1" role="status">${esc(S.toast.msg)}</div>` : '';
+  if (!S.panel || S.panel.rec !== rec) return `${toast}<div class="btns"><button class="btn" data-open="${rec}">Make a change</button></div>`;
+  const p = S.panel, A = p.choice ? assess(p) : null;
+  const choiceBtns = ch.length > 1 || !p.choice ? `<div class="choices" role="group" aria-label="What to change">${ch.map((k) => { const [l, s] = choiceMeta(rec, k);
+    return `<button class="choice ${k === 'stop' ? 'stop' : ''}" data-choice="${k}" aria-pressed="${p.choice === k}"><b>${l}</b><span class="small muted">${esc(s)}</span></button>`; }).join('')}</div>` : '';
+  let form = '';
+  if (p.choice === 'details') form = `<div class="field"><label for="f-title">Title</label><input id="f-title" data-d="title" value="${esc(p.d.title)}"></div>
+    <div class="field"><label for="f-mov">Means of verification</label><textarea id="f-mov" data-d="mov">${esc(p.d.mov)}</textarea></div>
+    <div class="field"><label for="f-freq">Reporting frequency</label><select id="f-freq" data-d="freq">${FREQ.map((f) => `<option${f === p.d.freq ? ' selected' : ''}>${f}</option>`).join('')}</select></div>`;
+  if (p.choice === 'qty') form = `<div class="field"><label for="f-qty">Quantity target, in meters</label><input id="f-qty" data-d="qty" inputmode="numeric" value="${esc(p.d.qty)}" style="max-width:220px"></div>`;
+  if (p.choice === 'owner') form = `<div class="field"><label for="f-owner">New owner</label><select id="f-owner" data-d="owner"><option value="">Choose a position</option>${POS.map(([id, t, n]) => `<option value="${id}"${id === p.d.owner ? ' selected' : ''}>${esc(t)}${n ? ' — ' + esc(n) : ' — vacant'}</option>`).join('')}</select>
+    <span class="hint">Positions own work, so it stays with the position when people move.</span></div>`;
+  if (p.choice === 'level') form = `<div class="field"><label for="f-level">6P decision level</label><select id="f-level" data-d="level">${LEVELS.map(([k, l]) => `<option value="${k}"${k === p.d.level ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`;
+  const affect = A ? `<div class="affect"><h3>This will affect</h3><ul>${A.items.map((i) => `<li class="${i.tone}">${esc(i.t)}</li>`).join('')}</ul></div>` : '';
+  const reasonBox = A && A.reason ? `<div class="field"><label for="f-reason">Reason</label><textarea id="f-reason" data-reason placeholder="Why is this change needed?">${esc(p.reason)}</textarea>
+    <span class="hint">Everyone who can see this record sees the reason in Changes this year.</span></div>` : '';
+  const ready = A && A.valid && (!A.reason || p.reason.trim());
+  const label = p.choice ? { stop:'Stop this activity', complete:'Mark complete', reopen:'Reopen', restart:'Restart' }[p.choice] || 'Save change' : 'Save change';
+  return `<div class="panel" aria-label="Make a change"><div><h3>Make a change</h3><p class="small muted">${ch.length === 1 ? 'You can change the owner here.' : 'Choose what to change. Only the changes you can make are listed.'}</p></div>
+    ${choiceBtns}${form}${A && A.error ? `<p class="err">${esc(A.error)}</p>` : ''}${affect}${reasonBox}
+    ${p.choice ? `<div class="btns"><button class="btn ${p.choice === 'stop' ? 'btn-danger' : 'btn-primary'}" data-save ${ready ? '' : 'disabled'}>${label}</button><button class="btn btn-quiet" data-cancel>Cancel</button></div>` : `<div class="btns"><button class="btn btn-quiet" data-cancel>Cancel</button></div>`}</div>`;
+}
+
+function renderAct() {
+  const a = S.act, st = a.status;
+  const chip = st === 'complete' ? '<span class="tag t-ok">Complete</span>' : st === 'stopped' ? '<span class="tag t-info">Stopped</span>' : '';
+  const pct = Math.min(100, Math.round(RECORDED / a.qty * 100));
+  const stoppedNote = st === 'stopped' && S.role !== 'strategy' ? '<p class="note">This activity is stopped. Only the Strategy office can restart it.</p>' : '';
+  const cascade = `<div class="levelbox"><span class="xs" style="color:var(--ca-t)">6P decision level</span><br><b>${levelName(a.level)}</b></div>
+    ${stoppedNote}${panelHtml('act')}
+    <p>Corrects: <u>Faulty and aged customer meters</u> (Process)</p>
+    <div class="grid2"><div><div class="lab">Means of verification</div><div>${esc(a.mov)}</div></div><div><div class="lab">Reporting</div><div>${esc(a.freq)}</div></div>
+    <div><div class="lab">Status</div><div>${st === 'complete' ? 'Complete' : st === 'stopped' ? 'Stopped' : 'In progress'}</div></div></div>
+    <div><h3 style="font-size:14px;margin-bottom:8px">Completion</h3><div class="barrow"><div class="bar"><i style="width:${pct}%"></i></div><b class="num">${pct}%</b></div>
+    <p class="small num" style="margin-top:6px">${fmt(RECORDED)} of ${fmt(a.qty)} meters, as of 30 June 2026</p></div>
+    ${changesList('act')}`;
+  return `<div class="card head"><span class="eyebrow" style="color:var(--ca-t)">Activity</span><h1>${esc(a.title)}</h1>
+    <div class="meta"><span>6P decision level <span class="tag t-ca">${levelName(a.level)}</span></span><span>Owned by <strong>${esc(posLabel(a.owner))}</strong></span><span class="num">A1.2.1.3</span>${chip}</div></div>
+    ${section('act','st','st','Strategy','Why this matters','Moves KPI “Non-revenue water”','<p>Serves objective O1.2 “Reduce non-revenue water”, owned by Joseph Tembo, Head of Operations.</p>')}
+    ${section('act','ca','ca','Cascade','How it’s done',`Decision level: ${levelName(a.level)}${st === 'stopped' ? ' · Stopped' : st === 'complete' ? ' · Complete' : ''}`, cascade)}
+    ${section('act','pl','pl','Plan','What it costs','Funded; the amount is visible to budget holders','<p>2 budget lines in the Commercial unit’s draft budget.</p>')}
+    ${section('act','pf','pf','Performance','Who delivers it','1 commitment in performance contracts','<p>Mary Chileshe, Meter Reader, Zone B: “Replace 400 faulty meters on route”, 400 meters. Verified by Esther Banda.</p>')}`;
+}
+function renderKpi() {
+  const owned = !!S.kpiOwner;
+  const banner = owned ? '' : `<div class="banner"><div class="row"><b>1 worth checking</b><button class="link" data-finding>${S.findingOpen ? 'Hide' : 'Show'}</button></div>
+    ${S.findingOpen ? `<div class="finding"><span>KPI K1.1.1 “Collection efficiency” has no owner.</span>
+    ${S.role === 'strategy' ? '<span class="btns"><button class="btn" data-assign>Assign owner</button><button class="btn btn-quiet">Mark as checked</button></span>' : '<span class="small muted">The Strategy office or the objective owner can assign one. The objective owner’s position, Head of Commercial, is vacant.</span>'}</div>` : ''}</div>`;
+  const cascade = `${panelHtml('kpi')}<div class="grid2"><div><div class="lab">Baseline</div><div class="num">78%</div></div><div><div class="lab">Target</div><div class="num">90%</div></div>
+    <div><div class="lab">Direction</div><div>Higher is better</div></div><div><div class="lab">Reporting</div><div>Monthly</div></div></div>
+    <div><h3 style="font-size:14px">Activities</h3><p style="margin-top:6px"><span class="muted num">A1.1.1.1</span> <u>Complete monthly meter-reading routes</u> <span class="tag t-ca">Procedure</span></p></div>
+    ${changesList('kpi')}`;
+  return `<div class="card head"><span class="eyebrow" style="color:var(--ca-t)">KPI</span><h1>Collection efficiency</h1>
+    <div class="meta"><span>Status <span class="tag t-info">No progress reported yet</span></span><span>${owned ? `Owned by <strong>${esc(posLabel(S.kpiOwner))}</strong>` : 'No owner yet'}</span><span class="num">K1.1.1</span></div></div>
+    ${banner}
+    ${section('kpi','st','st','Strategy','Why this matters','Serves objective “Increase collection efficiency”','<p>Objective O1.1, under goal G1 “Improve financial sustainability”.</p>')}
+    ${section('kpi','ca','ca','Cascade','How it’s done','1 activity: 1 at Procedure', cascade)}
+    ${section('kpi','pl','pl','Plan','What it costs','0 of 1 activity funded','<p>No budget line is linked to its activity yet.</p>')}
+    ${section('kpi','pf','pf','Performance','Who delivers it','2 commitments in performance contracts','<p>Held by meter readers in Zones A and B.</p>')}`;
+}
+function renderObj() {
+  const cascade = `${panelHtml('obj')}${S.role !== 'strategy' ? '<p class="note">Goal and objective owners are changed by the Strategy office.</p>' : ''}
+    <div><h3 style="font-size:14px">KPIs</h3><p style="margin-top:6px"><span class="muted num">K1.1.1</span> <u>Collection efficiency</u> ${S.kpiOwner ? '' : '<span class="tag t-adv">No owner yet</span>'}</p></div>
+    ${changesList('obj')}`;
+  return `<div class="card head"><span class="eyebrow" style="color:var(--ca-t)">Objective</span><h1>Increase collection efficiency</h1>
+    <div class="meta"><span>Owned by <strong>${esc(posLabel(S.objOwner))}</strong></span><span class="num">O1.1</span></div></div>
+    ${section('obj','st','st','Strategy','Why this matters','Serves goal “Improve financial sustainability”','<p>Goal G1, Financial perspective.</p>')}
+    ${section('obj','ca','ca','Cascade','How it’s done','1 KPI', cascade)}
+    ${section('obj','pl','pl','Plan','What it costs','0 of 1 activity funded','<p>No budget line is linked yet.</p>')}
+    ${section('obj','pf','pf','Performance','Who delivers it','2 commitments in performance contracts','<p>Held by meter readers in Zones A and B.</p>')}`;
+}
+function renderTree() {
+  const a = S.act;
+  const rows = [['A1.2.1.1','Establish district metered areas','Process','Joseph Tembo, Head of Operations',''],
+    ['A1.2.1.2','Revise meter management policy','Policy','Head of Commercial (vacant)',''],
+    ['A1.2.1.3', a.title, levelName(a.level), posLabel(a.owner), a.status],
+    ['A1.2.1.4','Introduce daily route briefing and check-in procedure','Procedure','Esther Banda, Commercial Officer','']];
+  const live = rows.filter((r) => r[4] !== 'stopped'), stopped = rows.filter((r) => r[4] === 'stopped');
+  const li = (r, cls) => `<li class="${cls || ''}"><span class="code">${r[0]}</span><span class="t">${r[0] === 'A1.2.1.3' ? `<button class="link" data-goto="act" style="min-height:0;font-weight:500">${esc(r[1])}</button>` : esc(r[1])}<br><span class="xs muted">${esc(r[3])}</span></span>
+    <span class="tag t-ca">${r[2]}</span>${r[4] === 'complete' ? '<span class="tag t-ok">Complete</span>' : r[4] === 'stopped' ? '<span class="tag t-info">Stopped</span>' : ''}</li>`;
+  return `<div class="card head"><span class="eyebrow" style="color:var(--ca-t)">Cascade</span><h1>K1.2.1 Non-revenue water</h1>
+    <p class="muted">${live.length} ${live.length === 1 ? 'activity' : 'activities'} this year. Change A1.2.1.3 on its own page to see this list follow.</p></div>
+    <div class="card"><ul class="tree">${live.map((r) => li(r)).join('')}</ul>
+    ${stopped.length ? `<div><button class="link" data-stopped aria-expanded="${S.showStopped}">${S.showStopped ? 'Hide' : 'Show'} ${stopped.length} stopped</button>
+      ${S.showStopped ? `<ul class="tree">${stopped.map((r) => li(r, 'stopped')).join('')}</ul>` : ''}</div>` : ''}</div>`;
+}
+
+const SCREENS = [['act','Activity A1.2.1.3'],['kpi','KPI K1.1.1 (no owner)'],['obj','Objective O1.1'],['tree','Cascade list for K1.2.1']];
+const CRUMBS = { act:'G1 › O1.2 › K1.2.1 › <b>A1.2.1.3</b>', kpi:'G1 › O1.1 › <b>K1.1.1</b>', obj:'G1 › <b>O1.1</b>', tree:'G1 › O1.2 › <b>K1.2.1</b>' };
+function render() {
+  document.getElementById('role').value = S.role;
+  document.getElementById('crumbs').innerHTML = `Sample Water Utility › Cascade › ${CRUMBS[S.screen]}`;
+  const toCheck = 4 - (S.kpiOwner ? 1 : 0) + S.flags.size;
+  document.getElementById('checks').innerHTML = `<span class="cnt c-blk">0</span> must fix <span class="cnt c-adv">${toCheck}</span> to check`;
+  const body = { act:renderAct, kpi:renderKpi, obj:renderObj, tree:renderTree }[S.screen]();
+  document.getElementById('app').innerHTML = `<div class="proto"><div class="proto-row"><p class="small"><b>Prototype.</b> In-Year Cascade Changes Specification v0.1, decisions IC-1 to IC-8 as accepted. Sample Water Utility on ${TODAY}. Nothing is saved.</p>
+    <button class="btn btn-quiet" data-reset>Start again</button></div>
+    <div class="entries" role="group" aria-label="Screen">${SCREENS.map(([k, l]) => `<button class="entry" data-screen="${k}" aria-pressed="${S.screen === k}">${l}</button>`).join('')}</div>
+    <p class="xs muted">Switch “Viewing as” to see who may make which change.</p></div>${body}`;
+}
+
+/* ---------- events ---------- */
+const app = document.getElementById('app');
+app.addEventListener('click', (e) => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.screen) { S.screen = t.dataset.screen; S.panel = null; S.toast = null; }
+  else if (t.dataset.goto) { S.screen = t.dataset.goto; S.panel = null; S.toast = null; }
+  else if (t.dataset.sec) { const [rec, key] = t.dataset.sec.split(':'); S.open[rec] = S.open[rec] === key ? null : key; }
+  else if (t.dataset.open) { const rec = t.dataset.open, ch = choicesFor(rec); S.toast = null; S.panel = { rec, choice: ch.length === 1 ? ch[0] : null, d: ch.length === 1 ? draftFor(rec, ch[0]) : {}, reason:'' }; }
+  else if (t.dataset.choice) { const k = t.dataset.choice; S.panel = { ...S.panel, choice:k, d:draftFor(S.panel.rec, k), reason:S.panel.reason }; }
+  else if ('cancel' in t.dataset) S.panel = null;
+  else if ('save' in t.dataset) return save();
+  else if ('assign' in t.dataset) { S.open.kpi = 'ca'; S.toast = null; S.panel = { rec:'kpi', choice:'owner', d:{ owner:'' }, reason:'' }; render(); document.getElementById('f-owner')?.focus(); return; }
+  else if ('finding' in t.dataset) S.findingOpen = !S.findingOpen;
+  else if ('stopped' in t.dataset) S.showStopped = !S.showStopped;
+  else if ('reset' in t.dataset) fresh();
+  else return;
+  render();
+});
+app.addEventListener('input', (e) => {
+  const el = e.target; if (!S.panel) return;
+  if (el.dataset.d) S.panel.d[el.dataset.d] = el.value; else if ('reason' in el.dataset) S.panel.reason = el.value; else return;
+  // Refresh only the parts that depend on the draft, keeping focus and caret in the field being typed in.
+  const id = el.id, pos = el.selectionStart; render();
+  const again = document.getElementById(id); if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
+});
+app.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT' && e.target.dataset.d && S.panel) { S.panel.d[e.target.dataset.d] = e.target.value; render(); document.getElementById(e.target.id)?.focus(); } });
+document.getElementById('role').addEventListener('change', (e) => { S.role = e.target.value; S.panel = null; S.toast = null; render(); });
+render();
+</script>
+</body>
+</html>
