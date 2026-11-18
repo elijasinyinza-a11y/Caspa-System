@@ -304,6 +304,12 @@ export const SAMPLE_EXPLANATIONS: Record<string, string> = {
     "Your organisation's plan-size guide suggests a limit on how many measures one objective carries, because a long list is hard to report on and to act on. This is only worth checking: keep them all if each one is needed, or mark it as checked with your reason.",
   [RULES.kpiManyActivities.id]:
     "Your organisation's plan-size guide suggests a limit on how many activities sit under one KPI. Many small activities can be hard to fund, assign and track. This is only worth checking: combine them if that helps, or mark it as checked with your reason.",
+  [RULES.activityTargetBelowSigned.id]:
+    "This activity's quantity target was lowered below what people have already signed for in their contracts. Their contracts stay as signed. Check whether those commitments should be revised through a contract revision, or mark it as checked with your reason.",
+  [RULES.commitmentActivityStopped.id]:
+    "The activity behind this signed commitment was stopped, but the commitment stays in the contract as signed. The holder and their supervisor can agree to revise the contract, or keep the commitment if the work goes on another way.",
+  [RULES.budgetLineActivityStopped.id]:
+    "This budget line is still linked to an activity that was stopped, so the money is set aside for work that will not be done this year. Move the line to other work in a budget revision, or remove it.",
   [RULES.envelopeExceeded.id]:
     "The indicative costs under this goal add up to more than the resources set aside for it. Reducing the costs, or revising the envelope, brings them back in line.",
 };

@@ -387,6 +387,10 @@ export interface TreeNode {
   /** The owning position, if any (positions, not people, own records: decision A2). */
   ownerPositionId: string | null;
   children: TreeNode[];
+  /** v0.27.0: an activity marked complete (IC-5). */
+  complete?: boolean;
+  /** v0.27.0: a KPI's stopped activities this year (IC-6). They stay out of the tree's counts. */
+  stopped?: TreeNode[];
 }
 
 export interface CascadeTree {
@@ -419,8 +423,12 @@ export function cascadeTree(s: Store, ctx: ProgressContext): CascadeTree {
                 .sort(byCode)
                 .map((a): TreeNode => {
                   counts.activity += 1;
-                  return { ref: refActivity(a), progress: null, level: a.decisionLevel, funded: funded.has(a.id), ownerPositionId: a.ownerPositionId ?? null, children: [] };
+                  return { ref: refActivity(a), progress: null, level: a.decisionLevel, funded: funded.has(a.id), ownerPositionId: a.ownerPositionId ?? null, children: [], complete: a.status === 'complete' };
                 }),
+              stopped: s.activities
+                .filter((a) => a.kpiId === k.id && a.financialYear === ctx.financialYear && a.status === 'archived')
+                .sort(byCode)
+                .map((a): TreeNode => ({ ref: refActivity(a), progress: null, level: a.decisionLevel, funded: funded.has(a.id), ownerPositionId: a.ownerPositionId ?? null, children: [] })),
             };
           }),
         };
