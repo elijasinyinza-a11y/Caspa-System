@@ -10,7 +10,8 @@ import type { ProgressStatus } from '../rules/kpi-progress';
 /** An organisation's renameable labels (contract T1), as finding messages need them (Clarity Specification, D3). */
 export type Terms = Record<'goal' | 'objective' | 'kpi' | 'activity' | 'deficiency' | 'budgetLine' | 'contractObjective', { singular: string; plural: string }>;
 /** Lower-case a label inside a sentence, but leave acronyms such as KPI as they are. */
-export const lc = (label: string) => (label === label.toUpperCase() ? label : label.toLowerCase());
+/** Lower case inside a sentence, keeping acronyms as written: "KPI" and "KPIs" stay, "Activities" becomes "activities". */
+export const lc = (label: string) => (label === label.toUpperCase() || /^[A-Z]{2,}s$/.test(label) ? label : label.toLowerCase());
 
 export type WorkspaceKey = 'home' | 'strategy' | 'cascade' | 'plan' | 'performance';
 
@@ -474,6 +475,38 @@ export const en = {
     done: (level: string, n: number) => `Level changed to ${level}.${n ? ` ${n === 1 ? 'The signed commitment is' : 'The signed commitments are'} sent for review.` : ''}`,
     history: 'Level changes',
     historyItem: (from: string, to: string, by: string, on: string, reason: string) => `Changed from ${from} to ${to} by ${by}, ${on}: “${reason}”`,
+  },
+  /** The Strategy landing (v0.28.0, Strategy Landing Specification v0.1). Labels follow the organisation's terms. */
+  landing: {
+    year: (fy: string, n: number, of: number) => `${fy}, year ${n} of ${of}`,
+    direction: 'Vision and mission',
+    vision: 'Vision',
+    mission: 'Mission',
+    recorded: (by: string, on: string) => `Recorded by ${by} on ${on}.`,
+    yourPart: 'Your part',
+    serves: 'Your work this year serves',
+    counts: (o: number, k: number, t: Terms) => `${o} ${lc(o === 1 ? t.objective.singular : t.objective.plural)} · ${k} ${lc(k === 1 ? t.kpi.singular : t.kpi.plural)}`,
+    why: 'Why it was chosen',
+    noReason: 'No reason recorded',
+    reasonCount: (n: number) => (n === 1 ? '1 reason recorded.' : `${n} reasons recorded.`),
+    onObjective: (t: Terms) => `on one of its ${lc(t.objective.plural)}`,
+    otherGoals: (t: Terms) => `Other ${lc(t.goal.plural)}`,
+    themes: 'Themes',
+    record: {
+      missing: 'No vision or mission recorded',
+      missingNote: 'This plan was brought in without them. As Executive you can record them once.',
+      title: 'Record the vision and mission',
+      note: 'Once saved they show to everyone here, confirmed by you. Later changes go through a plan revision.',
+      save: 'Save and confirm',
+      cancel: 'Cancel',
+      saved: 'Saved. The vision and mission now show to everyone on this page.',
+    },
+    errors: {
+      not_allowed: 'Only the Executive can record these.',
+      already_recorded: 'They are already recorded. Changes go through a plan revision.',
+      no_plan: 'There is no active plan.',
+      text_required: 'Write both the vision and the mission.',
+    } as Record<string, string>,
   },
   /** In-year changes (v0.27.0, In-Year Cascade Changes Specification v0.1). Labels follow the organisation's terms. */
   inYear: {

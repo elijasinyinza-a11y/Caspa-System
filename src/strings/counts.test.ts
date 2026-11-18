@@ -21,3 +21,10 @@ describe('count wording', () => {
     expect(en.node.summary.children(1, 'KPI', 'KPIs', '1 behind')).toBe('1 KPI: 1 behind');
   });
 });
+
+describe('acronyms inside a sentence (v0.28.0)', () => {
+  it('keeps KPI and KPIs as written', () => {
+    expect(en.landing.counts(2, 2, { objective: { singular: 'Objective', plural: 'Objectives' }, kpi: { singular: 'KPI', plural: 'KPIs' } } as never)).toBe('2 objectives · 2 KPIs');
+    expect(en.landing.counts(1, 1, { objective: { singular: 'Outcome', plural: 'Outcomes' }, kpi: { singular: 'Indicator', plural: 'Indicators' } } as never)).toBe('1 outcome · 1 indicator');
+  });
+});
