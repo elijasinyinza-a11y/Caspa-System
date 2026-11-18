@@ -4,20 +4,30 @@ import type { Viewer } from '../data/access/viewer';
 
 export const WORKSPACE_ORDER: WorkspaceKey[] = ['home', 'strategy', 'cascade', 'plan', 'performance'];
 
+/**
+ * Works in Strategy beyond reading its landing: the roles and relations that had the workspace before v0.28.0. The
+ * landing's sub-menu entries and the cards below the goals keep this rule (Strategy Landing Specification, SL-1, SL-6).
+ */
+export function worksInStrategy(v: Viewer): boolean {
+  return (
+    v.roles.some((r) => r === 'executive' || r === 'strategy_office' || r === 'finance' || r === 'facilitator' || r === 'compliance') ||
+    v.isDepartmentHead || // part 11b: department heads fill in their department's 4Q sheet
+    v.inConsultation || // part 11c: the audience of an open consultation round has its say there
+    v.writesCommunication // part 11e: goal owners and department heads reach the Communication page
+  );
+}
+
 export function workspacesFor(v: Viewer): WorkspaceKey[] {
-  const set = new Set<WorkspaceKey>(['home']);
+  // v0.28.0 (SL-1): every member sees the Strategy landing, read-only; working in Strategy keeps `worksInStrategy`.
+  const set = new Set<WorkspaceKey>(['home', 'strategy']);
   const add = (...w: WorkspaceKey[]) => w.forEach((x) => set.add(x));
-  if (v.roles.includes('executive') || v.roles.includes('strategy_office')) add('strategy', 'cascade', 'plan', 'performance');
-  if (v.roles.includes('finance')) add('strategy', 'cascade', 'plan');
+  if (v.roles.includes('executive') || v.roles.includes('strategy_office')) add('cascade', 'plan', 'performance');
+  if (v.roles.includes('finance')) add('cascade', 'plan');
   if (v.roles.includes('hr')) add('performance');
-  if (v.roles.includes('facilitator')) add('strategy', 'cascade');
-  if (v.roles.includes('compliance')) add('strategy');
+  if (v.roles.includes('facilitator')) add('cascade');
   if (v.isSupervisor) add('cascade', 'performance');
   if (v.hasContract) add('performance');
   if (v.isBudgetHolder) add('plan'); // slice 5: budget holders link and review their own lines
-  if (v.isDepartmentHead) add('strategy'); // part 11b: department heads fill in their department's 4Q sheet
-  if (v.inConsultation) add('strategy'); // part 11c: the audience of an open consultation round has its say there
-  if (v.writesCommunication) add('strategy'); // part 11e: goal owners and department heads reach the Communication page
   return WORKSPACE_ORDER.filter((w) => set.has(w));
 }
 
