@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ Strategy Landing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: the CASPA™ shell around the Strategy landing, read top to bottom: plan, direction, your part, goals, other cards.
+   Tokens are CASPA™ design tokens (src/design/tokens.json). Light mode only in v1, so one palette, set explicitly. */
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84; --line:#EDECEA;
+  --panel:#223D56; --side-fg:#C8D1DB;
+  --st:#378ADD; --st-t:#1A5A9E; --st-l:#EBF3FC;
+  --ca:#7C5CBF; --pl:#B85C38; --pf:#C2417A; --pf-t:#9B2C63; --pf-l:#FBEAF2;
+  --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA; --chart2:#5E6B7A;
+  --font:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--cream);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy);text-wrap:balance}
+h2{font-size:18px;margin:0;color:var(--navy);text-wrap:balance}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+a{color:var(--navy)}
+.muted{color:var(--muted)} .small{font-size:13px} .xs{font-size:12px}
+.num{font-variant-numeric:tabular-nums}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:var(--white);padding:20px 12px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px}
+.mark{width:36px;height:36px;border-radius:8px;background:var(--white);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.brand b{display:block;font-size:16px}.brand span{font-size:12px;color:var(--side-fg)}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:var(--white);font-weight:600}
+.subnav{display:flex;flex-direction:column;margin:2px 0 6px 28px;border-left:1px solid var(--panel)}
+.subnav span{padding:8px 0 8px 18px;color:var(--side-fg);font-size:13px}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.sep{border-top:1px solid var(--panel);margin:10px 0}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--white);border-bottom:1px solid var(--border);padding-block:10px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.crumbs{flex:1 1 200px;color:var(--muted);font-size:13px;min-width:0}
+.crumbs b{color:var(--navy);font-weight:600}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:var(--white);max-width:min(340px,70vw)}
+.content{padding-block:24px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));width:100%;max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.proto{background:var(--white);border:1px dashed var(--control);border-radius:12px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btn:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.wsh .eyebrow{display:flex;gap:10px;align-items:center;font-size:13px}
+.wsh .eyebrow b{color:var(--st-t)}
+.wsh .eyebrow span{color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px}
+.wsh h1{margin-top:6px}
+.wsh p{margin-top:6px;font-size:16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.planhead{border-top:4px solid var(--st)}
+.planhead .meta{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;color:var(--muted)}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.direction{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.statement{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
+.statement .lab{font-size:12px;font-weight:600;color:var(--st-t);letter-spacing:.04em;text-transform:uppercase}
+.statement p.text{font-size:18px;line-height:1.4;color:var(--navy);font-weight:500;text-wrap:pretty}
+.record{border:1px solid var(--control);border-radius:12px;background:var(--white);padding:18px;display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;color:var(--navy)}
+.field textarea{min-height:72px;border:1px solid var(--control);border-radius:8px;padding:10px 12px;background:var(--white);width:100%;resize:vertical}
+.hint{font-size:13px;color:var(--muted)}
+.yourpart{background:var(--pf-l);border-radius:12px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.yourpart b{color:var(--pf-t);font-size:13px}
+.yourpart a{font-weight:600;text-underline-offset:3px}
+.sechead{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.persp{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-top:6px}
+.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:12px}
+.goal{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.goal .title{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.goal .title .code{color:var(--muted);font-variant-numeric:tabular-nums}
+.goal .title a{font-size:16px;font-weight:700;text-underline-offset:3px}
+.barrow{display:flex;align-items:center;gap:12px}
+.bar{position:relative;height:8px;background:var(--line);border-radius:999px;flex:1}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--navy);border-radius:999px}
+.bar s{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--navy);text-decoration:none}
+.counts{font-size:13px;color:var(--muted)}
+.goal > .tag{align-self:flex-start}
+.why{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.why h4{margin:0;font-size:13px;color:var(--navy)}
+.reason{background:var(--st-l);border-radius:8px;padding:10px 12px}
+.reason .cell{font-size:12px;font-weight:600;color:var(--st-t)}
+.cards{display:grid;gap:12px}
+.note{font-size:13px;color:var(--muted)}
+.toast{border:1px solid var(--ok-b);background:var(--ok-l);color:var(--ok);border-radius:10px;padding:12px 14px;font-weight:600}
+@media (max-width:900px){.side{display:none}.top{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+</style>
+</head>
+<body style="margin:0">
+
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><div class="mark">C</div><div><b>CASPA™</b><span>Karislabs Technologies</span></div></div>
+    <div class="navbtn"><span class="dot" style="background:var(--white)"></span>Home</div>
+    <div class="navbtn on"><span class="dot" style="background:var(--st)"></span>Strategy</div>
+    <div class="subnav" id="subnav"></div>
+    <div class="navbtn" id="nav-cascade"><span class="dot" style="background:var(--ca)"></span>Cascade</div>
+    <div class="navbtn" id="nav-plan"><span class="dot" style="background:var(--pl)"></span>Plan</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pf)"></span>Performance</div>
+  </nav>
+  <div class="main">
+    <header class="top">
+      <div class="crumbs">Sample Water Utility › <b>Strategy</b></div>
+      <label class="viewas" for="role">Viewing as
+        <select id="role">
+          <option value="strategy">Bwalya Musonda, Strategy and Planning Manager (Strategy office)</option>
+          <option value="executive">Chanda Mulenga, Managing Director (Executive)</option>
+          <option value="goalowner">Joseph Tembo, Head of Operations (owner of G2 and G3)</option>
+          <option value="employee">Mary Chileshe, Meter Reader, Zone B</option>
+        </select>
+      </label>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+</div>
+
+<script>
+const ROLES = {
+  strategy:  { name:'Bwalya Musonda', reasons:true,  contract:false, sub:['Forming the next plan','Registers','Communication'], forming:true, comms:true, cascade:true, plan:true },
+  executive: { name:'Chanda Mulenga', reasons:true,  contract:false, sub:['Forming the next plan','Registers','Communication'], forming:true, comms:true, cascade:true, plan:true, exec:true },
+  goalowner: { name:'Joseph Tembo',   reasons:false, contract:false, sub:['Communication'], forming:false, comms:true, cascade:false, plan:false },
+  employee:  { name:'Mary Chileshe',  reasons:false, contract:true,  sub:[], forming:false, comms:false, cascade:false, plan:false },
+};
+const PERSPECTIVES = [['customer','Customer'],['internal','Internal'],['innovation_learning','Innovation and learning'],['financial','Financial']];
+const GOALS = [
+  { code:'G1', title:'Improve financial sustainability', p:'financial', owner:'Ruth Phiri, Head of Finance', progress:0.42, status:'Behind', objs:2, kpis:2,
+    reasons:[{ cell:'Retraction: Past failures', text:'Billed revenue has not covered operating and maintenance costs.' }] },
+  { code:'G2', title:'Provide reliable water supply', p:'customer', owner:'Joseph Tembo, Head of Operations', progress:null, objs:1, kpis:1,
+    reasons:[{ cell:'Retraction: Critical failure factors', text:'Ageing pumping equipment causes frequent supply interruptions.' }] },
+  { code:'G3', title:'Expand access to sanitation', p:'customer', owner:'Joseph Tembo, Head of Operations', progress:null, objs:1, kpis:1, reasons:[] },
+  { code:'G4', title:'Strengthen institutional capacity', p:'innovation_learning', owner:'Chanda Mulenga, Managing Director', progress:null, objs:1, kpis:1,
+    reasons:[{ cell:'Repositioning: Critical failure factors', text:'Section heads were promoted from technical roles without supervisory training.' }] },
+];
+const EXPECTED = 0.80;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let S;
+const fresh = () => { S = { role: S?.role ?? 'strategy', vision:null, mission:null, recording:false, draft:{ vision:'', mission:'' }, toast:null }; };
+fresh();
+
+function goalCard(g, r) {
+  const prog = g.progress === null
+    ? '<span class="tag t-info">No progress reported yet</span>'
+    : `<div class="barrow"><div class="bar" role="img" aria-label="${Math.round(g.progress*100)}% of the year's target; ${Math.round(EXPECTED*100)}% of the year has passed"><i style="width:${g.progress*100}%"></i><s style="left:${EXPECTED*100}%"></s></div><b class="num">${Math.round(g.progress*100)}%</b><span class="tag t-adv">${g.status}</span></div>`;
+  let why;
+  if (!g.reasons.length) why = '<p><span class="tag t-adv">No reason recorded</span></p>';
+  else if (r.reasons) why = g.reasons.map((x) => `<div class="reason"><p class="cell">${esc(x.cell)}</p><p>${esc(x.text)}</p></div>`).join('');
+  else why = `<p class="small">${g.reasons.length === 1 ? '1 reason recorded' : g.reasons.length + ' reasons recorded'}.</p>`;
+  return `<article class="goal" aria-labelledby="g-${g.code}">
+    <div class="title"><span class="code">${g.code}</span><a id="g-${g.code}" href="#${g.code}">${esc(g.title)}</a></div>
+    <p class="small muted">Owner: <span style="color:var(--text)">${esc(g.owner)}</span></p>
+    ${prog}
+    <p class="counts">${g.objs} ${g.objs === 1 ? 'objective' : 'objectives'} · ${g.kpis} ${g.kpis === 1 ? 'KPI' : 'KPIs'}</p>
+    <div class="why"><h4>Why it was chosen</h4>${why}</div>
+  </article>`;
+}
+
+function render() {
+  const r = ROLES[S.role];
+  document.getElementById('role').value = S.role;
+  document.getElementById('subnav').innerHTML = r.sub.map((x) => `<span>${x}</span>`).join('');
+  document.getElementById('subnav').hidden = !r.sub.length;
+  document.getElementById('nav-cascade').hidden = !r.cascade;
+  document.getElementById('nav-plan').hidden = !r.plan;
+
+  const plan = `<section class="card planhead" aria-labelledby="plan-title">
+    <h2 id="plan-title" style="font-size:22px">Strategic Plan 2022–2026</h2>
+    <div class="meta"><span>FY2022 to FY2026 · <b style="color:var(--text)">FY2026, year 5 of 5</b></span><span class="tag t-ok">Active · cascade published</span></div>
+    <p class="small">Confirmed by Chanda Mulenga on 10 January 2022; board resolution BR/2021/14.</p>
+  </section>`;
+
+  let direction = '';
+  if (S.vision || S.mission) {
+    direction = `<section class="direction" aria-label="Vision and mission">
+      ${S.vision ? `<div class="statement"><span class="lab">Vision</span><p class="text">${esc(S.vision)}</p></div>` : ''}
+      ${S.mission ? `<div class="statement"><span class="lab">Mission</span><p class="text">${esc(S.mission)}</p></div>` : ''}
+    </section><p class="xs muted">Recorded by Chanda Mulenga on 18 October 2026.</p>`;
+  } else if (r.exec) {
+    direction = S.recording
+      ? `<section class="record" aria-labelledby="rec-h"><h2 id="rec-h">Record the vision and mission</h2>
+          <p class="hint">This plan was imported without them. Once saved they show to everyone here; later changes go through a plan revision.</p>
+          <div class="field"><label for="f-vision">Vision</label><textarea id="f-vision" data-d="vision">${esc(S.draft.vision)}</textarea></div>
+          <div class="field"><label for="f-mission">Mission</label><textarea id="f-mission" data-d="mission">${esc(S.draft.mission)}</textarea></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" data-save ${S.draft.vision.trim() && S.draft.mission.trim() ? '' : 'disabled'}>Save and confirm</button><button class="btn btn-quiet" data-cancel>Cancel</button></div></section>`
+      : `<section class="card" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px"><div><h2>No vision or mission recorded</h2><p class="small muted">This plan was imported without them. As Executive you can record them once.</p></div><button class="btn" data-record>Record the vision and mission</button></section>`;
+  }
+
+  const yourpart = r.contract ? `<section class="yourpart" aria-label="Your part"><b>Your part</b><span>Your work this year serves <a href="#G1">G1 Improve financial sustainability</a>.</span></section>` : '';
+
+  const groups = PERSPECTIVES.map(([k, label]) => [label, GOALS.filter((g) => g.p === k)]).filter(([, gs]) => gs.length);
+  const goals = `<section aria-labelledby="goals-h" style="display:flex;flex-direction:column;gap:12px">
+    <div class="sechead"><h2 id="goals-h" style="font-size:22px">Goals</h2>
+    <p class="small muted">Progress is the mean of each objective's KPIs. The mark shows how much of the year has passed (80%).</p></div>
+    ${groups.map(([label, gs]) => `<h3 class="persp">${label}</h3><div class="goals">${gs.map((g) => goalCard(g, r)).join('')}</div>`).join('')}
+  </section>`;
+
+  const forming = r.forming ? `<section class="card"><h2>Forming the next plan</h2><p class="small muted">Strategic Plan 2027–2031 is being formed.</p><div><button class="btn">Open Forming the next plan</button></div></section>` : '';
+  const comms = r.comms ? `<section class="card"><h2>Communication</h2><p class="small"><b>Strategic Plan 2022–2026</b>: 2 of 4 goals have a communication record.</p><p><a href="#comm" style="font-weight:600;text-underline-offset:3px">Open Communication</a></p></section>` : '';
+
+  document.getElementById('app').innerHTML = `
+    <div class="proto"><p class="small"><b>Prototype.</b> Strategy Landing Specification v0.1, SL-1 to SL-7 as approved. Sample Water Utility on 18 October 2026. Nothing is saved; the plan has no themes, so that block is absent.</p><button class="btn btn-quiet" data-reset>Start again</button></div>
+    <div class="wsh"><div class="eyebrow"><b>■ Strategy</b><span>Conception to Communication</span></div><h1>Strategy</h1><p>The plan's goals and why they were chosen, formed here or imported.</p></div>
+    ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}
+    ${plan}${direction}${yourpart}${goals}
+    ${forming || comms ? `<div class="cards">${forming}${comms}</div>` : ''}`;
+}
+
+const app = document.getElementById('app');
+app.addEventListener('click', (e) => {
+  const t = e.target.closest('button'); if (!t) return;
+  if ('record' in t.dataset) { S.recording = true; S.toast = null; render(); document.getElementById('f-vision')?.focus(); return; }
+  if ('cancel' in t.dataset) S.recording = false;
+  else if ('save' in t.dataset) { S.vision = S.draft.vision.trim(); S.mission = S.draft.mission.trim(); S.recording = false; S.toast = 'Saved. The vision and mission now show to everyone on this page.'; }
+  else if ('reset' in t.dataset) fresh();
+  else return;
+  render();
+});
+app.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset.d) return;
+  S.draft[el.dataset.d] = el.value;
+  const save = app.querySelector('[data-save]');
+  if (save) save.disabled = !(S.draft.vision.trim() && S.draft.mission.trim());
+});
+document.getElementById('role').addEventListener('change', (e) => { S.role = e.target.value; S.recording = false; S.toast = null; render(); });
+render();
+</script>
+</body>
+</html>

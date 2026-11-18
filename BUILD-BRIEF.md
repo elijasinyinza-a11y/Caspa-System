@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Build Brief v1.1
 
-Read this whole file before writing any code. It holds the standing rules (sections 1 to 12) and the navigation rule (section 37). In-year cascade changes (section 51) are built as v0.27.0; slice 21, onboarding (section 50, now in the archive), was v0.26.0. The first usability round is next. Section 45 records the direction after the pilot. Section 12 says which source wins when sources disagree.
+Read this whole file before writing any code. It holds the standing rules (sections 1 to 12) and the navigation rule (section 37). The Strategy landing (section 52) is built as v0.28.0; in-year cascade changes (section 51) were v0.27.0 and onboarding (section 50) v0.26.0, both now in the archive. The first usability round is next. Section 45 records the direction after the pilot. Section 12 says which source wins when sources disagree.
 
 **Decision archive.** The decisions behind slices already built, sections 13 to 36, 38 to 44 and 46, are in `DECISIONS-ARCHIVE.md`, with their numbers unchanged: a reference to "BUILD-BRIEF section N" in code, tests or documents finds section N there. Search the archive when a question needs an earlier decision; it does not need to be read in full. When a slice is delivered, its section moves from this file to the archive (split agreed by Elijah on 4 November 2026; no decision changed).
 
@@ -211,18 +211,17 @@ Agreed with Elijah as a direction, to be specified after the pilot; nothing is b
 - **Needs first:** the backend, pilot organisations through at least one full cycle, and data good enough to learn from.
 
 
-## 51. Decisions on in-year cascade changes (18 November 2026)
+## 52. Decisions on the Strategy landing (18 November 2026)
 
-Sources: the *CASPA™ In-Year Cascade Changes Specification v0.1* (a doc in the Project's chats); Elijah accepted IC-1 to IC-8 as recommended and allowed facilitators to make the changes on 18 November 2026, and approved the prototype (`reference/caspa-in-year-changes-prototype.html`) the same day. Built as v0.27.0. No contract change (v1.20).
+Sources: the *CASPA™ Strategy Landing Specification v0.1* (a doc in the Project's chats); Elijah approved SL-1 to SL-7 as recommended on 18 November 2026, and the prototype (`reference/caspa-strategy-landing-prototype.html`) the same day. Built as v0.28.0. No contract change (v1.20).
 
-- **What it covers.** Correcting a published cascade during the year: an activity's title, means of verification, reporting frequency, quantity target and owner; marking it complete or reopening it; stopping and restarting it; and the owners of goals, objectives and KPIs. Goal and objective wording, KPI definitions, targets and baselines stay locked until plan revisions (D15-11). Moving an activity to another KPI is a stop and a new activity.
-- **IC-1, no approval queue.** A change is saved at once with a reason, as the 6P level change is (D6-6).
-- **IC-2, own work.** An activity's owner may correct its details, change its 6P level and mark it complete or reopen it. Its quantity target, its owner and stopping it need the objective owner, the Strategy office or a facilitator. Only the Strategy office restarts a stopped activity.
-- **IC-3, KPI owners.** Assigned or changed by the objective owner or the Strategy office (facilitators have no KPI rights in the matrix).
-- **IC-4, goal and objective owners.** Changed by the Strategy office only.
-- **IC-5, complete.** A reason is needed only when the latest recorded completion is below the quantity target. Complete counts as done for dependent work; it adds no quantity, KPI reading or rating.
-- **IC-6, stopping.** Sets the activity's status to `archived` (shown as "Stopped"; the word "archived" never appears on screen). Allowed with signed commitments and budget lines: "This will affect" lists them first, and two worth-checking checks follow, STRUCT-COMMITMENT-ACTIVITY-STOPPED (to the holder and supervisor) and STRUCT-BUDGETLINE-ACTIVITY-STOPPED (to the budget holder and Finance). Both clear on restart.
-- **IC-7, target below signed.** Allowed; STRUCT-ACTIVITY-TARGET-BELOW-SIGNED goes to the objective owner. Signed quantities are read from the frozen snapshots of contracts that are not closed.
-- **IC-8, Changes this year.** One list in each record's Cascade section, newest first: what changed, from, to, reason, who and when. Read from the audit trail, never a separate record; it replaces the level history. Anyone who may view the record sees it.
-- **Screens.** "Make a change" in the Cascade section replaces "Change level"; the 6P level is one of its choices. Before saving, "This will affect" names the signed commitments the viewer may see and counts the rest. On a KPI with no owner, the check offers "Assign owner", which opens the panel at the owner. In the Cascade tree, a completed activity carries a Complete chip and a KPI's stopped activities sit behind "Show N stopped". The record heading shows Complete or Stopped.
-- **Code.** Rules in `src/rules/cascade-edit.ts` (refusals, effects, signed quantity) and `src/rules/integrity.ts` (the three checks); data access in `src/data/access/in-year.ts` (`repo.inYear`); screens in `src/routes/InYearChanges.tsx`. Tests: `src/data/access/in-year.test.ts`.
+- **SL-1, open to every member.** Strategy is in every person's sidebar (`workspacesFor`) and its landing is read-only for them. Working in Strategy keeps the earlier rule, now `worksInStrategy` in `src/selectors/nav.ts` (Executive, Strategy office, Finance, facilitators, compliance, department heads while a plan is formed, a consultation's audience, communication writers): it decides the sub-menu entries, the Forming and Communication cards and the link to the Communication page. The four-entry cap (NV-9) is unaffected.
+- **The page, top to bottom.** The plan (title, period, "FY2026, year 5 of 5", status, confirmation); vision and mission when recorded; "Your part"; the goals; themes when the plan has any; then the Forming and Communication cards for those who work in Strategy (SL-6). The import door, plan setup and formation are unchanged.
+- **SL-2, grouping.** Goals sit under the organisation's perspectives in its order when it uses a scorecard, with "Other goals" last; otherwise one list in code order.
+- **Goal cards.** Code and title (linked to the record page), owner, the progress bar Home uses (same figure, expected-to-date mark), objective and KPI counts, and "Why it was chosen".
+- **SL-3, reasons.** As on record pages: in full, with the 4Q cell, for those who may read 4Q entries (`FourQEntry: view`); a count for everyone else; "No reason recorded" when there are none (BOOK-GOAL-NO-WHY).
+- **SL-4, vision and mission after publication.** When the active plan has neither, the Executive may record both once; they are saved as confirmed by the Executive (`VisionStatement` draft and confirm are both the Executive) and show to everyone. Later changes wait for plan revisions. The AI never drafts them (F1).
+- **SL-5, Your part.** For a signed contract this year: the goals its objectives serve, through their activity, share or breakdown, each linked. Nothing without a contract.
+- **SL-7, usability.** Tasks 6 (Strategy office: make the Head of Operations the owner of Collection efficiency) and 7 (employee: find which goal your work serves and how it is going) added to `#/usability`, same pass mark. Tasks 1 to 5 unchanged.
+- **Wording.** `lc` keeps acronyms such as "KPIs" as written inside sentences.
+- **Code.** `src/data/access/strategy-landing.ts` (`repo.strategyLanding`), `src/routes/StrategyLanding.tsx`; tests in `src/data/access/strategy-landing.test.ts`.

@@ -59,8 +59,18 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (895 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (903 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Strategy landing (v0.28.0)
+
+- 18 November 2026. BUILD-BRIEF section 52; *CASPA™ Strategy Landing Specification v0.1*; prototype
+  `reference/caspa-strategy-landing-prototype.html`. No contract change (v1.20). 903 tests (8 new: `src/data/access/strategy-landing.test.ts`, one in `src/strings/counts.test.ts`).
+- Strategy is open to every member and shows the strategy itself: the plan and its year, the vision and mission, "Your
+  part", and each goal with its progress and why it was chosen. Working in Strategy keeps its earlier rule (`worksInStrategy`).
+- Usability tasks 6 and 7 added at `#/usability`.
+- Try it (Sample Water Utility): as Employee, open Strategy and see "Your part" and reason counts; as Executive, use "Record
+  the vision and mission" and then view as anyone; as Strategy office, read the reasons in full.
 
 ## In-year cascade changes (v0.27.0)
 

@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36, 38 to 44 and 46 to 50 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36, 38 to 44 and 46 to 51 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -503,3 +503,19 @@ Sources: Elijah's decisions of 7 November 2026; the *CASPA™ Forming Schedule S
 - **Usability test.** `#/usability` (review build only, linked beside the role switcher on wide screens) holds the five tasks of the Clarity Specification's kit word for word, each starting from the sample's first state in its role, and a results sheet only the facilitator fills in, kept in that browser. A task passes when at least 4 of 5 complete it unaided. Nothing is recorded as passed until a real round runs.
 - **Development role switcher.** A KPI owner role: the holder of the position owning the most KPIs with no assigned role (in Sample Water Utility, Joseph Tembo, Head of Operations).
 - **Sample data.** Sample Water Utility's 2027–2031 plan carries the prototypes' schedule and three 4Q review groups mapped onto its own people (`src/data/sample/schedule-samples.ts`); Conception is open. Tests that start formation from nothing take it out first (`clearSampleSchedule`).
+
+## 51. Decisions on in-year cascade changes (18 November 2026)
+
+Sources: the *CASPA™ In-Year Cascade Changes Specification v0.1* (a doc in the Project's chats); Elijah accepted IC-1 to IC-8 as recommended and allowed facilitators to make the changes on 18 November 2026, and approved the prototype (`reference/caspa-in-year-changes-prototype.html`) the same day. Built as v0.27.0. No contract change (v1.20).
+
+- **What it covers.** Correcting a published cascade during the year: an activity's title, means of verification, reporting frequency, quantity target and owner; marking it complete or reopening it; stopping and restarting it; and the owners of goals, objectives and KPIs. Goal and objective wording, KPI definitions, targets and baselines stay locked until plan revisions (D15-11). Moving an activity to another KPI is a stop and a new activity.
+- **IC-1, no approval queue.** A change is saved at once with a reason, as the 6P level change is (D6-6).
+- **IC-2, own work.** An activity's owner may correct its details, change its 6P level and mark it complete or reopen it. Its quantity target, its owner and stopping it need the objective owner, the Strategy office or a facilitator. Only the Strategy office restarts a stopped activity.
+- **IC-3, KPI owners.** Assigned or changed by the objective owner or the Strategy office (facilitators have no KPI rights in the matrix).
+- **IC-4, goal and objective owners.** Changed by the Strategy office only.
+- **IC-5, complete.** A reason is needed only when the latest recorded completion is below the quantity target. Complete counts as done for dependent work; it adds no quantity, KPI reading or rating.
+- **IC-6, stopping.** Sets the activity's status to `archived` (shown as "Stopped"; the word "archived" never appears on screen). Allowed with signed commitments and budget lines: "This will affect" lists them first, and two worth-checking checks follow, STRUCT-COMMITMENT-ACTIVITY-STOPPED (to the holder and supervisor) and STRUCT-BUDGETLINE-ACTIVITY-STOPPED (to the budget holder and Finance). Both clear on restart.
+- **IC-7, target below signed.** Allowed; STRUCT-ACTIVITY-TARGET-BELOW-SIGNED goes to the objective owner. Signed quantities are read from the frozen snapshots of contracts that are not closed.
+- **IC-8, Changes this year.** One list in each record's Cascade section, newest first: what changed, from, to, reason, who and when. Read from the audit trail, never a separate record; it replaces the level history. Anyone who may view the record sees it.
+- **Screens.** "Make a change" in the Cascade section replaces "Change level"; the 6P level is one of its choices. Before saving, "This will affect" names the signed commitments the viewer may see and counts the rest. On a KPI with no owner, the check offers "Assign owner", which opens the panel at the owner. In the Cascade tree, a completed activity carries a Complete chip and a KPI's stopped activities sit behind "Show N stopped". The record heading shows Complete or Stopped.
+- **Code.** Rules in `src/rules/cascade-edit.ts` (refusals, effects, signed quantity) and `src/rules/integrity.ts` (the three checks); data access in `src/data/access/in-year.ts` (`repo.inYear`); screens in `src/routes/InYearChanges.tsx`. Tests: `src/data/access/in-year.test.ts`.

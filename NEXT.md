@@ -1,6 +1,6 @@
 # Next session
 
-v0.27.0 delivered 18 November 2026 (in-year cascade changes, BUILD-BRIEF section 51; v0.26.2 display fixes and v0.26.1 housekeeping before it; v0.26.0 delivered 8 November 2026): `npm run verify` clean, 895 tests. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
+v0.28.0 delivered 18 November 2026 (the Strategy landing, BUILD-BRIEF section 52; v0.27.0 in-year cascade changes, section 51 in the archive, the same day): `npm run verify` clean, 903 tests. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next
@@ -73,11 +73,12 @@ Elijah is not ready to run the round yet. A look at all four workspaces as each 
 fixes are in v0.26.2. Each of the rest needs a short specification confirmed by Elijah before any build.
 
 1. **Cascade: a published cascade cannot be corrected.** Built as v0.27.0 (18 November 2026, BUILD-BRIEF section 51).
-   Proposal for Elijah, not decided: usability task 3 could end with assigning the missing owner, which tests the panel
-   unaided. The tasks are the Clarity Specification kit word for word, so this needs his confirmation.
+   Usability task 6 tests it (added in v0.28.0 by SL-7; task 3 is run as the Supervisor, who cannot assign owners).
 2. **Plan: nobody can add or edit a budget line**; lines exist only in sample data, and unit submissions
    (`budget.submit_unit`) were never picked up. Needs Elijah's decision on where lines come from.
-3. **Strategy: the landing page shows no goals, reasons, vision or mission** for the active plan.
+3. **Strategy: the landing page shows no goals, reasons, vision or mission.** Built as v0.28.0 (BUILD-BRIEF section 52).
+   Note for the usability round: task 7 overlaps task 1 (both ask what the employee's work serves); task 7 adds "how it
+   is going". Elijah may keep both or drop one.
 4. **Performance: the Executive sees only direct reports**; nobody has an organisation-wide picture of contracts issued,
    updates arriving and verification waiting.
 5. **Record pages: a KPI shows only its latest reading**, with no history or trend.
