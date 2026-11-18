@@ -13,6 +13,8 @@ import type { NodeKind, NodeRef, NodeView, PlanGroup, PlanLine } from '../select
 import { en, type WorkspaceKey } from '../strings/en';
 import { nodeHref } from './router';
 import { ActivityLevel, MapSummary } from './DecisionMap';
+import { ChangesThisYear, MakeAChange } from './InYearChanges';
+import type { ChangeChoice } from '../data/access/in-year';
 import { RecordFigure } from '../components/RecordFigure';
 import { TargetsLine } from '../components/TargetsLine';
 import { GoalRecordSection } from './Communication';
@@ -30,6 +32,15 @@ const FOLD_AT = 6;
  * are always visible, so the thread from strategy to action reads at a glance; one section is open at a time.
  */
 const Sections = createContext<{ open: Panel | null; toggle: (p: Panel) => void }>({ open: null, toggle: () => {} });
+/** A change asked for from elsewhere on the page (the "Assign owner" fix on a check), opened in the Cascade section (v0.27.0). */
+const Pending = createContext<{ pending: ChangeChoice | null; used: () => void }>({ pending: null, used: () => {} });
+
+function Change({ n }: { n: NodeView }) {
+  const { pending, used } = useContext(Pending);
+  const { repo } = useApp();
+  // A fresh panel for each record and each viewer, so nothing half-typed carries over to someone else.
+  return <MakeAChange key={`${n.ref.id}:${repo.viewer.membershipId}`} kind={n.ref.kind} id={n.ref.id} pending={pending} onPendingUsed={used} />;
+}
 
 function PanelCard({ p, summary, children, empty }: { p: Panel; summary: string; children?: ReactNode; empty?: boolean }) {
   const { open, toggle } = useContext(Sections);
@@ -106,7 +117,7 @@ function NodeLink({ r, oneLine = false }: { r: NodeRef; oneLine?: boolean }) {
 }
 
 /** Hard blocks always show in full; advisory flags fold into one strip that can be opened. */
-function Findings({ n }: { n: NodeView }) {
+function Findings({ n, assignOwner }: { n: NodeView; assignOwner?: () => void }) {
   const { repo } = useApp();
   const [open, setOpen] = useState(false);
   const listId = useId();
@@ -115,7 +126,9 @@ function Findings({ n }: { n: NodeView }) {
   const card = (f: NodeView['findings'][number]) => {
     const own = f.subject.type === NODE_TYPE_OF[n.ref.kind] && f.subject.id === n.ref.id;
     const short = own ? en.node.findingHere[f.ruleId]?.(self) : undefined;
-    return <FindingCard key={f.key} view={repo.describeFinding(f)} here={{ node: n.ref.kind, id: n.ref.id }} short={short} />;
+    // v0.27.0: the owner is assigned right here, so the check offers that instead of a link.
+    const fixAction = own && f.ruleId === 'STRUCT-KPI-NO-OWNER' && assignOwner ? { label: en.inYear.assignOwner, onClick: assignOwner } : undefined;
+    return <FindingCard key={f.key} view={repo.describeFinding(f)} here={{ node: n.ref.kind, id: n.ref.id }} short={short} fixAction={fixAction} />;
   };
   const blocks = n.findings.filter(isBlocking);
   const flags = n.findings.filter((f) => !isBlocking(f));
@@ -266,6 +279,7 @@ function CascadePanel({ n, labels, singular, kpiSingular }: { n: NodeView; label
     <PanelCard p="cascade" summary={cascadeSummary(n, labels, singular)}>
       {c.kind === 'goal' || c.kind === 'objective' ? (
         <>
+          <Change n={n} />
           <ProgressBar share={c.progress.progress} expected={c.progress.expected} status={c.progress.status} label={n.ref.code} />
           <p className="text-13 text-muted">
             {en.progress.reporting(c.progress.reporting, c.progress.total)}. {en.progress.expected(formatPercent(c.progress.expected))}.
@@ -294,9 +308,11 @@ function CascadePanel({ n, labels, singular, kpiSingular }: { n: NodeView; label
             )}
           </div>
           {c.kind === 'objective' && <MapSummary objectiveId={n.ref.id} />}
+          <ChangesThisYear kind={n.ref.kind} id={n.ref.id} />
         </>
       ) : c.kind === 'kpi' ? (
         <>
+          <Change n={n} />
           <KpiDetail p={c.progress} unit={c.unit} />
           <dl className="grid grid-cols-2 gap-3">
             <Field label={en.node.direction}>{en.direction[c.direction]}</Field>
@@ -327,6 +343,7 @@ function CascadePanel({ n, labels, singular, kpiSingular }: { n: NodeView; label
               />
             )}
           </div>
+          <ChangesThisYear kind="kpi" id={n.ref.id} />
         </>
       ) : (
         <>
@@ -345,7 +362,8 @@ function CascadePanel({ n, labels, singular, kpiSingular }: { n: NodeView; label
               <p className="text-16 font-semibold text-navy">{en.noSixP}</p>
             )}
           </div>
-          <ActivityLevel key={`${n.ref.id}:${c.level ?? ''}`} activityId={n.ref.id} title={n.ref.title} level={c.level} />
+          <Change n={n} />
+          <ActivityLevel activityId={n.ref.id} level={c.level} />
           <dl className="grid gap-3 sm:grid-cols-2">
             <Field label={en.node.evidence}>{c.evidence || '—'}</Field>
             <Field label={en.node.frequency}>{en.frequency[c.frequency]}</Field>
@@ -384,6 +402,7 @@ function CascadePanel({ n, labels, singular, kpiSingular }: { n: NodeView; label
               <ProgressBar compact share={c.kpi.progress.clamped} trueShare={c.kpi.progress.progress} status={c.kpi.progress.status} label={c.kpi.ref.code} />
             )}
           </div>
+          <ChangesThisYear kind="activity" id={n.ref.id} />
         </>
       )}
     </PanelCard>
@@ -585,6 +604,9 @@ function RecordHeading({ n }: { n: NodeView }) {
           {n.owner ? en.node.owner(n.owner.position, n.owner.person, n.owner.acting) : en.node.noOwner}
         </span>
         {codes && <span className="tabular text-muted">{n.ref.code}</span>}
+        {c.kind === 'activity' && (c.status === 'complete' || c.status === 'archived') && (
+          <span className={`rounded-full px-2 py-0.5 text-12 font-semibold ${c.status === 'complete' ? 'border border-complete-border bg-complete-bg text-complete-text' : 'bg-info-bg text-navy'}`}>{en.activityStatus[c.status]}</span>
+        )}
       </div>
     </div>
   );
@@ -615,6 +637,7 @@ export function NodePage({ kind, id, from }: { kind: NodeKind; id: string; from?
   const terms = repo.settings().termLabels;
   // Which section opens first depends on where the person came from; a direct visit opens "How it's done" (9.3).
   const [open, setOpen] = useState<Panel | null>((from && FIRST_OPEN[from]) ?? 'cascade');
+  const [pending, setPending] = useState<ChangeChoice | null>(null);
   if (!n) {
     return (
       <div className="rounded-xl border border-border bg-white p-6">
@@ -633,16 +656,18 @@ export function NodePage({ kind, id, from }: { kind: NodeKind; id: string; from?
       <NextYearBar />
       <RecordHeading n={n} />
       {kind === 'kpi' && <AddNextYearActivity kpiId={id} ownerDefault={null} />}
-      <Findings n={n} />
+      <Findings n={n} assignOwner={repo.inYear.form(kind, id)?.choices.includes('owner') ? () => { setOpen('cascade'); setPending('owner'); } : undefined} />
       <NextStep n={n} />
       {/* Reading order is the source order, so on a phone the sections stack as Strategy, Cascade, Plan, Performance. */}
       <Sections.Provider value={{ open, toggle: (p) => setOpen(open === p ? null : p) }}>
+        <Pending.Provider value={{ pending, used: () => setPending(null) }}>
         <div className="grid gap-3">
           <StrategyPanel n={n} />
           <CascadePanel n={n} labels={labels} singular={singular} kpiSingular={terms.kpi.singular} />
           <PlanPanel n={n} labels={labels} singular={singular} line={terms.budgetLine} />
           <PerformancePanel n={n} co={terms.contractObjective} />
         </div>
+        </Pending.Provider>
       </Sections.Provider>
     </>
   );

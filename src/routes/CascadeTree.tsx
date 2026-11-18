@@ -103,6 +103,7 @@ function Row({ n, depth, c }: { n: TreeNode; depth: number; c: RowCtx }) {
         </div>
         <div className="flex flex-wrap items-center gap-2 pb-1 pl-12 md:justify-end md:pb-0 md:pl-0">
           <Signal n={n} c={c} />
+          {n.complete && <span className="rounded-full border border-complete-border bg-complete-bg px-2 py-0.5 text-12 font-semibold text-complete-text">{en.activityStatus.complete}</span>}
           {n.ref.kind === 'objective' && c.maps[n.ref.id] ? (
             <a href={mapHref(n.ref.id)} aria-label={en.decisionMap.treeLinkFor(n.ref.title)} className="inline-flex min-h-11 items-center text-13 font-semibold text-navy underline underline-offset-4">
               {en.decisionMap.treeLink}
@@ -127,9 +128,34 @@ function Row({ n, depth, c }: { n: TreeNode; depth: number; c: RowCtx }) {
           ) : (
             <Rows nodes={n.children} depth={depth + 1} c={c} />
           )}
+          {n.stopped && n.stopped.length > 0 && <Stopped nodes={n.stopped} depth={depth + 1} c={c} />}
         </ul>
       )}
     </li>
+  );
+}
+
+/** A KPI's stopped activities (v0.27.0, IC-6): out of the tree and its counts, one link away. */
+function Stopped({ nodes, depth, c }: { nodes: TreeNode[]; depth: number; c: RowCtx }) {
+  const [show, setShow] = useState(false);
+  const pad = { paddingLeft: `${depth * 24 + 52}px` };
+  return (
+    <>
+      <li className="border-b border-border py-1" style={pad}>
+        <button type="button" aria-expanded={show} onClick={() => setShow(!show)} className="inline-flex min-h-11 items-center text-14 font-semibold text-navy underline underline-offset-4">
+          {show ? en.inYear.hideStopped : en.inYear.showStopped(nodes.length)}
+        </button>
+      </li>
+      {show && nodes.map((n) => (
+        <li key={n.ref.id} className="flex flex-wrap items-center gap-x-3 border-b border-border py-1" style={pad}>
+          <a href={nodeHref(n.ref.kind, n.ref.id)} className="flex min-h-11 min-w-0 flex-1 flex-col justify-center py-1 text-muted hover:text-navy">
+            <span className="text-12 font-semibold">{c.terms.activity.singular}</span>
+            <span className="min-w-0 truncate text-14 line-through">{n.ref.title}{c.codes && <span className="tabular ml-2 text-13 no-underline">{n.ref.code}</span>}</span>
+          </a>
+          <span className="rounded-full bg-info-bg px-2 py-0.5 text-12 font-semibold text-navy">{en.activityStatus.archived}</span>
+        </li>
+      ))}
+    </>
   );
 }
 

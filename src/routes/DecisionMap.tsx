@@ -12,7 +12,6 @@ import { useShowCodes } from '../components/prefs';
 import { SevenCStage } from '../components/WorkspaceHeader';
 import type { CorrectiveForm, MapPage } from '../data/access/repository';
 import { SIX_P_LEVELS } from '../rules/structure';
-import { formatDate } from '../selectors/format';
 import type { MapRow } from '../selectors/decision-map';
 import { en, type Terms } from '../strings/en';
 import { mapHref, nodeHref } from './router';
@@ -461,115 +460,25 @@ export function MapSummary({ objectiveId }: { objectiveId: string }) {
   );
 }
 
-/** On an activity's "How it's done": "Change level" (D6-6), "Corrects:" (D6-2) and the level history. */
-export function ActivityLevel({ activityId, title, level }: { activityId: string; title: string; level: SixPLevel | null }) {
+/**
+ * On an activity's "How it's done": "Corrects:" (D6-2). Since v0.27.0 the level is changed through "Make a change"
+ * and its history shows in "Changes this year" (src/routes/InYearChanges.tsx).
+ */
+export function ActivityLevel({ activityId, level }: { activityId: string; level: SixPLevel | null }) {
   const { repo } = useApp();
   const v = repo.activityLevel(activityId);
-  const t = repo.settings().termLabels;
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const opener = useRef<HTMLButtonElement>(null);
-  if (!v) return null;
+  if (!v || !v.corrects || v.corrects.length === 0) return null;
   return (
-    <>
-      {v.canChange && !open && (
-        <button ref={opener} type="button" onClick={() => { setOpen(true); setMessage(null); }} className={button}>{en.levelChange.button}</button>
-      )}
-      {open && level && (
-        <LevelForm
-          activityId={activityId} title={title} level={level} t={t}
-          commitments={v.commitments} corrects={v.corrects ?? []}
-          onClose={(text) => { setOpen(false); setMessage(text); setTimeout(() => opener.current?.focus(), 0); }}
-        />
-      )}
-      <div role="status" aria-live="polite">
-        {message && <p className="rounded-lg border border-complete-border bg-complete-bg px-3 py-2 text-14 text-complete-text">{message}</p>}
-      </div>
-      {v.corrects && v.corrects.length > 0 && (
-        <p className="text-14 text-text">
-          <span className="text-muted">{en.decisionMap.corrects} </span>
-          {v.corrects.map((d, i) => (
-            <span key={d.id}>
-              <a href={mapHref(d.objectiveId, d.id)} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-navy">{d.description}</a> ({en.sixP[d.level]})
-              {level && level !== d.level && <span className="font-semibold text-cascade-text"> · {en.decisionMap.solvedAt(en.sixP[level])}</span>}
-              {i < v.corrects!.length - 1 ? '; ' : ''}
-            </span>
-          ))}
-        </p>
-      )}
-      {v.history.length > 0 && (
-        <div>
-          <h3 className="text-14 font-semibold text-navy">{en.levelChange.history}</h3>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-13 text-text">
-            {v.history.map((h, i) => (
-              <li key={i}>{en.levelChange.historyItem(h.from ? en.sixP[h.from] : en.noSixP, en.sixP[h.to], h.by, formatDate(h.on), h.reason)}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </>
-  );
-}
-
-function LevelForm({ activityId, title, level, t, commitments, corrects, onClose }: {
-  activityId: string; title: string; level: SixPLevel; t: Terms; commitments: number;
-  corrects: { description: string; level: SixPLevel }[]; onClose: (message: string | null) => void;
-}) {
-  const { repo } = useApp();
-  const [to, setTo] = useState<SixPLevel>(level);
-  const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const name = useId();
-  const reasonId = useId();
-  const errorRef = useRef<HTMLParagraphElement>(null);
-  const first = useRef<HTMLInputElement>(null);
-  useEffect(() => { first.current?.focus(); }, []);
-  const follows = to === level ? [] : [
-    ...(commitments ? [en.levelChange.commitments(t, commitments)] : []),
-    ...corrects.map((d) => en.levelChange.corrects(d.description, en.sixP[d.level], to !== d.level ? en.sixP[to] : null)),
-  ];
-  const save = () => {
-    const r = repo.changeActivityLevel(activityId, to, reason);
-    if (r.ok) onClose(en.levelChange.done(en.sixP[to], commitments));
-    else {
-      setError(en.levelChange.errors[r.error]!(en.sixP[level]));
-      setTimeout(() => errorRef.current?.focus(), 0);
-    }
-  };
-  return (
-    <section aria-label={en.levelChange.title} className="rounded-lg border border-control bg-white p-4">
-      <h3 className="text-16 font-bold text-navy">{en.levelChange.title}</h3>
-      <p className="text-13 text-muted">{en.levelChange.now(title, en.sixP[level])}</p>
-      {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mt-2 text-13 font-semibold text-block-text">{error}</p>}
-      <fieldset className="mt-3">
-        <legend className="text-14 font-semibold text-navy">{en.levelChange.legend}</legend>
-        <div className="mt-2 space-y-2">
-          {SIX_P_LEVELS.map((l, i) => (
-            <label key={l} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 hover:border-control">
-              <input ref={i === 0 ? first : undefined} type="radio" name={name} value={l} checked={to === l} onChange={() => { setTo(l); setError(null); }} className="mt-1 h-5 w-5 accent-navy" />
-              <span>
-                <span className="font-semibold text-navy">{en.sixP[l]}</span>
-                {l === level && <span className="ml-2 text-13 text-muted">{en.levelChange.current}</span>}
-                <span className="block text-13 text-muted">{en.explain.covers}: {SIX_P_SCOPE[l]}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <label htmlFor={reasonId} className="mt-3 block text-14 font-semibold text-navy">{en.levelChange.reason}</label>
-      <textarea id={reasonId} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} aria-describedby={`${reasonId}-hint`} className="mt-1 w-full rounded-lg border border-control bg-white p-2 text-14 text-text" />
-      <p id={`${reasonId}-hint`} className="text-12 text-muted">{en.levelChange.reasonHint}</p>
-      {follows.length > 0 && (
-        <div className="mt-3 rounded-lg border border-advisory-border bg-advisory-bg p-3 text-13 text-advisory-text">
-          <p className="font-semibold">{en.levelChange.follows}</p>
-          {follows.map((f) => <p key={f} className="mt-1">{f}</p>)}
-        </div>
-      )}
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={save} className={primary}>{en.levelChange.save}</button>
-        <button type="button" onClick={() => onClose(null)} className={button}>{en.levelChange.cancel}</button>
-      </div>
-    </section>
+    <p className="text-14 text-text">
+      <span className="text-muted">{en.decisionMap.corrects} </span>
+      {v.corrects.map((d, i) => (
+        <span key={d.id}>
+          <a href={mapHref(d.objectiveId, d.id)} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-navy">{d.description}</a> ({en.sixP[d.level]})
+          {level && level !== d.level && <span className="font-semibold text-cascade-text"> · {en.decisionMap.solvedAt(en.sixP[level])}</span>}
+          {i < v.corrects!.length - 1 ? '; ' : ''}
+        </span>
+      ))}
+    </p>
   );
 }
 
