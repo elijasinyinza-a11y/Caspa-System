@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ Access Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: the CASPA™ shell around People and access (By person, By role), the checks drawer, a handover and the
+   signed-out page. Access Review Specification v0.1, AR-1 to AR-10 as confirmed 19 November 2026. Light mode only. */
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84; --line:#EDECEA;
+  --panel:#223D56; --side-fg:#C8D1DB;
+  --st:#378ADD; --ca:#7C5CBF; --pl:#B85C38; --pf:#C2417A;
+  --blk:#B42318; --blk-l:#FEF3F2; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  --font:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--cream);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy);text-wrap:balance}
+h2{font-size:18px;margin:0;color:var(--navy)}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px} .xs{font-size:12px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:var(--white);padding:20px 12px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px}
+.mark{width:36px;height:36px;border-radius:8px;background:var(--white);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.brand b{display:block;font-size:16px}.brand span{font-size:12px;color:var(--side-fg)}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:var(--white);font-weight:600}
+.sub{display:flex;align-items:center;min-height:44px;padding:0 12px 0 34px;border-radius:8px;color:var(--side-fg);font-size:13px}
+.sub.on{color:var(--white);font-weight:600;box-shadow:inset 3px 0 0 var(--white)}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--white);border-bottom:1px solid var(--border);padding:10px max(24px,env(safe-area-inset-right,0px)) 10px max(24px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.crumbs{flex:1 1 200px;color:var(--muted);font-size:13px;min-width:0}
+.crumbs b{color:var(--navy);font-weight:600}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:var(--white);max-width:min(320px,70vw)}
+.pill{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--control);background:var(--white);font-size:13px;font-weight:600;cursor:pointer}
+.content{padding:24px max(16px,env(safe-area-inset-right,0px)) 96px max(16px,env(safe-area-inset-left,0px));width:100%;max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.proto{background:var(--white);border:1px dashed var(--control);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.proto-row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.entries{display:flex;gap:8px;flex-wrap:wrap}
+.entry{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--white);font-weight:600;cursor:pointer}
+.entry[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btn-sm{min-height:40px;padding:0 10px;font-size:13px}
+.btn:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.link{background:none;border:0;padding:0;color:var(--navy);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:44px}
+.wsh .eyebrow{font-size:13px;color:var(--muted)}
+.wsh h1{margin-top:6px}
+.wsh p{margin-top:6px;font-size:16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tab{min-height:44px;padding:0 16px;border:0;background:none;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+.tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--navy)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:600;padding:8px 12px 8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--border);vertical-align:top}
+.scroll{overflow-x:auto}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-blk{background:var(--blk-l);color:var(--blk);border:1px solid var(--blk)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.roles label{display:flex;align-items:center;gap:8px;min-height:44px}
+.roles input{width:20px;height:20px}
+.field{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white);max-width:200px}
+.search{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;width:100%;max-width:360px}
+.msg{border-radius:10px;padding:12px 14px;font-weight:600}
+.msg-ok{border:1px solid var(--ok-b);background:var(--ok-l);color:var(--ok)}
+.msg-blk{border:1px solid var(--blk);background:var(--blk-l);color:var(--blk)}
+.msg-blk p+p,.msg-ok p+p{font-weight:400;margin-top:4px}
+.role{border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.role:first-of-type{border-top:0;padding-top:0}
+.rolehead{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between}
+.holder{display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(160px,1.5fr) minmax(120px,1fr) auto;gap:4px 12px;align-items:start;padding:8px 0;border-top:1px dashed var(--line)}
+.holder:first-child{border-top:0}
+.drawer{position:fixed;inset:0 0 0 auto;width:min(440px,100vw);background:var(--white);border-left:1px solid var(--border);box-shadow:-8px 0 24px rgba(13,27,42,.12);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;z-index:5}
+.finding{border:1px solid var(--adv-b);background:var(--adv-l);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.finding.acked{border-color:var(--border);background:var(--white)}
+.ai{border-left:3px solid var(--control);padding:6px 10px;background:var(--cream);font-size:13px}
+textarea{min-height:72px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;width:100%}
+.log li{font-size:13px;margin:4px 0}
+.ended{max-width:520px;margin:48px auto;text-align:left}
+@media (max-width:900px){.side{display:none}}
+@media (max-width:700px){.holder{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><div class="mark">C</div><div><b>CASPA™</b><span>Karislabs Technologies</span></div></div>
+    <div class="navbtn"><span class="dot" style="background:var(--white)"></span>Home</div>
+    <div class="navbtn"><span class="dot" style="background:var(--st)"></span>Strategy</div>
+    <div class="navbtn"><span class="dot" style="background:var(--ca)"></span>Cascade</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pl)"></span>Plan</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pf)"></span>Performance</div>
+    <div class="navbtn on" id="nav-org"><span class="dot" style="background:var(--side-fg)"></span>Organisation</div>
+    <div class="sub" id="sub-vac">Vacancies</div>
+    <div class="sub" id="sub-people">People and access</div>
+  </nav>
+  <div class="main">
+    <header class="top">
+      <div class="crumbs" id="crumbs"></div>
+      <button class="pill" id="checks" type="button"></button>
+      <label class="viewas" for="who">Viewing as
+        <select id="who">
+          <option value="hrm">Natasha Kabwe, Human Resources Manager (administrator)</option>
+          <option value="md">Chanda Mulenga, Managing Director (Executive)</option>
+          <option value="fac">Mutale Chola, external consultant (Facilitator)</option>
+        </select>
+      </label>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+</div>
+<div id="drawer-root"></div>
+
+<script>
+/* ───── Sample: Sample Water Utility; structure confirmed 15 January 2026 ───── */
+const ROLES = ['executive','org_admin','strategy_office','finance','hr','compliance','facilitator'];
+const ROLE = { executive:'Executive', org_admin:'Organisation administrator', strategy_office:'Strategy office', finance:'Finance', hr:'HR', compliance:'Compliance', facilitator:'Facilitator' };
+const CONFIRMED = '2026-01-15';
+const DATES = [['2026-11-19','19 November 2026'],['2026-12-01','1 December 2026'],['2027-01-01','1 January 2027']];
+const SCREENS = [['person','People and access: By person'],['role','People and access: By role'],['handover','Vacancies: handover']];
+
+function seed() {
+  const p = (id, name, email, positions, roles, extra = {}) => ({ id, name, email, positions, roles, since: Object.fromEntries(roles.map((r) => [r, CONFIRMED])), startsOn: CONFIRMED, endsOn: null, status: 'active', endedOn: null, ...extra });
+  const pos = (title, acting = false, to = null) => ({ title, acting, to });
+  return [
+    p('md', 'Chanda Mulenga', 'chanda.mulenga@sample-water.example', [pos('Managing Director')], ['executive']),
+    p('hof', 'Ruth Phiri', 'ruth.phiri@sample-water.example', [pos('Head of Finance')], ['finance']),
+    p('hrm', 'Natasha Kabwe', 'natasha.kabwe@sample-water.example', [pos('Human Resources Manager')], ['hr', 'org_admin']),
+    p('spm', 'Bwalya Musonda', 'bwalya.musonda@sample-water.example', [pos('Strategy and Planning Manager')], ['strategy_office']),
+    p('lco', 'Lillian Siame', 'lillian.siame@sample-water.example', [pos('Legal and Compliance Officer')], ['compliance']),
+    p('kel', 'Kelvin Mwila', 'kelvin.mwila@sample-water.example', [], ['finance'], { since: { finance: '2026-03-02' } }),
+    p('fac', 'Mutale Chola', 'mutale.chola@consult.example', [], ['facilitator'], { since: { facilitator: '2026-10-01' }, startsOn: '2026-10-01', endsOn: '2026-11-30' }),
+    p('hoo', 'Joseph Tembo', 'joseph.tembo@sample-water.example', [pos('Head of Operations')], []),
+    p('cm', 'Peter Mwansa', 'peter.mwansa@sample-water.example', [pos('Commercial Manager')], []),
+    p('co', 'Esther Banda', 'esther.banda@sample-water.example', [pos('Commercial Officer')], []),
+    p('mrb', 'Mary Chileshe', null, [pos('Meter Reader, Zone B')], []),
+  ];
+}
+let S;
+function fresh() {
+  S = { people: seed(), today: DATES[0][0], who: 'hrm', screen: 'person', drawer: false, msg: null, q: '', acks: {}, explain: {}, ackOpen: null, log: [], handoverOf: 'hof' };
+  document.getElementById('who').value = 'hrm';
+}
+
+/* ───── Helpers (in the build: membershipActiveOn, selectors/access.ts, rules/access.ts) ───── */
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const fmt = (d) => d ? new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' }) : '';
+const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const person = (id) => S.people.find((x) => x.id === id);
+/** D1: a membership counts only from its start to its end date, inclusive. */
+const activeOn = (x, d = S.today) => x.status === 'active' && x.startsOn <= d && (!x.endsOn || x.endsOn >= d);
+const held = (x, d = S.today) => x.positions.filter((p) => !p.to || p.to >= d);
+const holders = (role, people = S.people) => people.filter((x) => activeOn(x) && x.roles.includes(role));
+const viewer = () => person(S.who);
+const isAdmin = () => viewer().roles.includes('org_admin') && activeOn(viewer());
+const record = (text) => S.log.unshift(`${fmt(S.today)} · ${viewer().name} · ${text}`);
+
+/* ───── The five ACCESS- checks (section 4) ───── */
+const RULE = {
+  'ACCESS-ROLE-NO-POSITION': { level: 'person', ack: true, explain: 'This person can still act with an assigned role although they hold no position and their access has no end date. If they have left, end their access; if they are a consultant, give their access an end date.' },
+  'ACCESS-ENDS-SOON': { level: 'person', ack: true, explain: 'This person’s access ends soon. After that date they can no longer sign in. Extend the date if their work continues, or let it end.' },
+  'ACCESS-NO-STAFF-ADMIN': { level: 'org', ack: false, explain: 'Changes to the structure need an administrator who holds a position in the organisation. Give the administrator role to someone who holds a position.' },
+  'ACCESS-NO-EXECUTIVE': { level: 'org', ack: false, explain: 'Plans and goals are confirmed by the Executive. Nobody active holds that role now, so confirmations cannot happen.' },
+  'ACCESS-KEY-ROLE-ACTING-ONLY': { level: 'org', ack: false, explain: 'Everyone holding this role holds their position only as acting. Acting appointments are normal; check that someone substantive will hold the role when the acting period ends.' },
+};
+function findings(people = S.people) {
+  const out = [];
+  const add = (rule, key, text, fix, personId = null) => out.push({ rule, key: `${rule}:${key}`, text, fix, personId });
+  for (const x of people) {
+    if (!activeOn(x)) continue;
+    if (x.roles.length && !held(x).length && !x.endsOn) add('ACCESS-ROLE-NO-POSITION', x.id, `${x.name} holds ${x.roles.map((r) => ROLE[r]).join(', ')} but no position.`, ['person', x.id], x.id);
+    if (x.endsOn && x.endsOn <= addDays(S.today, 14)) add('ACCESS-ENDS-SOON', x.id, `${x.name}’s access ends on ${fmt(x.endsOn)}.`, ['person', x.id], x.id);
+  }
+  if (!holders('org_admin', people).some((x) => held(x).length)) add('ACCESS-NO-STAFF-ADMIN', 'org', 'No administrator holds a position.', ['person', null]);
+  if (!holders('executive', people).length) add('ACCESS-NO-EXECUTIVE', 'org', 'Nobody holds Executive.', ['role', 'executive']);
+  for (const r of ['executive', 'org_admin']) {
+    const h = holders(r, people).filter((x) => held(x).length);
+    if (h.length && h.every((x) => held(x).every((p) => p.acting))) add('ACCESS-KEY-ROLE-ACTING-ONLY', r, `Everyone holding ${ROLE[r]} is acting in their position.`, ['role', r]);
+  }
+  return out;
+}
+/** Who sees what: person-level checks only administrators (Membership row, D7-5); the no-administrator check also the Executive. */
+function visibleFindings() {
+  if (!activeOn(viewer())) return [];
+  return findings().filter((f) => isAdmin() || (viewer().roles.includes('executive') && activeOn(viewer()) && f.rule === 'ACCESS-NO-STAFF-ADMIN'));
+}
+/** The setup must-checks a change would add (D7-10): no Executive, or no administrator holding a position. */
+function wouldBreak(change) {
+  const after = JSON.parse(JSON.stringify(S.people)); change(after);
+  const had = new Set(findings().filter((f) => ['ACCESS-NO-STAFF-ADMIN', 'ACCESS-NO-EXECUTIVE'].includes(f.rule)).map((f) => f.rule));
+  return findings(after).filter((f) => ['ACCESS-NO-STAFF-ADMIN', 'ACCESS-NO-EXECUTIVE'].includes(f.rule) && !had.has(f.rule));
+}
+const breakMsg = (added) => added.map((f) => f.rule === 'ACCESS-NO-EXECUTIVE' ? 'Nobody would hold Executive. Give Executive to someone else first.' : 'No administrator would hold a position. Give the administrator role to someone who holds a position first.');
+
+/* ───── Actions ───── */
+function setRole(id, role, on) {
+  const x = person(id);
+  if (on && role === 'facilitator' && !x.endsOn) return fail(`Facilitators need an end date for their access. Set “Access ends on” for ${x.name} first.`);
+  if (!on) { const b = wouldBreak((ps) => { const y = ps.find((p) => p.id === id); y.roles = y.roles.filter((r) => r !== role); }); if (b.length) return fail(`${ROLE[role]} stays with ${x.name}.`, breakMsg(b)); }
+  x.roles = on ? [...x.roles, role] : x.roles.filter((r) => r !== role);
+  if (on) x.since[role] = S.today;
+  record(`${on ? 'gave' : 'removed'} ${ROLE[role]} ${on ? 'to' : 'from'} ${x.name}`);
+  ok(`${ROLE[role]} ${on ? 'given to' : 'removed from'} ${x.name}.`);
+}
+function setEnd(id, value) {
+  const x = person(id);
+  if (!value && x.roles.includes('facilitator')) return fail(`Facilitators need an end date for their access. ${x.name}’s date stays ${fmt(x.endsOn)}.`);
+  if (value && value < S.today) return fail('The end date cannot be before today. To stop access now, use End access.');
+  x.endsOn = value || null;
+  record(`set ${x.name}’s access to ${value ? `end on ${fmt(value)}` : 'no end date'}`);
+  ok(value ? `${x.name}’s access ends on ${fmt(value)}.` : `${x.name}’s access has no end date.`);
+}
+function endAccess(id) {
+  const x = person(id);
+  if (id === S.who) return fail('You cannot end your own access. Ask another administrator.');
+  const b = wouldBreak((ps) => { ps.find((p) => p.id === id).status = 'ended'; });
+  if (b.length) return fail(`${x.name}’s access stays.`, breakMsg(b));
+  x.status = 'ended'; x.endedOn = addDays(S.today, -1); x.endsOn = x.endedOn;
+  record(`ended ${x.name}’s access (last day ${fmt(x.endedOn)})`);
+  ok(`${x.name}’s access has ended. Their records stay.`, [`Roles held until ${fmt(x.endedOn)}: ${x.roles.map((r) => ROLE[r]).join(', ') || 'none'}.`]);
+}
+function giveAgain(id) {
+  const x = person(id);
+  Object.assign(x, { status: 'active', startsOn: S.today, endsOn: null, endedOn: null, roles: [], since: {} });
+  record(`gave ${x.name} access again`);
+  ok(`${x.name} has access again, with no roles. Give roles in By person.`);
+}
+function leavePosition(id) {
+  const x = person(id);
+  const b = wouldBreak((ps) => { ps.find((p) => p.id === id).positions = []; });
+  if (b.length) return fail(`${x.name} stays in the position.`, breakMsg(b));
+  const title = x.positions[0]?.title;
+  x.positions = [];
+  record(`recorded that ${x.name} left ${title}`);
+  ok(`${x.name} has left ${title}. The position is vacant from today.`);
+}
+const ok = (title, more = []) => { S.msg = { kind: 'ok', title, more }; };
+const fail = (title, more = []) => { S.msg = { kind: 'blk', title, more }; };
+
+/* ───── Screens ───── */
+const msgHtml = () => S.msg ? `<div class="msg msg-${S.msg.kind}" role="${S.msg.kind === 'blk' ? 'alert' : 'status'}"><p>${esc(S.msg.title)}</p>${S.msg.more.map((m) => `<p>${esc(m)}</p>`).join('')}</div>` : '';
+const checksOf = (id) => visibleFindings().filter((f) => f.personId === id);
+const checkTags = (list) => list.map((f) => `<span class="tag ${S.acks[f.key] ? 't-info' : 't-adv'}">${S.acks[f.key] ? 'Checked: ' : 'To check: '}${esc(f.text)}</span>`).join(' ');
+
+function tabs() {
+  return `<div class="tabs" role="tablist" aria-label="People and access">
+    <button class="tab" role="tab" data-screen="person" aria-selected="${S.screen === 'person'}">By person</button>
+    <button class="tab" role="tab" data-screen="role" aria-selected="${S.screen === 'role'}">By role</button></div>`;
+}
+function rowPerson(x, focus) {
+  const pos = held(x);
+  return `<tr id="row-${x.id}"${focus ? ' style="background:var(--adv-l)"' : ''}>
+    <td><b style="color:var(--navy)">${esc(x.name)}</b><div class="xs muted">${esc(x.email ?? 'No email')}</div>
+      <div class="field"><label for="end-${x.id}">Access for ${esc(x.name)} ends on</label><input type="date" id="end-${x.id}" data-end="${x.id}" value="${x.endsOn ?? ''}" min="${S.today}"></div>
+      <div style="margin-top:6px">${checkTags(checksOf(x.id))}</div></td>
+    <td class="small">${pos.map((p) => esc(p.title) + (p.acting ? ' <span class="tag t-info">acting</span>' : '')).join('<br>') || '<span class="muted">No position</span>'}</td>
+    <td><fieldset class="roles" style="border:0;margin:0;padding:0"><legend class="sr-only" style="position:absolute;left:-9999px">Roles: ${esc(x.name)}</legend>
+      ${ROLES.map((r) => `<label><input type="checkbox" data-role="${r}" data-id="${x.id}" ${x.roles.includes(r) ? 'checked' : ''}>${ROLE[r]}</label>`).join('')}</fieldset></td>
+    <td>${x.id === S.who ? '<span class="xs muted">You</span>' : `<button class="btn btn-quiet btn-sm" data-endaccess="${x.id}">End access</button>`}</td></tr>`;
+}
+function byPerson() {
+  const list = S.people.filter((x) => activeOn(x) && x.roles.length);
+  const others = S.people.filter((x) => !list.includes(x));
+  const q = S.q.trim().toLowerCase();
+  const found = q.length >= 2 ? others.filter((x) => x.name.toLowerCase().includes(q) || (x.email ?? '').includes(q)) : [];
+  const focus = S.focus;
+  return `${tabs()}<div class="card"><p class="small muted">People with an assigned role. Supervisors, owners and budget holders follow from the structure.</p>
+    <p class="small">${list.length} people have an assigned role, out of ${S.people.filter((x) => activeOn(x)).length} people.</p>
+    <div class="scroll"><table><thead><tr><th>Person</th><th>Position</th><th>Roles</th><th><span style="position:absolute;left:-9999px">Access</span></th></tr></thead>
+    <tbody>${list.map((x) => rowPerson(x, focus === x.id)).join('')}</tbody></table></div>
+    <div><label for="find" class="small" style="font-weight:600">Find someone else to give a role or an email</label><br>
+    <input id="find" class="search" type="search" placeholder="Name or email" value="${esc(S.q)}" style="margin-top:4px"></div>
+    ${q.length >= 2 ? (found.length ? `<div class="scroll"><table><tbody>${found.map((x) => activeOn(x) ? rowPerson(x, false) : `<tr><td><b>${esc(x.name)}</b><div class="xs muted">Access ended ${fmt(x.endsOn)}</div></td><td colspan="2"></td><td><button class="btn btn-quiet btn-sm" data-again="${x.id}">Give access again</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">Nobody else matches.</p>') : ''}
+    </div>`;
+}
+function byRole() {
+  const ended = S.people.filter((x) => !activeOn(x) && x.startsOn <= S.today && (x.status === 'ended' || x.endsOn));
+  return `${tabs()}<div class="card"><p class="small muted">Who holds each assigned role. Supervisors, owners and budget holders follow from the structure and are not listed here. To change roles, use By person.</p>
+    ${ROLES.map((r) => {
+      const h = holders(r);
+      const orgChecks = visibleFindings().filter((f) => f.fix[0] === 'role' && f.fix[1] === r);
+      return `<section class="role" id="role-${r}"><div class="rolehead"><h3>${ROLE[r]}</h3><span class="small muted">${h.length ? `${h.length} ${h.length === 1 ? 'person' : 'people'}` : 'Nobody holds this role'}</span></div>
+        ${orgChecks.length ? `<div>${checkTags(orgChecks)}</div>` : ''}
+        ${h.length ? `<div>${h.map((x) => `<div class="holder"><div><b style="color:var(--navy)">${esc(x.name)}</b>${x.endsOn ? `<div class="xs muted">Access ends ${fmt(x.endsOn)}</div>` : ''}</div>
+          <div class="small">${held(x).map((p) => esc(p.title) + (p.acting ? ' <span class="tag t-info">acting</span>' : '')).join('<br>') || '<span class="muted">No position</span>'}<div>${checkTags(checksOf(x.id))}</div></div>
+          <div class="small muted">Held since ${fmt(x.since[r] ?? x.startsOn)}</div>
+          <div><button class="link small" data-goto="${x.id}">Change roles</button></div></div>`).join('')}</div>` : ''}</section>`;
+    }).join('')}
+    <section class="role"><div class="rolehead"><h3>Access ended</h3><span class="small muted">${ended.length ? `${ended.length} ${ended.length === 1 ? 'person' : 'people'}` : 'Nobody'}</span></div>
+      ${ended.map((x) => `<div class="holder"><div><b style="color:var(--navy)">${esc(x.name)}</b></div><div class="small">${x.roles.map((r) => ROLE[r]).join(', ') || 'No roles'}</div><div class="small muted">Last day ${fmt(x.endsOn)}</div><div></div></div>`).join('')}</section></div>`;
+}
+function handover() {
+  const opts = S.people.filter((x) => activeOn(x) && x.positions.length);
+  const x = person(S.handoverOf);
+  const has = x && activeOn(x) && x.positions.length;
+  return `<div class="card"><div class="field" style="margin:0"><label for="ho">Position</label>
+      <select id="ho" class="search" style="max-width:360px">${opts.map((y) => `<option value="${y.id}" ${y.id === S.handoverOf ? 'selected' : ''}>${esc(y.positions[0].title)}: ${esc(y.name)}</option>`).join('')}</select></div>
+    ${has ? `<h2>Handover: ${esc(x.positions[0].title)}</h2>
+      <p class="small muted">What ${esc(x.name)} hands over is listed on the Vacancies page as today (owned records, budget lines, people reporting). Added here: the access part.</p>
+      <div><h3>Roles that leave with ${esc(x.name)}</h3><p style="margin-top:4px">${x.roles.map((r) => ROLE[r]).join(', ') || 'None'}</p>
+      <p class="xs muted">Shown to administrators only.</p></div>
+      <div class="btns"><button class="btn btn-primary" data-leave="${x.id}">Record that ${esc(x.name)} leaves this position</button></div>`
+      : `<p class="small muted">${x ? `${esc(x.name)} holds no position now.` : ''}</p>`}
+    ${x && activeOn(x) && !held(x).length && x.id !== S.who ? `<div class="card" style="background:var(--cream)"><p><b>${esc(x.name)}</b> holds no other position${x.roles.length ? ` but still holds ${x.roles.map((r) => ROLE[r]).join(', ')}` : ''}.</p>
+      <div class="btns"><button class="btn btn-primary" data-endaccess="${x.id}">End access</button><button class="btn btn-quiet" data-goto="${x.id}">Keep access and review roles</button></div></div>` : ''}</div>`;
+}
+function endedPage() {
+  const x = viewer();
+  return `<div class="card ended"><h1>Your access has ended</h1><p style="font-size:16px">Your access to Sample Water Utility ended on ${fmt(x.endsOn)}. Ask an administrator if you need it again.</p><p class="small muted">Nothing you did while you had access has been removed.</p></div>`;
+}
+function facilitatorPage() {
+  const x = viewer();
+  return `<div class="card"><h2>Welcome, ${esc(x.name)}</h2><p>You have Facilitator access to Sample Water Utility until ${fmt(x.endsOn)}.</p><p class="small muted">People and access is for administrators. Facilitators see the Strategy work they help with, never salaries or ratings.</p></div>`;
+}
+function notAdminPage() {
+  return `<div class="card"><h2>People and access</h2><p>Only administrators see who holds which role.</p>${visibleFindings().length ? '<p class="small">One check about access is open for you in Checks.</p>' : ''}</div>`;
+}
+
+/* ───── Drawer ───── */
+function drawer() {
+  const list = visibleFindings();
+  return `<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dh"><div class="rolehead"><h2 id="dh">Checks about access</h2><button class="btn btn-quiet btn-sm" data-close>Close</button></div>
+    <p class="small muted">Worth checking, never blocking. Other checks in this drawer are unchanged and not shown in the prototype.</p>
+    ${list.length ? list.map((f) => {
+      const r = RULE[f.rule], a = S.acks[f.key];
+      return `<div class="finding ${a ? 'acked' : ''}"><div><span class="tag ${a ? 't-info' : 't-adv'}">${a ? 'Checked' : 'To check'}</span> <span class="xs muted">${f.rule}</span></div>
+        <p><b>${esc(f.text)}</b></p><p class="xs muted">Sent to ${f.rule === 'ACCESS-NO-STAFF-ADMIN' ? 'administrators and the Executive' : 'administrators'}. Blocks nothing.</p>
+        ${a ? `<p class="small">Checked by ${esc(a.by)} on ${fmt(a.on)}: ${esc(a.reason)}</p>` : ''}
+        ${S.explain[f.key] ? `<div class="ai"><span class="tag t-info">AI draft</span> ${esc(r.explain)}</div>` : ''}
+        <div class="btns"><button class="btn btn-quiet btn-sm" data-explain="${f.key}">Explain this</button>
+          ${isAdmin() ? `<button class="btn btn-sm" data-fix="${f.key}">Fix</button>` : ''}
+          ${r.ack && !a && isAdmin() ? `<button class="btn btn-quiet btn-sm" data-ackopen="${f.key}">Mark as checked</button>` : ''}</div>
+        ${!r.ack ? '<p class="xs muted">This check stays until it is fixed; it cannot be marked as checked.</p>' : ''}
+        ${S.ackOpen === f.key ? `<div><label for="ackr" class="small" style="font-weight:600">Why it is fine</label><textarea id="ackr"></textarea><div class="btns" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-ack="${f.key}">Save</button></div></div>` : ''}</div>`;
+    }).join('') : '<p class="msg msg-ok">All access checks clear.</p>'}</aside>`;
+}
+
+/* ───── Render ───── */
+function render() {
+  const v = viewer();
+  const list = visibleFindings();
+  const open = list.filter((f) => !S.acks[f.key]).length;
+  const checks = document.getElementById('checks');
+  checks.textContent = `Checks: ${open} to check${list.length - open ? `, ${list.length - open} checked` : ''}`;
+  checks.hidden = !activeOn(v);
+  document.getElementById('sub-people').hidden = !isAdmin();
+  document.getElementById('sub-people').classList.toggle('on', S.screen !== 'handover');
+  document.getElementById('sub-vac').classList.toggle('on', S.screen === 'handover');
+  const place = S.screen === 'handover' ? 'Vacancies' : 'People and access';
+  document.getElementById('crumbs').innerHTML = `Sample Water Utility › Organisation › <b>${place}</b>`;
+  let body;
+  if (!activeOn(v)) body = endedPage();
+  else if (v.id === 'fac') body = facilitatorPage();
+  else if (!isAdmin()) body = notAdminPage();
+  else body = { person: byPerson, role: byRole, handover }[S.screen]();
+  const head = activeOn(v) && isAdmin() ? `<div class="wsh"><div class="eyebrow">Organisation</div><h1>${place}</h1></div>` : '';
+  document.getElementById('app').innerHTML = `<div class="proto"><div class="proto-row"><p class="small"><b>Prototype.</b> Access Review Specification v0.1, AR-1 to AR-10 as confirmed 19 November 2026. Sample Water Utility. Nothing is saved.</p>
+      <div class="btns"><label class="viewas" for="today">Today is <select id="today">${DATES.map(([d, l]) => `<option value="${d}" ${d === S.today ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <button class="btn btn-quiet btn-sm" data-reset>Start again</button></div></div>
+    <div class="entries" role="group" aria-label="Screen">${SCREENS.map(([k, l]) => `<button class="entry" data-screen="${k}" aria-pressed="${S.screen === k}">${l}</button>`).join('')}</div>
+    <div class="btns"><span class="xs muted">Try a situation:</span><button class="btn btn-quiet btn-sm" data-sc="acting">Managing Director becomes acting</button><button class="btn btn-quiet btn-sm" data-sc="appt">Natasha’s appointment runs out 31 December 2026</button></div>
+    <p class="xs muted">Suggested path: open Checks; fix Kelvin Mwila (no position) with End access; try to untick Natasha’s administrator role, vacate her position in the handover, or tick Facilitator for Joseph Tembo; open By role; move today to 1 December 2026 and view as Mutale Chola.</p></div>
+    ${head}${msgHtml()}${body}
+    ${S.log.length ? `<div class="card"><h3>Recorded in the audit trail</h3><ul class="log">${S.log.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>` : ''}`;
+  document.getElementById('drawer-root').innerHTML = S.drawer ? drawer() : '';
+  if (S.focus) { document.getElementById(`row-${S.focus}`)?.scrollIntoView({ block: 'center' }); S.focus = null; }
+}
+
+/* ───── Events ───── */
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button'); if (!t) return;
+  const d = t.dataset;
+  if (t.id === 'checks') { S.drawer = true; S.ackOpen = null; }
+  else if ('close' in d) S.drawer = false;
+  else if ('reset' in d) fresh();
+  else if (d.screen) { S.screen = d.screen; S.msg = null; }
+  else if (d.endaccess) endAccess(d.endaccess);
+  else if (d.again) { giveAgain(d.again); S.q = ''; }
+  else if (d.leave) leavePosition(d.leave);
+  else if (d.goto) { S.screen = 'person'; S.focus = d.goto; S.msg = null; }
+  else if (d.explain) S.explain[d.explain] = !S.explain[d.explain];
+  else if (d.ackopen) S.ackOpen = d.ackopen;
+  else if (d.ack) { const r = document.getElementById('ackr').value.trim(); if (!r) return; S.acks[d.ack] = { reason: r, by: viewer().name, on: S.today }; S.ackOpen = null; record(`marked a check as checked: ${r}`); }
+  else if (d.fix) {
+    const f = visibleFindings().find((x) => x.key === d.fix); S.drawer = false; S.msg = null;
+    if (f.fix[0] === 'person') { S.screen = 'person'; S.focus = f.fix[1]; } else { S.screen = 'role'; setTimeout(() => document.getElementById(`role-${f.fix[1]}`)?.scrollIntoView({ block: 'start' })); }
+  }
+  else if (d.sc === 'acting') { const x = person('md'); x.positions[0].acting = !x.positions[0].acting; S.msg = null; record(`${x.positions[0].acting ? 'made' : 'confirmed'} Chanda Mulenga ${x.positions[0].acting ? 'acting' : 'substantive'} Managing Director`); }
+  else if (d.sc === 'appt') { const x = person('hrm'); x.positions[0].to = x.positions[0].to ? null : '2026-12-31'; S.msg = null; record(`set Natasha Kabwe’s appointment to ${x.positions[0].to ? 'end on 31 December 2026' : 'have no end date'}`); }
+  else return;
+  render();
+});
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'who') { S.who = t.value; S.msg = null; S.drawer = false; }
+  else if (t.id === 'today') { S.today = t.value; S.msg = null; }
+  else if (t.id === 'ho') { S.handoverOf = t.value; S.msg = null; }
+  else if (t.dataset.role) setRole(t.dataset.id, t.dataset.role, t.checked);
+  else if (t.dataset.end !== undefined && t.dataset.end) setEnd(t.dataset.end, t.value);
+  else return;
+  render();
+});
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'find') return;
+  S.q = e.target.value; const pos = e.target.selectionStart;
+  render(); const f = document.getElementById('find'); f.focus(); f.setSelectionRange(pos, pos);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.drawer) { S.drawer = false; render(); } });
+fresh(); render();
+</script>
+</body>
+</html>
