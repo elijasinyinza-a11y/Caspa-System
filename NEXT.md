@@ -1,6 +1,6 @@
 # Next session
 
-v0.29.0 delivered 18 November 2026 (corporate values, BUILD-BRIEF section 53, contract v1.21; v0.28.0 the Strategy landing and v0.27.0 in-year changes the same day, sections 52 and 51 in the archive): `npm run verify` clean, 909 tests. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
+v0.30.0 delivered 19 November 2026 (access review, BUILD-BRIEF section 54, contract v1.21 unchanged): `npm run verify` clean, 934 tests. v0.29.0 (corporate values, section 53), v0.28.0 (Strategy landing) and v0.27.0 (in-year changes) were delivered on 18 November 2026; their sections are in the archive. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next
@@ -31,6 +31,16 @@ Next: Elijah runs the first usability round with `#/usability`. Failures are fix
 
 Usability test (D5, section 20; deferred by section 27): five people new to CASPA™, at least two likely pilot users; pass
 when each task is completed unaided by at least 4 of 5. Nothing is recorded as passed until a real round runs.
+
+## Access review (v0.30.0): what is left
+Built: items 1 and 2 of the *Access Review Specification v0.1* (By role and the five checks) and the fixes D1 to D4. Agreed as
+next if Elijah wants them (AR-9), each with its own short confirmation and prototype first:
+- **Item 5, an access report for auditors:** "Who held which role", for a period, printable, from Membership audit entries
+  (written per person since v0.30.0, AR-8). Administrators only unless Elijah opens it to Compliance (contract v1.22).
+- **Item 4, a yearly access review:** an organisation setting (off by default, contract v1.22), a Needs you item, keep /
+  remove / end per holder, one `access.review` audit entry; the Executive confirms the administrators' own rows.
+- **Item 3, role suggestions from the position:** deferred (3a). If wanted, roles marked on the position (3b, contract v1.22).
+- Still open from the handoff: whether to keep the term "facilitator" (in practice an external consultant).
 
 ## Later in the agreed sequence
 3. File exchange (budget utilisation) and plan revisions. Includes recording a rate KPI's two parts (for example billed

@@ -1,6 +1,6 @@
 # CASPA™ Frontend — Decision archive
 
-Sections 13 to 36, 38 to 44 and 46 to 52 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
+Sections 13 to 36, 38 to 44 and 46 to 53 of the Build Brief, moved here unchanged (13 to 36 and 38 on 4 November 2026; 39 on delivery of v0.18.0, the same day) so the brief stays short. Numbers are kept, so "BUILD-BRIEF section N" in code and documents finds section N here. These decisions still apply; where a later decision differs, the latest wins (Build Brief section 12). Section 37 stays in `BUILD-BRIEF.md`.
 
 ## 13. Decisions behind v1.1 (18 October 2026)
 
@@ -534,3 +534,18 @@ Sources: the *CASPA™ Strategy Landing Specification v0.1* (a doc in the Projec
 - **SL-7, usability.** Tasks 6 (Strategy office: make the Head of Operations the owner of Collection efficiency) and 7 (employee: find which goal your work serves and how it is going) added to `#/usability`, same pass mark. Tasks 1 to 5 unchanged.
 - **Wording.** `lc` keeps acronyms such as "KPIs" as written inside sentences.
 - **Code.** `src/data/access/strategy-landing.ts` (`repo.strategyLanding`), `src/routes/StrategyLanding.tsx`; tests in `src/data/access/strategy-landing.test.ts`.
+
+## 53. Decisions on corporate values (18 November 2026)
+
+Sources: the *CASPA™ Corporate Values Specification v0.1* (a doc in the Project's chats); Elijah accepted CV-1 to CV-8 as recommended on 18 November 2026, and approved the prototype (`reference/caspa-values-prototype.html`) the same day. Built as v0.29.0. Contract v1.21, fields only.
+
+- **CV-1, a list.** Each value has a name (up to 40 characters) and what it means (up to 300). Stored as a `VisionStatement` of kind `value`, with `name` and `order`; same permission row as the vision and mission (`view: all_members`, `draft` and `confirm`: Executive). The AI never drafts them (F1).
+- **CV-2, per plan, carried forward.** Each plan has its own values. In the forming vision step, while the plan has none saved, the active plan's values are offered as a starting point.
+- **CV-3, confirmed with the vision, optional.** Forming: confirming the vision (`vision.confirm`) confirms the values. Import: typed into the vision step and confirmed with the plan (O9).
+- **CV-4, limits.** Up to ten, none required, every value named and explained, no two names the same (`src/rules/values.ts`, `valuesError`).
+- **CV-5, after publication.** The landing offers the Executive "Record the vision, mission and values" when the plan has none, or "Record the values" when it has a vision or mission but no values; once each. Later changes wait for plan revisions.
+- **CV-6, personal attributes.** In HR's draft scoring policy, "Start from a value" copies a value's name and meaning into a new attribute; HR writes its five level descriptions. No link is stored. Values already named as an attribute are not offered.
+- **CV-7, STRUCT-PLAN-NO-VALUES.** Worth checking at plan confirmation for a formed plan with no values, to the Executive and Strategy office; never blocking. Imported plans are not checked.
+- **CV-8, where values show.** Beneath the vision and mission on the Strategy landing, in two columns; in both vision steps; in the consultation room; and after the mission in the plan document.
+- **Sample data.** Unlike the specification's note, no sample plan is seeded with values: no sample plan has a vision either, so the landing's record form and the vision steps start empty.
+- **Code.** `src/rules/values.ts`; `src/data/access/values.ts` (one helper that saves a plan's list, used by forming, import and the landing); `src/routes/ValueList.tsx` (the editor and the read-only list). Tests in `src/data/access/values.test.ts`, with two assertions added to `onboarding.test.ts`.

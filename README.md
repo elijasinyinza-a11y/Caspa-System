@@ -51,7 +51,9 @@ Sample Water Utility is the demo used for review. Three test organisations break
 Sample Community Health NGO (flat, July–June year, UGX, renamed terms), Sample Packaging Manufacturer
 (five levels, April–March year, staff reporting outside their unit) and Sample Scale Test Organisation
 (288 activities, long names). Every rules and selector test runs against all four. In the review build,
-the Executive of Sample Water Utility belongs to all four, so the organisation switcher reaches them.
+the Executive of Sample Water Utility belongs to all four, so the organisation switcher reaches them; from v0.30.0 she
+holds the top position in each (AR-7), and Sample Water Utility has a facilitator, Mutale Chola, and a former finance
+officer who still holds Finance, Kelvin Mwila.
 
 The development role switcher has six roles: Executive, Strategy office, Finance, HR, Supervisor and
 Employee, plus the organisation administrator and, where one exists, Compliance (Sample Water Utility, from v0.13.0)
@@ -59,8 +61,20 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (909 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (934 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Access review (v0.30.0)
+
+- 19 November 2026. BUILD-BRIEF section 54; *CASPA™ Access Review Specification v0.1* (AR-1 to AR-10); prototype
+  `reference/caspa-access-review-prototype.html`. No contract change (v1.21). 934 tests (25 new in `src/data/access/access-review.test.ts`).
+- Access now ends on its end date; a Facilitator must have one. People and access gains By role (who holds each role, since
+  when, and whose access has ended) and End access. Five checks on role holders after setup, all worth checking. The last
+  administrator holding a position can no longer be removed from it.
+- Try it (Sample Water Utility, as Organisation administrator): open the checks (Kelvin Mwila holds Finance but no position)
+  and fix it with End access; open Organisation › People and access › By role; try to untick your own administrator role
+  or tick Facilitator for someone without an end date; open the Head of Finance handover. In Sample New Organisation, view
+  as the consultant on 4 January 2027 to see the page shown once access has ended.
 
 ## Corporate values (v0.29.0)
 
