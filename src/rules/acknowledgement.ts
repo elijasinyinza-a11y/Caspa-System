@@ -24,6 +24,7 @@ const AUDITED: Record<string, keyof Store> = {
   BudgetLine: "budgetLines",
   Deficiency: "deficiencies",
   ContractObjective: "contractObjectives",
+  Membership: "memberships", // v0.30.0: an access check marked as checked reopens when the membership changes
 };
 
 /** When the finding's subject record was last updated, or null if it is not an audited record. */

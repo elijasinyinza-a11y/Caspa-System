@@ -2,12 +2,14 @@
  * Integrity rule catalogue and checker (Build Brief v1.1, section 8).
  * Pure: no React, no I/O, no system clock. Findings are computed, never stored.
  */
-import type { Finding, GateCode, Id, IntegrityRule } from '../contract/caspa-data-contract';
+import type { Finding, GateCode, Id, IntegrityRule, ISODate } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { en } from '../strings/en';
 import { kpiBaseline } from './baseline';
 import { signedQuantity } from './cascade-edit';
 import { activityFingerprint } from './fingerprint';
+import { accessChecks, roleHolderPositions, type AccessCheckKind } from './access';
+import { CONFIRM_ACTION } from '../data/access/setup/confirmation';
 import { activitiesOfGoal, fundedActivityIds, linesOfVersion, objectiveOfActivity, objectiveOfKpi, accountablePositionOfUnit } from './structure';
 
 export const RULES = {
@@ -34,13 +36,29 @@ export const RULES = {
   activityTargetBelowSigned: { id: 'STRUCT-ACTIVITY-TARGET-BELOW-SIGNED', source: 'structural', description: "Activity's quantity target is below what signed contracts carry", blocksAt: [] },
   commitmentActivityStopped: { id: 'STRUCT-COMMITMENT-ACTIVITY-STOPPED', source: 'structural', description: "A signed commitment's activity was stopped", blocksAt: [] },
   budgetLineActivityStopped: { id: 'STRUCT-BUDGETLINE-ACTIVITY-STOPPED', source: 'structural', description: "Budget line's activity was stopped", blocksAt: [] },
+  // v0.30.0 (Access Review Specification v0.1, section 4): checks on role holders after setup; worth checking only.
+  accessRoleNoPosition: { id: 'ACCESS-ROLE-NO-POSITION', source: 'structural', description: 'A member holds an assigned role but no position, and their access has no end date', blocksAt: [] },
+  accessEndsSoon: { id: 'ACCESS-ENDS-SOON', source: 'structural', description: "A member's access ends within 14 days", blocksAt: [] },
+  accessNoStaffAdmin: { id: 'ACCESS-NO-STAFF-ADMIN', source: 'structural', description: 'No administrator holds a position', blocksAt: [] },
+  accessNoExecutive: { id: 'ACCESS-NO-EXECUTIVE', source: 'structural', description: 'Nobody holds the Executive role', blocksAt: [] },
+  accessKeyRoleActingOnly: { id: 'ACCESS-KEY-ROLE-ACTING-ONLY', source: 'structural', description: 'Everyone holding Executive, or everyone holding Organisation administrator, is acting in their position', blocksAt: [] },
 } as const satisfies Record<string, IntegrityRule>;
 
 type RuleKey = keyof typeof RULES;
 
 export interface CheckContext {
   financialYear: number;
+  /** v0.30.0: the day checks are run for. The access checks run only when it is given (passed in, never the clock). */
+  now?: ISODate;
 }
+
+const ACCESS_RULE: Record<AccessCheckKind, RuleKey> = {
+  roleNoPosition: 'accessRoleNoPosition', endsSoon: 'accessEndsSoon', noStaffAdmin: 'accessNoStaffAdmin', noExecutive: 'accessNoExecutive', keyRoleActingOnly: 'accessKeyRoleActingOnly',
+};
+/** Every ACCESS- rule id: shown by role, not by position (repository `concerned`). */
+export const ACCESS_RULE_IDS: string[] = Object.values(ACCESS_RULE).map((k) => RULES[k].id);
+/** AR-6: these stay until fixed; they cannot be marked as checked. */
+export const UNACKNOWLEDGEABLE_RULE_IDS: string[] = [RULES.accessNoStaffAdmin.id, RULES.accessNoExecutive.id, RULES.accessKeyRoleActingOnly.id];
 
 const P = (ids: (string | null | undefined)[]) => ids.filter((x): x is string => !!x) as Id<'Position'>[];
 
@@ -144,6 +162,17 @@ export function computeFindings(s: Store, ctx: CheckContext): Finding[] {
   for (const l of linesOfVersion(s, fy)) {
     const a = l.activityId ? s.activities.find((x) => x.id === l.activityId) : undefined;
     if (a && a.status === 'archived') push('budgetLineActivityStopped', { type: 'BudgetLine', id: l.id }, en.findings.budgetLineActivityStopped(terms, l.description, a.code), [accountablePositionOfUnit(s, l.holderUnitId), ...finance]);
+  }
+  // v0.30.0: access checks, once the structure is confirmed, to the administrators (and the Executive for one).
+  const confirmed = s.auditEntries.some((e) => e.action === CONFIRM_ACTION && e.entity.type === 'Organisation' && e.entity.id === s.organisation.id);
+  if (ctx.now && confirmed) {
+    const admins = roleHolderPositions(s, 'org_admin', ctx.now);
+    const executives = roleHolderPositions(s, 'executive', ctx.now);
+    for (const c of accessChecks(s, ctx.now)) {
+      const rule = ACCESS_RULE[c.kind];
+      const subject = c.part ? { type: c.subject.type, id: `${c.subject.id}:${c.part}` } : c.subject;
+      push(rule, subject, en.findings.access[c.kind](c), c.kind === 'noStaffAdmin' ? [...admins, ...executives] : admins);
+    }
   }
   return out;
 }

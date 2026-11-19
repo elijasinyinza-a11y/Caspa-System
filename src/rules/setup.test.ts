@@ -171,7 +171,8 @@ describe('removing after confirmation (D7-3, D7-4)', () => {
     expect(b).toHaveLength(11);
     const act = b.find((x) => x.subject.code === 'A1.2.1.1')!;
     // Activity: objective owner (unless it is this position) and the Strategy office, from the matrix.
-    expect(act.who.map((w) => w.title)).toEqual(['Strategy and Planning Manager']);
+    // v0.30.0: the sample facilitator, who holds no position, is named.
+    expect(act.who.map((w) => w.title)).toEqual(['Strategy and Planning Manager', 'Mutale Chola']);
     const kpi = b.find((x) => x.subject.code === 'K1.2.1')!;
     expect(kpi.who.map((w) => [w.title, w.role])).toEqual([['Strategy and Planning Manager', 'strategy_office']]);
   });

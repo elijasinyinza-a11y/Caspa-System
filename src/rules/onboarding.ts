@@ -9,6 +9,7 @@ import { compositionFindings, pendingDecisions } from './composition';
 import { visionConfirmed } from './conception';
 import { complianceOf } from './consultation';
 import { computeFindings, RULES } from './integrity';
+import { membershipActiveOn } from './access';
 
 /* ───────── Rows: what the template, the AI draft and the editor all produce (O3) ───────── */
 
@@ -179,7 +180,7 @@ export const onboardingPlan = (s: Store): StrategicPlan | null =>
 export function gettingStarted(s: Store, financialYear: number, now: ISODate, structureConfirmed: boolean): Step[] {
   const plan = onboardingPlan(s);
   if (plan && isPublished(s, plan.id)) return [];
-  const strategy = s.memberships.some((m) => m.status === 'active' && m.roles.includes('strategy_office')
+  const strategy = s.memberships.some((m) => membershipActiveOn(m, now) && m.roles.includes('strategy_office')
     && s.assignments.some((a) => a.personId === m.personId && a.from <= now && (a.to === null || a.to >= now)));
   const c = plan ? planChecks(s, plan, financialYear) : null;
   const content = !!plan && planRecords(s, plan.id).goals.length > 0 && c!.must.length === 0;

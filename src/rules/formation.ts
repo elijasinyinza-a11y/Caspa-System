@@ -5,6 +5,7 @@
 import type { FormationStage, ISODate, StrategicPlan, Workshop, WorkshopPurpose } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { accountablePositionOfUnit } from './structure';
+import { membershipActiveOn } from './access';
 
 export const STAGES: FormationStage[] = ['conception', 'consultation', 'confirmation', 'composition', 'communication'];
 export const PURPOSES: WorkshopPurpose[] = ['kickoff', 'four_q_review', 'vision', 'composition', 'validation', 'launch'];
@@ -34,7 +35,7 @@ export function departmentHeadPositions(s: Store): string[] {
 
 /** Leadership: the positions held by people with the Executive role. */
 export function leadershipPositions(s: Store, now: ISODate): string[] {
-  const execs = new Set(s.memberships.filter((m) => m.status === 'active' && m.roles.includes('executive')).map((m) => m.personId as string));
+  const execs = new Set(s.memberships.filter((m) => membershipActiveOn(m, now) && m.roles.includes('executive')).map((m) => m.personId as string));
   return [...new Set(current(s, now).filter((a) => execs.has(a.personId)).map((a) => a.positionId as string))];
 }
 

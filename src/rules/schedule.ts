@@ -8,6 +8,7 @@ import type { FormationDeadline, FormationStage, ISODate, StrategicPlan, Worksho
 import type { Store } from '../data/access/store';
 import { departments, submissionOf } from './conception';
 import { leadershipPositions, sessionDate, sessionsOf, STAGES } from './formation';
+import { membershipActiveOn } from './access';
 
 /** The stage a session sits in, from its first purpose. Confirmation is where the vision is settled. */
 export const STAGE_OF_PURPOSE: Record<WorkshopPurpose, FormationStage> = {
@@ -142,7 +143,7 @@ export function starterSchedule(boardRequired: boolean): StarterItem[] {
 /** Owners for the starter items: department heads for their sheets, leadership for the board, otherwise the Strategy office's positions. */
 export function starterOwners(s: Store, label: 'sheets' | 'consultation' | 'closes' | 'board', now: ISODate, fallback: string[]): string[] {
   const current = s.assignments.filter((a) => a.from <= now && (a.to === null || a.to >= now));
-  const office = [...new Set(s.memberships.filter((m) => m.status === 'active' && m.roles.includes('strategy_office')).flatMap((m) => current.filter((a) => a.personId === m.personId).map((a) => a.positionId as string)))];
+  const office = [...new Set(s.memberships.filter((m) => membershipActiveOn(m, now) && m.roles.includes('strategy_office')).flatMap((m) => current.filter((a) => a.personId === m.personId).map((a) => a.positionId as string)))];
   if (label === 'sheets') { const heads = departments(s).map((d) => d.headPositionId).filter((p): p is string => !!p); if (heads.length) return heads; }
   if (label === 'board') { const lead = leadershipPositions(s, now); if (lead.length) return lead; }
   return office.length ? office : fallback;

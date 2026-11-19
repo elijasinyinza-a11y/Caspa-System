@@ -2,7 +2,7 @@
  * Where a finding is fixed (Build Brief section 8: every finding links directly to the record that fixes it).
  * Pure: reads stored records only. Permissions are applied by the data-access layer, which passes `canOpen`.
  */
-import type { Finding } from "../contract/caspa-data-contract";
+import type { AssignedRole, Finding } from "../contract/caspa-data-contract";
 import type { Store } from "../data/access/store";
 import type { WorkspaceKey } from "../strings/en";
 import type { NodeKind } from "./node";
@@ -12,7 +12,9 @@ export type FixTarget =
   /** The record has no page of its own yet; the fix happens in a workspace (e.g. linking a budget line in Plan). */
   | { kind: "workspace"; w: Exclude<WorkspaceKey, "home"> }
   /** A row on an objective's decision map (BUILD-BRIEF section 22, D6-2). `code` is the objective's. */
-  | { kind: "map"; objectiveId: string; deficiencyId: string; code: string };
+  | { kind: "map"; objectiveId: string; deficiencyId: string; code: string }
+  /** v0.30.0: People and access, at a person's row (By person) or a role (By role). Administrators only. */
+  | { kind: "access"; personId?: string; role?: AssignedRole };
 
 const node = (
   node: NodeKind,
@@ -59,6 +61,17 @@ export function fixTarget(s: Store, f: Finding): FixTarget | null {
       const df = s.deficiencies.find((x) => x.id === id);
       const o = s.objectives.find((x) => x.id === df?.objectiveId);
       return df && o ? { kind: "map", objectiveId: o.id, deficiencyId: df.id, code: o.code } : null;
+    }
+    case "Membership": {
+      const m = s.memberships.find((x) => x.id === id);
+      return m ? { kind: "access", personId: m.personId } : null;
+    }
+    case "Organisation": {
+      // Access checks on the whole organisation (v0.30.0): the role concerned, or the people list.
+      if (f.ruleId === "ACCESS-NO-EXECUTIVE") return { kind: "access", role: "executive" };
+      if (f.ruleId === "ACCESS-KEY-ROLE-ACTING-ONLY") return { kind: "access", role: id.split(":")[1] as AssignedRole };
+      if (f.ruleId === "ACCESS-NO-STAFF-ADMIN") return { kind: "access" };
+      return null;
     }
     case "ContractObjective": {
       // Reviewed against the activity whose change raised it.

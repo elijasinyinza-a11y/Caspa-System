@@ -5,9 +5,10 @@
  * confirmation, or the stored records after it) and never on findings. No React, no I/O, no clock. Every lookup
  * goes through an index by ID, so a structure of thousands of positions is checked in milliseconds.
  */
-import { PERMISSIONS, type AssignedRole, type DraftMeta, type Principal } from '../contract/caspa-data-contract';
+import { PERMISSIONS, type AssignedRole, type DraftMeta, type ISODate, type Principal } from '../contract/caspa-data-contract';
 import type { Store } from '../data/access/store';
 import { currentBudgetVersion } from './structure';
+import { membershipActiveOn } from './access';
 
 /* ───────── The shape the rules read ───────── */
 
@@ -20,7 +21,11 @@ export interface StructurePosition {
   holder: { personId: string; acting: boolean } | null;
   draft?: DraftMeta;
 }
-export interface StructurePerson { id: string; fullName: string; email: string | null; roles: AssignedRole[] }
+export interface StructurePerson {
+  id: string; fullName: string; email: string | null; roles: AssignedRole[];
+  /** When their access ends (v0.30.0: read by the facilitator_no_end check, B4). */
+  endsOn?: string | null;
+}
 export interface StructureInput { units: StructureUnit[]; positions: StructurePosition[]; people: StructurePerson[] }
 
 export interface StructureIndex {
@@ -170,12 +175,12 @@ export function unitCounts(ix: StructureIndex, unitId: string): UnitCounts {
 
 /* ───────── Checks (D7-2) ───────── */
 
-export type MustKind = 'ai_pending' | 'loop' | 'position_unit_missing' | 'unit_parent_missing' | 'top_units' | 'same_email' | 'no_executive' | 'no_staff_admin';
+export type MustKind = 'ai_pending' | 'loop' | 'position_unit_missing' | 'unit_parent_missing' | 'top_units' | 'same_email' | 'no_executive' | 'no_staff_admin' | 'facilitator_no_end';
 export type WorthKind = 'no_manager' | 'empty_unit' | 'no_unit_type' | 'two_permanent' | 'no_email';
 export type SetupCheckKind = MustKind | WorthKind;
 
 /** Must-fix kinds in the order they are shown; worth-checking kinds likewise. */
-export const MUST_KINDS: MustKind[] = ['ai_pending', 'loop', 'position_unit_missing', 'unit_parent_missing', 'top_units', 'same_email', 'no_executive', 'no_staff_admin'];
+export const MUST_KINDS: MustKind[] = ['ai_pending', 'loop', 'position_unit_missing', 'unit_parent_missing', 'top_units', 'same_email', 'no_executive', 'no_staff_admin', 'facilitator_no_end'];
 export const WORTH_KINDS: WorthKind[] = ['no_manager', 'empty_unit', 'no_unit_type', 'two_permanent', 'no_email'];
 
 export interface SetupItem {
@@ -246,6 +251,11 @@ export function setupChecks(st: StructureInput): SetupChecks {
     if (people.length > 1) add(must, { kind: 'same_email', subject: { type: 'person', id: people[0]!.id }, ids: people.map((p) => p.id), unitId: unitOfPerson(people[0]!.id) });
   }
   if (!st.people.some((p) => p.roles.includes('executive'))) add(must, { kind: 'no_executive', subject: { type: 'organisation', id: '' }, ids: [], unitId: null });
+
+  // v0.30.0 (D2, B4): a Facilitator's access needs an end date. Also catches a Facilitator role from the spreadsheet.
+  for (const p of st.people) {
+    if (p.roles.includes('facilitator') && !p.endsOn) add(must, { kind: 'facilitator_no_end', subject: { type: 'person', id: p.id }, ids: [p.id], unitId: unitOfPerson(p.id) });
+  }
 
   // D7-7: confirmation comes from an administrator who holds a position in the organisation.
   const admins = st.people.filter((p) => p.roles.includes('org_admin'));
@@ -350,7 +360,7 @@ export interface RemovalBlocker {
 function roleHolders(s: Store, role: AssignedRole, now: string): RemovalBlocker['who'] {
   const out: RemovalBlocker['who'] = [];
   for (const m of s.memberships) {
-    if (m.status !== 'active' || !m.roles.includes(role)) continue;
+    if (!membershipActiveOn(m, now as ISODate) || !m.roles.includes(role)) continue;
     const held = s.assignments.filter((a) => a.personId === m.personId && a.from <= now && (a.to === null || a.to >= now));
     if (held.length === 0) {
       const name = s.people.find((p) => p.id === m.personId)?.fullName ?? m.personId;
