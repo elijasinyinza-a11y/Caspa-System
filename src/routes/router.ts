@@ -4,6 +4,8 @@ import { NODE_KINDS, type NodeKind } from '../selectors/node';
 import { FORMING_STAGES, WORKSPACE_ORDER, type FormingStage, type StrategyEntry } from '../selectors/nav';
 import type { WorkspaceKey } from '../strings/en';
 import type { FixTarget } from '../selectors/integrity';
+import type { AssignedRole } from '../contract/caspa-data-contract';
+import { ROLE_ORDER } from '../rules/access';
 
 /**
  * A workspace, or a record page: #/node/<kind>/<id>, optionally ending ~<workspace> for the workspace the person
@@ -19,7 +21,15 @@ export type Route =
    * The organisation's structure and its setup, #/organisation (slice 7, D7-13); its vacant and acting positions,
    * #/organisation/vacancies, and a position's handover list, #/organisation/handover/<positionId> (slice 9).
    */
-  | { kind: 'org'; tab?: 'vacancies' | 'people'; handover?: string }
+  | {
+      kind: 'org'; tab?: 'vacancies' | 'people'; handover?: string;
+      /**
+       * v0.30.0 (Access Review Specification v0.1, section 3.1): People and access by role,
+       * #/organisation/people/by-role, optionally at one role (/by-role/<role>); or By person at one person's row,
+       * #/organisation/people/person/<personId>.
+       */
+      byRole?: boolean; role?: AssignedRole; person?: string;
+    }
   /** The plan document's print version, #/strategy/plan-document/print (D15-5; was #/plan-document, which redirects). */
   | { kind: 'planDocument' }
   /**
@@ -52,7 +62,10 @@ export type Route =
   | { kind: 'usability'; start?: number };
 
 export const hrefFor = (r: Route): string =>
-  r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}` : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
+  r.kind === 'org' ? (r.handover ? `#/organisation/handover/${encodeURIComponent(r.handover)}`
+    : r.tab === 'people' && r.byRole ? `#/organisation/people/by-role${r.role ? `/${r.role}` : ''}`
+    : r.tab === 'people' && r.person ? `#/organisation/people/person/${encodeURIComponent(r.person)}`
+    : r.tab ? `#/organisation/${r.tab}` : '#/organisation')
   : r.kind === 'planDocument' ? '#/strategy/plan-document/print'
   : r.kind === 'strategy' ? strategyHref(r)
   : r.kind === 'boardPaper' ? `#/board-paper/${encodeURIComponent(r.goalId)}`
@@ -76,7 +89,9 @@ function strategyHref(r: Extract<Route, { kind: 'strategy' }>): string {
 export const mapHref = (objectiveId: string, deficiencyId?: string) => hrefFor({ kind: 'map', objectiveId, deficiencyId });
 /** Where a check's fix opens. */
 export const fixHref = (fix: FixTarget, from?: WorkspaceKey): string =>
-  fix.kind === 'node' ? nodeHref(fix.node, fix.id, from) : fix.kind === 'map' ? mapHref(fix.objectiveId, fix.deficiencyId) : hrefFor({ kind: 'workspace', w: fix.w });
+  fix.kind === 'node' ? nodeHref(fix.node, fix.id, from) : fix.kind === 'map' ? mapHref(fix.objectiveId, fix.deficiencyId)
+  : fix.kind === 'access' ? hrefFor(fix.role ? { kind: 'org', tab: 'people', byRole: true, role: fix.role } : fix.personId ? { kind: 'org', tab: 'people', person: fix.personId } : { kind: 'org', tab: 'people' })
+  : hrefFor({ kind: 'workspace', w: fix.w });
 export const nodeHref = (node: NodeKind, id: string, from?: WorkspaceKey) => hrefFor({ kind: 'node', node, id, from });
 
 export const parseRoute = (hash: string): Route => {
@@ -127,6 +142,11 @@ export const parseRoute = (hash: string): Route => {
   if (parts[0] === 'print' && (parts[1] === 'contract' || parts[1] === 'review') && parts[2]) return { kind: 'print', doc: parts[1], id: decodeURIComponent(parts[2]) };
   if (parts[0] === 'organisation') {
     if (parts[1] === 'handover' && parts[2]) return { kind: 'org', handover: decodeURIComponent(parts[2]) };
+    if (parts[1] === 'people' && parts[2] === 'by-role') {
+      const role = ROLE_ORDER.find((r) => r === parts[3]);
+      return role ? { kind: 'org', tab: 'people', byRole: true, role } : { kind: 'org', tab: 'people', byRole: true };
+    }
+    if (parts[1] === 'people' && parts[2] === 'person' && parts[3]) return { kind: 'org', tab: 'people', person: decodeURIComponent(parts[3]) };
     return parts[1] === 'vacancies' || parts[1] === 'people' ? { kind: 'org', tab: parts[1] } : { kind: 'org' };
   }
   const w = parts[0] as WorkspaceKey;

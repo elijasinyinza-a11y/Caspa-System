@@ -314,6 +314,17 @@ export const SAMPLE_EXPLANATIONS: Record<string, string> = {
     "This budget line is still linked to an activity that was stopped, so the money is set aside for work that will not be done this year. Move the line to other work in a budget revision, or remove it.",
   [RULES.envelopeExceeded.id]:
     "The indicative costs under this goal add up to more than the resources set aside for it. Reducing the costs, or revising the envelope, brings them back in line.",
+  // v0.30.0 (Access Review Specification v0.1, section 4).
+  [RULES.accessRoleNoPosition.id]:
+    "This person can still act with an assigned role, although they hold no position and their access has no end date. If they have left, end their access. If they are a consultant, give their access an end date. Otherwise mark it as checked with your reason.",
+  [RULES.accessEndsSoon.id]:
+    "This person's access ends soon. After that date they can no longer sign in, and their past work stays on record. Move the date if their work continues, or let it end.",
+  [RULES.accessNoStaffAdmin.id]:
+    "Changes to the structure need an administrator who holds a position in the organisation. Nobody like that is left, for example because an appointment or an access period ran out. Give the administrator role to someone who holds a position.",
+  [RULES.accessNoExecutive.id]:
+    "Plans, goals and objectives are confirmed by the Executive. Nobody active holds that role now, so those confirmations cannot happen. Give the Executive role to the right person.",
+  [RULES.accessKeyRoleActingOnly.id]:
+    "Everyone holding this role holds their position only as acting. Acting appointments are normal; check that someone will still hold the role when the acting period ends.",
 };
 
 export const aiStub: AiService = {

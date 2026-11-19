@@ -8,6 +8,7 @@ import type { HandoverView, HoldingsView } from '../../data/access/setup';
 import { formatDate, formatMoney, formatNumber } from '../../selectors/format';
 import { en } from '../../strings/en';
 import { btn, card, CheckBox, Chip, download, input, link, primary } from './ui';
+import { EndAccessDialog } from './Access';
 
 const V = en.vacancy;
 const count = (n: number, key: string) => {
@@ -162,6 +163,8 @@ export function HandoverPage({ positionId }: { positionId: string }) {
   const { repo, navigate } = useApp();
   const h = repo.structure.handover(positionId);
   const [note, setNote] = useState<string | null>(null);
+  const [ending, setEnding] = useState(false);
+  const [done, setDone] = useState<{ ok: boolean; text: string } | null>(null);
   const P = V.handoverPage;
   const back = <p className="print:hidden"><a href="#/organisation" className={link} onClick={(e) => { e.preventDefault(); navigate({ kind: 'org' }); }}>{P.back}</a></p>;
   if (!h) return <>{back}<h1 className="text-28 font-bold text-navy">{V.handover}</h1><p className="mt-2 text-14">{P.notAllowed}</p></>;
@@ -195,6 +198,11 @@ export function HandoverPage({ positionId }: { positionId: string }) {
           </button>
         )}
       </div>
+      {done && <p role={done.ok ? 'status' : 'alert'} className={`mt-4 rounded-lg border px-4 py-3 text-14 ${done.ok ? 'border-complete-border bg-complete-bg text-complete-text' : 'border-block-border bg-block-bg text-block-text'}`}>{done.text}</p>}
+      {ending && h.endAccess && (
+        <EndAccessDialog page={repo.structure.page()} access={repo.structure} personId={h.endAccess.personId}
+          onClose={() => setEnding(false)} onDone={(text, ok) => { setEnding(false); setDone({ ok, text }); }} />
+      )}
       {note && (
         <section className={`${card} mt-4`}>
           <p className="text-12 text-muted"><Chip tone="info">{en.vacancy.aiDraft}</Chip> {P.noteLabel}</p>
@@ -217,6 +225,17 @@ export function HandoverPage({ positionId }: { positionId: string }) {
                   : <p className="text-13 text-muted">{V.holds.none}</p>}
                 <h3 className="mt-3 text-14 font-bold text-navy">{P.ownContract}</h3>
                 <p className="text-14">{h.ownContract ? P.ownContractStatus(V.status[h.ownContract.status] ?? h.ownContract.status) : P.noContract}</p>
+                {h.endAccess && (
+                  <div className="mt-4 rounded-lg border border-border bg-cream p-3 print:hidden">
+                    <h3 className="text-14 font-bold text-navy">{P.endAccessTitle}</h3>
+                    <p className="mt-1 text-14">{P.endAccessText(h.endAccess.name)}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" className={primary} onClick={() => setEnding(true)}>{P.endAccess(h.endAccess.name)}</button>
+                      <a href={`#/organisation/people/person/${encodeURIComponent(h.endAccess.personId)}`} className={link}
+                        onClick={(e) => { e.preventDefault(); navigate({ kind: 'org', tab: 'people', person: h.endAccess!.personId }); }}>{P.keepAccess}</a>
+                    </div>
+                  </div>
+                )}
               </>
             ) : <p className="mt-1 text-13 text-muted">{P.nobody}</p>}
           </section>

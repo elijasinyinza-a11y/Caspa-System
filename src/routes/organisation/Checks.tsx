@@ -41,6 +41,7 @@ export function itemText(ix: StructureIndex, item: SetupItem, repeated = titleCo
     case 'same_email': return c.text.sameEmail(en.list(item.ids.map((id) => person(id)!.fullName)), person(item.ids[0]!)!.email ?? '');
     case 'no_executive': return c.text.noExecutive;
     case 'no_staff_admin': return c.text.noStaffAdmin;
+    case 'facilitator_no_end': return c.text.facilitatorNoEnd(person(item.subject.id)?.fullName ?? '');
     case 'no_manager': return c.text.position(pos(item.subject.id)!.title, unitName(item.unitId));
     case 'empty_unit': {
       const a = item.answeredBy;
@@ -67,7 +68,7 @@ function Fix({ ix, item, a }: { ix: StructureIndex; item: SetupItem; a: FixActio
     case 'unit_parent_missing': return <button type="button" className={btn} onClick={() => a.editUnit(item.subject.id)}>{c.fix}</button>;
     case 'no_unit_type': return <button type="button" className={btn} onClick={() => a.editUnit(item.subject.id)}>{c.text.noTypeFix}</button>;
     case 'top_units': return <button type="button" className={btn} onClick={a.openBuild}>{c.text.topUnitsFix}</button>;
-    case 'no_executive': return <button type="button" className={btn} onClick={a.openAccess}>{c.text.openAccess}</button>;
+    case 'no_executive': case 'facilitator_no_end': return <button type="button" className={btn} onClick={a.openAccess}>{c.text.openAccess}</button>;
     case 'no_staff_admin': {
       if (!item.merge) return <button type="button" className={btn} onClick={a.openAccess}>{c.text.openAccess}</button>;
       const keep = ix.person.get(item.merge.keepPersonId)!.fullName;

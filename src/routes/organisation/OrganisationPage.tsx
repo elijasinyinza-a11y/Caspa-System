@@ -20,6 +20,7 @@ import { ChecksPanel, type FixActions } from './Checks';
 import { ConfirmDialog, MarkDialog, PositionDialog, RemoveDialog, ReplaceDialog, UnitDialog } from './Dialogs';
 import { StructureTree, type TreeActions } from './StructureTree';
 import { VacancyList } from './Vacancies';
+import { AccessByRolePanel, AccessList, AccessTabs } from './Access';
 import { btn, card, CheckBox, Chip, download, downloadTemplate, FOLD, input, label, link, plural, primary } from './ui';
 
 const S = en.setup;
@@ -33,7 +34,7 @@ type Modal =
   | { kind: 'replace'; ai: boolean; run: () => void }
   | null;
 
-export function OrganisationPage({ tab }: { tab?: 'vacancies' | 'people' }) {
+export function OrganisationPage({ tab, byRole, role, person }: { tab?: 'vacancies' | 'people'; byRole?: boolean; role?: AssignedRole; person?: string }) {
   const { repo } = useApp();
   const access = repo.structure;
   const page = access.page();
@@ -108,8 +109,13 @@ export function OrganisationPage({ tab }: { tab?: 'vacancies' | 'people' }) {
             ? (
               <section className={card}>
                 <h2 className="text-18 font-bold text-navy">{S.access.title}</h2>
-                <p className="mt-1 text-14 text-muted">{S.access.intro}</p>
-                <AccessList page={page} access={access} editable />
+                <AccessTabs byRole={!!byRole} />
+                {byRole ? <AccessByRolePanel access={access} focusRole={role} /> : (
+                  <>
+                    <p className="mt-3 text-14 text-muted">{S.access.intro}</p>
+                    <AccessList page={page} access={access} editable focus={person} />
+                  </>
+                )}
               </section>
             )
             : <Structure page={page} access={access} tree={tree} fix={fix} reveal={reveal} />}
@@ -343,75 +349,6 @@ function RowProblems({ page, access, onEdit, onShow }: { page: Page; access: Org
 }
 
 /* ───────── People and access (D7-14: people with an assigned role, plus a search) ───────── */
-
-const ROLE_KEYS = Object.keys(en.assignedRole) as AssignedRole[];
-
-function AccessList({ page, access, editable }: { page: Page; access: OrganisationAccess; editable: boolean }) {
-  const [q, setQ] = useState('');
-  const [added, setAdded] = useState<string[]>([]);
-  const st = page.structure;
-  const ix = indexStructure(st);
-  const withRoles = st.people.filter((p) => p.roles.length || added.includes(p.id));
-  const query = q.trim().toLowerCase();
-  const found = query.length >= 2 ? st.people.filter((p) => !withRoles.includes(p) && (p.fullName.toLowerCase().includes(query) || (p.email ?? '').toLowerCase().includes(query))).slice(0, 10) : [];
-  const a = S.access;
-  const row = (p: (typeof st.people)[number]) => {
-    const held = ix.positionsOfHolder.get(p.id) ?? [];
-    const ends = page.endsOn[p.id];
-    return (
-      <tr key={p.id} className="border-b border-border align-top">
-        <td className="py-2 pr-3">
-          {editable && !held.length ? (
-            <><label htmlFor={`nm-${p.id}`} className="sr-only">{a.name(p.fullName)}</label>
-              <input id={`nm-${p.id}`} className={input} defaultValue={p.fullName} onBlur={(e) => { if (e.target.value.trim() && e.target.value.trim() !== p.fullName) access.savePerson(p.id, { fullName: e.target.value }); }} /></>
-          ) : <b className="text-navy">{p.fullName}</b>}
-          {page.isAdmin && (editable ? (
-            <><label htmlFor={`em-a-${p.id}`} className="sr-only">{a.email(p.fullName)}</label>
-              <input id={`em-a-${p.id}`} type="email" className={`${input} mt-1`} placeholder={a.noEmail} defaultValue={p.email ?? ''} onBlur={(e) => { if ((e.target.value.trim() || null) !== p.email) access.savePerson(p.id, { email: e.target.value }); }} /></>
-          ) : <div className="text-12 text-muted">{p.email ?? a.noEmail}</div>)}
-          {ends && <div className="text-12 text-muted">{a.endsOn(formatDate(ends))}</div>}
-        </td>
-        <td className="py-2 pr-3 text-13">{held.map((x) => x.title).join(', ') || <span className="text-muted">{a.none}</span>}</td>
-        <td className="py-2 text-13">
-          {editable ? (
-            <fieldset><legend className="sr-only">{a.roles}: {p.fullName}</legend>
-              {ROLE_KEYS.map((k) => (
-                <label key={k} className="flex min-h-11 items-center gap-2">
-                  <input type="checkbox" className="h-5 w-5 shrink-0" checked={p.roles.includes(k)}
-                    onChange={(e) => access.savePerson(p.id, { roles: e.target.checked ? [...p.roles, k] : p.roles.filter((x) => x !== k) })} />
-                  {en.assignedRole[k]}
-                </label>
-              ))}
-            </fieldset>
-          ) : p.roles.map((k) => en.assignedRole[k]).join(', ')}
-        </td>
-      </tr>
-    );
-  };
-  return (
-    <div>
-      <p className="mt-2 text-13 text-muted">{a.count(plural(withRoles.length, 'peopleHave'), plural(st.people.length, 'person'))}</p>
-      <div className="mt-1 overflow-x-auto">
-        <table className="w-full min-w-[480px] text-left text-14">
-          <thead><tr className="border-b border-border"><th className="py-2 pr-3 font-semibold">{a.person}</th><th className="py-2 pr-3 font-semibold">{a.position}</th><th className="py-2 font-semibold">{a.roles}</th></tr></thead>
-          <tbody>{withRoles.map(row)}</tbody>
-        </table>
-      </div>
-      {editable && (
-        <>
-          <div className="mt-3">
-            <label htmlFor="people-find" className={label}>{a.find}</label>
-            <input id="people-find" type="search" className={input} placeholder={a.findPlaceholder} value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          {query.length >= 2 && (found.length ? (
-            <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[480px] text-left text-14"><tbody>{found.map(row)}</tbody></table></div>
-          ) : <p className="mt-1 text-13 text-muted">{a.nobodyElse}</p>)}
-          <button type="button" className={`${btn} mt-3`} onClick={() => { const r = access.addPerson(); if (r.ok) setAdded([...added, r.id]); }}>{a.addPerson}</button>
-        </>
-      )}
-    </div>
-  );
-}
 
 /* ───────── Details and settings (D7-11) ───────── */
 

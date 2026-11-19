@@ -3,7 +3,7 @@ import { Explain } from "./Explain";
 import { aiStub, type AiDraft } from "../ai";
 import type { FindingView } from "../data/access/repository";
 import type { AcknowledgeResult } from "../data/access/repository";
-import { isBlocking } from "../rules/integrity";
+import { isBlocking, UNACKNOWLEDGEABLE_RULE_IDS } from "../rules/integrity";
 import { formatDate } from "../selectors/format";
 import { useApp } from "./AppContext";
 import type { NodeKind } from "../selectors/node";
@@ -113,7 +113,9 @@ export function FindingCard({
       ? en.integrity.fixNode(fix.code)
       : fix.kind === "map"
         ? en.integrity.fixMap(fix.code)
-        : en.integrity.fixWorkspace(en.nav[fix.w])
+        : fix.kind === "access"
+          ? en.integrity.fixAccess
+          : en.integrity.fixWorkspace(en.nav[fix.w])
     : "";
 
   return (
@@ -191,6 +193,9 @@ export function FindingCard({
           {open ? en.integrity.explainHide : en.integrity.explain}
         </button>
       </div>
+      {UNACKNOWLEDGEABLE_RULE_IDS.includes(view.finding.ruleId) && (
+        <p className="mt-2 text-13 text-muted">{en.integrity.staysUntilFixed}</p>
+      )}
       {form && (
         <div className="mt-3 rounded-lg border border-control bg-white p-3">
           <label

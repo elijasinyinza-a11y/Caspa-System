@@ -12,7 +12,9 @@ import { createDevice } from '../data/access/device';
 import { ALL_DEV_ROLES } from '../data/sample/all';
 import { createReviewOrgs, devMembership } from '../data/sample/review';
 import { asIfActive } from '../rules/onboarding';
-import type { ISODate } from '../contract/caspa-data-contract';
+import type { ISODate, Membership } from '../contract/caspa-data-contract';
+import { membershipActiveOn } from '../rules/access';
+import { formatDate } from '../selectors/format';
 
 /** D15-10: the dates the review build can run at. */
 const DEV_DATES = ['2026-10-18', '2027-01-04'] as ISODate[];
@@ -56,12 +58,17 @@ export function App() {
   // Development roles this organisation has now; Sample New Organisation gains most of them once confirmed.
   const roles = ALL_DEV_ROLES.filter((r) => devMembership(org, r, now) !== null);
   const viewing: DevRole = roles.includes(role) ? role : roles[0]!;
+  // D1 (v0.30.0): a membership outside its dates opens no workspace; the person sees that their access has ended.
+  const viewingMid = devMembership(org, viewing, now)!;
+  const viewingMembership = org.store.memberships.find((m) => m.id === viewingMid);
+  const outside = !!viewingMembership && !membershipActiveOn(viewingMembership, now);
+  const repoMid = outside ? org.store.memberships.find((m) => membershipActiveOn(m, now))!.id : viewingMid;
   // Keep the role actually shown, so a confirmation that adds roles does not switch the person away.
   useEffect(() => { if (viewing !== role) setRole(viewing); }, [viewing, role]);
   const base = useMemo(
-    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, devMembership(org, viewing, now)!, now, { clock, device, onChange: () => setRevision((r) => r + 1) }),
+    () => createMemoryRepository(orgs.map((o) => o.store), org.orgId, repoMid, now, { clock, device, onChange: () => setRevision((r) => r + 1) }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- revision is the signal that the store changed
-    [orgs, org, viewing, clock, revision, now, device],
+    [orgs, org, repoMid, clock, revision, now, device],
   );
   // D15-7: next year's draft. Cascade and record pages read a view of the records in which the confirmed plan counts
   // as active, dated at the start of its first year; the view shares the record lists, so changes are kept.
@@ -73,7 +80,7 @@ export function App() {
     const start = `${next.financialYear}-${String(org.store.organisation.financialYearStartMonth).padStart(2, '0')}-01` as ISODate;
     const at = now > start ? now : start;
     const view = asIfActive(org.store, next.planId);
-    return createMemoryRepository(orgs.map((o) => (o.orgId === org.orgId ? view : o.store)), org.orgId, devMembership(org, viewing, now)!, at, { clock, device, onChange: () => setRevision((r) => r + 1) });
+    return createMemoryRepository(orgs.map((o) => (o.orgId === org.orgId ? view : o.store)), org.orgId, repoMid, at, { clock, device, onChange: () => setRevision((r) => r + 1) });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- base changes with every stored change
   }, [base, showsNext]);
   const closeDrawer = useCallback(() => setDrawer(false), []);
@@ -110,7 +117,7 @@ export function App() {
 
   const page =
     route.kind === 'org' && route.handover ? <HandoverPage key={`${org.orgId}:${viewing}:${route.handover}`} positionId={route.handover} />
-    : route.kind === 'org' ? <OrganisationPage key={`${org.orgId}:${viewing}`} tab={route.tab} />
+    : route.kind === 'org' ? <OrganisationPage key={`${org.orgId}:${viewing}`} tab={route.tab} byRole={route.byRole} role={route.role} person={route.person} />
     : route.kind === 'node' ? <NodePage key={`${route.node}:${route.id}:${route.from ?? ''}`} kind={route.node} id={route.id} from={route.from} />
     : route.kind === 'planDocument' ? <PlanDocumentPrint key={`${org.orgId}:${viewing}`} />
     : route.kind === 'strategy' ? <StrategyEntryPage key={`${org.orgId}:${viewing}:${hrefFor(route)}`} entry={route.entry} stage={route.stage} tab={route.tab} goalId={route.goalId} />
@@ -130,6 +137,10 @@ export function App() {
     : route.w === 'strategy' ? <Strategy key={`${org.orgId}:${viewing}`} />
     : <PerformanceLanding key={`${org.orgId}:${viewing}`} />;
 
+  if (outside && viewingMembership) {
+    return <AccessEndedPage org={org.store.organisation.name} membership={viewingMembership} now={now} roles={roles} viewing={viewing} setRole={setRole} setNow={setNow} />;
+  }
+
   return (
     <AppContext.Provider value={{ repo, role: viewing, setRole, orgId: org.orgId, setOrgId, dev: { orgs: orgs.map((o) => ({ id: o.orgId, name: o.store.organisation.name })), roles, dates: DEV_DATES }, now, setNow, base, year, setYear, nextYear, preview: showsNext, route, navigate, openFindings: () => setDrawer(true), toast, say: setToast }}>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">{en.skipToContent}</a>
@@ -148,5 +159,37 @@ export function App() {
       <div data-chrome className="contents"><BottomBar /></div>
       {drawer && <IntegrityDrawer onClose={closeDrawer} />}
     </AppContext.Provider>
+  );
+}
+
+/**
+ * D1 (v0.30.0): the page for a person whose access has ended or not yet started. No workspace opens. The review
+ * build keeps its role and date switches here, so the reviewer can go back.
+ */
+function AccessEndedPage({ org, membership, now, roles, viewing, setRole, setNow }: {
+  org: string; membership: Membership; now: ISODate; roles: DevRole[]; viewing: DevRole; setRole: (r: DevRole) => void; setNow: (d: ISODate) => void;
+}) {
+  const E = en.accessEnded;
+  const notYet = membership.status === 'active' && membership.startsOn > now;
+  const ended = membership.endsOn ?? now;
+  return (
+    <main id="main" className="mx-auto w-full max-w-[560px] px-4 py-12">
+      <p className="text-14 font-bold text-navy">{en.product}</p>
+      <h1 className="mt-4 text-28 font-bold text-navy">{notYet ? E.notYetTitle : E.title}</h1>
+      <p className="mt-2 text-16">{notYet ? E.notYet(org, formatDate(membership.startsOn)) : E.text(org, formatDate(ended))}</p>
+      {!notYet && <p className="mt-2 text-14 text-muted">{E.kept}</p>}
+      <div aria-label={en.devSwitcher.label} role="group" className="mt-8 flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-control p-3 text-12 text-muted">
+        <label className="flex flex-col gap-1">{en.devSwitcher.viewingAs}
+          <select className="min-h-11 rounded-lg border border-control bg-white px-2 text-14 text-text" value={viewing} onChange={(e) => setRole(e.target.value as DevRole)}>
+            {roles.map((r) => <option key={r} value={r}>{en.roles[r]}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">{en.devSwitcher.date}
+          <select className="min-h-11 rounded-lg border border-control bg-white px-2 text-14 text-text" value={now} onChange={(e) => setNow(e.target.value as ISODate)}>
+            {DEV_DATES.map((d) => <option key={d} value={d}>{formatDate(d)}</option>)}
+          </select>
+        </label>
+      </div>
+    </main>
   );
 }
