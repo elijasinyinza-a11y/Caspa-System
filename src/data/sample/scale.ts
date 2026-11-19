@@ -15,7 +15,7 @@ const departments = [1, 2, 3];
 const deptHead = (dir: number, dep: number) => `dh${dir}${dep}`;
 
 const people: PersonSpec[] = [
-  { key: 'dg', name: 'Director General', title: 'Director General', unit: 'hq', reportsTo: null },
+  { key: 'dg', name: 'Chanda Mulenga', title: 'Director General', unit: 'hq', reportsTo: null, sharedExecutive: true }, // AR-7
   ...directorates.map((d) => ({ key: `dir${d}`, name: `Director ${d}`, title: `Director, Directorate ${d}`, unit: `d${d}`, reportsTo: 'dg', roles: d === 1 ? ['finance' as const] : d === 2 ? ['hr' as const] : d === 3 ? ['strategy_office' as const] : [] })),
   ...directorates.flatMap((d) => departments.map((p) => ({ key: deptHead(d, p), name: `Head ${d}.${p}`, title: `Head of Department ${d}.${p}, responsible for programme delivery and reporting`, unit: `d${d}p${p}`, reportsTo: `dir${d}` }))),
   { key: 'off1', name: 'Officer One', title: 'Programme Officer, Department 2.1, with a deliberately long position title for layout checks', unit: 'd2p1', reportsTo: 'dh21' },

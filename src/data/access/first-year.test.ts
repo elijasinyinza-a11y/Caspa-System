@@ -4,6 +4,7 @@ import { CELLS, cellKey } from '../../rules/conception';
 import { asIfActive } from '../../rules/onboarding';
 import { createReviewOrgs, devMembership, type ReviewOrg } from '../sample/review';
 import { createMemoryRepository } from './repository';
+import { membershipActiveOn } from '../../rules/access';
 
 const NOW = '2026-10-18' as ISODate;
 const JAN = '2027-01-04' as ISODate;
@@ -171,7 +172,7 @@ describe('the first year’s cascade (D15-7 to D15-9)', () => {
     expect(jan.firstYear.publish()).toEqual({ ok: true, passed: false });
     expect(f.store.gateEvents[f.store.gateEvents.length - 1]).toMatchObject({ gate: 'cascade.publish', outcome: 'blocked' });
     // Owners confirm the measures the AI drafted (still allowed after confirmation), then the Strategy office validates.
-    for (const mid of f.store.memberships.filter((m) => m.status === 'active').map((m) => m.id)) {
+    for (const mid of f.store.memberships.filter((m) => membershipActiveOn(m, JAN)).map((m) => m.id)) { // D1: access counts only within its dates
       const owner = createMemoryRepository(f.orgs.map((o) => o.store), SWU, mid, JAN).consultation;
       for (const row of owner.baselines()?.rows ?? []) if (row.canDecide && row.state === 'awaiting_owner') owner.decideBaseline(row.id, 'accept');
     }

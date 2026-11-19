@@ -12,7 +12,7 @@ import { budgetView, linkOptions, type BudgetView, type LinkOption } from '../..
 import { gateDueDate } from '../../selectors/needs-you';
 import { acknowledgementState } from '../../rules/acknowledgement';
 import { dateInZone } from '../../selectors/format';
-import { computeFindings, RULES } from '../../rules/integrity';
+import { ACCESS_RULE_IDS, computeFindings, RULES } from '../../rules/integrity';
 import { fixTarget, type FixTarget } from '../../selectors/integrity';
 import {
   activePlanTitle, financeSummary, goalHealth, homesFor, hrSummary, myContracts, team,
@@ -48,6 +48,7 @@ import { createPrintoutsAccess, type PrintoutsAccess } from './printouts';
 import { createFirstYearAccess, type FirstYearAccess } from './first-year';
 import { structureConfirmation } from './setup/confirmation';
 import { financialYearOf, resolveViewer, type Viewer } from './viewer';
+import { membershipActiveOn } from '../../rules/access';
 
 export interface FindingView {
   finding: Finding;
@@ -291,6 +292,9 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   const title = (pid: string) => s.positions.find((p) => p.id === pid)?.title ?? pid;
 
   const concerned = (f: Finding): boolean => {
+    // v0.30.0: access checks go by role, not position: administrators see them all, wherever they sit (a consultant
+    // administrator holds no position); the Executive sees only that no administrator holds a position.
+    if (ACCESS_RULE_IDS.includes(f.ruleId)) return viewer.roles.includes('org_admin') || (f.ruleId === RULES.accessNoStaffAdmin.id && viewer.roles.includes('executive'));
     if (!can(s, viewer, 'view', f.subject)) return false;
     if (viewer.roles.some((r) => (OVERSIGHT_ROLES as readonly string[]).includes(r))) return true;
     if (viewer.roles.includes('finance') && FINANCE_RULES.includes(f.ruleId)) return true;
@@ -321,7 +325,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   };
 
   const acknowledge = (findingKey: string, reason: string): AcknowledgeResult => {
-    const finding = computeFindings(s, { financialYear }).find((f) => f.key === findingKey);
+    const finding = computeFindings(s, { financialYear, now }).find((f) => f.key === findingKey);
     // Only findings this viewer is shown can be acted on; anything else is reported as not found.
     if (!finding || !concerned(finding)) return { ok: false, error: 'not_found' };
     if (finding.blocksAt.length > 0) return { ok: false, error: 'blocking' };
@@ -358,7 +362,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
 
   const attempt = (gate: GateCode): GateEvent => {
     const v = version()!;
-    const check = checkGate(computeFindings(s, { financialYear }), gate);
+    const check = checkGate(computeFindings(s, { financialYear, now }), gate);
     const event: GateEvent = {
       id: `ge-${s.gateEvents.length + 1}` as GateEvent['id'], orgId: s.organisation.id, gate,
       subject: { type: 'BudgetVersion', id: v.id }, attempted: { at: clock(), byMembershipId: viewer.membershipId }, ...gateRecord(s, check),
@@ -377,7 +381,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     };
     if (!v) return empty;
     const gate = nextGate(v.status);
-    const findings = computeFindings(s, { financialYear });
+    const findings = computeFindings(s, { financialYear, now });
     const check = gate ? checkGate(findings, gate) : null;
     const seen = (f: Finding) => can(s, viewer, 'view', f.subject);
     const submitter = submitterOf(s, v.id);
@@ -524,7 +528,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     const probe = s.deficiencies.find((d) => d.objectiveId === o.id);
     const checks: Record<string, FindingView> = {};
     if (map.visible) {
-      for (const f of computeFindings(s, { financialYear }).filter(concerned)) {
+      for (const f of computeFindings(s, { financialYear, now }).filter(concerned)) {
         if (f.ruleId === RULES.deficiencyUnaddressed.id && s.deficiencies.some((d) => d.id === f.subject.id && d.objectiveId === o.id)) checks[f.subject.id] = describe(f);
       }
     }
@@ -666,11 +670,11 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     organisation: () => ({ id: s.organisation.id, name: s.organisation.name }),
     organisationsForPerson: () =>
       stores
-        .filter((x) => x.memberships.some((m) => m.personId === viewer.personId && m.status === 'active'))
+        .filter((x) => x.memberships.some((m) => m.personId === viewer.personId && membershipActiveOn(m, now)))
         .map((x) => ({ id: x.organisation.id, name: x.organisation.name })),
     workspaces: () => workspacesFor(viewer),
     findings: () =>
-      computeFindings(s, { financialYear })
+      computeFindings(s, { financialYear, now })
         .filter(concerned)
         .map(describe),
     describeFinding: describe,
@@ -679,7 +683,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     cascadeView: () => {
       const tree = cascadeTree(s, { financialYear, now });
       const index = indexTree(tree.goals);
-      const shown = computeFindings(s, { financialYear }).filter(concerned).map(describe);
+      const shown = computeFindings(s, { financialYear, now }).filter(concerned).map(describe);
       const checks: Record<string, NodeChecks> = {};
       let unlinkedLines = 0;
       for (const f of shown) {
@@ -772,7 +776,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
       const has = (h: HomeKind) => homes.includes(h);
       const ctx = { financialYear, now };
       const access = { canView: (subject: { type: string; id: string }) => can(s, viewer, 'view', subject), canSeeRating: (cid: string) => canSeeRating(s, viewer, cid) };
-      const routedFindings = computeFindings(s, { financialYear })
+      const routedFindings = computeFindings(s, { financialYear, now })
         .filter(concerned)
         .map(describe)
         .filter((f) => f.routedToMe)

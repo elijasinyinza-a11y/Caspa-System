@@ -26,6 +26,7 @@ import type { Viewer } from '../viewer';
 import { CONFIRM_ACTION, structureConfirmation, type StructureConfirmationRecord } from './confirmation';
 import { detailsOf, emptyDraft, human, structureOfStore, type DraftDetails, type DraftPerson, type DraftPosition, type DraftUnit, type RowProblem, type SetupDraft } from './draft';
 import { importRows } from './import';
+import { accessEnded, heldSince, membershipActiveOn, positionsHeldOn, ROLE_ORDER } from '../../../rules/access';
 import type { Sheet } from './files';
 
 export type { SetupDraft, DraftDetails, RowProblem };
@@ -57,7 +58,15 @@ export type SetupError =
   | { error: 'must_fix'; items: SetupItem[] }
   | { error: 'blocked'; blockers: RemovalBlocker[] }
   | { error: 'reason_required' }
-  | { error: 'not_ready'; must: number };
+  | { error: 'not_ready'; must: number }
+  /** v0.30.0 (D2, B4): a Facilitator needs an end date for their access. */
+  | { error: 'ends_required' }
+  /** v0.30.0: an access end date cannot be before today; End access stops access now. */
+  | { error: 'ends_past' }
+  /** v0.30.0 (D4): administrators cannot end their own access. */
+  | { error: 'own_access' }
+  /** v0.30.0 (D4): the person's access has already ended, or has not. */
+  | { error: 'already' };
 export type SetupResult<T = object> = ({ ok: true } & T) | ({ ok: false } & SetupError);
 
 export interface StructureChange { at: ISODate; by: string; action: string; type: string; label: string }
@@ -131,6 +140,25 @@ export interface OrganisationAccess {
   holdingsPreview(positionId: string): { owned: number; lines: number; contracts: number; reports: number; needingSupervisor: number } | null;
   /** H7: an AI handover note restating the list; shown, never stored. */
   handoverNote(positionId: string): Promise<string | null>;
+  /** v0.30.0 (section 3.1): People and access by role; null for anyone but an administrator. */
+  accessByRole(): AccessByRole | null;
+  /**
+   * v0.30.0 (D4): end a person's access from yesterday. They leave any position they hold today; every record stays.
+   * Refused for oneself, and when it would leave no Executive or no administrator holding a position.
+   */
+  endAccess(personId: string): SetupResult<{ leftPositions: string[] }>;
+  /** v0.30.0 (D4): give access again to a person whose access ended: the same membership, from today, with no roles. */
+  giveAccessAgain(personId: string): SetupResult;
+}
+
+/** v0.30.0 (Access Review Specification v0.1, section 3.1): each role, who holds it and since when. */
+export interface AccessByRole {
+  roles: {
+    role: AssignedRole;
+    holders: { personId: string; name: string; positions: { title: string; acting: boolean }[]; since: ISODate; endsOn: ISODate | null }[];
+  }[];
+  /** People whose access has ended, with the roles they held and their last day, latest first. */
+  ended: { personId: string; name: string; roles: AssignedRole[]; lastDay: ISODate }[];
 }
 
 export interface AccessContext {
@@ -168,6 +196,11 @@ export interface HoldingsView {
 export interface HandoverView extends HoldingsView {
   /** Assigned roles leaving with the person: administrators only (Membership row); null for others. */
   rolesLeaving: AssignedRole[] | null;
+  /**
+   * v0.30.0 (D4): for administrators, when the holder holds no other position, End access is offered here; null
+   * otherwise, and for oneself.
+   */
+  endAccess: { personId: string; name: string } | null;
   /** The holder's own contract for this post this year, if the viewer may see it. */
   ownContract: { status: string } | null;
   waiting: HoldingsView['contracts'];
@@ -190,6 +223,8 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
   };
   const stamp = () => ({ at: clock(), byMembershipId: viewer.membershipId });
   const deny = <T,>(): SetupResult<T> => ({ ok: false, error: 'not_allowed' }) as SetupResult<T>;
+  /** D1 (v0.30.0): the person's membership that gives access today, if any. */
+  const activeMembershipOf = (personId: string) => s.memberships.find((m) => m.personId === personId && membershipActiveOn(m, now));
 
   /* ───── IDs: unique in the organisation, and kept as record IDs on confirmation ───── */
   const taken = () => new Set<string>([...s.units, ...s.positions, ...s.people].map((x) => x.id as string));
@@ -421,7 +456,9 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
       const own = s.contracts.find((c) => c.positionId === positionId && c.financialYear === ctx.financialYear && (!h.holder || c.personId === h.holder.personId));
       return {
         ...v,
-        rolesLeaving: h.holder && isAdmin ? [...(s.memberships.find((m) => m.personId === h.holder!.personId && m.status === 'active')?.roles ?? [])] : null,
+        rolesLeaving: h.holder && isAdmin ? [...(activeMembershipOf(h.holder.personId)?.roles ?? [])] : null,
+        endAccess: h.holder && isAdmin && h.holder.personId !== viewer.personId && positionsHeldOn(s, h.holder.personId, now).length === 1
+          ? { personId: h.holder.personId, name: h.holder.name } : null,
         ownContract: own && can(s, viewer, 'view', { type: 'PerformanceContract', id: own.id }) ? { status: own.status } : null,
         waiting: v.contracts.filter((c) => c.needsSupervisor),
         noteAvailable: !!h.holder && s.organisation.settings.aiEnabled,
@@ -637,7 +674,13 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
         changed();
         return { ok: true };
       }
-      const g = guard((c) => applyPosition(c, id, input));
+      // D3 (v0.30.0): the holder change is checked too, so the last administrator holding a position cannot be removed.
+      const g = guard((c) => {
+        const after = applyPosition(c, id, input);
+        const pos = after.positions.find((x) => x.id === id);
+        if (pos) pos.holder = holder ? { personId: holder.personId && s.people.some((x) => x.id === holder.personId) ? holder.personId : `new:${holder.name.trim().toLowerCase()}`, acting: holder.acting } : null;
+        return after;
+      });
       if (!g.ok) return g;
       const p = s.positions.find((x) => x.id === id)!;
       const before = structuredClone(p);
@@ -719,10 +762,14 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
     savePerson(id, input) {
       if (!isAdmin) return deny();
       const email = input.email === undefined ? undefined : input.email?.trim() || null;
+      if (input.endsOn && input.endsOn < now) return { ok: false, error: 'ends_past' };
+      // D2 (B4): a Facilitator's access needs an end date.
+      const needsEnd = (roles: AssignedRole[], endsOn: ISODate | null) => roles.includes('facilitator') && !endsOn;
       if (!confirmed()) {
         const d = draftOf(s);
         const p = d.structure.people.find((x) => x.id === id);
         if (!p) return { ok: false, error: 'not_found' };
+        if (needsEnd(input.roles ?? p.roles, input.endsOn === undefined ? p.endsOn : input.endsOn)) return { ok: false, error: 'ends_required' };
         if (input.fullName !== undefined) p.fullName = input.fullName.trim() || p.fullName;
         if (email !== undefined) p.email = email;
         if (input.roles) p.roles = [...new Set(input.roles)];
@@ -732,8 +779,9 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
         return { ok: true };
       }
       const person = s.people.find((x) => x.id === id);
-      const m = s.memberships.find((x) => x.personId === id && x.status === 'active');
+      const m = activeMembershipOf(id);
       if (!person || !m) return { ok: false, error: 'not_found' };
+      if (needsEnd(input.roles ?? m.roles, input.endsOn === undefined ? m.endsOn : input.endsOn)) return { ok: false, error: 'ends_required' };
       const g = guard((st) => ({
         ...st,
         people: st.people.map((p) => (p.id === id ? { ...p, fullName: input.fullName ?? p.fullName, email: email === undefined ? p.email : email, roles: input.roles ?? p.roles } : p)),
@@ -830,8 +878,15 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
         else s.people.push({ id: p.id as Id<'Person'>, fullName: p.fullName, email: p.email });
         const m = s.memberships.find((x) => x.personId === p.id && x.status === 'active');
         const num = (p as { employeeNumber?: string | null }).employeeNumber ?? undefined;
+        const was = m ? structuredClone(m) : null;
         if (m) Object.assign(m, { roles: [...p.roles], endsOn: p.endsOn, updated: stamp() }, num ? { employeeNumber: num } : {});
         else s.memberships.push({ ...base(), id: `m-${p.id}` as Id<'Membership'>, personId: p.id as Id<'Person'>, roles: [...p.roles], startsOn: now, endsOn: p.endsOn, status: 'active', employeeNumber: num ?? null });
+        // AR-8 (v0.30.0): each person given roles at confirmation gets their own audit entry, so the access history
+        // (and "held since") starts on the day the structure was confirmed.
+        if (p.roles.length) {
+          const after = s.memberships.find((x) => x.personId === p.id && x.status === 'active')!;
+          audit(was ? 'update' : 'create', { type: 'Membership', id: after.id }, was, { ...after, name: p.fullName });
+        }
       }
       for (const p of st.positions) {
         if (!p.holder) continue;
@@ -849,6 +904,67 @@ export function createOrganisationAccess(ctx: AccessContext): OrganisationAccess
       changed();
       return { ok: true };
     },
+    accessByRole() {
+      if (!isAdmin || !confirmed()) return null;
+      const active = s.memberships.filter((m) => membershipActiveOn(m, now));
+      const name = (personId: string) => s.people.find((p) => p.id === personId)?.fullName ?? personId;
+      const title = (positionId: string) => s.positions.find((p) => p.id === positionId)?.title ?? positionId;
+      return {
+        roles: ROLE_ORDER.map((role) => ({
+          role,
+          holders: active.filter((m) => m.roles.includes(role)).map((m) => ({
+            personId: m.personId as string,
+            name: name(m.personId),
+            positions: positionsHeldOn(s, m.personId, now).map((a) => ({ title: title(a.positionId), acting: a.kind === 'acting' })),
+            since: heldSince(s.auditEntries, m, role, on),
+            endsOn: m.endsOn,
+          })).sort((a, b) => a.name.localeCompare(b.name)),
+        })),
+        // A person whose access ended and who has no access now (not given access again).
+        ended: s.memberships
+          .filter((m) => accessEnded(m, now) && !activeMembershipOf(m.personId))
+          .map((m) => ({ personId: m.personId as string, name: name(m.personId), roles: [...m.roles], lastDay: m.endsOn ?? m.startsOn }))
+          .sort((a, b) => (a.lastDay < b.lastDay ? 1 : a.lastDay > b.lastDay ? -1 : a.name.localeCompare(b.name))),
+      };
+    },
+
+    endAccess(personId) {
+      if (!isAdmin || !confirmed()) return deny();
+      if (personId === viewer.personId) return { ok: false, error: 'own_access' };
+      const m = activeMembershipOf(personId);
+      if (!m) return { ok: false, error: 'already' };
+      // The person leaves the structure: no position, no roles. Refused if that adds a must-fix problem.
+      const g = guard((st) => ({
+        ...st,
+        positions: st.positions.map((p) => (p.holder?.personId === personId ? { ...p, holder: null } : p)),
+        people: st.people.filter((p) => p.id !== personId),
+      }));
+      if (!g.ok) return g;
+      const left: string[] = [];
+      for (const a of positionsHeldOn(s, personId, now)) {
+        left.push(s.positions.find((p) => p.id === a.positionId)?.title ?? a.positionId);
+        endAssignment(a);
+      }
+      const before = structuredClone(m);
+      Object.assign(m, { status: 'ended', endsOn: dayBefore(now) });
+      touchRecord(m);
+      audit('update', { type: 'Membership', id: m.id }, before, { ...m, name: s.people.find((p) => p.id === personId)?.fullName ?? '' });
+      changed();
+      return { ok: true, leftPositions: left };
+    },
+
+    giveAccessAgain(personId) {
+      if (!isAdmin || !confirmed()) return deny();
+      if (activeMembershipOf(personId)) return { ok: false, error: 'already' };
+      const mine = s.memberships.filter((x) => x.personId === personId);
+      const m = mine[mine.length - 1];
+      if (!m) return { ok: false, error: 'not_found' };
+      const before = structuredClone(m);
+      Object.assign(m, { status: 'active', startsOn: now, endsOn: null, roles: [] });
+      touchRecord(m);
+      audit('update', { type: 'Membership', id: m.id }, before, { ...m, name: s.people.find((p) => p.id === personId)?.fullName ?? '' });
+      changed();
+      return { ok: true };
+    },
   };
 }
-

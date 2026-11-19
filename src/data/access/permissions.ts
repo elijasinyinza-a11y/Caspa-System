@@ -7,6 +7,7 @@ import { communicationOwnerPositions } from '../../rules/communication';
 import { verifierPosition } from '../../rules/progress';
 import { baselineOwnerPosition, complianceOwnerPositions, inAudience } from '../../rules/consultation';
 import { structureOfStore } from './setup/draft';
+import { UNACKNOWLEDGEABLE_RULE_IDS } from '../../rules/integrity';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
 
@@ -155,6 +156,10 @@ export function can(s: Store, v: Viewer, action: Action, subject: Subject): bool
  */
 export function canAcknowledge(s: Store, v: Viewer, f: Finding): boolean {
   if (f.blocksAt.length > 0) return false;
+  // v0.30.0 (AR-6): three access checks stay until fixed.
+  if (UNACKNOWLEDGEABLE_RULE_IDS.includes(f.ruleId)) return false;
+  // Access checks about a person are marked as checked by an administrator, who may hold no position.
+  if (f.subject.type === 'Membership') return v.roles.includes('org_admin');
   if (!can(s, v, 'view', f.subject)) return false;
   return (PERMISSIONS.Acknowledgement?.draft ?? []).some((p) =>
     p === 'finding_recipient' ? f.routeToPositionIds.some((pid) => v.positionIds.includes(pid)) : holds(s, v, p, f.subject),

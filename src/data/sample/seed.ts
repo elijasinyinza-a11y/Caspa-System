@@ -12,7 +12,7 @@ import {
 import { activityFingerprint } from '../../rules/fingerprint';
 import { seededConfirmation, seededPublication } from '../access/setup/confirmation';
 import type { Store } from '../access/store';
-import type { FinancialYear, KpiTarget } from '../../contract/caspa-data-contract';
+import type { AuditEntry, FinancialYear, KpiTarget } from '../../contract/caspa-data-contract';
 import './composition'; // part 11d: the AI stub's approved sample wording for this organisation
 import { DEFAULT_STRUCTURE_VIEW } from '../../rules/structure-view';
 import { en } from '../../strings/en';
@@ -77,6 +77,25 @@ const memberships: Membership[] = PEOPLE.map((p, i) => ({
   // v0.23.0 (C7): sample staff numbers, as printed on contracts (Mary Chileshe's approved as SWU-0412).
   employeeNumber: p.key === 'mrb' ? 'SWU-0412' : `SWU-${String(101 + i * 7).padStart(4, '0')}`,
 }));
+
+/*
+ * v0.30.0 (Access Review Specification v0.1; prototype approved 19 November 2026): two people with a role and no
+ * position. Kelvin Mwila, a former finance officer who still holds Finance (ACCESS-ROLE-NO-POSITION), given it on
+ * 2 March 2026; and Mutale Chola, an external consultant with Facilitator access from 1 October to 30 November 2026.
+ */
+people.push(
+  { id: per('kel'), fullName: 'Kelvin Mwila', email: 'kel@sample-water.example' },
+  { id: per('fac'), fullName: 'Mutale Chola', email: 'mutale.chola@consult.example' },
+);
+memberships.push(
+  { ...base, id: id('m-kel'), personId: per('kel'), roles: ['finance'], startsOn: d('2024-01-01'), endsOn: null, status: 'active', employeeNumber: 'SWU-0388' },
+  { ...base, id: id('m-fac'), personId: per('fac'), roles: ['facilitator'], startsOn: d('2026-10-01'), endsOn: d('2026-11-30'), status: 'active', employeeNumber: null },
+);
+/** Kelvin Mwila was given Finance on 2 March 2026 (his "held since" date in By role). */
+const accessAudit = (): AuditEntry[] => [{
+  id: id('au-m-kel-finance'), orgId, at: dt('2026-03-02T09:00:00+02:00'), actorMembershipId: id('m-hrm'), action: 'update',
+  entity: { type: 'Membership', id: 'm-kel' }, before: { roles: [] }, after: { roles: ['finance'], name: 'Kelvin Mwila' },
+}];
 
 /** Membership behind each development role switch (Build Brief, screen 1). */
 export const DEV_ROLE_MEMBERSHIPS = {
@@ -439,7 +458,7 @@ function seedStore(): Store {
     // The imported plan's cascade was published when the plan was brought in (section 28).
     gateEvents: [seededPublication(orgId, PLAN, id('m-spm'), dt('2026-01-20T09:00:00+02:00'))],
     // The structure was confirmed by the organisation administrator on 15 January 2026 (D7-9).
-    auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length })],
+    auditEntries: [seededConfirmation(orgId, id('m-hrm'), dt('2026-01-15T09:00:00+02:00'), { units: units.length, positions: positions.length, people: people.length }), ...accessAudit()],
     sourceDocuments: formationDocs,
     // The same drafting task also drafted the baselines and the compliance items read from documents (part 11c).
     aiTasks: [communicationAi, { ...formationAi, outputRefs: [...formationAi.outputRefs, ...formationBaselines.map((b) => ({ type: 'BaselineMeasure', id: b.id as string })), ...formationCompliance.filter((c) => c.provenance.kind === 'document').map((c) => ({ type: 'ComplianceItem', id: c.id as string }))] }],

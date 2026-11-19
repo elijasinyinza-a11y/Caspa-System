@@ -22,7 +22,7 @@ export const createManufacturer = () =>
       { id: 'line2', parent: 'prod', name: 'Line 2', type: 'Line' },
     ],
     people: [
-      { key: 'ceo', name: 'James Kariuki', title: 'Chief Executive', unit: 'co', reportsTo: null },
+      { key: 'ceo', name: 'Chanda Mulenga', title: 'Chief Executive', unit: 'co', reportsTo: null, sharedExecutive: true }, // AR-7
       { key: 'fm', name: 'Wanjiru Mwangi', title: 'Finance Manager', unit: 'co', reportsTo: 'ceo', roles: ['finance'] },
       { key: 'od', name: 'Samuel Njoroge', title: 'Operations Director', unit: 'ops', reportsTo: 'ceo', roles: ['strategy_office'] },
       { key: 'hrm', name: 'Faith Wairimu', title: 'Human Resources Manager', unit: 'co', reportsTo: 'ceo', roles: ['hr'] },

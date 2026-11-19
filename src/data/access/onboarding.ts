@@ -24,6 +24,7 @@ import { en } from '../../strings/en';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
 import { structureConfirmation } from './setup/confirmation';
+import { membershipActiveOn } from '../../rules/access';
 
 /* ───────── Reading the template (O3) ───────── */
 
@@ -321,7 +322,7 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
     const p = plan();
     const confirmed = !!structureConfirmation(s);
     const sees = canSetUp || isExecutive || can('org_admin');
-    const strategyMember = s.memberships.find((m) => m.status === 'active' && m.roles.includes('strategy_office'));
+    const strategyMember = s.memberships.find((m) => membershipActiveOn(m, now) && m.roles.includes('strategy_office'));
     const confirmEvent = p ? s.gateEvents.filter((g) => g.gate === 'plan.confirm' && g.outcome === 'passed' && g.subject.id === p.id).pop() : undefined;
     const checks = p ? planChecks(s, p, fy) : null;
     const items = p ? viewOf() : [];

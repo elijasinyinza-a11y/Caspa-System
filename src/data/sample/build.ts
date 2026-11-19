@@ -48,7 +48,11 @@ export interface KpiSpec {
 }
 export interface ObjectiveSpec { code: string; title: string; owner: string; kpis: KpiSpec[] }
 export interface GoalSpec { code: string; title: string; perspective: PerspectiveKey | null; owner: string; why?: { cell: FourQCell; text: string }; objectives: ObjectiveSpec[] }
-export interface PersonSpec { key: string; name: string; title: string; unit: string; reportsTo: string | null; roles?: AssignedRole[]; /** Held by an acting holder from this date (H2). */ actingFrom?: string }
+export interface PersonSpec {
+  key: string; name: string; title: string; unit: string; reportsTo: string | null; roles?: AssignedRole[]; /** Held by an acting holder from this date (H2). */ actingFrom?: string;
+  /** v0.30.0 (AR-7): held by the shared Executive, who belongs to every sample organisation; `name` is not used. */
+  sharedExecutive?: true;
+}
 export interface ContractSpec {
   person: string; status: 'draft' | 'signed';
   objectives: { activity: string; title: string; qty: { value: number; unit: string } | null; weight: number; done?: number }[];
@@ -89,12 +93,14 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
 
   const units: OrgUnit[] = spec.units.map((u) => ({ ...base, id: unit(u.id), parentId: u.parent ? unit(u.parent) : null, name: u.name, unitType: u.type }));
   const positions: Position[] = spec.people.map((p) => ({ ...base, id: pos(p.key), unitId: unit(p.unit), title: p.title, reportsToPositionId: p.reportsTo ? pos(p.reportsTo) : null }));
+  // AR-7 (v0.30.0): the shared Executive holds the organisation's top position, so no role is held without a position.
+  const holderOf = (p: PersonSpec) => (p.sharedExecutive ? id<'Person'>(SHARED_EXECUTIVE.personId) : per(p.key));
   const people = [
-    ...spec.people.map((p) => ({ id: per(p.key), fullName: p.name, email: `${p.key}@${k}.example` })),
+    ...spec.people.filter((p) => !p.sharedExecutive).map((p) => ({ id: per(p.key), fullName: p.name, email: `${p.key}@${k}.example` })),
     { id: id<'Person'>(SHARED_EXECUTIVE.personId), fullName: SHARED_EXECUTIVE.fullName, email: SHARED_EXECUTIVE.email },
   ];
   const assignments = spec.people.map((p) => ({
-    ...base, id: id<'PositionAssignment'>(`pa-${k}-${p.key}`), positionId: pos(p.key), personId: per(p.key),
+    ...base, id: id<'PositionAssignment'>(`pa-${k}-${p.key}`), positionId: pos(p.key), personId: holderOf(p),
     kind: (p.actingFrom ? 'acting' : 'substantive') as 'acting' | 'substantive', from: d(p.actingFrom ?? '2024-01-01'), to: null,
   }));
   const membership = (mid: string, personId: Id<'Person'>, roles: AssignedRole[]): Membership => ({
@@ -102,8 +108,8 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
   });
   const memberships: Membership[] = [
     // The HR person also administers the organisation, so each test organisation has an administrator on its own staff (D7-7).
-    ...spec.people.map((p) => membership(`m-${k}-${p.key}`, per(p.key), p.key === spec.devRoles.hr ? [...new Set([...(p.roles ?? []), 'org_admin' as const])] : p.roles ?? [])),
-    membership(sharedMembership, id(SHARED_EXECUTIVE.personId), ['executive']),
+    ...spec.people.filter((p) => !p.sharedExecutive).map((p) => membership(`m-${k}-${p.key}`, per(p.key), p.key === spec.devRoles.hr ? [...new Set([...(p.roles ?? []), 'org_admin' as const])] : p.roles ?? [])),
+    membership(sharedMembership, id(SHARED_EXECUTIVE.personId), ['executive', ...spec.people.filter((p) => p.sharedExecutive).flatMap((p) => p.roles ?? [])]),
   ];
 
   const goals: Goal[] = [];
@@ -208,7 +214,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     store.contracts.push({
       ...base, id: cid, personId: per(c.person), positionId: pos(c.person), financialYear: spec.fy, status: c.status,
       signedByEmployee: signed ? { at: signedAt, byMembershipId: id(`m-${k}-${c.person}`) } : null,
-      signedBySupervisor: signed ? { at: signedAt, byMembershipId: id(`m-${k}-${supervisorKey}`) } : null,
+      signedBySupervisor: signed ? { at: signedAt, byMembershipId: spec.people.find((p) => p.key === supervisorKey)?.sharedExecutive ? sharedMembership : id(`m-${k}-${supervisorKey}`) } : null,
     });
     c.objectives.forEach((o, i) => {
       const a = activities.find((x) => x.code === o.activity);

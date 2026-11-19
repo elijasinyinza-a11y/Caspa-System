@@ -25,14 +25,15 @@ export const createNgo = () =>
     perspectives: null,
     units: [{ id: 'office', parent: null, name: 'Sample Community Health NGO', type: 'Office' }],
     people: [
-      { key: 'cd', name: 'Florence Akello', title: 'Country Director', unit: 'office', reportsTo: null, roles: ['strategy_office'] },
+      { key: 'cd', name: 'Chanda Mulenga', title: 'Country Director', unit: 'office', reportsTo: null, sharedExecutive: true }, // AR-7
+      { key: 'sl', name: 'Florence Akello', title: 'Strategy and Learning Manager', unit: 'office', reportsTo: 'cd', roles: ['strategy_office'] },
       { key: 'fo', name: 'David Ssempala', title: 'Finance Officer', unit: 'office', reportsTo: 'cd', roles: ['finance', 'hr'] }, // one person, two roles: the merged queue
       { key: 'pc', name: 'Grace Namutebi', title: 'Programme Coordinator', unit: 'office', reportsTo: 'cd', actingFrom: '2026-08-01' }, // H2: one acting post
       { key: 'chw1', name: 'Sarah Nakato', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
       { key: 'chw2', name: 'Peter Okello', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
       { key: 'chw3', name: 'Ruth Atim', title: 'Community Health Worker', unit: 'office', reportsTo: 'pc' },
     ],
-    devRoles: { finance: 'fo', supervisor: 'pc', employee: 'chw1', hr: 'fo', strategy: 'cd' },
+    devRoles: { finance: 'fo', supervisor: 'pc', employee: 'chw1', hr: 'fo', strategy: 'sl' },
     // Slice 6 (wording approved 29 October 2026): two decision-map rows on R1.1, one solved at another level, one with none.
     deficiencies: [
       { objective: 'R1.1', level: 'people', description: 'Many women do not return after their first antenatal visit', cause: 'Mothers are not reminded when their next visit is due', effects: 'Fewer women complete four visits', fix: ['IV1.1.1.1'], timeframe: '12 months' },

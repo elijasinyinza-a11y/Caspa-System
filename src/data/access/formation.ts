@@ -17,6 +17,7 @@ import { en } from '../../strings/en';
 import { can } from './permissions';
 import type { Store } from './store';
 import type { Viewer } from './viewer';
+import { membershipActiveOn } from '../../rules/access';
 
 export interface ActionView { logIndex: number; actionIndex: number; text: string; owner: string; dueOn: ISODate; done: { by: string; on: ISODate } | null; canClose: boolean }
 export interface GroupView {
@@ -175,7 +176,7 @@ export function createFormationAccess(ctx: Ctx): FormationAccess {
   const groupSession = (id: string) => { const p = plan(); const w = s.workshops.find((x) => x.id === id && x.planId === p?.id && x.purposes.includes('four_q_review')); return w && p?.status === 'draft' ? w : null; };
   const groupInputError = (g: { name: string; cells: FourQCell[]; scribeMembershipId: string; memberNames: string[] }): FormationError | null => {
     if (!g.name.trim() || !g.cells.length || !g.scribeMembershipId) return 'required';
-    if (!s.memberships.some((m) => m.id === g.scribeMembershipId && m.status === 'active')) return 'required';
+    if (!s.memberships.some((m) => m.id === g.scribeMembershipId && membershipActiveOn(m, now))) return 'required';
     const keys = g.cells.map((c) => `${c.band}.${c.column}`);
     if (new Set(keys).size !== keys.length || !g.cells.every((c) => CELL_KEYS.has(`${c.band}.${c.column}`))) return 'cells';
     return null;
@@ -235,12 +236,12 @@ export function createFormationAccess(ctx: Ctx): FormationAccess {
       isPreparer: isPreparer(),
       seesDraft,
       preparerOptions: s.memberships
-        .filter((m) => m.status === 'active' && (m.roles.includes('strategy_office') || m.roles.includes('facilitator')))
+        .filter((m) => membershipActiveOn(m, now) && (m.roles.includes('strategy_office') || m.roles.includes('facilitator')))
         .map((m) => ({ membershipId: m.id, name: personOf(m.id), role: m.roles.includes('strategy_office') ? en.assignedRole.strategy_office : en.assignedRole.facilitator })),
       positions: s.positions.map((x) => ({ id: x.id, label: labelOf(x.id), holder: holderOf(x.id) })),
       deadlines: deadlines.map((d) => ({ id: d.id, label: d.label, owners: d.ownerPositionIds.map(labelOf), dueOn: d.dueOn, completed: !!d.completed })).sort((a, b) => ((a.dueOn ?? '9999') < (b.dueOn ?? '9999') ? -1 : 1)),
       schedule: p ? scheduleView(p, seesDraft || published) : { empty: true, next: null, months: [], undated: [], counts: countsByStage([]), canBuild: false, canEdit: false, canMoveStages: false },
-      members: s.memberships.filter((m) => m.status === 'active').map((m) => ({ membershipId: m.id, name: personOf(m.id) })).sort((a, b) => a.name.localeCompare(b.name)),
+      members: s.memberships.filter((m) => membershipActiveOn(m, now)).map((m) => ({ membershipId: m.id, name: personOf(m.id) })).sort((a, b) => a.name.localeCompare(b.name)),
       sessions: visibleSessions.map((w) => ({
         id: w.id, purposes: w.purposes, format: w.format, scheduledOn: w.scheduledOn, window: w.window, status: w.status, participants: w.participantPositionIds.length,
         decisionLog: w.decisionLog.map((l, li) => ({

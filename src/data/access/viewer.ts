@@ -7,6 +7,7 @@ import { openRoundFor } from '../../rules/consultation';
 import { formingPlan } from '../../rules/formation';
 import { verifierPosition } from '../../rules/progress';
 import type { Store } from './store';
+import { membershipActiveOn } from '../../rules/access';
 
 /** Part 11e: owns a goal that can have a record, or heads a department while any goal can have one. */
 function writesCommunication(s: Store, positionIds: readonly string[]): boolean {
@@ -44,7 +45,8 @@ export interface Viewer {
 }
 
 export function resolveViewer(s: Store, membershipId: string, now: ISODate, financialYear: number): Viewer {
-  const m = s.memberships.find((x) => x.id === membershipId && x.status === 'active');
+  // D1 (v0.30.0): a membership gives access only from its start date to its end date, inclusive.
+  const m = s.memberships.find((x) => x.id === membershipId && membershipActiveOn(x, now));
   if (!m) throw new Error(`No active membership ${membershipId}`);
   const positionIds = s.assignments
     .filter((a) => a.personId === m.personId && a.from <= now && (a.to === null || a.to >= now))

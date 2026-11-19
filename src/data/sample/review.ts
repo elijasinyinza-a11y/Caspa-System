@@ -6,6 +6,8 @@ import type { Store } from '../access/store';
 import { createSampleOrgs, type DevRole } from './all';
 import { createNewOrganisation } from './new-org';
 import { reviewerPositionOf } from '../../rules/review';
+import { membershipActiveOn } from '../../rules/access';
+import type { ISODate } from '../../contract/caspa-data-contract';
 
 export interface ReviewOrg { orgId: string; store: Store; devRoles: Partial<Record<DevRole, string>> }
 
@@ -19,7 +21,9 @@ export function devMembership(org: ReviewOrg, role: DevRole, now: string): strin
   const fixed = org.devRoles[role];
   if (fixed) return fixed;
   const s = org.store;
-  const active = s.memberships.filter((m) => m.status === 'active');
+  // D1 (v0.30.0): only memberships that give access today. The consultant is found whatever the date, so the review
+  // build can show the page a person sees once their access has ended.
+  const active = s.memberships.filter((m) => membershipActiveOn(m, now as ISODate));
   const held = (personId: string) => s.assignments.filter((a) => a.personId === personId && a.from <= now && (a.to === null || a.to >= now)).map((a) => a.positionId as string);
   const byRole = (r: string) => active.find((m) => m.roles.includes(r as never) && held(m.personId).length > 0) ?? active.find((m) => m.roles.includes(r as never));
   switch (role) {
@@ -29,7 +33,7 @@ export function devMembership(org: ReviewOrg, role: DevRole, now: string): strin
     case 'hr': return byRole('hr')?.id ?? null;
     case 'admin': return byRole('org_admin')?.id ?? null;
     case 'compliance': return byRole('compliance')?.id ?? null;
-    case 'consultant': return active.find((m) => m.roles.includes('org_admin') && held(m.personId).length === 0 && m.endsOn)?.id ?? null;
+    case 'consultant': return s.memberships.find((m) => m.status === 'active' && m.roles.includes('org_admin') && held(m.personId).length === 0 && m.endsOn)?.id ?? null;
     case 'reviewer': {
       // v0.20.0 (RV-8): whoever checks the employee role's flagged reviews, from the employee's contract.
       const emp = devMembership(org, 'employee', now);

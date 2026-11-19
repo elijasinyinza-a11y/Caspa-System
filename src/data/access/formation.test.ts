@@ -35,7 +35,8 @@ describe('setting up the next plan (F-1)', () => {
     expect(setUp(f)).toMatchObject({ ok: true, id: 'plan-2027' }); // the seeded formed plan is the one set up
     const page = f.as('executive').formation.page();
     expect(page.plan).toMatchObject({ title: 'Strategic Plan 2027–2031', preparer: { name: 'Bwalya Musonda' }, processOwner: { label: 'Strategy and Planning Manager' } });
-    expect(page.preparerOptions.map((x) => x.name)).toEqual(['Bwalya Musonda']);
+    // v0.30.0: Mutale Chola, the sample facilitator (1 October to 30 November 2026), may also prepare.
+    expect(page.preparerOptions.map((x) => x.name)).toEqual(['Bwalya Musonda', 'Mutale Chola']);
     expect(page.activePlan?.title).toBe('Strategic Plan 2022–2026');
   });
   it('stages open and close, a closed stage can be reopened, and only the Strategy office moves them', () => {

@@ -15,6 +15,14 @@ export const lc = (label: string) => (label === label.toUpperCase() || /^[A-Z]{2
 
 export type WorkspaceKey = 'home' | 'strategy' | 'cascade' | 'plan' | 'performance';
 
+/** Assigned roles' names (also en.assignedRole), here so finding messages can name roles. */
+const ROLE_NAME = {
+  executive: 'Executive', strategy_office: 'Strategy office', finance: 'Finance', hr: 'HR', facilitator: 'Facilitator', compliance: 'Compliance', org_admin: 'Organisation administrator',
+} satisfies Record<AssignedRole, string>;
+/** 14 October 2026, from an ISO date, for messages built by the rules engine. */
+const longDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const roleList = (roles: AssignedRole[]) => new Intl.ListFormat('en-GB', { style: 'long', type: 'conjunction' }).format(roles.map((r) => ROLE_NAME[r]));
+
 export const en = {
   product: 'CASPA™',
   parentBrand: 'Karislabs Technologies',
@@ -101,10 +109,16 @@ export const en = {
   devSwitcher: { label: 'Development preview', viewingAs: 'Viewing as', date: 'Date' },
   roles: { executive: 'Executive', strategy: 'Strategy office', finance: 'Finance', hr: 'HR', supervisor: 'Supervisor', employee: 'Employee', admin: 'Organisation administrator', compliance: 'Compliance', consultant: 'Consultant (administrator, no position)', reviewer: 'Next-level reviewer', kpiOwner: 'KPI owner' },
   /** Assigned roles as people see them (contract AssignedRole). Supervisor, owner and employee are never assigned. */
-  assignedRole: {
-    executive: 'Executive', strategy_office: 'Strategy office', finance: 'Finance', hr: 'HR', facilitator: 'Facilitator', compliance: 'Compliance', org_admin: 'Organisation administrator',
-  } satisfies Record<AssignedRole, string>,
+  assignedRole: ROLE_NAME,
   orgSwitcher: { label: 'Organisation' },
+  /** v0.30.0 (D1): what a person sees once their access has ended, or before it starts. */
+  accessEnded: {
+    title: 'Your access has ended',
+    text: (org: string, date: string) => `Your access to ${org} ended on ${date}. Ask an administrator if you need it again.`,
+    notYetTitle: 'Your access has not started',
+    notYet: (org: string, date: string) => `Your access to ${org} starts on ${date}.`,
+    kept: 'Nothing you did while you had access has been removed.',
+  },
   integrity: {
     pillLabel: (blocking: number, advisory: number, acknowledged: number) =>
       `Checks: ${blocking} must fix, ${advisory} to check${acknowledged ? `, ${acknowledged} checked` : ''}. Open the checks.`,
@@ -135,6 +149,7 @@ export const en = {
     fixNode: (code: string) => `Fix this in ${code}`,
     fixMap: (code: string) => `Fix this on the ${code} decision map`,
     fixWorkspace: (w: string) => `Fix this in ${w}`,
+    fixAccess: 'Fix this in People and access',
     noFixLink: 'The record that fixes this is not one you can open. The people it is sent to can fix it.',
     explain: 'Explain this',
     explainHide: 'Hide explanation',
@@ -144,6 +159,7 @@ export const en = {
     aiNote: 'Written by AI to explain the check. It cannot clear it; only fixing the record does.',
     acknowledged: 'Checked',
     acknowledge: 'Mark as checked',
+    staysUntilFixed: 'This check stays until it is fixed; it cannot be marked as checked.',
     acknowledgeAgain: 'Mark as checked again',
     ackReasonLabel: 'Why is this acceptable for now?',
     ackReasonHint: 'Your reason is stored with your name and the date. It does not fix the record.',
@@ -209,6 +225,14 @@ export const en = {
     planNoValues: (plan: string) => `${plan} has no corporate values recorded.`,
     commitmentActivityStopped: (t: Terms, x: string) => `“${x}”: the ${lc(t.activity.singular)} behind this signed ${lc(t.contractObjective.singular)} was stopped.`,
     budgetLineActivityStopped: (t: Terms, d: string, c: string) => `${t.budgetLine.singular} “${d}” is linked to ${lc(t.activity.singular)} ${c}, which was stopped.`,
+    /** v0.30.0 (Access Review Specification v0.1, section 4). Person-level messages are shown to administrators only. */
+    access: {
+      roleNoPosition: (c: { personName: string | null; roles: AssignedRole[] }) => `${c.personName} holds ${roleList(c.roles)} but no position, and their access has no end date.`,
+      endsSoon: (c: { personName: string | null; endsOn: string | null }) => `${c.personName}’s access ends on ${longDate(c.endsOn ?? '')}.`,
+      noStaffAdmin: () => 'No administrator holds a position, so nobody on the staff can change the structure.',
+      noExecutive: () => 'Nobody holds the Executive role, so plans and goals cannot be confirmed.',
+      keyRoleActingOnly: (c: { role: AssignedRole | null }) => `Everyone holding ${c.role ? ROLE_NAME[c.role] : ''} is acting in their position.`,
+    },
   },
   /** Verb-first next steps for findings that are fixed on a record (Clarity Specification, C6 and section 7). */
   fixStep: {
@@ -1193,6 +1217,50 @@ export const en = {
       newPerson: 'New person',
       name: (name: string) => `Name of ${name}`,
       endsLabel: (name: string) => `Access for ${name} ends on`,
+      // v0.30.0 (Access Review Specification v0.1, sections 3 and 4).
+      tabsLabel: 'People and access',
+      byPerson: 'By person',
+      byRole: 'By role',
+      byRoleIntro: 'Who holds each assigned role. Supervisors, owners and budget holders follow from the structure and are not listed here. To change roles, use By person.',
+      nobodyHolds: 'Nobody holds this role',
+      noPosition: 'No position',
+      acting: 'acting',
+      heldSince: (date: string) => `Held since ${date}`,
+      changeRoles: (name: string) => `Change roles for ${name}`,
+      changeRolesShort: 'Change roles',
+      ended: 'Access ended',
+      endedNobody: 'Nobody',
+      endedLine: (date: string) => `Last day ${date}`,
+      noRoles: 'No roles',
+      toCheck: 'To check',
+      checked: 'Checked',
+      endAccess: 'End access',
+      endAccessFor: (name: string) => `End access for ${name}`,
+      you: 'You',
+      giveAgain: 'Give access again',
+      giveAgainFor: (name: string) => `Give ${name} access again`,
+      endedOn: (date: string) => `Access ended ${date}`,
+      endDialog: {
+        title: (name: string) => `End access for ${name}?`,
+        lastDay: (date: string) => `Their last day of access is ${date}. From today they can no longer sign in.`,
+        leaves: (positions: string) => `They also leave ${positions}, which becomes vacant from today.`,
+        roles: (roles: string) => `The roles they hold go with them: ${roles}.`,
+        kept: 'Everything they did stays on record, and the change is recorded in the audit trail.',
+        confirm: 'End access',
+        cancel: 'Cancel',
+      },
+      done: {
+        ended: (name: string) => `${name}’s access has ended. Their records stay.`,
+        again: (name: string) => `${name} has access again, with no roles. Give roles here if they need any.`,
+      },
+      error: {
+        ends_required: 'Facilitators need an end date for their access. Set “Access ends on” first.',
+        ends_past: 'The end date cannot be before today. To stop access now, use End access.',
+        own_access: 'You cannot end your own access. Ask another administrator.',
+        already: 'This has already been done.',
+        must_fix: (why: string) => `Not changed. ${why}`,
+        other: 'This could not be saved.',
+      },
     },
     checks: {
       title: 'Checks',
@@ -1223,6 +1291,7 @@ export const en = {
         same_email: 'The same email for two people',
         no_executive: 'Nobody holds the Executive role',
         no_staff_admin: 'No administrator holds a position here',
+        facilitator_no_end: 'Facilitators with no end date for their access',
         no_manager: 'Positions with no line manager',
         empty_unit: 'Units with no positions',
         no_unit_type: 'Units with no unit type',
@@ -1246,6 +1315,7 @@ export const en = {
         sameEmail: (names: string, email: string) => `${names} have the same email, ${email}.`,
         noExecutive: 'Nobody holds the Executive role. Strategic choices need a person to confirm them.',
         noStaffAdmin: 'No administrator holds a position here. Confirming needs an administrator on the organisation’s own staff.',
+        facilitatorNoEnd: (name: string) => `${name} has the Facilitator role but no end date for their access. Facilitators need one.`,
         openAccess: 'Open People and access',
         merge: (admin: string, holder: string) => `Make ${admin} the holder named ${holder}`,
         position: (title: string, unit: string) => `${title}, ${unit}`,
@@ -1706,6 +1776,11 @@ export const en = {
       roles: 'Roles',
       rolesNote: 'Roles belong to the person, not the position. The administrator decides whether the new holder takes them.',
       rolesHidden: 'Shown to the administrator.',
+      // v0.30.0 (D4): when the holder holds no other position.
+      endAccessTitle: 'When they leave',
+      endAccessText: (name: string) => `${name} holds no other position. If they are leaving the organisation, end their access: they leave this post today and can no longer sign in.`,
+      endAccess: (name: string) => `End access for ${name}`,
+      keepAccess: 'Keep access and review roles',
       ownContract: 'Their own contract for this post',
       ownContractStatus: (status: string) => `${status}. HR handles it in the year’s reviews (H6).`,
       noContract: 'None this year, or not shown to you.',
