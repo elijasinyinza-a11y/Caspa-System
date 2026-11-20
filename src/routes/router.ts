@@ -57,7 +57,8 @@ export type Route =
   /** Performance › Contracts (v0.22.0): a tab, or one contract (/c/<id>). */
   | { kind: 'contracts'; tab?: 'mine' | 'team' | 'check' | 'overview'; contractId?: string }
   /** v0.26.0 (4Q Group Work Specification v0.1): a group's 4Q flip chart, #/flipchart/<workshopId>/<groupId>, for its scribe. */
-  | { kind: 'flipchart'; workshopId: string; groupId: string }
+  /** v0.32.0: a values group's printed sheet, #/flipchart/<workshopId>/<groupId>/sheet, for the Strategy office. */
+  | { kind: 'flipchart'; workshopId: string; groupId: string; sheet?: boolean }
   /** v0.26.0: the usability-test kit, #/usability (review build only, beside the role switcher). */
   | { kind: 'usability'; start?: number };
 
@@ -76,7 +77,7 @@ export const hrefFor = (r: Route): string =>
   : r.kind === 'survey' ? `#/survey/${encodeURIComponent(r.roundId)}${r.results ? '/results' : ''}`
   : r.kind === 'progress' ? ['#/performance/progress', r.tab, r.tab === 'mine' && r.objectiveId ? encodeURIComponent(r.objectiveId) : null].filter(Boolean).join('/')
   : r.kind === 'workspace' ? `#/${r.w}`
-  : r.kind === 'flipchart' ? `#/flipchart/${encodeURIComponent(r.workshopId)}/${encodeURIComponent(r.groupId)}`
+  : r.kind === 'flipchart' ? `#/flipchart/${encodeURIComponent(r.workshopId)}/${encodeURIComponent(r.groupId)}${r.sheet ? '/sheet' : ''}`
   : r.kind === 'usability' ? `#/usability${r.start ? `/start/${r.start}` : ''}`
   : r.kind === 'map' ? `#/map/${encodeURIComponent(r.objectiveId)}${r.deficiencyId ? `/${encodeURIComponent(r.deficiencyId)}` : ''}`
   : `#/node/${r.node}/${encodeURIComponent(r.id)}${r.from ? `~${r.from}` : ''}`;
@@ -101,7 +102,7 @@ export const parseRoute = (hash: string): Route => {
     const from = WORKSPACE_ORDER.includes(rawFrom as WorkspaceKey) ? (rawFrom as WorkspaceKey) : undefined;
     return { kind: 'node', node: parts[1] as NodeKind, id: decodeURIComponent(rawId!), from };
   }
-  if (parts[0] === 'flipchart' && parts[1] && parts[2]) return { kind: 'flipchart', workshopId: decodeURIComponent(parts[1]), groupId: decodeURIComponent(parts[2]) };
+  if (parts[0] === 'flipchart' && parts[1] && parts[2]) return { kind: 'flipchart', workshopId: decodeURIComponent(parts[1]), groupId: decodeURIComponent(parts[2]), ...(parts[3] === 'sheet' ? { sheet: true } : {}) };
   if (parts[0] === 'usability') return parts[1] === 'start' && Number(parts[2]) > 0 ? { kind: 'usability', start: Number(parts[2]) } : { kind: 'usability' };
   if (parts[0] === 'map' && parts[1]) {
     return { kind: 'map', objectiveId: decodeURIComponent(parts[1]), deficiencyId: parts[2] ? decodeURIComponent(parts[2]) : undefined };

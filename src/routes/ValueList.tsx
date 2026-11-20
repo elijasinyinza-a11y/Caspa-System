@@ -11,7 +11,8 @@ const field = 'mt-1 min-h-11 w-full rounded-lg border border-control bg-white px
 const small = 'inline-flex min-h-10 items-center rounded-lg border border-control bg-white px-3 text-13 font-medium text-navy hover:border-navy disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Add, edit, move and remove values. The caller keeps the list and decides when to save. */
-export function ValueListEditor({ values, onChange, idPrefix }: { values: ValueInput[]; onChange: (next: ValueInput[]) => void; idPrefix: string }) {
+/** v0.32.0: `note` adds a line under a value, such as where it came from in group work ("Put forward by 2 of 3 groups"). */
+export function ValueListEditor({ values, onChange, idPrefix, note }: { values: ValueInput[]; onChange: (next: ValueInput[]) => void; idPrefix: string; note?: (v: ValueInput) => string | null }) {
   const set = (i: number, patch: Partial<ValueInput>) => onChange(values.map((v, j) => (j === i ? { ...v, ...patch } : v)));
   const move = (i: number, d: -1 | 1) => { const next = [...values]; [next[i], next[i + d]] = [next[i + d]!, next[i]!]; onChange(next); };
   const error = values.length ? valuesError(values) : null;
@@ -35,6 +36,7 @@ export function ValueListEditor({ values, onChange, idPrefix }: { values: ValueI
                   <p className="mt-1 text-12 text-muted">{V.count(v.text.length, VALUE_MEANING_MAX)}</p>
                 </div>
               </div>
+              {note?.(v) && <p className="text-12 font-semibold text-strategy-text">{note(v)}</p>}
               <div className="flex flex-wrap gap-2">
                 <button type="button" className={small} disabled={i === 0} onClick={() => move(i, -1)} aria-label={V.moveUpLabel(i + 1)}>{V.moveUp}</button>
                 <button type="button" className={small} disabled={i === values.length - 1} onClick={() => move(i, 1)} aria-label={V.moveDownLabel(i + 1)}>{V.moveDown}</button>
@@ -57,7 +59,7 @@ export function ValueListEditor({ values, onChange, idPrefix }: { values: ValueI
 export const valuesReady = (values: ValueInput[]) => valuesError(values) === null;
 
 /** The values as a read-only list: each name in bold with its meaning, in order (CV-8). */
-export function ValueListView({ values, columns = false }: { values: ValueInput[]; columns?: boolean }) {
+export function ValueListView({ values, columns = false, note }: { values: ValueInput[]; columns?: boolean; note?: (v: ValueInput) => string | null }) {
   if (!values.length) return null;
   return (
     <ol className={columns ? 'grid gap-x-6 gap-y-3 md:grid-cols-2' : 'space-y-2'}>
@@ -65,6 +67,7 @@ export function ValueListView({ values, columns = false }: { values: ValueInput[
         <li key={i}>
           <b className="block text-16 font-semibold text-navy">{v.name}</b>
           <span className="text-14 text-text">{v.text}</span>
+          {note?.(v) && <span className="block text-12 font-semibold text-strategy-text">{note(v)}</span>}
         </li>
       ))}
     </ol>

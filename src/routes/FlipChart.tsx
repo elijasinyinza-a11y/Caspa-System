@@ -10,10 +10,18 @@ import type { FourQCell } from '../contract/caspa-data-contract';
 import { cellKey } from '../rules/conception';
 import { en } from '../strings/en';
 import { btn, card, Chip, input, label, primary } from './organisation/ui';
+import { GroupSheet, ValuesFlipChart } from './ValuesWork';
 
 const G = en.flipChart;
 
-export function FlipChartPage({ workshopId, groupId }: { workshopId: string; groupId: string }) {
+export function FlipChartPage({ workshopId, groupId, sheet = false }: { workshopId: string; groupId: string; sheet?: boolean }) {
+  const { repo } = useApp();
+  // v0.32.0: a values session's groups have their own flip chart and printed sheet (Values Group Work Specification v0.1).
+  if (repo.valuesWork.session(workshopId) || repo.valuesWork.flipChart(workshopId, groupId)) return sheet ? <GroupSheet workshopId={workshopId} groupId={groupId} /> : <ValuesFlipChart workshopId={workshopId} groupId={groupId} />;
+  return <FourQFlipChart workshopId={workshopId} groupId={groupId} />;
+}
+
+function FourQFlipChart({ workshopId, groupId }: { workshopId: string; groupId: string }) {
   const { repo } = useApp();
   const f = repo.conception.flipChart(workshopId, groupId);
   if (!f) return <p className="rounded-lg bg-info-bg px-4 py-3 text-14">{G.notYours}</p>;

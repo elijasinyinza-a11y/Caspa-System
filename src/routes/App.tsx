@@ -129,7 +129,7 @@ export function App() {
     : route.kind === 'survey' ? (route.results ? <SurveyStaffResults key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} /> : <SurveyAnswer key={`${org.orgId}:${viewing}:${route.roundId}`} roundId={route.roundId} />)
     : route.kind === 'progress' ? <ProgressUpdates key={`${org.orgId}:${viewing}`} tab={route.tab} objectiveId={route.objectiveId} />
     : route.kind === 'map' ? <DecisionMapPage key={`${org.orgId}:${viewing}:${route.objectiveId}:${route.deficiencyId ?? ''}`} objectiveId={route.objectiveId} deficiencyId={route.deficiencyId} />
-    : route.kind === 'flipchart' ? <FlipChartPage key={`${org.orgId}:${viewing}:${route.workshopId}:${route.groupId}`} workshopId={route.workshopId} groupId={route.groupId} />
+    : route.kind === 'flipchart' ? <FlipChartPage key={`${org.orgId}:${viewing}:${route.workshopId}:${route.groupId}:${route.sheet ? 's' : ''}`} workshopId={route.workshopId} groupId={route.groupId} sheet={!!route.sheet} />
     : route.kind === 'usability' ? <UsabilityPage key={org.orgId} />
     : route.w === 'home' ? <Home key={`${org.orgId}:${viewing}`} />
     : route.w === 'cascade' ? <CascadeTree key={`${org.orgId}:${viewing}`} />

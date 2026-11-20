@@ -6,6 +6,8 @@
  */
 import type { ValueInput } from '../rules/values';
 import { ValueListEditor, ValueListView, valuesReady } from './ValueList';
+import { backingLine, ValuesBoard } from './ValuesWork';
+import { withBoardValues } from '../rules/values-work';
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { BookLine, Explain, SixPChip } from '../components/Explain';
@@ -682,10 +684,15 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
   const [mission, setMission] = useState(v.mission);
   // v0.29.0 (CV-2): start from the plan's values, or the current plan's while none are saved.
   const [values, setValues] = useState<ValueInput[]>(v.values.length ? v.values : v.carried);
+  // v0.32.0: a value added from the values board joins the list being edited, keeping anything not yet saved.
+  const stored = JSON.stringify(v.values);
+  const [seen, setSeen] = useState(stored);
+  if (stored !== seen) { setSeen(stored); setValues(withBoardValues(values, v.values)); }
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const editable = v.canWrite && v.open;
+  const valuesSession = repo.valuesWork.sessionFor('forming');
   const save = () => { const r = repo.conception.saveVision({ vision, mission, values }); setNote(r.ok ? { ok: true, text: V.saved } : null); };
   const confirm = () => {
     repo.conception.saveVision({ vision, mission, values });
@@ -722,7 +729,7 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
             {v.values.length === 0 && (
               <p className="mt-1 rounded-lg bg-strategy-tint px-3 py-2 text-13">{v.carried.length ? en.values.carriedPlain : en.values.noneCarried}</p>
             )}
-            <div className="mt-2"><ValueListEditor values={values} onChange={setValues} idPrefix="vm-val" /></div>
+            <div className="mt-2"><ValueListEditor values={values} onChange={setValues} idPrefix="vm-val" note={(x) => backingLine(repo, x)} /></div>
             {values.length === 0 && <p className="mt-2 text-13 text-muted">{en.values.withoutValues}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className={btn} onClick={save} disabled={!valuesReady(values)}>{V.save}</button>
@@ -738,7 +745,7 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
             {!v.canWrite && <p className="mt-3 text-13 text-muted">{V.onlyExecutive}</p>}
             {v.vision && <><p className="mt-3"><Chip tone="info">{V.draftLabel}</Chip></p><p className="mt-2 text-16 text-navy">“{v.vision}”</p></>}
             {v.mission && <p className="mt-2 text-14">{v.mission}</p>}
-            {v.values.length > 0 && <div className="mt-3"><ValueListView values={v.values} /></div>}
+            {v.values.length > 0 && <div className="mt-3"><ValueListView values={v.values} note={(x) => backingLine(repo, x)} /></div>}
           </>
         )}
         {!v.confirmed && (blocked || (c.isExecutive && v.open)) && must.length > 0 && (
@@ -748,6 +755,8 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
         )}
       </section>
       {c.seesAll && <BoardSummary c={c} />}
+      {/* v0.32.0 (Values Group Work Specification v0.1): the values board sits in the vision step while forming. */}
+      {valuesSession && <div className="xl:col-span-2"><ValuesBoard workshopId={valuesSession.workshopId} /></div>}
       {confirming && (
         <Dialog title={V.confirmTitle} onClose={() => setConfirming(false)}>
           <p className="text-14">{V.confirmText}</p>

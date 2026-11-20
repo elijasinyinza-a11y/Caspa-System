@@ -32,6 +32,10 @@ describe('addresses under their workspace (NV-5)', () => {
     expect(hrefFor({ kind: 'flipchart', workshopId: 'ws-2027-4q', groupId: 'g1' })).toBe('#/flipchart/ws-2027-4q/g1');
     expect(parseRoute('#/usability/start/x')).toEqual({ kind: 'usability' });
   });
+  it('v0.32.0: a values group’s printed sheet has its own address', () => {
+    round({ kind: 'flipchart', workshopId: 'ws-2027-values', groupId: 'g1', sheet: true });
+    expect(hrefFor({ kind: 'flipchart', workshopId: 'ws-2027-values', groupId: 'g1', sheet: true })).toBe('#/flipchart/ws-2027-values/g1/sheet');
+  });
   it('treats an unknown stage as the entry itself', () => {
     expect(parseRoute('#/strategy/forming/nowhere')).toEqual({ kind: 'strategy', entry: 'forming', stage: undefined, tab: undefined });
   });

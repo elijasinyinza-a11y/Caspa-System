@@ -8,6 +8,8 @@
  */
 import type { ValueInput } from '../rules/values';
 import { ValueListEditor, ValueListView, valuesReady } from './ValueList';
+import { backingLine, ValuesLanding } from './ValuesWork';
+import { withBoardValues } from '../rules/values-work';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { ProgressBar } from '../components/Status';
@@ -96,6 +98,10 @@ function DraftStatements({ mode, draft, onDone }: { mode: 'all' | 'values'; draf
   const [vision, setVision] = useState(draft?.vision ?? '');
   const [mission, setMission] = useState(draft?.mission ?? '');
   const [values, setValues] = useState<ValueInput[]>(draft?.values ?? []);
+  // v0.32.0: a value added from the values board joins the list being edited, keeping anything not yet saved.
+  const stored = JSON.stringify(draft?.values ?? []);
+  const [seen, setSeen] = useState(stored);
+  if (stored !== seen) { setSeen(stored); setValues(withBoardValues(values, draft?.values ?? [])); }
   const [error, setError] = useState<string | null>(null);
   const all = mode === 'all';
   const fail = (e: string) => setError(L.errors[e] ?? L.errors.not_allowed!);
@@ -120,7 +126,7 @@ function DraftStatements({ mode, draft, onDone }: { mode: 'all' | 'values'; draf
         </>
       )}
       <h3 className="pt-1 text-14 font-bold text-navy">{en.values.title}</h3>
-      <ValueListEditor values={values} onChange={setValues} idPrefix="dr-val" />
+      <ValueListEditor values={values} onChange={setValues} idPrefix="dr-val" note={(x) => backingLine(repo, x)} />
       {error && <p role="alert" className="text-13 font-semibold text-block-text">{error}</p>}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => save(false)} disabled={!valuesReady(values)} className={btn}>{D.save}</button>
@@ -133,12 +139,13 @@ function DraftStatements({ mode, draft, onDone }: { mode: 'all' | 'values'; draf
 
 /** The draft as written, read-only. */
 function DraftView({ d }: { d: LandingDraft }) {
+  const { repo } = useApp();
   return (
     <div className="space-y-3">
       {d.mode === 'all' && ([['vision', d.vision], ['mission', d.mission]] as const).map(([k, text]) => (
         <div key={k}><p className="text-12 font-semibold uppercase tracking-wide text-strategy-text">{k === 'vision' ? L.vision : L.mission}</p><p className="mt-1 text-16 text-navy">{text}</p></div>
       ))}
-      {d.values.length > 0 && <div><p className="mb-2 text-12 font-semibold uppercase tracking-wide text-strategy-text">{en.values.title}</p><ValueListView values={d.values} /></div>}
+      {d.values.length > 0 && <div><p className="mb-2 text-12 font-semibold uppercase tracking-wide text-strategy-text">{en.values.title}</p><ValueListView values={d.values} note={(x) => backingLine(repo, x)} /></div>}
     </div>
   );
 }
@@ -258,6 +265,8 @@ export function StrategyLanding() {
           </section>
         )
       )}
+      {/* v0.32.0 (VG-8): values group work, while the active plan has no values. */}
+      <ValuesLanding />
 
       {v.yourPart && v.yourPart.length > 0 && (
         <section aria-label={L.yourPart} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl bg-performance-tint px-5 py-3">

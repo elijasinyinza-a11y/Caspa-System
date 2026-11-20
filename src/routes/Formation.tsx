@@ -8,11 +8,12 @@ import { useApp } from '../components/AppContext';
 import type { FormationPage, ScheduleItemView, SessionView } from '../data/access/formation';
 import type { FormationStage, FourQCell, ISODate, WorkshopPurpose } from '../contract/caspa-data-contract';
 import { BANDS, CELLS, cellKey, cellOfKey } from '../rules/conception';
-import { PURPOSES, STAGES, type Format } from '../rules/formation';
+import { SESSION_PURPOSES, STAGES, type Format } from '../rules/formation';
 import { formatDate, formatFinancialYear, formatNumber } from '../selectors/format';
 import { en } from '../strings/en';
 import { btn, card, CheckBox, Chip, input, label, plural, primary } from './organisation/ui';
 import { Board, Documents, MyPart, VisionMission } from './Conception';
+import { ValuesGroups } from './ValuesWork';
 import { Baselines, Compliance, Room } from './Consultation';
 import { Composer } from './Composition';
 import { PlanDocumentPanel } from './PlanDocument';
@@ -455,7 +456,7 @@ function Sessions({ f }: { f: FormationPage }) {
           {error && <CheckBox tone="block" title={en.setup.edit.cantSave}>{error}</CheckBox>}
           <fieldset className="mt-2"><legend className={label}>{S.purposes}</legend>
             <div className="flex flex-wrap gap-x-4">
-              {PURPOSES.map((p) => (
+              {SESSION_PURPOSES.map((p) => (
                 <label key={p} className="flex min-h-11 items-center gap-2 text-14">
                   <input type="checkbox" className="h-5 w-5 shrink-0" checked={purposes.includes(p)} onChange={(e) => setPurposes(e.target.checked ? [...purposes, p] : purposes.filter((x) => x !== p))} />
                   {F.purpose[p]}
@@ -521,6 +522,7 @@ function SessionCard({ w, f, editable }: { w: SessionView; f: FormationPage; edi
         </div>
       )}
       {w.purposes.includes('four_q_review') && (w.groups.length > 0 || w.canManageGroups) && <Groups w={w} f={f} />}
+      {w.purposes.includes('values') && <ValuesSessionGroups workshopId={w.id} />}
       <div className="mt-3 border-t border-border pt-2">
         <b className="text-14">{S.decisionLog}</b>
         {w.decisionLog.length ? w.decisionLog.map((l, i) => (
@@ -564,6 +566,14 @@ function SessionCard({ w, f, editable }: { w: SessionView; f: FormationPage; edi
   );
 }
 
+
+/* ───────── v0.32.0: groups in a values session (Values Group Work Specification v0.1) ───────── */
+
+function ValuesSessionGroups({ workshopId }: { workshopId: string }) {
+  const { repo } = useApp();
+  const session = repo.valuesWork.session(workshopId);
+  return session ? <ValuesGroups session={session} boardElsewhere /> : null;
+}
 
 /* ───────── v1.19: groups in the 4Q review session (4Q Group Work Specification v0.1) ───────── */
 
