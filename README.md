@@ -3,7 +3,7 @@
 The strategy execution system of Karislabs Technologies. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` first (standing
 rules and the open slice), then `NEXT.md` (work in progress). Earlier decisions are in `DECISIONS-ARCHIVE.md`,
-with their section numbers unchanged. The data contract is v1.22.
+with their section numbers unchanged. The data contract is v1.23.
 
 ## Run
 
@@ -61,8 +61,23 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (941 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (957 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Values group work (v0.32.0)
+
+- 20 November 2026. BUILD-BRIEF section 56; *CASPA™ Values Group Work Specification v0.1* (VG-1 to VG-10); prototype
+  `reference/caspa-values-group-work-prototype.html`. Contract v1.23. 957 tests (15 new in
+  `src/data/access/values-work.test.ts`, one router test).
+- Groups (a name and a scribe; member names optional; a printed sheet) answer five fixed questions on a flip chart and put
+  forward up to three candidate values each. The Strategy office and facilitators keep, merge or set aside candidates on a
+  values board and add kept ones to the draft values, which the Executive confirms. No voting: "put forward by n of m
+  groups" is shown as a fact. While forming, or after publication only when the plan has no values.
+- Try it (Sample Water Utility): as Strategy office, open Strategy › Forming the next plan › Overview › Sessions to see
+  the values session's groups and print a sheet; open Conception › Vision and mission for the board, merge "Customer care"
+  with "Putting customers first", keep it and add it to the draft values. As Employee, open `#/flipchart/ws-2027-values/g3`
+  (Group 3's flip chart; try Work offline). As Finance, nothing shows. As Strategy office, the Strategy landing offers
+  values group work for the active plan, which has no values.
 
 ## Drafting the vision, mission and values, and A4 (v0.31.0)
 

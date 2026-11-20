@@ -1,6 +1,6 @@
 # Next session
 
-v0.31.0 delivered 20 November 2026 (drafting the vision, mission and values, and A4; BUILD-BRIEF section 55; contract v1.22): `npm run verify` clean, 941 tests. v0.30.0 (access review, section 54) was delivered on 19 November 2026; earlier sections are in the archive.
+v0.32.0 delivered 20 November 2026 (values group work; BUILD-BRIEF section 56; contract v1.23): `npm run verify` clean, 957 tests. v0.31.0 (drafting the vision, mission and values, and A4, section 55) was delivered the same day and v0.30.0 (access review, section 54) on 19 November 2026; their sections are in the archive.
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next
@@ -32,12 +32,10 @@ Next: Elijah runs the first usability round with `#/usability`. Failures are fix
 Usability test (D5, section 20; deferred by section 27): five people new to CASPA™, at least two likely pilot users; pass
 when each task is completed unaided by at least 4 of 5. Nothing is recorded as passed until a real round runs.
 
-## Next: values group work (v0.32.0)
-Confirmed 20 November 2026: *CASPA™ Values Group Work Specification v0.1* (VG-1 to VG-10). Groups (a name and a scribe;
-member names optional; a printed group sheet) answer five confirmed questions on the existing flip chart and put forward up
-to three candidate values each; the Strategy office keeps, merges or sets aside candidates on a values board and drafts
-the short list, which the Executive confirms (VM-4). No voting. Runs while forming, or after publication only when the
-plan has no values. Contract v1.23. Prototype first (`reference/caspa-values-group-work-prototype.html`).
+## Done: values group work (v0.32.0)
+Built 20 November 2026 (BUILD-BRIEF section 56). Left for later, as the specification says: groups commenting on each
+other's candidates, voting or ranking, anonymous answers, an organisation's own questions, and group work joining plan
+revisions when that slice is built.
 
 ## Access review (v0.30.0): what is left
 Built: items 1 and 2 of the *Access Review Specification v0.1* (By role and the five checks) and the fixes D1 to D4. Agreed as

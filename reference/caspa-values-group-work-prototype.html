@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ prototype: values group work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--navy:#0D1B2A;--navy2:#16283B;--panel:#223D56;--text:#1A2B3C;--muted:#5E6B7A;--cream:#F5F4F0;--border:#D5D2CA;--control:#8A867D;--focus:#007F84;--line:#EDECEA;--side:#C8D1DB;
+  --st:#378ADD;--st-t:#1A5A9E;--st-l:#EBF3FC;--ok:#067647;--ok-l:#ECFDF3;--ok-b:#ABEFC6;--adv:#7A2E0E;--adv-l:#FFFAEB;--adv-b:#F5C26B;--info:#EDECEA;--ai:#5B3FA8;--ai-l:#F4F1FB;--ai-b:#CFC3EE;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.45}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;margin:0;color:var(--navy);line-height:1.2} h2{font-size:18px;margin:0;color:var(--navy)} h3{font-size:16px;margin:0;color:var(--navy)} p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px} .xs{font-size:12px}
+.sr{position:absolute;left:-9999px}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 20px 96px;display:flex;flex-direction:column;gap:14px}
+.proto{border:1px dashed var(--control);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted);background:#fff;display:flex;flex-direction:column;gap:8px}
+.proto .ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.proto select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;max-width:100%;background:#fff}
+.proto label{display:flex;gap:6px;align-items:center}
+.eyebrow{font-size:13px;font-weight:600;color:var(--st-t)}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--navy);color:#fff} .btn-quiet{border-color:var(--control);font-weight:500}
+.btn-ai{border-color:var(--ai-b);color:var(--ai);background:var(--ai-l);font-weight:600}
+.tag{display:inline-flex;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;align-self:flex-start}
+.t-grp{background:var(--st-l);color:var(--st-t)} .t-rev{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)} .t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)} .t-info{background:var(--info);color:var(--navy)} .t-ai{background:var(--ai-l);color:var(--ai);border:1px solid var(--ai-b)}
+.list{list-style:none;margin:0;padding:0} .list>li{border-top:1px solid var(--line);padding:12px 0} .list>li:first-child{border-top:0;padding-top:0}
+input,textarea,select.in{width:100%;min-height:44px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;background:#fff;color:var(--text)}
+input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--navy);margin:0;flex:none}
+textarea{min-height:64px;resize:vertical}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.hint{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.note{border-radius:10px;padding:10px 12px;font-size:13px}
+.n-info{background:var(--st-l);color:var(--st-t)} .n-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)} .n-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+/* Flip chart */
+.chart{background:var(--navy);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.qbox{background:var(--navy2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.qbox h3{color:#fff;font-size:14px;font-weight:600;display:flex;gap:8px}
+.qbox .qn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--panel);color:#fff;font-size:12px;flex:none}
+.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pts li{background:#fff;border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.addrow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap} .addrow>div{flex:1;min-width:200px}
+.addrow label.f{color:var(--side)}
+.cand{background:#fff;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.cand label.f{color:var(--navy)}
+.ties{display:flex;flex-direction:column;gap:6px}
+.ties label{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+.aibox{background:var(--ai-l);border:1px solid var(--ai-b);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+/* Board */
+.filter{display:flex;gap:6px;flex-wrap:wrap}
+.fbtn{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:#fff;font-weight:600;cursor:pointer;color:var(--text)}
+.fbtn[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.vc{border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.vc.rev{border-color:var(--adv-b);background:var(--adv-l)}
+.vc.aside{background:var(--cream)}
+.vc .head{display:flex;gap:10px;align-items:flex-start}
+.vc .head>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.vc .name{font-weight:700;color:var(--navy);font-size:16px}
+.vc details summary{cursor:pointer;font-size:13px;color:var(--st-t);font-weight:600;min-height:32px;display:flex;align-items:center}
+.vc details ul{margin:4px 0 0;padding-left:18px;font-size:13px}
+.merging{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;z-index:5}
+.merging label.f{color:var(--side)}
+.merging .opt{display:flex;gap:8px;align-items:center}
+.merging input[type=radio]{width:20px;height:20px;min-height:0;margin:0}
+/* Short list */
+.sl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.sl>li{border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px}
+.sl .no{width:28px;height:28px;border-radius:999px;background:var(--navy);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.from{font-size:12px;color:var(--muted)}
+.values-ro{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.values-ro b{color:var(--navy)}
+.needs{border-left:4px solid var(--adv-b)}
+/* Printed group sheet */
+.overlay{position:fixed;inset:0;background:rgba(13,27,42,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:20}
+.sheetwrap{display:flex;flex-direction:column;gap:10px;max-width:760px;width:100%}
+.sheet{background:#fff;padding:32px 36px;border-radius:4px;color:#000;display:flex;flex-direction:column;gap:14px}
+.sheet h2{color:#000;font-size:22px} .sheet .meta{font-size:13px;display:grid;grid-template-columns:120px 1fr;gap:4px 10px}
+.sheet .sq{border-top:1px solid #999;padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.sheet .space{height:96px;border:1px dashed #bbb;border-radius:4px}
+.sheet .cands{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sheet .cands div{border:1px dashed #bbb;border-radius:4px;height:110px;padding:6px;font-size:12px;color:#555}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;max-width:90vw;z-index:30}
+@media (max-width:720px){.grid2{grid-template-columns:1fr} h1{font-size:22px} .sheet{padding:20px} .sheet .cands{grid-template-columns:1fr}}
+@media print{body{background:#fff} .wrap,.toast,.sheetbar{display:none!important} .overlay{position:static;background:none;padding:0} .sheet{padding:0}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="layer"></div>
+<script>
+'use strict';
+/* Confirmed by Elijah, 19 November 2026 (VG-2). Fixed in this build. */
+const QUESTIONS = [
+  'Think of a time this organisation was at its best. What did people do that made it work?',
+  'What do we do that holds us back or lets our customers down? What should we do instead?',
+  'Where do we need to be in five years? What will people need to do differently to get there?',
+  'What should our customers and community always be able to count on from us?',
+  'From your answers, which three values does your group put forward? For each, give a name and what it means in daily work.',
+];
+const MAX_CANDS = 3, NAME = 40, MEANING = 300, MAX_VALUES = 10;
+const PEOPLE = ['Mutale Zulu', 'Grace Mwila', 'Joseph Banda', 'Natasha Phiri', 'Bwalya Musonda'];
+const ROLES = {
+  so: 'Bwalya Musonda, Strategy office',
+  fac: 'Natasha Phiri, facilitator',
+  exec: 'Chanda Mulenga, Executive',
+  s3: 'Joseph Banda, scribe for Group 3 (open)',
+  s1: 'Mutale Zulu, scribe for Group 1 (closed)',
+  other: 'Any other staff member',
+};
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+let n = 100;
+
+function fresh(keep) {
+  return {
+    role: keep?.role ?? 'so', route: keep?.route ?? 'forming', offline: false, queued: 0,
+    filter: 'all', toast: null, sheet: null, behalf: null, editing: null, aside: null, keepEdit: null, mergeSel: [], mergeTarget: null, ai: {}, sendBack: false,
+    groups: [
+      { id: 'g1', name: 'Group 1', scribe: 'Mutale Zulu', members: 'Head of Commercial, two district managers, a billing officer', state: 'closed' },
+      { id: 'g2', name: 'Group 2', scribe: 'Grace Mwila', members: '', state: 'closed' },
+      { id: 'g3', name: 'Group 3', scribe: 'Joseph Banda', members: 'Head of Operations, the water quality officer, two plumbers', state: 'open' },
+    ],
+    answers: [
+      { id: 'a1', g: 'g1', q: 1, text: 'During the 2024 outbreak every department worked weekends to keep chlorination going' },
+      { id: 'a2', g: 'g1', q: 1, text: 'Staff called customers back the same day' },
+      { id: 'a3', g: 'g1', q: 2, text: 'Complaints wait too long because nobody owns them. Instead: one person follows each complaint to the end' },
+      { id: 'a4', g: 'g1', q: 3, text: 'Every connection metered and billed correctly' },
+      { id: 'a5', g: 'g1', q: 4, text: 'Water that is safe to drink, every day' },
+      { id: 'a6', g: 'g2', q: 1, text: 'Teams shared vehicles and fuel to finish the meter roll-out' },
+      { id: 'a7', g: 'g2', q: 2, text: 'We blame other departments when targets are missed' },
+      { id: 'a8', g: 'g2', q: 2, text: 'Instead: report problems early and own the fix' },
+      { id: 'a9', g: 'g2', q: 3, text: 'Decisions based on figures, not guesswork' },
+      { id: 'a10', g: 'g2', q: 4, text: 'Honest bills and a straight answer' },
+      { id: 'a11', g: 'g3', q: 1, text: 'The night shift fixed the main burst in four hours' },
+      { id: 'a12', g: 'g3', q: 4, text: 'Someone who answers the phone' },
+    ],
+    cands: [
+      { id: 'c1', g: 'g1', name: 'Customer care', text: 'We answer every customer the same day and follow each complaint until it is closed.', ties: ['a2', 'a3'], state: 'review' },
+      { id: 'c2', g: 'g1', name: 'Safe water first', text: 'We never compromise on water quality, whatever the pressure.', ties: ['a1', 'a5'], state: 'review' },
+      { id: 'c3', g: 'g1', name: 'Teamwork', text: 'Departments help each other when the work demands it.', ties: ['a1'], state: 'review' },
+      { id: 'c4', g: 'g2', name: 'Putting customers first', text: 'Customers get honest bills and a straight answer from whoever they speak to.', ties: ['a10'], state: 'review' },
+      { id: 'c5', g: 'g2', name: 'Owning the result', text: 'We report problems early and own the fix instead of blaming others.', ties: ['a7', 'a8'], state: 'review' },
+      { id: 'c6', g: 'g2', name: 'Working together', text: 'We share vehicles, fuel and knowledge to get the job done.', ties: ['a6'], state: 'review' },
+      { id: 'c7', g: 'g3', name: 'Quick response', text: 'we fix faults fast  day or night', ties: ['a11'], state: 'review' },
+    ],
+    short: { status: 'draft', items: [], reason: '' },
+  };
+}
+let S = fresh();
+const grp = (id) => S.groups.find((g) => g.id === id);
+const cand = (id) => S.cands.find((c) => c.id === id);
+const say = (t) => { S.toast = t; clearTimeout(say.t); say.t = setTimeout(() => { S.toast = null; render(); }, 2600); };
+const canRun = () => S.role === 'so' || S.role === 'fac';
+const sees = () => ['so', 'fac', 'exec'].includes(S.role);
+const scribeGroup = () => (S.role === 's3' ? 'g3' : S.role === 's1' ? 'g1' : null);
+/* Groups behind a candidate: its own plus every candidate merged into it. Shown as a fact, never a score (VG-6). */
+const groupsOf = (c) => [...new Set([c.g, ...S.cands.filter((x) => x.mergedInto === c.id).flatMap(groupsOf)])];
+const onBoard = (c) => grp(c.g).state === 'closed' || c.state !== 'review';
+const byLine = (gs) => `Put forward by ${gs.length} of ${S.groups.length} groups (${gs.map((g) => grp(g).name).join(', ')})`;
+const itemGroups = (it) => [...new Set(it.from.flatMap((id) => groupsOf(cand(id))))].sort();
+const tidy = (t) => { let s = t.replace(/\s+/g, ' ').trim(); s = s.charAt(0).toUpperCase() + s.slice(1); s = s.replace(/ day or night/, ', day or night'); return /[.!?]$/.test(s) ? s : s + '.'; };
+
+/* ---------- Page frame ---------- */
+function render() {
+  const forming = S.route === 'forming';
+  const head = forming
+    ? `<span class="eyebrow">Strategy · Forming the next plan · Values session, 26 November 2026</span><h1>Values group work</h1><p class="muted">Strategic Plan 2027–2031 · Sample Water Utility</p>`
+    : `<span class="eyebrow">Strategy · Strategic Plan 2022–2026 (active, no values yet)</span><h1>Values group work</h1><p class="muted">Started from the Strategy landing because the active plan has no values · Sample Water Utility</p>`;
+  let body;
+  const sg = scribeGroup();
+  if (S.role === 'other') body = otherView();
+  else if (sg) body = flipChart(sg, false);
+  else if (S.behalf) body = flipChart(S.behalf, true);
+  else body = (S.role === 'exec' ? execView() : '') + groupsCard() + board() + (canRun() ? shortList() : '');
+  document.getElementById('app').innerHTML = `
+    <div class="proto"><span>Lean prototype: values group work (<i>CASPA™ Values Group Work Specification v0.1</i>, VG-1 to VG-10, confirmed 20 November 2026). Three groups; one scribe each; nobody else signs in. No voting.</span>
+      <div class="ctl">
+        <label>Viewing as <select id="role">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === S.role ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+        <label>Route <select id="route"><option value="forming" ${forming ? 'selected' : ''}>Forming a new plan</option><option value="after" ${!forming ? 'selected' : ''}>After publication (plan has no values)</option></select></label>
+        ${sg || S.behalf ? `<label><input type="checkbox" id="offline" ${S.offline ? 'checked' : ''}> Connection lost</label>` : ''}
+        <button class="btn btn-quiet" data-act="reset">Start again</button>
+      </div></div>
+    <div>${head}</div>
+    ${body}`;
+  document.getElementById('layer').innerHTML = (S.sheet ? sheetHtml(S.sheet) : '') + (S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : '');
+}
+
+/* ---------- Everyone else (VG-9) ---------- */
+function otherView() {
+  if (S.short.status === 'confirmed') {
+    return `<section class="card"><h2>Our values</h2><p class="small muted">Confirmed by Chanda Mulenga, Executive.</p>${valuesRO(S.short.items, false)}</section>`;
+  }
+  return `<section class="card"><h2>Nothing to show yet</h2><p class="muted">The values are being worked on by groups and the Strategy office. You will see them here once the Executive confirms them.</p></section>`;
+}
+
+/* ---------- Groups (VG-3) ---------- */
+function groupsCard() {
+  const so = canRun();
+  const addForm = S.editing === 'new' ? groupForm() : '';
+  return `<section class="card" aria-labelledby="gh">
+    <div class="row"><h2 id="gh">Groups</h2>${so && S.editing !== 'new' ? '<button class="btn" data-act="newgroup">Add a group</button>' : ''}</div>
+    <p class="small muted">A group needs a name and a scribe. The scribe signs in and enters the group's answers; member names are optional.</p>
+    <ul class="list">${S.groups.map((g) => {
+      const waiting = S.cands.filter((c) => c.g === g.id && c.state === 'review').length;
+      return `<li><div class="row"><span><b>${esc(g.name)}</b><span class="small muted" style="display:block">Scribe: ${esc(g.scribe)} · ${g.members ? esc(g.members) : 'Members listed on the notice board'}</span></span>
+        <span class="btns"><span class="tag ${g.state === 'closed' ? 't-info' : 't-grp'}">${g.state === 'closed' ? 'Closed for review' : 'Entering answers'}</span>${g.state === 'closed' && waiting ? `<span class="tag t-rev">${waiting} to review</span>` : ''}</span></div>
+        ${so ? `<div class="btns" style="margin-top:8px">
+          <button class="btn btn-quiet" data-act="sheet" data-g="${g.id}">Print group sheet<span class="sr">: ${esc(g.name)}</span></button>
+          ${g.state === 'open' ? `<button class="btn btn-quiet" data-act="behalf" data-g="${g.id}">Enter for this group<span class="sr">: ${esc(g.name)}</span></button><button class="btn" data-act="close" data-g="${g.id}">Close for review<span class="sr">: ${esc(g.name)}</span></button>` : `<button class="btn btn-quiet" data-act="reopen" data-g="${g.id}">Reopen<span class="sr">: ${esc(g.name)}</span></button>`}
+        </div>` : ''}</li>`;
+    }).join('')}</ul>${addForm}</section>`;
+}
+function groupForm() {
+  return `<div class="note n-info" style="display:flex;flex-direction:column;gap:10px;color:var(--text)"><h3>New group</h3>
+    <div class="grid2"><div><label class="f" for="ng-name">Name</label><input id="ng-name" placeholder="Group 4, or a team's name" maxlength="40"></div>
+    <div><label class="f" for="ng-scribe">Scribe (needs a CASPA™ login)</label><select class="in" id="ng-scribe"><option value="">Choose a person</option>${PEOPLE.map((p) => `<option>${p}</option>`).join('')}</select></div></div>
+    <div><label class="f" for="ng-mem">Member names (optional)</label><input id="ng-mem" placeholder="Leave empty if people are listed on the notice board"></div>
+    <p class="hint" id="ng-err" role="alert"></p>
+    <div class="btns"><button class="btn btn-primary" data-act="savegroup">Add group</button><button class="btn btn-quiet" data-act="cancel">Cancel</button></div></div>`;
+}
+
+/* ---------- Flip chart (scribe, or the Strategy office on the group's behalf) ---------- */
+function flipChart(gid, behalf) {
+  const g = grp(gid);
+  const open = g.state === 'open';
+  const mine = S.cands.filter((c) => c.g === gid);
+  const answers = (q) => S.answers.filter((a) => a.g === gid && a.q === q);
+  const pt = (a) => `<li><span>${esc(a.text)}${a.behalf ? ' <span class="tag t-info">Entered on the group\'s behalf</span>' : ''}${a.local ? ' <span class="tag t-rev">Saved on this device</span>' : ''}</span>${open ? `<button class="btn btn-quiet" data-act="delans" data-id="${a.id}">Delete<span class="sr">: ${esc(a.text)}</span></button>` : ''}</li>`;
+  const qs = [1, 2, 3, 4].map((q) => `<div class="qbox"><h3><span class="qn">${q}</span>${esc(QUESTIONS[q - 1])}</h3>
+      ${answers(q).length ? `<ul class="pts">${answers(q).map(pt).join('')}</ul>` : '<p class="small" style="color:var(--side)">No answers yet.</p>'}
+      ${open ? `<div class="addrow"><div><label class="f" for="ans-${q}">Add a point</label><input id="ans-${q}"></div><button class="btn btn-primary" data-act="addans" data-q="${q}">Add<span class="sr"> to question ${q}</span></button></div>` : ''}</div>`).join('');
+  const q5 = `<div class="qbox"><h3><span class="qn">5</span>${esc(QUESTIONS[4])}</h3>
+      <p class="xs" style="color:var(--side)">${mine.length} of up to ${MAX_CANDS} entered.</p>
+      ${mine.map((c) => candidateEditor(c, gid, open)).join('')}
+      ${open && mine.length < MAX_CANDS ? `<button class="btn" style="background:transparent;color:#fff;border-color:var(--side);align-self:flex-start" data-act="addcand">Add a candidate value</button>` : ''}</div>`;
+  const back = behalf ? `<button class="btn btn-quiet" data-act="endbehalf">Back to the groups</button>` : '';
+  return `<section class="card" aria-labelledby="fh">
+    <div class="row"><h2 id="fh">${esc(g.name)}: flip chart</h2>${back}</div>
+    ${behalf ? `<p class="note n-adv">You are entering ${esc(g.name)}'s answers because the scribe could not sign in. Each entry is recorded as entered on the group's behalf.</p>` : ''}
+    <p class="small muted">Type the points your group agrees. Nothing counts until the Strategy office reviews it. If the connection drops, entries are kept on this device and sent when it returns.</p>
+    ${S.offline ? `<p class="note n-adv" role="status">No connection. ${S.queued} ${S.queued === 1 ? 'entry is' : 'entries are'} saved on this device and will be sent when the connection returns.</p>` : ''}
+    ${open ? '' : `<p class="note n-info">Closed for review: no more changes from this group. ${mine.filter((c) => c.state !== 'review').length} of ${mine.length} candidates have been reviewed.</p>`}
+    <div class="chart">${qs}${q5}</div></section>`;
+}
+function candidateEditor(c, gid, open) {
+  const groupAns = S.answers.filter((a) => a.g === gid);
+  const st = { review: ['t-rev', 'To review'], kept: ['t-ok', 'Kept'], merged: ['t-info', 'Merged'], aside: ['t-info', 'Set aside'] }[c.state];
+  if (!open) {
+    return `<div class="cand"><div class="row"><b style="color:var(--navy)">${esc(c.name)}</b><span class="tag ${st[0]}">${st[1]}</span></div><p class="small">${esc(c.text)}</p></div>`;
+  }
+  const ai = S.ai[c.id];
+  return `<div class="cand" data-cand="${c.id}">
+    <div><label class="f" for="cn-${c.id}">Value name</label><input id="cn-${c.id}" data-cf="name" maxlength="${NAME}" value="${esc(c.name)}" placeholder="Integrity"><span class="hint">${c.name.length}/${NAME}</span></div>
+    <div><label class="f" for="ct-${c.id}">What it means in daily work</label><textarea id="ct-${c.id}" data-cf="text" maxlength="${MEANING}">${esc(c.text)}</textarea></div>
+    ${ai ? `<div class="aibox"><span class="tag t-ai">AI draft · wording only</span><p class="small">${esc(ai)}</p><p class="xs muted">The AI tidies how the meaning reads. It does not suggest values, names or answers.</p>
+      <div class="btns"><button class="btn btn-primary" data-act="aiaccept" data-id="${c.id}">Use this wording</button><button class="btn btn-quiet" data-act="aichange" data-id="${c.id}">Change it first</button><button class="btn btn-quiet" data-act="aiignore" data-id="${c.id}">Ignore</button></div></div>`
+      : `<div class="btns"><button class="btn btn-ai" data-act="aitidy" data-id="${c.id}">Tidy the wording (AI)</button></div>`}
+    <details><summary class="small" style="cursor:pointer;color:var(--st-t);font-weight:600;min-height:32px">Answers it came from (optional) · ${c.ties.length} ticked</summary>
+      <div class="ties" style="margin-top:6px">${groupAns.map((a) => `<label><input type="checkbox" data-tie="${a.id}" data-c="${c.id}" ${c.ties.includes(a.id) ? 'checked' : ''}><span><span class="muted">Q${a.q}:</span> ${esc(a.text)}</span></label>`).join('') || '<span class="small muted">Add answers above first.</span>'}</div></details>
+    <div class="btns"><button class="btn btn-quiet" data-act="delcand" data-id="${c.id}">Delete this candidate</button>${c.local ? '<span class="tag t-rev">Saved on this device</span>' : ''}${c.behalf ? '<span class="tag t-info">Entered on the group\'s behalf</span>' : ''}</div></div>`;
+}
+
+/* ---------- Values board (VG-5, VG-6) ---------- */
+function board() {
+  const run = canRun();
+  const all = S.cands.filter(onBoard);
+  const visible = all.filter((c) => c.state !== 'merged' && (S.filter === 'all' || (S.filter === 'review' ? c.state === 'review' : c.g === S.filter || groupsOf(c).includes(S.filter))));
+  const order = { review: 0, kept: 1, aside: 2 };
+  visible.sort((a, b) => order[a.state] - order[b.state]);
+  const toReview = all.filter((c) => c.state === 'review').length;
+  const closed = S.groups.filter((g) => g.state === 'closed');
+  const sel = S.mergeSel.map(cand);
+  return `<section class="card" aria-labelledby="bh">
+    <div class="row"><h2 id="bh">Values board</h2><span class="small muted">${toReview} to review · ${closed.length} of ${S.groups.length} groups closed</span></div>
+    <p class="small muted">Candidates from closed groups. ${run ? 'Keep, merge or set aside each one. The group\'s own wording stays in the record.' : 'The Strategy office and facilitators review these.'}</p>
+    <div class="filter" role="group" aria-label="Show">${[['all', 'All'], ['review', 'To review'], ...closed.map((g) => [g.id, g.name])].map(([k, l]) => `<button class="fbtn" aria-pressed="${S.filter === k}" data-act="filter" data-f="${k}">${esc(l)}</button>`).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${visible.map((c) => vcHtml(c, run)).join('') || '<p class="small muted">Nothing here yet. Candidates arrive when a group is closed for review.</p>'}</div>
+    ${run && sel.length >= 2 ? mergeBar(sel) : run && sel.length === 1 ? '<div class="merging"><span class="small">1 selected. Tick another candidate that says the same thing to merge them.</span></div>' : ''}
+  </section>`;
+}
+function vcHtml(c, run) {
+  const gs = groupsOf(c);
+  const merged = S.cands.filter((x) => x.mergedInto === c.id);
+  const ties = [...c.ties, ...merged.flatMap((m) => m.ties)].map((id) => S.answers.find((a) => a.id === id)).filter(Boolean);
+  const st = { review: ['t-rev', 'To review'], kept: ['t-ok', 'Kept'], aside: ['t-info', 'Set aside'] }[c.state];
+  const inShort = S.short.items.some((it) => it.from.includes(c.id));
+  const locked = S.short.status === 'sent' || S.short.status === 'confirmed';
+  let actions = '';
+  if (run && !locked) {
+    if (S.aside === c.id) {
+      actions = `<div><label class="f" for="ar-${c.id}">Reason for setting aside (required)</label><input id="ar-${c.id}" placeholder="For example: covered by Customer care"><p class="hint" id="ar-err" role="alert"></p></div>
+        <div class="btns"><button class="btn btn-primary" data-act="asideok" data-id="${c.id}">Set aside</button><button class="btn btn-quiet" data-act="cancel">Cancel</button></div>`;
+    } else if (S.keepEdit === c.id) {
+      actions = `<div class="grid2"><div><label class="f" for="kn-${c.id}">Value name</label><input id="kn-${c.id}" maxlength="${NAME}" value="${esc(c.name)}"></div><div><label class="f" for="kt-${c.id}">What it means</label><textarea id="kt-${c.id}" maxlength="${MEANING}">${esc(c.text)}</textarea></div></div>
+        <div class="btns"><button class="btn btn-primary" data-act="keepok" data-id="${c.id}">Keep as edited</button><button class="btn btn-quiet" data-act="cancel">Cancel</button></div>`;
+    } else if (c.state === 'review') {
+      actions = `<div class="btns"><button class="btn btn-primary" data-act="keep" data-id="${c.id}">Keep</button><button class="btn btn-quiet" data-act="keepedit" data-id="${c.id}">Edit and keep</button><button class="btn btn-quiet" data-act="aside" data-id="${c.id}">Set aside</button></div>`;
+    } else if (c.state === 'kept') {
+      actions = `<div class="btns">${inShort ? '<span class="tag t-grp">On the short list</span>' : `<button class="btn" data-act="toshort" data-id="${c.id}" ${S.short.items.length >= MAX_VALUES ? 'disabled' : ''}>Add to the short list</button>`}<button class="btn btn-quiet" data-act="keepedit" data-id="${c.id}">Edit</button>${inShort ? '' : `<button class="btn btn-quiet" data-act="aside" data-id="${c.id}">Set aside</button>`}</div>`;
+    } else {
+      actions = `<div class="btns"><button class="btn btn-quiet" data-act="restore" data-id="${c.id}">Back to review</button></div>`;
+    }
+  }
+  const selectable = run && !locked && c.state !== 'aside' && !inShort && S.aside !== c.id && S.keepEdit !== c.id;
+  const original = c.orig && (c.orig.name !== c.name || c.orig.text !== c.text) ? `<p class="xs muted">Group's wording: <b>${esc(c.orig.name)}</b>: ${esc(c.orig.text)}</p>` : '';
+  return `<article class="vc ${c.state === 'review' ? 'rev' : c.state === 'aside' ? 'aside' : ''}">
+    <div class="head">${selectable ? `<input type="checkbox" data-sel="${c.id}" ${S.mergeSel.includes(c.id) ? 'checked' : ''} aria-label="Select ${esc(c.name)} to merge">` : ''}
+      <div><div class="row"><span class="name">${esc(c.name)}</span><span class="tag ${st[0]}">${st[1]}</span></div>
+      <p>${esc(c.text)}</p>${original}
+      <span class="small" style="color:var(--st-t);font-weight:600">${byLine(gs)}</span>
+      ${merged.length ? `<span class="xs muted">Merged from: ${merged.map((m) => `${esc(m.orig?.name ?? m.name)} (${grp(m.g).name})`).join(', ')}</span>` : ''}
+      ${c.state === 'aside' ? `<span class="xs muted">Set aside: ${esc(c.reason)}</span>` : ''}
+      ${c.behalf ? '<span class="tag t-info">Entered on the group\'s behalf</span>' : ''}
+      ${ties.length ? `<details><summary>Answers it came from (${ties.length})</summary><ul>${ties.map((a) => `<li><span class="muted">${grp(a.g).name}, Q${a.q}:</span> ${esc(a.text)}</li>`).join('')}</ul></details>` : ''}
+      </div></div>${actions}</article>`;
+}
+function mergeBar(sel) {
+  const target = S.mergeTarget && S.mergeSel.includes(S.mergeTarget) ? S.mergeTarget : S.mergeSel[0];
+  const all = [...new Set(sel.flatMap(groupsOf))];
+  return `<div class="merging" role="region" aria-label="Merge">
+    <b>Merge ${sel.length} candidates that say the same thing</b>
+    <span class="small">The merged value lists every group: ${byLine(all).replace('Put forward by', 'put forward by')}.</span>
+    <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px"><legend class="xs" style="color:var(--side);margin-bottom:4px">Start from the wording of</legend>
+      ${sel.map((c) => `<label class="opt"><input type="radio" name="mt" data-mt="${c.id}" ${c.id === target ? 'checked' : ''}> ${esc(c.name)} <span class="xs" style="color:var(--side)">(${grp(c.g).name})</span></label>`).join('')}</fieldset>
+    <div class="grid2"><div><label class="f" for="mg-n">Merged name</label><input id="mg-n" maxlength="${NAME}" value="${esc(cand(target).name)}"></div><div><label class="f" for="mg-t">What it means</label><textarea id="mg-t" maxlength="${MEANING}">${esc(cand(target).text)}</textarea></div></div>
+    <div class="btns"><button class="btn btn-primary" style="background:#fff;color:var(--navy)" data-act="mergeok">Merge and keep</button><button class="btn" style="background:transparent;color:#fff;border-color:var(--side)" data-act="mergecancel">Cancel</button></div></div>`;
+}
+
+/* ---------- Short list and drafting (VM-4 to VM-6) ---------- */
+function shortList() {
+  const sh = S.short;
+  const forming = S.route === 'forming';
+  const items = sh.items;
+  if (sh.status === 'confirmed') {
+    return `<section class="card" aria-labelledby="slh"><div class="row"><h2 id="slh">Values</h2><span class="tag t-ok">Confirmed</span></div>
+      <p class="small muted">Confirmed by Chanda Mulenga${forming ? ' with the vision' : ''}. Everyone can now see them. They change only through a plan revision.</p>${valuesRO(items, true)}</section>`;
+  }
+  const sent = sh.status === 'sent';
+  const rows = items.map((it, i) => `<li data-item="${i}"><span class="no" aria-hidden="true">${i + 1}</span><div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+      ${sent ? `<b style="color:var(--navy)">${esc(it.name)}</b><p class="small">${esc(it.text)}</p>` : `<div class="grid2"><div><label class="f" for="sn-${i}">Value ${i + 1}</label><input id="sn-${i}" data-sf="name" maxlength="${NAME}" value="${esc(it.name)}"></div><div><label class="f" for="st-${i}">What it means</label><textarea id="st-${i}" data-sf="text" maxlength="${MEANING}">${esc(it.text)}</textarea></div></div>`}
+      <span class="from">From the board: ${it.from.map((id) => esc(cand(id).name)).join(', ')} · ${byLine(itemGroups(it))}</span>
+      ${sent ? '' : `<div class="btns"><button class="btn btn-quiet" data-act="up" data-i="${i}" ${i === 0 ? 'disabled' : ''}>Move up<span class="sr"> value ${i + 1}</span></button><button class="btn btn-quiet" data-act="down" data-i="${i}" ${i === items.length - 1 ? 'disabled' : ''}>Move down<span class="sr"> value ${i + 1}</span></button><button class="btn btn-quiet" data-act="unshort" data-i="${i}">Remove<span class="sr"> value ${i + 1}</span></button></div>`}
+    </div></li>`).join('');
+  const waitingGroups = S.groups.filter((g) => g.state === 'open').length;
+  const reviewLeft = S.cands.filter((c) => onBoard(c) && c.state === 'review').length;
+  return `<section class="card" aria-labelledby="slh">
+    <div class="row"><h2 id="slh">Draft values</h2><span class="small muted">${items.length} of up to ${MAX_VALUES}</span></div>
+    ${sh.status === 'returned' ? `<p class="note n-adv"><b>Sent back by Chanda Mulenga:</b> ${esc(sh.reason)}</p>` : ''}
+    ${sent ? `<p class="note n-info">Waiting for Chanda Mulenga in Needs you. Hidden from everyone else until confirmed.</p>` : `<p class="small muted">Choose kept candidates from the board, put them in order and reword them here if needed. Each value remembers where it came from.</p>`}
+    ${items.length ? `<ol class="sl">${rows}</ol>` : '<p class="small muted">No values yet. Use "Add to the short list" on a kept candidate.</p>'}
+    ${!sent && items.length ? `${waitingGroups || reviewLeft ? `<p class="note n-info">${[waitingGroups ? `${waitingGroups} group${waitingGroups > 1 ? 's are' : ' is'} still entering answers` : '', reviewLeft ? `${reviewLeft} candidate${reviewLeft > 1 ? 's' : ''} still to review` : ''].filter(Boolean).join(' and ')}. You can still send; this is shown for information only.</p>` : ''}
+      <div class="btns"><button class="btn btn-primary" data-act="send">${sh.status === 'returned' ? 'Send again to the Executive' : 'Send to the Executive'}</button><span class="hint">${forming ? 'The Executive confirms them with the vision.' : 'The Executive confirms them as written or sends them back.'}</span></div>` : ''}
+  </section>`;
+}
+function valuesRO(items, withFrom) {
+  return `<ol class="values-ro">${items.map((it) => `<li><b>${esc(it.name)}</b>: ${esc(it.text)}${withFrom ? `<span class="from" style="display:block">${byLine(itemGroups(it))}</span>` : ''}</li>`).join('')}</ol>`;
+}
+
+/* ---------- Executive ---------- */
+function execView() {
+  const sh = S.short;
+  const forming = S.route === 'forming';
+  if (sh.status !== 'sent') {
+    const msg = sh.status === 'confirmed' ? 'You confirmed the values. Nothing waiting.' : sh.status === 'returned' ? 'You sent the values back. The Strategy office is reworking them.' : 'Nothing waiting. The Strategy office is still drafting the values from group work.';
+    return `<section class="card"><h2>Needs you</h2><p class="small muted">${msg}</p></section>`;
+  }
+  return `<section class="card needs" aria-labelledby="nh"><div class="row"><h2 id="nh">Needs you: draft values</h2><span class="tag t-rev">Waiting for you</span></div>
+    <p class="small muted">Drafted by Bwalya Musonda, Strategy office, from group work. ${forming ? 'Strategic Plan 2027–2031, vision step.' : 'Strategic Plan 2022–2026 (active).'} How many groups put each value forward is shown as a fact, not a score.</p>
+    ${valuesRO(sh.items, true)}
+    ${S.sendBack ? `<div><label class="f" for="sb">Reason for sending back (required)</label><textarea id="sb" placeholder="What should change?"></textarea><p class="hint" id="sb-err" role="alert"></p></div>
+      <div class="btns"><button class="btn btn-primary" data-act="sendbackok">Send back</button><button class="btn btn-quiet" data-act="cancel">Cancel</button></div>`
+      : `<div class="btns"><button class="btn btn-primary" data-act="confirm">${forming ? 'Confirm with the vision' : 'Confirm as written'}</button><button class="btn btn-quiet" data-act="sendback">Send back with a reason</button></div>`}
+  </section>`;
+}
+
+/* ---------- Printed group sheet ---------- */
+function sheetHtml(gid) {
+  const g = grp(gid);
+  return `<div class="overlay" role="dialog" aria-modal="true" aria-label="Printed group sheet for ${esc(g.name)}"><div class="sheetwrap">
+    <div class="btns sheetbar"><button class="btn btn-primary" data-act="print">Print</button><button class="btn" data-act="closesheet">Close</button><span class="small" style="color:#fff">Print only. Nothing is collected from paper; the scribe types the answers.</span></div>
+    <div class="sheet"><h2>Values group work: ${esc(g.name)}</h2>
+      <div class="meta"><span>Organisation</span><b>Sample Water Utility</b><span>Session</span><b>${S.route === 'forming' ? 'Values session, 26 November 2026' : 'Values session'}</b><span>Scribe</span><b>${esc(g.scribe)}</b><span>Members</span><span>${g.members ? esc(g.members) : '______________________________________________'}</span></div>
+      ${QUESTIONS.slice(0, 4).map((q, i) => `<div class="sq"><b>${i + 1}. ${esc(q)}</b><div class="space"></div></div>`).join('')}
+      <div class="sq"><b>5. ${esc(QUESTIONS[4])}</b><div class="cands">${[1, 2, 3].map((k) => `<div>Value ${k}: name and what it means</div>`).join('')}</div></div>
+    </div></div></div>`;
+}
+
+/* ---------- Actions ---------- */
+function queue(rec) { if (S.offline) { rec.local = true; S.queued++; } }
+function act(a, el) {
+  const id = el.dataset.id;
+  const c = id ? cand(id) : null;
+  const sg = scribeGroup() || S.behalf;
+  switch (a) {
+    case 'reset': S = fresh(S); say('Started again with the sample data.'); break;
+    case 'filter': S.filter = el.dataset.f; break;
+    case 'newgroup': S.editing = 'new'; break;
+    case 'savegroup': {
+      const name = document.getElementById('ng-name').value.trim();
+      const scribe = document.getElementById('ng-scribe').value;
+      if (!name || !scribe) { document.getElementById('ng-err').textContent = 'A group needs a name and a scribe.'; return; }
+      S.groups.push({ id: 'g' + n++, name, scribe, members: document.getElementById('ng-mem').value.trim(), state: 'open' });
+      S.editing = null; say(`${name} added. ${scribe} can now open its flip chart.`); break;
+    }
+    case 'cancel': S.editing = null; S.aside = null; S.keepEdit = null; S.sendBack = false; break;
+    case 'close': {
+      const g = grp(el.dataset.g);
+      const blank = S.cands.filter((k) => k.g === g.id && k.state === 'review' && !k.name.trim());
+      S.cands = S.cands.filter((k) => !blank.includes(k));
+      g.state = 'closed'; say(`${g.name} closed. Its candidates are on the board to review.${blank.length ? ` ${blank.length} empty ${blank.length === 1 ? 'candidate was' : 'candidates were'} left out.` : ''}`); break;
+    }
+    case 'reopen': grp(el.dataset.g).state = 'open'; S.mergeSel = S.mergeSel.filter((x) => cand(x).g !== el.dataset.g || cand(x).state !== 'review'); say(`${grp(el.dataset.g).name} reopened for missing entries. Candidates already reviewed stay on the board.`); break;
+    case 'sheet': S.sheet = el.dataset.g; break;
+    case 'closesheet': S.sheet = null; break;
+    case 'print': try { window.print(); } catch (err) { /* blocked in some viewers */ } say('If nothing opens, this viewer blocks printing. In CASPA™ this opens the print dialogue.'); return;
+    case 'behalf': S.behalf = el.dataset.g; S.offline = false; break;
+    case 'endbehalf': S.behalf = null; S.offline = false; break;
+    case 'addans': {
+      const inp = document.getElementById('ans-' + el.dataset.q); const t = inp.value.trim(); if (!t) return;
+      const rec = { id: 'a' + n++, g: sg, q: Number(el.dataset.q), text: t, behalf: !!S.behalf }; queue(rec); S.answers.push(rec);
+      say(S.offline ? 'Saved on this device.' : 'Added.'); break;
+    }
+    case 'delans': S.answers = S.answers.filter((x) => x.id !== id); S.cands.forEach((k) => { k.ties = k.ties.filter((t) => t !== id); }); break;
+    case 'addcand': {
+      if (S.cands.filter((k) => k.g === sg).length >= MAX_CANDS) { say(`A group can put forward up to ${MAX_CANDS} values.`); break; }
+      const rec = { id: 'c' + n++, g: sg, name: '', text: '', ties: [], state: 'review', behalf: !!S.behalf }; queue(rec); S.cands.push(rec); break;
+    }
+    case 'delcand': S.cands = S.cands.filter((k) => k.id !== id); delete S.ai[id]; break;
+    case 'aitidy': if (!c.text.trim()) { say('Write what it means first; the AI only tidies wording.'); break; } S.ai[id] = tidy(c.text); break;
+    case 'aiaccept': c.text = S.ai[id]; delete S.ai[id]; say('Wording updated.'); break;
+    case 'aichange': c.text = S.ai[id]; delete S.ai[id]; render(); document.getElementById('ct-' + id)?.focus(); return;
+    case 'aiignore': delete S.ai[id]; break;
+    case 'keep': c.orig = c.orig ?? { name: c.name, text: c.text }; c.state = 'kept'; S.mergeSel = S.mergeSel.filter((x) => x !== id); say(`Kept: ${c.name}.`); break;
+    case 'keepedit': S.keepEdit = id; S.aside = null; break;
+    case 'keepok': {
+      c.orig = c.orig ?? { name: c.name, text: c.text };
+      c.name = document.getElementById('kn-' + id).value.trim() || c.name; c.text = document.getElementById('kt-' + id).value.trim() || c.text;
+      c.state = 'kept'; S.keepEdit = null;
+      S.short.items.forEach((it) => { if (it.from.length === 1 && it.from[0] === id) { it.name = c.name; it.text = c.text; } });
+      say('Kept as edited. The group\'s wording stays in the record.'); break;
+    }
+    case 'aside': S.aside = id; S.keepEdit = null; break;
+    case 'asideok': {
+      const r = document.getElementById('ar-' + id).value.trim();
+      if (!r) { document.getElementById('ar-err').textContent = 'A reason is needed to set a candidate aside.'; return; }
+      c.state = 'aside'; c.reason = r; S.aside = null; S.mergeSel = S.mergeSel.filter((x) => x !== id); say('Set aside. It stays in the record.'); break;
+    }
+    case 'restore': c.state = 'review'; delete c.reason; break;
+    case 'mergeok': {
+      const target = cand(S.mergeTarget && S.mergeSel.includes(S.mergeTarget) ? S.mergeTarget : S.mergeSel[0]);
+      S.mergeSel.forEach((x) => { const k = cand(x); k.orig = k.orig ?? { name: k.name, text: k.text }; });
+      target.name = document.getElementById('mg-n').value.trim() || target.name;
+      target.text = document.getElementById('mg-t').value.trim() || target.text;
+      target.state = 'kept';
+      S.mergeSel.filter((x) => x !== target.id).forEach((x) => { cand(x).state = 'merged'; cand(x).mergedInto = target.id; });
+      say(`Merged into "${target.name}". ${byLine(groupsOf(target))}.`);
+      S.mergeSel = []; S.mergeTarget = null; break;
+    }
+    case 'mergecancel': S.mergeSel = []; S.mergeTarget = null; break;
+    case 'toshort': if (S.short.items.length >= MAX_VALUES) break; S.short.items.push({ name: c.name, text: c.text, from: [c.id] }); say(`${c.name} added to the draft values.`); break;
+    case 'unshort': S.short.items.splice(Number(el.dataset.i), 1); break;
+    case 'up': case 'down': {
+      const i = Number(el.dataset.i), j = a === 'up' ? i - 1 : i + 1; const L = S.short.items; [L[i], L[j]] = [L[j], L[i]]; break;
+    }
+    case 'send': {
+      if (S.short.items.some((it) => !it.name.trim() || !it.text.trim())) { say('Each value needs a name and what it means.'); break; }
+      S.short.status = 'sent'; S.short.reason = ''; say('Sent to Chanda Mulenga\'s Needs you.'); break;
+    }
+    case 'sendback': S.sendBack = true; break;
+    case 'sendbackok': {
+      const r = document.getElementById('sb').value.trim();
+      if (!r) { document.getElementById('sb-err').textContent = 'A reason is needed to send the values back.'; return; }
+      S.short.status = 'returned'; S.short.reason = r; S.sendBack = false; say('Sent back to the Strategy office with your reason.'); break;
+    }
+    case 'confirm': S.short.status = 'confirmed'; say(S.route === 'forming' ? 'Confirmed with the vision. Everyone can now see the values.' : 'Confirmed. Everyone can now see the values.'); break;
+  }
+  render();
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (el && !el.disabled) act(el.dataset.act, el);
+});
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'role') { S.role = t.value; S.behalf = null; S.offline = false; S.editing = null; S.aside = null; S.keepEdit = null; S.sendBack = false; S.mergeSel = []; render(); }
+  else if (t.id === 'route') { S.route = t.value; render(); }
+  else if (t.id === 'offline') {
+    S.offline = t.checked;
+    if (!t.checked && S.queued) { S.answers.forEach((x) => delete x.local); S.cands.forEach((x) => delete x.local); say(`Connection back. ${S.queued} ${S.queued === 1 ? 'entry' : 'entries'} sent.`); S.queued = 0; }
+    render();
+  }
+  else if (t.dataset.sel) { S.mergeSel = t.checked ? [...S.mergeSel, t.dataset.sel] : S.mergeSel.filter((x) => x !== t.dataset.sel); render(); }
+  else if (t.dataset.mt) { S.mergeTarget = t.dataset.mt; render(); }
+  else if (t.dataset.tie) { const k = cand(t.dataset.c); k.ties = t.checked ? [...k.ties, t.dataset.tie] : k.ties.filter((x) => x !== t.dataset.tie); render(); }
+});
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  const cWrap = t.closest('[data-cand]');
+  if (cWrap && t.dataset.cf) {
+    const k = cand(cWrap.dataset.cand); k[t.dataset.cf] = t.value;
+    if (t.dataset.cf === 'name') { const h = t.parentElement.querySelector('.hint'); if (h) h.textContent = `${t.value.length}/${NAME}`; }
+  }
+  const sWrap = t.closest('[data-item]');
+  if (sWrap && t.dataset.sf) S.short.items[Number(sWrap.dataset.item)][t.dataset.sf] = t.value;
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.sheet) { S.sheet = null; render(); } });
+render();
+</script>
+</body>
+</html>
