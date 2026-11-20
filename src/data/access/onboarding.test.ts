@@ -94,13 +94,14 @@ describe('the import door, end to end, from the plan document', () => {
     expect(page.noVisionOrMission).toBe(true);
     expect(page.publishBlocks.map((b) => b.key.split(':')[0]).sort()).toEqual(['BOOK-KPI-BASELINE-NOT-VALIDATED', 'BOOK-KPI-BASELINE-NOT-VALIDATED', 'BOOK-KPI-BASELINE-NOT-VALIDATED', 'BOOK-KPI-BASELINE-NOT-VALIDATED', 'BOOK-KPI-BASELINE-NOT-VALIDATED', 'STRUCT-ACTIVITY-NO-6P']);
 
-    // O9: only the Executive types the vision and mission.
-    expect(s.saveVision('vision', 'x')).toMatchObject({ ok: false, error: 'not_allowed' });
+    // O9, v0.31.0 (VM-7): whoever runs the import may type the vision and mission; others may not.
+    expect(r.as('employee').onboarding.saveVision('vision', 'x')).toMatchObject({ ok: false, error: 'not_allowed' });
+    expect(s.saveVision('vision', 'x')).toEqual({ ok: true });
     const exec = r.as('executive').onboarding;
     expect(exec.saveVision('vision', 'A trusted organisation that serves every region well.')).toEqual({ ok: true });
     expect(exec.saveVision('mission', 'We deliver reliable services through capable people.')).toEqual({ ok: true });
-    // v0.29.0 (CV-3): values typed in by the Executive only; confirmed with the plan below.
-    expect(s.saveValues([{ name: 'Integrity', text: 'We do what we say.' }])).toMatchObject({ ok: false, error: 'not_allowed' });
+    // v0.29.0 (CV-3), v0.31.0 (VM-7): values typed in by whoever runs the import or the Executive; confirmed with the plan below.
+    expect(r.as('employee').onboarding.saveValues([{ name: 'Integrity', text: 'We do what we say.' }])).toMatchObject({ ok: false, error: 'not_allowed' });
     expect(exec.saveValues([{ name: 'Integrity', text: 'We do what we say.' }, { name: 'Service', text: 'We put the people we serve first.' }])).toEqual({ ok: true });
     expect(exec.page().values.map((v) => v.name)).toEqual(['Integrity', 'Service']);
     expect(exec.page().noVisionOrMission).toBe(false);

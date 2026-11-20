@@ -326,7 +326,10 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
     const confirmEvent = p ? s.gateEvents.filter((g) => g.gate === 'plan.confirm' && g.outcome === 'passed' && g.subject.id === p.id).pop() : undefined;
     const checks = p ? planChecks(s, p, fy) : null;
     const items = p ? viewOf() : [];
-    const vs = (kind: 'vision' | 'mission') => (p ? s.visionStatements.find((v) => v.planId === p.id && v.kind === kind)?.text ?? '' : '');
+    // VM-3 (v0.31.0): unconfirmed statements are shown only to those who may draft or confirm them.
+    const seesDraft = canSetUp || isExecutive;
+    const shown = (x: { confirmation: unknown }) => seesDraft || !!x.confirmation;
+    const vs = (kind: 'vision' | 'mission') => (p ? ((x) => (x && shown(x) ? x.text : ''))(s.visionStatements.find((v) => v.planId === p.id && v.kind === kind)) : '');
     const n = noteOf(s);
     return {
       structureConfirmed: confirmed,
@@ -348,7 +351,7 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
       worth: (checks?.worth ?? []).map((f) => ({ key: f.key, message: f.message })),
       publishBlocks: (checks?.publishBlocks ?? []).map((f) => ({ key: f.key, message: f.message, subject: f.subject })),
       noVisionOrMission: checks?.noVisionOrMission ?? false,
-      vision: vs('vision'), mission: vs('mission'), values: p ? valueInputs(s.visionStatements, p.id) : [],
+      vision: vs('vision'), mission: vs('mission'), values: p ? valueInputs(s.visionStatements.filter(shown), p.id) : [],
       sheet: p && p.status === 'draft' ? n.sheet : null,
       ai: p && p.status === 'draft' ? n.ai : null,
       positions: s.positions.map((x) => ({ id: x.id, label: labelOf(x.id), holder: holderOf(x.id) })),
@@ -571,9 +574,10 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
     },
 
     saveVision(kind, text) {
-      // VisionStatement draft: the Executive only; the AI never drafts them (F1).
+      // VisionStatement draft (v1.22, VM-1 and VM-7): whoever runs the import (the Strategy office or a facilitator) or
+      // the Executive; confirmed with the plan (O9). The AI never drafts them (F1).
       const p = draftPlan();
-      if (!isExecutive) return deny();
+      if (!isExecutive && !canSetUp) return deny();
       if (!p) return deny('not_draft');
       const v = s.visionStatements.find((x) => x.planId === p.id && x.kind === kind);
       if (v) {
@@ -592,7 +596,7 @@ export function createOnboardingAccess(ctx: Ctx): OnboardingAccess {
 
     saveValues(values) {
       const p = draftPlan();
-      if (!isExecutive) return deny();
+      if (!isExecutive && !canSetUp) return deny(); // v0.31.0 (VM-7)
       if (!p) return deny('not_draft');
       if (valuesError(values)) return deny('values');
       saveValues(s, p.id, values, stamp, audit);

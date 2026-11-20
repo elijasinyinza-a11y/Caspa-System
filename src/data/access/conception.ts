@@ -316,6 +316,8 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
     const heads = new Set(mine());
     const depts = departments(s).filter((d) => seesAll || heads.has(d.unitId));
     const vision = visionOf(p, 'vision');
+    /** VM-3 (v0.31.0): the Executive, the Strategy office and facilitators see an unconfirmed vision; others once confirmed. */
+    const shownVision = !!vision?.confirmation || has('executive') || has('strategy_office') || has('facilitator');
     const checks = visionChecks(s, p);
     const filled = filledCells(s, p.id).length;
     return {
@@ -362,11 +364,12 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
         drafted: draftedFrom(p.id, d.id),
       })) : [],
       vision: {
-        vision: vision?.text ?? '', mission: visionOf(p, 'mission')?.text ?? '',
-        // v0.29.0: the plan's values, or the active plan's as a starting point while none are saved (CV-2).
-        values: valueInputs(s.visionStatements, p.id),
-        carried: !vision?.confirmation && valuesOf(s.visionStatements, p.id).length === 0
-          ? valueInputs(s.visionStatements, s.plans.find((x) => x.status === 'active' && x.id !== p.id)?.id ?? '') : [],
+        // VM-3 (v0.31.0): until the vision is confirmed, its text is shown only to those who may draft or confirm it.
+        vision: shownVision ? vision?.text ?? '' : '', mission: shownVision ? visionOf(p, 'mission')?.text ?? '' : '',
+        // v0.29.0: the plan's values, or the active plan's confirmed values as a starting point while none are saved (CV-2).
+        values: shownVision ? valueInputs(s.visionStatements, p.id) : [],
+        carried: shownVision && !vision?.confirmation && valuesOf(s.visionStatements, p.id).length === 0
+          ? valueInputs(s.visionStatements.filter((x) => x.confirmation), s.plans.find((x) => x.status === 'active' && x.id !== p.id)?.id ?? '') : [],
         confirmed: vision?.confirmation ? { by: personOf(vision.confirmation.byMembershipId), on: dateInZone(vision.confirmation.at, tz) } : null,
         canWrite: can(s, viewer, 'draft', { type: 'VisionStatement', id: '' }) && !vision?.confirmation,
         open: filled === CELLS.length,

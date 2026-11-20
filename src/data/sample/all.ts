@@ -8,6 +8,7 @@ import { createNgo } from './ngo';
 import { createScale } from './scale';
 import { createSeed, DEV_ROLE_MEMBERSHIPS, ORG } from './seed';
 import { addSampleSurvey } from './survey-samples';
+import { addSampleVisionDraft } from './vision-draft-samples';
 import { addSampleTargets } from './targets-samples';
 import { addSampleSchedule } from './schedule-samples';
 
@@ -37,5 +38,6 @@ export const createSampleOrgs = (): SampleOrg[] => [
   if (o.store.organisation.name.includes('Scale Test')) addSampleSurvey(o.store, { title: 'Start of year, 2026', opensOn: '2026-02-09', closesOn: '2026-03-06', answers: 'all' });
   addSampleTargets(o.store); // v0.21.0 (src/data/sample/targets-samples.ts)
   if (o.orgId === ORG) addSampleSchedule(o.store); // v0.26.0 (src/data/sample/schedule-samples.ts)
+  if (o.store.organisation.name.includes('Packaging')) addSampleVisionDraft(o.store); // v0.31.0 (VM-4)
   return o;
 });

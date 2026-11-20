@@ -129,7 +129,7 @@ export function createPlanDocumentAccess(ctx: Ctx): PlanDocumentAccess {
       if (docOf(p)) return deny('exists');
       if (!s.organisation.settings.aiEnabled) return deny('ai_off');
       const goals = composition(s, p.id).goals.filter((g) => isDecided(g.draft)).sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true }));
-      const vision = s.visionStatements.find((v) => v.planId === p.id && v.kind === 'vision')?.text ?? '';
+      const vision = s.visionStatements.find((v) => v.planId === p.id && v.kind === 'vision' && v.confirmation)?.text ?? '';
       const task: AiTask = {
         orgId: s.organisation.id, id: `ai-${(s.organisation.id as string).replace(/^org-/, '')}-${s.aiTasks.length + 1}` as Id<'AiTask'>, kind: 'draft',
         requested: stamp(), inputRefs: [{ type: 'StrategicPlan', id: p.id }, ...goals.map((g) => ({ type: 'Goal', id: g.id }))], outputRefs: [], model: 'stub',

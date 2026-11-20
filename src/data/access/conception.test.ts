@@ -188,10 +188,16 @@ describe('vision and mission (vision.confirm)', () => {
     expect(f.as('executive').conception.page()!.filled).toBe(12);
     fillAll(f);
     expect(f.as('executive').conception.page()!.vision.open).toBe(true);
-    expect(f.as('strategy').conception.saveVision({ vision: 'v', mission: '' })).toEqual({ ok: false, error: 'not_allowed' });
+    // v0.31.0 (VM-1): the Strategy office may write too; Finance may not.
+    expect(f.as('finance').conception.saveVision({ vision: 'v', mission: '' })).toEqual({ ok: false, error: 'not_allowed' });
     expect(f.as('executive').conception.saveVision({ vision: 'Safe water for every household we serve', mission: '' })).toEqual({ ok: true });
     expect(f.store.visionStatements.map((v) => v.kind)).toEqual(['vision']); // a blank mission is not stored
-    expect(f.as('employee').conception.page()!.vision.vision).toBe('Safe water for every household we serve');
+    // VM-3: unconfirmed, the text is shown to the Strategy office and the Executive only.
+    expect(f.as('employee').conception.page()!.vision.vision).toBe('');
+    expect(f.as('strategy').conception.page()!.vision.vision).toBe('Safe water for every household we serve');
+    // VM-2: the Strategy office may save the vision step but not confirm it.
+    expect(f.as('strategy').conception.saveVision({ vision: 'Safe water for every household we serve', mission: '' })).toEqual({ ok: true });
+    expect(f.as('strategy').conception.confirmVision()).toMatchObject({ ok: false, error: 'not_allowed' });
   });
   it('every attempt is recorded; a blocked one names what must be fixed; a passed one confirms and locks the vision', () => {
     const f = fresh();

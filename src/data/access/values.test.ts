@@ -73,7 +73,7 @@ describe('forming the next plan (CV-2, CV-3)', () => {
     const ex = f.as('executive').conception;
     expect(ex.page()!.vision.carried.map((v) => v.name)).toEqual(['Integrity', 'Teamwork']);
     expect(ex.page()!.vision.values).toEqual([]);
-    expect(f.as('strategy').conception.saveVision({ vision: 'v', mission: '', values: [V('Integrity')] })).toEqual({ ok: false, error: 'not_allowed' });
+    expect(f.as('finance').conception.saveVision({ vision: 'v', mission: '', values: [V('Integrity')] })).toEqual({ ok: false, error: 'not_allowed' }); // v0.31.0: the Strategy office may
     expect(ex.saveVision({ vision: 'Safe water for every household', mission: 'We supply and care', values: [V('Teamwork'), V('Integrity'), V('Accountability')] })).toEqual({ ok: true });
     expect(f.as('executive').conception.page()!.vision.values.map((v) => v.name)).toEqual(['Teamwork', 'Integrity', 'Accountability']);
     expect(f.as('executive').conception.page()!.vision.carried).toEqual([]);
