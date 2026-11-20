@@ -30,6 +30,7 @@ import { createOrganisationAccess, type OrganisationAccess } from './setup';
 import { createOnboardingAccess, type OnboardingAccess } from './onboarding';
 import { createFormationAccess, type FormationAccess } from './formation';
 import { createConceptionAccess, type ConceptionAccess } from './conception';
+import { createValuesWorkAccess, type ValuesWorkAccess } from './values-work';
 import { createConsultationAccess, type ConsultationAccess } from './consultation';
 import { createCompositionAccess, type CompositionAccess } from './composition';
 import { createPlanDocumentAccess, type PlanDocumentAccess } from './plan-document';
@@ -225,6 +226,8 @@ export interface Repository {
   formation: FormationAccess;
   /** Strategy formation, part 11b: the 4Q board, department sheets, the interview, vision and mission. */
   conception: ConceptionAccess;
+  /** v0.32.0: values group work (Values Group Work Specification v0.1; contract v1.23). */
+  valuesWork: ValuesWorkAccess;
   /** Strategy formation, part 11c: the consultation room, the baseline register and the compliance register. */
   consultation: ConsultationAccess;
   /** Strategy formation, part 11d: Composition, up to confirming the plan. */
@@ -641,6 +644,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   // One device for progress and the survey: going back online sends what waits for both (OP-7, SV-8).
   const device = options.device ?? createDevice();
   device.groupCards ??= [];
+  device.valueEntries ??= [];
   const repo: Repository = {
     viewer,
     financialYear,
@@ -648,6 +652,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
     onboarding: createOnboardingAccess({ s, viewer, now, financialYear, clock, audit, onChange: options.onChange }),
     formation: createFormationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     conception: createConceptionAccess({ s, viewer, now, clock, audit, onChange: options.onChange, device }),
+    valuesWork: createValuesWorkAccess({ s, viewer, now, clock, audit, onChange: options.onChange, device }),
     consultation: createConsultationAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     composition: createCompositionAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
     planDocument: createPlanDocumentAccess({ s, viewer, now, clock, audit, onChange: options.onChange }),
@@ -798,7 +803,7 @@ export function createMemoryRepository(stores: Store[], orgId: string, membershi
   };
   // Going back online sends survey answers waiting on this device too (SV-8); progress reports its own result.
   const setOffline = repo.progress.setOffline;
-  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) { repo.survey.sendWaiting(); repo.reviews.sendWaiting(); repo.targets.sendWaiting(); repo.conception.sendWaiting(); } return r; };
+  repo.progress.setOffline = (off) => { const r = setOffline(off); if (!off) { repo.survey.sendWaiting(); repo.reviews.sendWaiting(); repo.targets.sendWaiting(); repo.conception.sendWaiting(); repo.valuesWork.sendWaiting(); } return r; };
   repo.printouts = createPrintoutsAccess({ s, viewer, now, contracts: repo.contracts, reviews: repo.reviews });
   return repo;
 }

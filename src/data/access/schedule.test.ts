@@ -125,7 +125,7 @@ describe('stages from the strip', () => {
   it('opens, closes and reopens a stage; counts show how many items each stage has', () => {
     const f = fresh();
     const so = f.as('strategy').formation;
-    expect(so.page().schedule.counts.conception).toBe(3);
+    expect(so.page().schedule.counts.conception).toBe(4); // v0.32.0: with the values session
     expect(so.moveStage('conception', 'complete')).toEqual({ ok: true });
     expect(f.as('strategy').formation.moveStage('conception', 'open')).toEqual({ ok: true });
     expect(f.as('executive').formation.page().schedule.canMoveStages).toBe(false);

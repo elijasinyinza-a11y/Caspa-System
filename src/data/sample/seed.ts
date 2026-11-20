@@ -463,6 +463,7 @@ function seedStore(): Store {
     // The same drafting task also drafted the baselines and the compliance items read from documents (part 11c).
     aiTasks: [communicationAi, { ...formationAi, outputRefs: [...formationAi.outputRefs, ...formationBaselines.map((b) => ({ type: 'BaselineMeasure', id: b.id as string })), ...formationCompliance.filter((c) => c.provenance.kind === 'document').map((c) => ({ type: 'ComplianceItem', id: c.id as string }))] }],
     visionStatements: [],
+    valueCandidates: [],
   };
 }
 

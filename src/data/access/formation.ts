@@ -166,7 +166,7 @@ export function createFormationAccess(ctx: Ctx): FormationAccess {
   const groupView = (planId: string, w: Workshop, g: WorkshopGroup): GroupView => {
     const cards = s.fourQEntries.filter((e) => e.planId === planId && e.fromGroup?.workshopId === w.id && e.fromGroup.groupId === g.id && !e.removed && e.mergedIntoId === null);
     return {
-      id: g.id, name: g.name, cells: g.cells, scribe: { membershipId: g.scribeMembershipId, name: personOf(g.scribeMembershipId) }, memberNames: g.memberNames,
+      id: g.id, name: g.name, cells: g.cells ?? [], scribe: { membershipId: g.scribeMembershipId, name: personOf(g.scribeMembershipId) }, memberNames: g.memberNames,
       closed: g.closed ? { by: personOf(g.closed.byMembershipId), on: dateInZone(g.closed.at, s.organisation.timeZone) } : null,
       toReview: cards.filter((e) => e.draft.state === 'ai_draft').length, accepted: cards.filter((e) => e.draft.state === 'accepted').length,
     };
@@ -464,7 +464,7 @@ export function createFormationAccess(ctx: Ctx): FormationAccess {
       const g = w?.groups?.find((x) => x.id === groupId);
       if (!w || !g) return deny('not_found');
       if (w.status !== 'planned') return deny('held');
-      const err = groupInputError({ name: input.name ?? g.name, cells: input.cells ?? g.cells, scribeMembershipId: input.scribeMembershipId ?? g.scribeMembershipId, memberNames: input.memberNames ?? g.memberNames });
+      const err = groupInputError({ name: input.name ?? g.name, cells: input.cells ?? g.cells ?? [], scribeMembershipId: input.scribeMembershipId ?? g.scribeMembershipId, memberNames: input.memberNames ?? g.memberNames });
       if (err) return deny(err);
       const before = structuredClone(w);
       if (input.name !== undefined) g.name = input.name.trim();

@@ -76,4 +76,5 @@ export function clearSampleSchedule(s: Store) {
   s.formationDeadlines = s.formationDeadlines.filter((d) => !d.id.startsWith('fd-2027-'));
   s.workshops = s.workshops.filter((w) => !w.id.startsWith('ws-2027-'));
   s.fourQEntries = s.fourQEntries.filter((e) => !e.fromGroup);
+  s.valueCandidates = s.valueCandidates.filter((c) => !c.workshopId.startsWith('ws-2027-')); // v0.32.0
 }

@@ -139,7 +139,7 @@ export function buildOrg(spec: OrgSpec): BuiltOrg {
     budgetLines: [], contracts: [], contractObjectives: [], progressUpdates: [], acknowledgements: [],
     gateEvents: [seededPublication(orgId, planId, id(`m-${k}-${spec.devRoles.strategy}`), stamp.at)],
     auditEntries: [seededConfirmation(orgId, id(`m-${k}-${spec.devRoles.hr}`), stamp.at, { units: units.length, positions: positions.length, people: spec.people.length })],
-    sourceDocuments: [], aiTasks: [], visionStatements: [],
+    sourceDocuments: [], aiTasks: [], visionStatements: [], valueCandidates: [],
     reviews: [], workshops: [], formationDeadlines: [],
     // R1: every organisation starts on preset A with the safeguards at their defaults.
     ratingSchemes: [{

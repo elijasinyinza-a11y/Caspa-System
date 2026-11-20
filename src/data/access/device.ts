@@ -77,7 +77,9 @@ export interface Device {
   shareReadings: { membershipId: string; shareId: string; periodEnd: string; value: number }[];
   /** v0.26.0 (4Q group work): cards a group's scribe typed offline, sent when back online. */
   groupCards: { key: string; membershipId: string; workshopId: string; groupId: string; cell: import('../../contract/caspa-data-contract').FourQCell; text: string; evidence: string | null }[];
+  /** v0.32.0 (values group work): answers and candidates a values group's scribe typed offline, sent when back online. */
+  valueEntries?: ({ key: string; membershipId: string; workshopId: string; groupId: string } & ({ kind: 'answer'; question: 1 | 2 | 3 | 4; text: string } | { kind: 'candidate'; name: string; meaning: string; answerIds: string[] }))[];
   seq: number;
 }
 
-export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], reviewSelf: [], shareReadings: [], groupCards: [], seq: 1 });
+export const createDevice = (): Device => ({ offline: {}, outbox: [], notices: [], survey: [], reviewSelf: [], shareReadings: [], groupCards: [], valueEntries: [], seq: 1 });

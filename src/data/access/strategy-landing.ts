@@ -181,7 +181,7 @@ export function createStrategyLandingAccess(c: Ctx): StrategyLandingAccess {
         mode,
         vision: recs.find((x) => x.kind === 'vision')?.text ?? '',
         mission: recs.find((x) => x.kind === 'mission')?.text ?? '',
-        values: valuesOf(recs, p.id).map((x) => ({ name: x.name ?? '', text: x.text })),
+        values: valuesOf(recs, p.id).map((x) => ({ name: x.name ?? '', text: x.text, ...(x.fromCandidateIds?.length ? { fromCandidateIds: [...x.fromCandidateIds] } : {}) })),
         status,
         by: person(recs.reduce((a, b) => (a.updated.at >= b.updated.at ? a : b)).updated.byMembershipId),
         sent: first.sentForConfirmation ? { by: person(first.sentForConfirmation.byMembershipId), on: on(first.sentForConfirmation.at) } : null,

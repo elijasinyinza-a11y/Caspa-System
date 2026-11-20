@@ -3,7 +3,7 @@ import type {
   Acknowledgement, CommunicationRecord, Activity, AiTask, AuditEntry, ComplianceItem, ConsultationInput, ConsultationRound, ActivityProgress, BaselineMeasure, BudgetLine, BudgetVersion, ContractObjective, Cycle,
   Deficiency, FormationDeadline, FourQEntry, GateEvent, Goal, Kpi, KpiActual, KpiTarget, Membership, Objective, Organisation, OrgUnit,
   ActivityProposal, PerformanceContract, Person, Position, PositionAssignment, ProgressUpdate, RatingScheme, ResourceEnvelope, Review, Theme, IndicativeCost, PlanDocument,
-  SourceDocument, StrategicPlan, SurveyReceipt, SurveyResponse, SurveyRound, KpiBreakdown, KpiShare, ShareReading, Dependency, VisionStatement, Workshop,
+  SourceDocument, StrategicPlan, SurveyReceipt, SurveyResponse, SurveyRound, KpiBreakdown, KpiShare, ShareReading, Dependency, ValueCandidate, VisionStatement, Workshop,
 } from '../../contract/caspa-data-contract';
 
 export interface Store {
@@ -64,6 +64,8 @@ export interface Store {
   aiTasks: AiTask[];
   /** Vision and mission (contract VisionStatement); for an imported plan, typed by the Executive (O9). */
   visionStatements: VisionStatement[];
+  /** v0.32.0 (contract v1.23): candidate values from values group work. */
+  valueCandidates: ValueCandidate[];
   /** Part 11c: consultation rounds and what people sent in (contract v1.6). */
   consultationRounds: ConsultationRound[];
   consultationInputs: ConsultationInput[];

@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.22
+ * CASPA™ data contract — v1.23
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -12,6 +12,17 @@
  *   are no stored totals, percentages, counts or findings.
  * - Money is stored as integer minor units (e.g. ngwee) to avoid rounding.
  * - Live links for traceability; frozen snapshots for signed commitments.
+ *
+ * v1.23 (20 November 2026, Elijah; Values Group Work Specification v0.1, VG-1 to VG-10): values from group work.
+ *     - WorkshopPurpose gains 'values': a values session, while forming or, after publication, for a plan with no values.
+ *     - WorkshopGroup.cells becomes optional (values groups have none); memberNames may be empty;
+ *       WorkshopGroup.answers holds a values group's answers to questions 1 to 4.
+ *     - ValueCandidate: a candidate value a group puts forward (question 5), with its wording as entered and as edited,
+ *       the answers it is tied to, and its state on the values board (to review, kept, merged, set aside).
+ *     - PERMISSIONS.ValueCandidate: viewed by the Strategy office, facilitators and the Executive, drafted by the
+ *       Strategy office and facilitators; a group's scribe adds and changes their own group's while it is open
+ *       (data-access layer).
+ *     - VisionStatement.fromCandidateIds (values only): the candidates a draft value came from.
  *
  * v1.0 closes the v0.1 PENDING items: KPI progress rules (P1–P10), the
  * rating scheme (R1–R10 plus over-achievement safeguards) and the strategy
@@ -483,6 +494,8 @@ export interface VisionStatement extends OrgScoped, Audited {
   sentForConfirmation?: Stamp | null;
   /** v1.22 (VM-4): when and why the Executive sent the draft back; cleared when it is sent again. */
   returned?: (Stamp & { reason: string }) | null;
+  /** v1.23 (values only): the candidates from group work a draft value came from. */
+  fromCandidateIds?: Id<'ValueCandidate'>[];
 }
 
 export interface ConsultationRound extends OrgScoped, Audited {
@@ -667,7 +680,7 @@ export interface CommunicationRecord extends OrgScoped, Audited {
  * they check the data and confirmations it produces. A purpose with no session
  * planned raises an advisory flag to the process owner only.
  */
-export type WorkshopPurpose = 'kickoff' | 'four_q_review' | 'vision' | 'composition' | 'validation' | 'launch';
+export type WorkshopPurpose = 'kickoff' | 'four_q_review' | 'vision' | 'composition' | 'validation' | 'launch' | 'values'; // v1.23: 'values'
 
 export interface Workshop extends OrgScoped, Audited {
   id: Id<'Workshop'>;
@@ -691,10 +704,30 @@ export interface Workshop extends OrgScoped, Audited {
 export interface WorkshopGroup {
   id: string;
   name: string; // "Group 1"
-  cells: FourQCell[]; // a band, or one or more sections
+  cells?: FourQCell[]; // a band, or one or more sections; v1.23: none for a values group
   scribeMembershipId: Id<'Membership'>;
-  memberNames: string[]; // for the record only; they need no sign-in
+  memberNames: string[]; // for the record only; they need no sign-in; v1.23: may be empty
   closed: Stamp | null; // closed for review by the Strategy office; reopening sets it back to null (audit entries)
+  /** v1.23: a values group's answers to questions 1 to 4, as short points. */
+  answers?: { id: string; question: 1 | 2 | 3 | 4; text: string }[];
+}
+
+/** v1.23 (Values Group Work Specification v0.1): a candidate value a group puts forward (question 5). */
+export interface ValueCandidate extends OrgScoped, Audited {
+  id: Id<'ValueCandidate'>;
+  planId: Id<'StrategicPlan'>;
+  workshopId: Id<'Workshop'>;
+  groupId: string;
+  name: string; // up to 40 characters; as edited on the board
+  meaning: string; // what it means in daily work; as edited on the board
+  /** The group's own wording, kept when the board edits it. */
+  entered: { name: string; meaning: string };
+  answerIds: string[]; // the group's answers it came from; optional
+  state: 'to_review' | 'kept' | 'merged' | 'set_aside';
+  mergedIntoId: Id<'ValueCandidate'> | null;
+  setAsideReason: string | null;
+  /** Entered by the Strategy office because the scribe could not sign in. */
+  onBehalf: boolean;
 }
 
 /**
@@ -1134,6 +1167,9 @@ export const PERMISSIONS: PermissionMatrix = {
   SurveyResponse: { view: ['strategy_office', 'executive', 'owner'], draft: ['self'] },
   SurveyReceipt: { view: ['self', 'strategy_office'], draft: ['self'] },
   Workshop: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
+  // v1.23 (VG-5, VG-9): values group work. A group's scribe adds and changes their own group's candidates while it is
+  // open, enforced in the data-access layer; everyone else sees nothing until the values are confirmed.
+  ValueCandidate: { view: ['executive', 'strategy_office', 'facilitator'], draft: ['strategy_office', 'facilitator'] },
   FormationDeadline: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['strategy_office', 'facilitator'] },
   // Calendar edits are further limited to the assigned preparer (StrategicPlan.calendar.preparerMembershipId).
   PlanRevision: { view: ['all_members'], propose: ['strategy_office', 'owner'], confirm: ['executive'] },

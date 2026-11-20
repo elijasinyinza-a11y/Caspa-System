@@ -351,7 +351,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
         }).filter((x) => x.open.length + x.dismissed.length > 0);
       })(),
       causes: causeLevels(s, p.id),
-      groups: s.workshops.filter((w) => w.planId === p.id && w.status !== 'cancelled').flatMap((w) => (w.groups ?? []).map((g) => ({
+      groups: s.workshops.filter((w) => w.planId === p.id && w.status !== 'cancelled' && w.purposes.includes('four_q_review')).flatMap((w) => (w.groups ?? []).map((g) => ({
         workshopId: w.id as string, groupId: g.id, name: g.name,
         toReview: entriesOf(s, p.id).filter((e) => awaitsReview(e) && e.fromGroup!.workshopId === w.id && e.fromGroup!.groupId === g.id).length,
       }))),
@@ -623,7 +623,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       const open = !g.closed && p.status === 'draft';
       return {
         workshopId, groupId, name: g.name, planTitle: p.title, sessionLabel: en.list(w.purposes.map((x) => en.formation.purpose[x]!)),
-        cells: g.cells, closed: !!g.closed, isScribe: scribe,
+        cells: g.cells ?? [], closed: !!g.closed, isScribe: scribe,
         cards: mine.map((e) => ({
           id: e.id, cell: e.cell, text: e.text, evidence: e.evidence,
           state: e.draft.state === 'ai_draft' ? 'to_review' as const : e.draft.state === 'rejected' ? 'rejected' as const : 'accepted' as const,
@@ -640,7 +640,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       const { p, w, g } = found;
       if (g.scribeMembershipId !== viewer.membershipId) return deny();
       if (g.closed || p.status !== 'draft') return deny('closed');
-      if (!g.cells.some((c) => sameCell(c, input.cell))) return deny('cell');
+      if (!(g.cells ?? []).some((c) => sameCell(c, input.cell))) return deny('cell');
       if (!input.text.trim()) return deny('required');
       if (device?.offline[viewer.membershipId]) {
         device.groupCards = [...(device.groupCards ?? []), { key: `gc-${device.seq++}`, membershipId: viewer.membershipId, workshopId, groupId, cell: { ...input.cell }, text: input.text.trim(), evidence: input.evidence?.trim() || null }];
@@ -682,7 +682,7 @@ export function createConceptionAccess(ctx: Ctx): ConceptionAccess {
       for (const x of (device.groupCards ?? []).filter((c) => c.membershipId === me)) {
         const found = groupFor(x.workshopId, x.groupId);
         // Sent only while the group is still open; a card for a closed group stays out (the scribe sees why on the flip chart).
-        if (found && found.g.scribeMembershipId === me && !found.g.closed && found.g.cells.some((c) => sameCell(c, x.cell))) { groupCard(found.p, found.w.id, found.g.id, { cell: x.cell, text: x.text, evidence: x.evidence }, true); n++; }
+        if (found && found.g.scribeMembershipId === me && !found.g.closed && (found.g.cells ?? []).some((c) => sameCell(c, x.cell))) { groupCard(found.p, found.w.id, found.g.id, { cell: x.cell, text: x.text, evidence: x.evidence }, true); n++; }
       }
       device.groupCards = (device.groupCards ?? []).filter((c) => c.membershipId !== me);
       if (n) changed();
