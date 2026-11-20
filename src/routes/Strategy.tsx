@@ -616,7 +616,7 @@ function Vision({ page, setNote }: { page: OnboardingPage; setNote: (m: string |
   const [mission, setMission] = useState(page.mission);
   const [values, setValues] = useState<ValueInput[]>(page.values);
   const V = O.vision;
-  const canEdit = page.isExecutive && page.plan!.status === 'draft';
+  const canEdit = (page.isExecutive || page.canSetUp) && page.plan!.status === 'draft'; // v0.31.0 (VM-7)
   return (
     <section className={card}>
       <h2 className="text-18 font-bold text-navy">{V.title}</h2>

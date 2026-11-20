@@ -1,5 +1,5 @@
 /**
- * CASPA™ data contract — v1.21
+ * CASPA™ data contract — v1.22
  *
  * The single shape of every record in CASPA™. Screens, the sample store, the
  * rules engine and (later) the backend all use these types. Nothing outside
@@ -80,6 +80,12 @@
  *       all members. Department sheets, drafts and the 4Q board itself stay with the row as listed.
  *     - CommunicationRecord row: facilitators may draft records. "owner" is the goal's owner, and the department heads,
  *       who may log meetings held in their own unit (enforced in the data-access layer, as for 4Q cards).
+ * v1.22 (20 November 2026, Elijah; Vision, Mission and Values Drafting Specification v0.1, VM-1 to VM-8): fields and
+ *     one permission row.
+ *     - VisionStatement: drafted by the Executive, the Strategy office or a facilitator; confirmed by the Executive
+ *       alone. An unconfirmed statement is visible only to those roles (enforced in the data-access layer).
+ *     - VisionStatement.sentForConfirmation and .returned: after publication, a draft is sent to the Executive, who
+ *       confirms it as written or sends it back with a reason. Who drafted is the statement's `updated` stamp.
  * v1.21 (18 November 2026, Elijah; Corporate Values Specification v0.1, CV-1 to CV-8): fields only.
  *     - VisionStatement.kind gains 'value': a plan's corporate values, each with a name (up to 40 characters), its
  *       meaning in `text` (up to 300) and its place in the list (`order`, from 1). Up to ten per plan, none required.
@@ -473,6 +479,10 @@ export interface VisionStatement extends OrgScoped, Audited {
   name?: string;
   /** v1.21, values only: its place in the list, from 1. */
   order?: number;
+  /** v1.22 (VM-4): after publication, when a draft was sent to the Executive to confirm; null once sent back. */
+  sentForConfirmation?: Stamp | null;
+  /** v1.22 (VM-4): when and why the Executive sent the draft back; cleared when it is sent again. */
+  returned?: (Stamp & { reason: string }) | null;
 }
 
 export interface ConsultationRound extends OrgScoped, Audited {
@@ -1088,7 +1098,9 @@ export const PERMISSIONS: PermissionMatrix = {
   ProgressUpdate: { view: ['self', 'supervisor', 'next_level_reviewer', 'hr'], draft: ['self'], approve: ['supervisor'] },
   ActivityProgress: { view: ['all_members'], draft: ['owner'] }, // v1.10
   KpiActual: { view: ['all_members'], draft: ['owner'] }, // v1.10
-  VisionStatement: { view: ['all_members'], draft: ['executive'], confirm: ['executive'] },
+  // v1.22 (VM-1, VM-2, VM-3): drafted by the Executive, the Strategy office or a facilitator; confirmed by the Executive
+  // alone. An unconfirmed statement is visible only to those roles (data-access layer).
+  VisionStatement: { view: ['all_members'], draft: ['executive', 'strategy_office', 'facilitator'], confirm: ['executive'] },
   // v1.9 (D16-1): accepted organisation-level cards shown in a final plan document are read there by all members.
   FourQEntry: { view: ['executive', 'strategy_office', 'facilitator', 'owner'], draft: ['owner', 'strategy_office', 'facilitator'], propose: ['owner'] },
   BaselineMeasure: { view: ['executive', 'strategy_office', 'owner'], draft: ['owner', 'strategy_office'], approve: ['strategy_office'] },

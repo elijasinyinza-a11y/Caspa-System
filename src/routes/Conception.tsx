@@ -726,7 +726,10 @@ export function VisionMission({ c }: { c: ConceptionPage }) {
             {values.length === 0 && <p className="mt-2 text-13 text-muted">{en.values.withoutValues}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className={btn} onClick={save} disabled={!valuesReady(values)}>{V.save}</button>
-              <button type="button" className={primary} onClick={() => setConfirming(true)} disabled={!valuesReady(values)}>{V.confirm}</button>
+              {/* VM-2 (v0.31.0): others may write; only the Executive confirms. */}
+              {repo.viewer.roles.includes('executive')
+                ? <button type="button" className={primary} onClick={() => setConfirming(true)} disabled={!valuesReady(values)}>{V.confirm}</button>
+                : <p className="self-center text-13 text-muted">{V.confirmByExecutive}</p>}
             </div>
           </>
         ) : (

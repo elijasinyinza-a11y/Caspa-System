@@ -2,13 +2,16 @@
  * The Strategy landing (v0.28.0; Strategy Landing Specification v0.1, SL-1 to SL-7; prototype
  * `reference/caspa-strategy-landing-prototype.html`). Read top to bottom: the plan, its vision and mission, your part,
  * the goals with progress and why each was chosen, then themes. Every figure comes from `repo.strategyLanding`.
+ *
+ * v0.31.0 (Vision, Mission and Values Drafting Specification v0.1, VM-1 to VM-8): the Strategy office or a facilitator
+ * drafts and sends; the Executive confirms as written or sends back with a reason, or records their own in one step.
  */
 import type { ValueInput } from '../rules/values';
 import { ValueListEditor, ValueListView, valuesReady } from './ValueList';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { ProgressBar } from '../components/Status';
-import type { LandingGoal } from '../data/access/strategy-landing';
+import type { LandingDraft, LandingGoal } from '../data/access/strategy-landing';
 import { formatDate, formatPercent } from '../selectors/format';
 import { en, type Terms } from '../strings/en';
 import { nodeHref } from './router';
@@ -86,11 +89,97 @@ function RecordStatements({ mode, onDone }: { mode: 'all' | 'values'; onDone: (s
   );
 }
 
+/** VM-1: the Strategy office or a facilitator drafts, saves and sends to the Executive. */
+function DraftStatements({ mode, draft, onDone }: { mode: 'all' | 'values'; draft: LandingDraft | null; onDone: (note: string | null) => void }) {
+  const { repo } = useApp();
+  const D = L.draft;
+  const [vision, setVision] = useState(draft?.vision ?? '');
+  const [mission, setMission] = useState(draft?.mission ?? '');
+  const [values, setValues] = useState<ValueInput[]>(draft?.values ?? []);
+  const [error, setError] = useState<string | null>(null);
+  const all = mode === 'all';
+  const fail = (e: string) => setError(L.errors[e] ?? L.errors.not_allowed!);
+  const save = (send: boolean) => {
+    const r = repo.strategyLanding.saveDraft(vision, mission, values);
+    if (!r.ok) return fail(r.error);
+    if (!send) return onDone(D.saved);
+    const sent = repo.strategyLanding.sendDraft();
+    if (sent.ok) onDone(D.sentDone); else fail(sent.error);
+  };
+  return (
+    <section aria-labelledby="draft-vm" className="space-y-3 rounded-xl border border-control bg-white p-5">
+      <h2 id="draft-vm" className="text-18 font-bold text-navy">{all ? D.title : D.titleValues}</h2>
+      <p className="text-13 text-muted">{D.note}</p>
+      {draft?.returned && <p className="rounded-lg border border-advisory-border bg-advisory-bg px-3 py-2 text-14 text-advisory-text">{D.statusReturned(draft.returned.by, formatDate(draft.returned.on), draft.returned.reason)}</p>}
+      {all && (
+        <>
+          <div><label htmlFor="dr-vision" className="text-14 font-semibold text-navy">{L.vision}</label>
+            <textarea id="dr-vision" value={vision} onChange={(e) => setVision(e.target.value)} className={field} /></div>
+          <div><label htmlFor="dr-mission" className="text-14 font-semibold text-navy">{L.mission}</label>
+            <textarea id="dr-mission" value={mission} onChange={(e) => setMission(e.target.value)} className={field} /></div>
+        </>
+      )}
+      <h3 className="pt-1 text-14 font-bold text-navy">{en.values.title}</h3>
+      <ValueListEditor values={values} onChange={setValues} idPrefix="dr-val" />
+      {error && <p role="alert" className="text-13 font-semibold text-block-text">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => save(false)} disabled={!valuesReady(values)} className={btn}>{D.save}</button>
+        <button type="button" onClick={() => save(true)} disabled={!valuesReady(values) || (all ? !vision.trim() || !mission.trim() : values.length === 0)} className={primary}>{D.send}</button>
+        <button type="button" onClick={() => onDone(null)} className={btn}>{D.cancel}</button>
+      </div>
+    </section>
+  );
+}
+
+/** The draft as written, read-only. */
+function DraftView({ d }: { d: LandingDraft }) {
+  return (
+    <div className="space-y-3">
+      {d.mode === 'all' && ([['vision', d.vision], ['mission', d.mission]] as const).map(([k, text]) => (
+        <div key={k}><p className="text-12 font-semibold uppercase tracking-wide text-strategy-text">{k === 'vision' ? L.vision : L.mission}</p><p className="mt-1 text-16 text-navy">{text}</p></div>
+      ))}
+      {d.values.length > 0 && <div><p className="mb-2 text-12 font-semibold uppercase tracking-wide text-strategy-text">{en.values.title}</p><ValueListView values={d.values} /></div>}
+    </div>
+  );
+}
+
+/** VM-4, VM-5: the Executive confirms the sent draft as written, or sends it back with a reason. */
+function ConfirmDraft({ d, onDone }: { d: LandingDraft; onDone: (note: string) => void }) {
+  const { repo } = useApp();
+  const D = L.draft;
+  const [back, setBack] = useState(false);
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const drafter = d.sent?.by ?? d.by;
+  return (
+    <section aria-labelledby="confirm-vm" className="space-y-3 rounded-xl border border-advisory-border bg-white p-5">
+      <p><Chip tone="advisory">{D.waitingTitle}</Chip></p>
+      <h2 id="confirm-vm" className="text-18 font-bold text-navy">{d.mode === 'all' ? D.confirmTitle : D.confirmTitleValues}</h2>
+      <p className="text-14">{D.waitingIntro(drafter, d.sent ? formatDate(d.sent.on) : '')}</p>
+      <DraftView d={d} />
+      {error && <p role="alert" className="text-13 font-semibold text-block-text">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={primary} onClick={() => { const r = repo.strategyLanding.confirmDraft(); if (r.ok) onDone(D.confirmed); else setError(L.errors[r.error] ?? L.errors.not_allowed!); }}>{D.confirm}</button>
+        <button type="button" className={btn} aria-expanded={back} onClick={() => setBack(true)}>{D.sendBack}</button>
+      </div>
+      {back && (
+        <div>
+          <label htmlFor="vm-reason" className="text-14 font-semibold text-navy">{D.reasonLabel}</label>
+          <textarea id="vm-reason" value={reason} onChange={(e) => setReason(e.target.value)} className={field} />
+          <button type="button" className={`${primary} mt-2`} disabled={!reason.trim()} onClick={() => { const r = repo.strategyLanding.sendBackDraft(reason); if (r.ok) onDone(D.returnedDone(drafter)); else setError(L.errors[r.error] ?? L.errors.not_allowed!); }}>{D.sendBackGo(drafter)}</button>
+        </div>
+      )}
+      <p className="text-12 text-muted">{D.editNote}</p>
+    </section>
+  );
+}
+
 export function StrategyLanding() {
   const { repo } = useApp();
   const t = repo.settings().termLabels;
   const v = repo.strategyLanding.landing();
   const [recording, setRecording] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   if (!v) return null;
   const p = v.plan;
@@ -128,6 +217,36 @@ export function StrategyLanding() {
           {st.recorded && <p className="text-12 text-muted">{L.recorded(st.recorded.by, formatDate(st.recorded.on))}</p>}
         </section>
       )}
+      {/* v0.31.0 (VM-4): the Executive's confirmation of a sent draft. */}
+      {v.draft?.status === 'sent' && repo.viewer.roles.includes('executive') && (
+        <ConfirmDraft d={v.draft} onDone={(n) => setNote(n)} />
+      )}
+      {/* The Strategy office or a facilitator: a draft with the Executive, read-only. */}
+      {v.draft?.status === 'sent' && !repo.viewer.roles.includes('executive') && (
+        <section aria-labelledby="sent-vm" className={`${card} space-y-3`}>
+          <h2 id="sent-vm" className="text-18 font-bold text-navy">{v.draft.mode === 'all' ? L.draft.title : L.draft.titleValues}</h2>
+          <p><Chip tone="info">{L.draft.statusSent(v.draft.sent?.by ?? v.draft.by, v.draft.sent ? formatDate(v.draft.sent.on) : '')}</Chip></p>
+          <DraftView d={v.draft} />
+        </section>
+      )}
+      {/* VM-1: drafting by the Strategy office or a facilitator. */}
+      {v.canDraft && (
+        drafting ? <DraftStatements mode={v.canDraft} draft={v.draft} onDone={(n) => { setDrafting(false); setNote(n); }} /> : (
+          <section className={`${card} flex flex-wrap items-center justify-between gap-3`}>
+            <div>
+              <h2 className="text-18 font-bold text-navy">{v.canDraft === 'all' ? L.record.missing : L.record.missingValues}</h2>
+              <p className="text-13 text-muted">{L.draft.missingNote}</p>
+              {v.draft && (
+                <p className="mt-1">{v.draft.status === 'returned' && v.draft.returned
+                  ? <Chip tone="advisory">{L.draft.statusReturned(v.draft.returned.by, formatDate(v.draft.returned.on), v.draft.returned.reason)}</Chip>
+                  : <Chip tone="info">{L.draft.statusDraft(v.draft.by)}</Chip>}</p>
+              )}
+            </div>
+            <button type="button" onClick={() => { setDrafting(true); setNote(null); }} className={btn}>{v.draft ? L.draft.edit : v.canDraft === 'all' ? L.draft.title : L.draft.titleValues}</button>
+          </section>
+        )
+      )}
+      {v.canRecord && v.draft && v.draft.status !== 'sent' && <p className="text-13 text-muted">{L.draft.drafting(v.draft.by)}</p>}
       {v.canRecord && (
         recording ? <RecordStatements mode={v.canRecord} onDone={(saved) => { setRecording(false); setNote(saved ? L.record.saved : null); }} /> : (
           <section className={`${card} flex flex-wrap items-center justify-between gap-3`}>
