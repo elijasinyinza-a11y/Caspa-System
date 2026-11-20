@@ -61,7 +61,9 @@ export function planDocumentContent(s: Store, plan: StrategicPlan, seesCard: (id
       band: en.fourQ.band[band],
       sections: CELLS.filter((c) => c.band === band).map((c: FourQCell) => {
         const cards = board.filter((e) => sameCell(e.cell, c));
-        return { name: en.fourQ.cellName(c), cards: cards.every((e) => seesCard(e.id)) ? cards.map((e) => e.text) : null, count: cards.length };
+        // A4 (agreed 6 November 2026, built v0.31.0): a critical failure factor shows where its cause sits, after its text.
+        const text = (e: (typeof cards)[number]) => (e.causeLevel ? en.fourQ.causeAfter(e.text, en.sixP[e.causeLevel]) : e.text);
+        return { name: en.fourQ.cellName(c), cards: cards.every((e) => seesCard(e.id)) ? cards.map(text) : null, count: cards.length };
       }),
     })),
     goals: [...r.goals].filter((g) => isDecided(g.draft)).sort(byCode).map((g) => ({

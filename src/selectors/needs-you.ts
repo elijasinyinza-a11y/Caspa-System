@@ -30,7 +30,8 @@ export type StrategyLink = { kind: 'strategy'; entry: StrategyEntry; stage?: For
 export type ProgressLink = { kind: 'progress'; tab: 'mine' | 'verify'; objectiveId?: string };
 /** v0.20.0: Performance › Reviews, at one review or a tab. */
 export type ReviewsLink = { kind: 'reviews'; reviewId?: string; tab?: 'mine' | 'team' | 'check' | 'round' | 'policy' };
-export type NeedsYouLink = FixTarget | { kind: 'findings' } | { kind: 'flipchart'; workshopId: string; groupId: string } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | { kind: 'contracts'; contractId?: string; tab?: 'mine' | 'team' | 'check' | 'overview' } | null;
+/** v0.31.0: `landing` opens the Strategy landing (Our strategy), where a draft of the vision, mission and values waits. */
+export type NeedsYouLink = FixTarget | { kind: 'landing' } | { kind: 'findings' } | { kind: 'flipchart'; workshopId: string; groupId: string } | { kind: 'communication'; goalId: string } | StrategyLink | ProgressLink | { kind: 'survey'; roundId: string } | ReviewsLink | { kind: 'targets'; breakdownId?: string; shareId?: string } | { kind: 'contracts'; contractId?: string; tab?: 'mine' | 'team' | 'check' | 'overview' } | null;
 const at = (entry: StrategyEntry, stage?: FormingStage, tab?: string): StrategyLink => ({ kind: 'strategy', entry, ...(stage ? { stage } : {}), ...(tab ? { tab } : {}) });
 
 export interface NeedsYouItem {
@@ -309,6 +310,26 @@ export function needsYou(s: Store, input: NeedsYouInput): NeedsYouItem[] {
       key: `communication:write:${g.id}`, kind: 'deadline', title: en.communication.needs.write(g.code, g.title), detail: plan?.title ?? null,
       due: null, severity: null, as: owns ? null : 'strategy_office', link: { kind: 'communication', goalId: g.id },
     });
+  }
+
+  /*
+   * v0.31.0 (VM-4): a draft of the active plan's vision, mission and values. Sent: each Executive confirms or sends it
+   * back. Sent back: the person who last saved it revises and sends again.
+   */
+  const activePlan = s.plans.find((p) => p.status === 'active');
+  if (activePlan) {
+    const recs = s.visionStatements.filter((x) => x.planId === activePlan.id && !x.confirmation && (x.kind === 'value' || x.text.trim() !== ''));
+    const valuesOnly = !recs.some((x) => x.kind !== 'value');
+    const sent = recs.find((x) => x.sentForConfirmation)?.sentForConfirmation;
+    const back = recs.find((x) => x.returned)?.returned;
+    const last = recs.length ? recs.reduce((a, b) => (a.updated.at >= b.updated.at ? a : b)).updated.byMembershipId : null;
+    const strategy: NeedsYouLink = { kind: 'landing' };
+    if (sent && v.roles.includes('executive')) {
+      add({ key: `vision:confirm:${activePlan.id}`, kind: 'approval', title: en.needsYou.confirmStatements(valuesOnly, personName(sent.byMembershipId)), detail: activePlan.title, due: null, severity: null, as: 'executive', link: strategy });
+    }
+    if (back && !sent && last === v.membershipId) {
+      add({ key: `vision:returned:${activePlan.id}`, kind: 'deadline', title: en.needsYou.statementsReturned(personName(back.byMembershipId), back.reason), detail: activePlan.title, due: null, severity: null, as: null, link: strategy });
+    }
   }
 
   /* Decision-log actions from held sessions, owned by the person's positions. */
