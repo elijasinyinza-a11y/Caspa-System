@@ -1,6 +1,6 @@
 # Next session
 
-v0.30.0 delivered 19 November 2026 (access review, BUILD-BRIEF section 54, contract v1.21 unchanged): `npm run verify` clean, 934 tests. v0.29.0 (corporate values, section 53), v0.28.0 (Strategy landing) and v0.27.0 (in-year changes) were delivered on 18 November 2026; their sections are in the archive. Onboarding decisions in section 50 (archive); v0.25.0 in section 49
+v0.31.0 delivered 20 November 2026 (drafting the vision, mission and values, and A4; BUILD-BRIEF section 55; contract v1.22): `npm run verify` clean, 941 tests. v0.30.0 (access review, section 54) was delivered on 19 November 2026; earlier sections are in the archive.
 (archive); v0.24.0 in section 48 and v0.23.0 in section 47.
 
 ## Slice 21 (7 November 2026): onboarding, built as v0.26.0 — the first usability round is next
@@ -32,6 +32,13 @@ Next: Elijah runs the first usability round with `#/usability`. Failures are fix
 Usability test (D5, section 20; deferred by section 27): five people new to CASPA™, at least two likely pilot users; pass
 when each task is completed unaided by at least 4 of 5. Nothing is recorded as passed until a real round runs.
 
+## Next: values group work (v0.32.0)
+Confirmed 20 November 2026: *CASPA™ Values Group Work Specification v0.1* (VG-1 to VG-10). Groups (a name and a scribe;
+member names optional; a printed group sheet) answer five confirmed questions on the existing flip chart and put forward up
+to three candidate values each; the Strategy office keeps, merges or sets aside candidates on a values board and drafts
+the short list, which the Executive confirms (VM-4). No voting. Runs while forming, or after publication only when the
+plan has no values. Contract v1.23. Prototype first (`reference/caspa-values-group-work-prototype.html`).
+
 ## Access review (v0.30.0): what is left
 Built: items 1 and 2 of the *Access Review Specification v0.1* (By role and the five checks) and the fixes D1 to D4. Agreed as
 next if Elijah wants them (AR-9), each with its own short confirmation and prototype first:
@@ -51,10 +58,8 @@ Open questions for a later slice: shares of a share; activity shares by unit in 
 several units shows each unit's part only through contracts today).
 
 ## To settle with Elijah
-- 4Q A4: showing a failure factor's cause level in the plan document (agreed; not yet built).
-- A share's score uses the reading against its target (as R1), not KPI progress (P1), because shares hold no baseline.
 - Which 6P levels a position may be held to (for an authority rule); today the level is only shown as a fact.
-- Staff survey "Why we ask" book lines; the survey tool's later refinement.
+- Staff survey "Why we ask" book lines (the survey screen shows "[from the book]" until confirmed); the survey tool's later refinement.
 - Spending-against-results thresholds. (Decision-log action completion is settled by the forming schedule, item 1.)
 
 ## Review of 10 November 2026: findings to settle with Elijah

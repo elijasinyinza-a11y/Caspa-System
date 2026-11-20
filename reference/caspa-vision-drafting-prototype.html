@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASPA™ Vision, Mission and Values Drafting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: the CASPA™ shell around Home, Strategy › Our strategy and the forming vision step. Light mode only. */
+
+:root{
+  color-scheme: light;
+  --navy:#0D1B2A; --text:#1A2B3C; --muted:#5E6B7A; --cream:#F5F4F0; --white:#FFFFFF; --border:#D5D2CA; --control:#8A867D; --focus:#007F84; --line:#EDECEA;
+  --panel:#223D56; --side-fg:#C8D1DB;
+  --st:#378ADD; --ca:#7C5CBF; --pl:#B85C38; --pf:#C2417A;
+  --blk:#B42318; --blk-l:#FEF3F2; --adv:#7A2E0E; --adv-l:#FFFAEB; --adv-b:#F5C26B; --ok:#067647; --ok-l:#ECFDF3; --ok-b:#ABEFC6; --info-l:#EDECEA;
+  --font:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--cream);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:28px;line-height:1.2;margin:0;color:var(--navy);text-wrap:balance}
+h2{font-size:18px;margin:0;color:var(--navy)}
+h3{font-size:16px;margin:0;color:var(--navy)}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px} .xs{font-size:12px}
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex:none;background:var(--navy);color:var(--white);padding:20px 12px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px}
+.mark{width:36px;height:36px;border-radius:8px;background:var(--white);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700}
+.brand b{display:block;font-size:16px}.brand span{font-size:12px;color:var(--side-fg)}
+.navbtn{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--side-fg);font-weight:500}
+.navbtn.on{background:var(--panel);color:var(--white);font-weight:600}
+.sub{display:flex;align-items:center;min-height:44px;padding:0 12px 0 34px;border-radius:8px;color:var(--side-fg);font-size:13px}
+.sub.on{color:var(--white);font-weight:600;box-shadow:inset 3px 0 0 var(--white)}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--white);border-bottom:1px solid var(--border);padding:10px max(24px,env(safe-area-inset-right,0px)) 10px max(24px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.crumbs{flex:1 1 200px;color:var(--muted);font-size:13px;min-width:0}
+.crumbs b{color:var(--navy);font-weight:600}
+.viewas{display:flex;align-items:center;gap:8px;border:1px dashed var(--control);border-radius:10px;padding:4px 4px 4px 10px;font-size:12px;color:var(--muted)}
+.viewas select{min-height:40px;border:1px solid var(--control);border-radius:8px;padding:0 8px;background:var(--white);max-width:min(320px,70vw)}
+.pill{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--control);background:var(--white);font-size:13px;font-weight:600;cursor:pointer}
+.content{padding:24px max(16px,env(safe-area-inset-right,0px)) 96px max(16px,env(safe-area-inset-left,0px));width:100%;max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.proto{background:var(--white);border:1px dashed var(--control);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.proto-row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.entries{display:flex;gap:8px;flex-wrap:wrap}
+.entry{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--white);font-weight:600;cursor:pointer}
+.entry[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:var(--white);color:var(--navy);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-quiet{border-color:var(--control);font-weight:500}
+.btn-sm{min-height:40px;padding:0 10px;font-size:13px}
+.btn:disabled{background:var(--line);border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.link{background:none;border:0;padding:0;color:var(--navy);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:44px}
+.wsh .eyebrow{font-size:13px;color:var(--muted)}
+.wsh h1{margin-top:6px}
+.wsh p{margin-top:6px;font-size:16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tab{min-height:44px;padding:0 16px;border:0;background:none;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+.tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--navy)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:600;padding:8px 12px 8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--border);vertical-align:top}
+.scroll{overflow-x:auto}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-l);color:var(--ok);border:1px solid var(--ok-b)}
+.t-adv{background:var(--adv-l);color:var(--adv);border:1px solid var(--adv-b)}
+.t-blk{background:var(--blk-l);color:var(--blk);border:1px solid var(--blk)}
+.t-info{background:var(--info-l);color:var(--navy)}
+.roles label{display:flex;align-items:center;gap:8px;min-height:44px}
+.roles input{width:20px;height:20px}
+.field{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 10px;background:var(--white);max-width:200px}
+.search{min-height:44px;border:1px solid var(--control);border-radius:8px;padding:0 12px;width:100%;max-width:360px}
+.msg{border-radius:10px;padding:12px 14px;font-weight:600}
+.msg-ok{border:1px solid var(--ok-b);background:var(--ok-l);color:var(--ok)}
+.msg-blk{border:1px solid var(--blk);background:var(--blk-l);color:var(--blk)}
+.msg-blk p+p,.msg-ok p+p{font-weight:400;margin-top:4px}
+.role{border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.role:first-of-type{border-top:0;padding-top:0}
+.rolehead{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between}
+.holder{display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(160px,1.5fr) minmax(120px,1fr) auto;gap:4px 12px;align-items:start;padding:8px 0;border-top:1px dashed var(--line)}
+.holder:first-child{border-top:0}
+.drawer{position:fixed;inset:0 0 0 auto;width:min(440px,100vw);background:var(--white);border-left:1px solid var(--border);box-shadow:-8px 0 24px rgba(13,27,42,.12);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;z-index:5}
+.finding{border:1px solid var(--adv-b);background:var(--adv-l);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.finding.acked{border-color:var(--border);background:var(--white)}
+.ai{border-left:3px solid var(--control);padding:6px 10px;background:var(--cream);font-size:13px}
+textarea{min-height:72px;border:1px solid var(--control);border-radius:8px;padding:8px 10px;width:100%}
+.log li{font-size:13px;margin:4px 0}
+.ended{max-width:520px;margin:48px auto;text-align:left}
+@media (max-width:900px){.side{display:none}}
+@media (max-width:700px){.holder{grid-template-columns:1fr}}
+</style>
+<style>textarea{font-size:14px}@media (max-width:820px){[style*="grid-template-columns:minmax(0,1.4fr)"]{grid-template-columns:1fr!important}}</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><div class="mark">C</div><div><b>CASPA™</b><span>Karislabs Technologies</span></div></div>
+    <div class="navbtn" id="nav-home"><span class="dot" style="background:var(--white)"></span>Home</div>
+    <div class="navbtn" id="nav-strategy"><span class="dot" style="background:var(--st)"></span>Strategy</div>
+    <div class="sub" id="sub-landing">Our strategy</div>
+    <div class="sub" id="sub-forming">Forming the next plan</div>
+    <div class="navbtn"><span class="dot" style="background:var(--ca)"></span>Cascade</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pl)"></span>Plan</div>
+    <div class="navbtn"><span class="dot" style="background:var(--pf)"></span>Performance</div>
+  </nav>
+  <div class="main">
+    <header class="top">
+      <div class="crumbs" id="crumbs"></div>
+      <label class="viewas" for="who">Viewing as
+        <select id="who">
+          <option value="spm">Bwalya Musonda, Strategy and Planning Manager (Strategy office)</option>
+          <option value="fac">Mutale Chola, external consultant (Facilitator)</option>
+          <option value="md">Chanda Mulenga, Managing Director (Executive)</option>
+          <option value="hof">Ruth Phiri, Head of Finance (Finance)</option>
+        </select>
+      </label>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+</div>
+<script>
+/* Sample Water Utility. The active plan (2022–2026) has no vision, mission or values; the next plan (2027–2031) is being formed. */
+const PEOPLE = { spm: { name: 'Bwalya Musonda', role: 'strategy' }, fac: { name: 'Mutale Chola', role: 'facilitator' }, md: { name: 'Chanda Mulenga', role: 'executive' }, hof: { name: 'Ruth Phiri', role: 'finance' } };
+const TODAY = '19 November 2026';
+/* Accepted 4Q cards, grouped by Elijah's confirmed reading (19 November 2026). */
+const GROUPS = [
+  { key: 'keep', title: 'Values to keep', why: 'Critical success factors: behaviours that made things work.', cards: [
+    { id: 'c1', cell: 'Retraction: Critical success factors', text: 'Dedicated metering project team' },
+    { id: 'c2', cell: 'Repositioning: Critical success factors', text: 'Weekly zonal supply schedules published' } ] },
+  { key: 'counter', title: 'Values that counter failures', why: 'Critical failure factors: behaviours behind failures.', cards: [
+    { id: 'c3', cell: 'Retraction: Critical failure factors', text: 'No funded sanitation activities in annual budgets' },
+    { id: 'c4', cell: 'Retraction: Critical failure factors', text: 'Reading routes left without supervision' },
+    { id: 'c5', cell: 'Repositioning: Critical failure factors', text: 'Leaks repaired only after customers complain' } ] },
+  { key: 'future', title: 'Values the future needs', why: 'Projection: key strategic actions and risk strategies.', cards: [
+    { id: 'c6', cell: 'Projection: Key strategic actions', text: 'Cost-of-service study before the tariff application' },
+    { id: 'c7', cell: 'Projection: Risk strategies', text: 'Develop a second borehole field' } ] },
+];
+const CARDS = Object.fromEntries(GROUPS.flatMap((g) => g.cards.map((c) => [c.id, c])));
+const AI_SUMMARY = 'Across the board, what worked was dedicated teams and published schedules people could rely on. What failed came from work left unsupervised, unfunded or done only after complaints. The future asks for evidence-based decisions and planning ahead of risk.';
+const SCREENS = [['home', 'Home: Needs you'], ['landing', 'Strategy: Our strategy (after publication)'], ['forming', 'Strategy: Forming, vision step']];
+
+const blank = () => ({ vision: '', mission: '', values: [{ name: '', meaning: '', cards: [] }] });
+let S;
+function fresh() {
+  S = { who: 'spm', screen: 'landing', msg: null, log: [], ai: false, pick: null, reason: '', showReason: false, openWhy: {},
+    // After publication (active plan): one draft at a time.
+    pub: { draft: null, status: 'none', drafter: null, sentOn: null, returned: null, confirmed: null },
+    // Forming (next plan): the vision step.
+    form: { draft: blank(), drafter: null, confirmed: null } };
+  document.getElementById('who').value = 'spm';
+}
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const me = () => PEOPLE[S.who];
+const mayDraft = () => ['strategy', 'facilitator', 'executive'].includes(me().role);
+const isExec = () => me().role === 'executive';
+const record = (t) => S.log.unshift(`${TODAY} · ${me().name} · ${t}`);
+const ok = (t) => { S.msg = { kind: 'ok', t }; };
+const fail = (t) => { S.msg = { kind: 'blk', t }; };
+const valid = (d, needVision) => {
+  if (needVision && (!d.vision.trim() || !d.mission.trim())) return 'Write both the vision and the mission.';
+  const vs = d.values.filter((v) => v.name.trim() || v.meaning.trim());
+  if (!vs.length) return 'Add at least one value.';
+  if (vs.some((v) => !v.name.trim() || !v.meaning.trim())) return 'Each value needs a name and what it means.';
+  if (vs.some((v) => v.name.trim().length > 40)) return 'A value’s name can be up to 40 characters.';
+  if (vs.length > 10) return 'Up to 10 values.';
+  return null;
+};
+const clean = (d) => ({ vision: d.vision.trim(), mission: d.mission.trim(), values: d.values.filter((v) => v.name.trim()).map((v) => ({ ...v, name: v.name.trim(), meaning: v.meaning.trim() })) });
+
+/* ───── Pieces ───── */
+const msgHtml = () => S.msg ? `<div class="msg msg-${S.msg.kind}" role="${S.msg.kind === 'blk' ? 'alert' : 'status'}"><p>${esc(S.msg.t)}</p></div>` : '';
+function board() {
+  return `<aside class="card" aria-labelledby="bh" style="gap:10px"><h3 id="bh">From the 4Q board</h3>
+    <p class="small muted">Accepted cards that point to values. The Executive chooses the short list and tests each value against the vision.</p>
+    ${GROUPS.map((g) => `<section><h4 style="margin:6px 0 2px;font-size:14px;color:var(--navy)">${g.title}</h4><p class="xs muted">${g.why}</p>
+      <ul style="margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">${g.cards.map((c) => `<li style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--cream)"><div class="xs muted">${esc(c.cell)}</div><div class="small">${esc(c.text)}</div></li>`).join('')}</ul></section>`).join('')}
+    <div class="btns"><button class="btn btn-quiet btn-sm" data-ai>${S.ai ? 'Hide the AI summary' : 'Summarise the critical factors (AI)'}</button></div>
+    ${S.ai ? `<div class="ai"><span class="tag t-info">AI summary</span> ${esc(AI_SUMMARY)}<div class="xs muted" style="margin-top:4px">Not stored. The AI never drafts a value.</div></div>` : ''}</aside>`;
+}
+function linkedChips(ids) {
+  return ids.length ? ids.map((id) => `<span class="tag t-info" title="${esc(CARDS[id].cell)}">${esc(CARDS[id].text)}</span>`).join(' ') : '<span class="xs muted">No cards linked</span>';
+}
+function form(d, where, needVision) {
+  return `<div class="card" style="gap:14px">
+    ${needVision ? `<div class="field" style="margin:0"><label for="${where}-vision">Vision</label><textarea id="${where}-vision" data-f="${where}" data-k="vision">${esc(d.vision)}</textarea></div>
+    <div class="field" style="margin:0"><label for="${where}-mission">Mission</label><textarea id="${where}-mission" data-f="${where}" data-k="mission">${esc(d.mission)}</textarea></div>` : ''}
+    <div><h3>Values</h3><p class="xs muted">Up to 10. Each has a name (up to 40 characters) and what it means. Link the 4Q cards behind it.</p></div>
+    ${d.values.map((v, i) => `<fieldset style="border:1px solid var(--border);border-radius:10px;padding:12px;margin:0;display:flex;flex-direction:column;gap:6px"><legend class="small" style="font-weight:600;padding:0 4px">Value ${i + 1}</legend>
+      <div class="field" style="margin:0"><label for="${where}-n${i}">Name</label><input id="${where}-n${i}" maxlength="40" style="max-width:360px" data-f="${where}" data-v="${i}" data-k="name" value="${esc(v.name)}"></div>
+      <div class="field" style="margin:0"><label for="${where}-m${i}">What it means</label><textarea id="${where}-m${i}" data-f="${where}" data-v="${i}" data-k="meaning">${esc(v.meaning)}</textarea></div>
+      <div class="small">Why: ${linkedChips(v.cards)}</div>
+      <div class="btns"><button class="btn btn-quiet btn-sm" data-pick="${where}:${i}">Link 4Q cards</button>${d.values.length > 1 ? `<button class="link small" data-remove="${where}:${i}">Remove value ${i + 1}</button>` : ''}</div>
+      ${S.pick === `${where}:${i}` ? `<div style="border:1px dashed var(--control);border-radius:8px;padding:8px 10px">${GROUPS.map((g) => `<div class="xs muted" style="margin-top:4px">${g.title}</div>${g.cards.map((c) => `<label class="small" style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" style="width:20px;height:20px" data-link="${where}:${i}:${c.id}" ${v.cards.includes(c.id) ? 'checked' : ''}>${esc(c.text)}</label>`).join('')}`).join('')}
+        <button class="btn btn-sm" data-pick="" style="margin-top:6px">Done</button></div>` : ''}
+    </fieldset>`).join('')}
+    ${d.values.length < 10 ? `<div><button class="btn btn-quiet btn-sm" data-add="${where}">Add a value</button></div>` : ''}
+  </div>`;
+}
+function readValues(values, where) {
+  return `<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">${values.map((v, i) => `<li><b style="color:var(--navy)">${esc(v.name)}</b><div class="small">${esc(v.meaning)}</div>
+    ${v.cards.length ? `<button class="link xs" data-why="${where}:${i}" aria-expanded="${!!S.openWhy[`${where}:${i}`]}">Why: ${v.cards.length} ${v.cards.length === 1 ? 'card' : 'cards'} from the 4Q board</button>
+    ${S.openWhy[`${where}:${i}`] ? `<ul class="small" style="margin:2px 0 0;padding-left:18px">${v.cards.map((id) => `<li>${esc(CARDS[id].text)} <span class="xs muted">(${esc(CARDS[id].cell)})</span></li>`).join('')}</ul>` : ''}` : ''}</li>`).join('')}</ol>`;
+}
+function statements(d, where) {
+  return `<div><h3>Vision</h3><p style="margin-top:4px;font-size:16px">${esc(d.vision)}</p></div><div><h3>Mission</h3><p style="margin-top:4px">${esc(d.mission)}</p></div><div><h3>Our values</h3><div style="margin-top:6px">${readValues(d.values, where)}</div></div>`;
+}
+
+/* ───── Screens ───── */
+function needsYou() {
+  const items = [];
+  if (isExec() && S.pub.status === 'sent') items.push(['Confirm the vision, mission and values drafted by ' + S.pub.drafter, 'landing']);
+  if (S.pub.status === 'returned' && mayDraft() && !isExec()) items.push([`Sent back by Chanda Mulenga: ${S.pub.returned}`, 'landing']);
+  return `<div class="card"><h2>Needs you</h2>${items.length ? `<ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px">${items.map(([t, s]) => `<li class="finding" style="flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap"><span><b>${esc(t)}</b></span><button class="btn btn-sm" data-screen="${s}">Open</button></li>`).join('')}</ul>` : '<p class="muted">Nothing needs you about the vision, mission and values.</p>'}</div>`;
+}
+function landing() {
+  const P = S.pub;
+  if (P.confirmed) {
+    return `<div class="card">${statements(P.confirmed, 'pub')}<p class="xs muted">Drafted by ${esc(P.confirmed.drafter)}, confirmed by Chanda Mulenga on ${TODAY}. Changes wait for plan revisions.</p></div>`;
+  }
+  const head = `<p class="small muted">The 2022–2026 plan has no vision, mission or values yet.</p>`;
+  if (!mayDraft()) return `<div class="card">${head}<p>Not recorded yet.</p><p class="xs muted">A draft is shown only to the Strategy office, facilitators and the Executive.</p></div>`;
+  if (isExec()) {
+    if (P.status === 'sent') {
+      return `<div class="card" style="border-color:var(--adv-b)"><span class="tag t-adv" style="align-self:flex-start">Waiting for you</span><h2>Draft by ${esc(P.drafter)}, sent on ${P.sentOn}</h2>${statements(P.draft, 'draft')}
+        <div class="btns"><button class="btn btn-primary" data-confirm>Confirm as written</button><button class="btn" data-sendback>Send back</button></div>
+        ${S.showReason ? `<div class="field"><label for="reason">Why it goes back (required)</label><textarea id="reason" data-reason>${esc(S.reason)}</textarea><div class="btns" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-sendback-go>Send back to ${esc(P.drafter)}</button></div></div>` : ''}
+        <p class="xs muted">To change the wording, send it back with the change in the reason, or record your own text instead.</p></div>`;
+    }
+    const note = P.status === 'draft' || P.status === 'returned' ? `<p class="small">${esc(P.drafter)} is drafting them${P.status === 'returned' ? ' after you sent them back' : ''}; you will be asked to confirm once they send the draft.</p>` : '';
+    return `<div class="card">${head}${note}<p>Record the vision, mission and values yourself, in one step, or wait for the Strategy office’s draft.</p></div>
+      <div class="cols" style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px">${form(S.execOwn ?? (S.execOwn = blank()), 'own', true)}${board()}</div>
+      <div class="btns"><button class="btn btn-primary" data-record>Record and confirm</button></div>`;
+  }
+  // Strategy office or facilitator
+  const status = P.status === 'sent' ? `<span class="tag t-info">Sent to the Executive on ${P.sentOn}</span>` : P.status === 'returned' ? `<span class="tag t-adv">Sent back: ${esc(P.returned)}</span>` : P.status === 'draft' ? `<span class="tag t-info">Draft saved, not sent</span>` : '';
+  if (P.status === 'sent') return `<div class="card">${head}${status}${statements(P.draft, 'draft')}<p class="xs muted">The Executive confirms it as written or sends it back. Only the Strategy office, facilitators and the Executive see this draft.</p></div>`;
+  if (!P.draft) P.draft = blank();
+  return `<div class="card">${head}<h2>Draft the vision, mission and values</h2>${status ? `<div>${status}</div>` : ''}<p class="xs muted">Only the Strategy office, facilitators and the Executive see a draft. The Executive confirms it.</p></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px">${form(P.draft, 'pub', true)}${board()}</div>
+    <div class="btns"><button class="btn" data-savedraft>Save draft</button><button class="btn btn-primary" data-send>Send to the Executive</button></div>`;
+}
+function forming() {
+  const F = S.form;
+  if (!mayDraft()) return `<div class="card"><p>The vision step is open to the Strategy office, facilitators and the Executive.</p></div>`;
+  if (F.confirmed) return `<div class="card"><span class="tag t-ok" style="align-self:flex-start">Confirmed at vision.confirm</span>${statements(F.confirmed, 'formc')}<p class="xs muted">Confirmed by Chanda Mulenga on ${TODAY}.</p></div>`;
+  return `<div class="card"><p class="small muted">Forming the 2027–2031 plan · Conception · Vision. All 12 sections of the organisation sheet have an accepted card.</p>
+    <p class="xs muted">The Strategy office, a facilitator or the Executive writes; only the Executive confirms. ${F.drafter ? `Last saved by ${esc(F.drafter)}.` : ''}</p></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px">${form(F.draft, 'form', true)}${board()}</div>
+    <div class="btns"><button class="btn" data-formsave>Save</button>${isExec() ? '<button class="btn btn-primary" data-formconfirm>Confirm the vision</button>' : '<span class="xs muted">Only the Executive can confirm the vision.</span>'}</div>`;
+}
+
+/* ───── Render ───── */
+function render() {
+  const place = { home: 'Home', landing: 'Strategy › Our strategy', forming: 'Strategy › Forming the next plan' }[S.screen];
+  document.getElementById('crumbs').innerHTML = `Sample Water Utility › <b>${place}</b>`;
+  for (const [id, on] of [['nav-home', S.screen === 'home'], ['nav-strategy', S.screen !== 'home'], ['sub-landing', S.screen === 'landing'], ['sub-forming', S.screen === 'forming']]) document.getElementById(id).classList.toggle('on', on);
+  const body = { home: needsYou, landing, forming }[S.screen]();
+  const title = { home: `Good morning, ${me().name.split(' ')[0]}`, landing: 'Our strategy', forming: 'Vision, mission and values' }[S.screen];
+  document.getElementById('app').innerHTML = `<div class="proto"><div class="proto-row"><p class="small"><b>Prototype.</b> Vision, Mission and Values Drafting Specification v0.1 (VM-1 to VM-9) and the 4Q reading Elijah confirmed on 19 November 2026. Sample Water Utility. Nothing is saved.</p>
+      <button class="btn btn-quiet btn-sm" data-reset>Start again</button></div>
+    <div class="entries" role="group" aria-label="Screen">${SCREENS.map(([k, l]) => `<button class="entry" data-screen="${k}" aria-pressed="${S.screen === k}">${l}</button>`).join('')}</div>
+    <p class="xs muted">Suggested path: as Bwalya, draft on Our strategy, link 4Q cards to each value, send; view as Ruth Phiri (nothing shows); as Chanda, open Home, then send it back with a reason; as Bwalya, revise and send again; as Chanda, confirm; open “Why” under a value. Then try the forming vision step.</p></div>
+    <div class="wsh"><div class="eyebrow">${S.screen === 'home' ? 'Home' : 'Strategy'}</div><h1>${title}</h1></div>${msgHtml()}${body}
+    ${S.log.length ? `<div class="card"><h3>Recorded in the audit trail</h3><ul class="log">${S.log.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>` : ''}`;
+}
+
+/* ───── Events ───── */
+const target = (where) => (where === 'pub' ? S.pub.draft : where === 'form' ? S.form.draft : S.execOwn);
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const d = b.dataset; S.msg = null;
+  if ('reset' in d) fresh();
+  else if (d.screen) { S.screen = d.screen; S.pick = null; S.showReason = false; }
+  else if ('ai' in d) S.ai = !S.ai;
+  else if (d.pick !== undefined) S.pick = d.pick || null;
+  else if (d.add) target(d.add).values.push({ name: '', meaning: '', cards: [] });
+  else if (d.remove) { const [w, i] = d.remove.split(':'); target(w).values.splice(+i, 1); S.pick = null; }
+  else if (d.why) S.openWhy[d.why] = !S.openWhy[d.why];
+  else if ('savedraft' in d) { S.pub.status = S.pub.status === 'returned' ? 'returned' : 'draft'; S.pub.drafter = me().name; record('saved a draft of the vision, mission and values'); ok('Draft saved. Only the Strategy office, facilitators and the Executive can see it.'); }
+  else if ('send' in d) { const err = valid(S.pub.draft, true); if (err) fail(err); else { S.pub.draft = clean(S.pub.draft); Object.assign(S.pub, { status: 'sent', drafter: me().name, sentOn: TODAY, returned: null }); record('sent the draft to the Executive'); ok('Sent to the Executive. It shows on their Needs you.'); } }
+  else if ('confirm' in d) { S.pub.confirmed = { ...S.pub.draft, drafter: S.pub.drafter }; S.pub.status = 'confirmed'; record(`confirmed the vision, mission and values drafted by ${S.pub.drafter}`); ok('Confirmed. Everyone now sees them on Our strategy.'); }
+  else if ('sendback' in d) S.showReason = true;
+  else if ('sendbackGo' in d) { if (!S.reason.trim()) fail('Say why it goes back.'); else { Object.assign(S.pub, { status: 'returned', returned: S.reason.trim() }); record(`sent the draft back: ${S.reason.trim()}`); S.reason = ''; S.showReason = false; ok(`Sent back to ${S.pub.drafter}.`); } }
+  else if ('record' in d) { const err = valid(S.execOwn, true); if (err) fail(err); else { S.pub.confirmed = { ...clean(S.execOwn), drafter: 'Chanda Mulenga' }; S.pub.status = 'confirmed'; record('recorded and confirmed the vision, mission and values'); ok('Recorded and confirmed. Everyone now sees them.'); } }
+  else if ('formsave' in d) { S.form.drafter = me().name; record('saved the vision step'); ok('Saved. The Executive confirms the vision.'); }
+  else if ('formconfirm' in d) { const err = valid(S.form.draft, true); if (err) fail(`Not confirmed. ${err}`); else { S.form.confirmed = clean(S.form.draft); record('confirmed the vision (vision.confirm)'); ok('Vision confirmed. The values are confirmed with it (CV-3).'); } }
+  else return;
+  render();
+});
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset.reason !== undefined) { S.reason = t.value; return; }
+  if (!t.dataset.f) return;
+  const d = target(t.dataset.f);
+  if (t.dataset.v !== undefined) d.values[+t.dataset.v][t.dataset.k] = t.value; else d[t.dataset.k] = t.value;
+});
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'who') { S.who = t.value; S.msg = null; S.pick = null; S.showReason = false; render(); return; }
+  if (t.dataset.link) { const [w, i, id] = t.dataset.link.split(':'); const v = target(w).values[+i]; v.cards = t.checked ? [...v.cards, id] : v.cards.filter((x) => x !== id); render(); }
+});
+fresh(); render();
+</script>
+</body>
+</html>

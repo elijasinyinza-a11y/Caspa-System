@@ -3,7 +3,7 @@
 The strategy execution system of Karislabs Technologies. Frontend-first build: the screens read an in-memory sample
 store through a data-access layer that the real backend replaces later. Read `BUILD-BRIEF.md` first (standing
 rules and the open slice), then `NEXT.md` (work in progress). Earlier decisions are in `DECISIONS-ARCHIVE.md`,
-with their section numbers unchanged. The data contract is v1.21.
+with their section numbers unchanged. The data contract is v1.22.
 
 ## Run
 
@@ -61,8 +61,20 @@ and a consultant, and from v0.26.0 a KPI owner (in Sample Water Utility, the Hea
 
 ## Next chat
 
-- Start from this zip: `npm install`, `npm run verify` (934 tests). Next in the agreed sequence: the first usability test
+- Start from this zip: `npm install`, `npm run verify` (941 tests). Next in the agreed sequence: the first usability test
   round (see `NEXT.md`, which also lists the findings of the review of 10 November 2026).
+
+## Drafting the vision, mission and values, and A4 (v0.31.0)
+
+- 20 November 2026. BUILD-BRIEF section 55; *CASPA™ Vision, Mission and Values Drafting Specification v0.1* (VM-1 to
+  VM-8); prototype `reference/caspa-vision-drafting-prototype.html` (its 4Q panel was dropped). Contract v1.22. 941 tests
+  (7 new in `src/data/access/vision-drafting.test.ts`).
+- The Strategy office and facilitators may now draft the vision, mission and values; only the Executive confirms. Drafts
+  are hidden from everyone else. After publication a draft goes to the Executive's Needs you, to confirm as written or
+  send back with a reason. A4: the plan document shows where a failure factor's cause sits.
+- Try it (Sample Water Utility): as Strategy office, open Strategy and draft the vision, mission and values, then send;
+  view as Finance (nothing shows); as Executive, open Home, then send it back with a reason; as Strategy office, revise and
+  send again; as Executive, confirm. In the Packaging Manufacturer, a draft already waits for the Executive.
 
 ## Access review (v0.30.0)
 
