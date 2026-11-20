@@ -12,7 +12,7 @@ import { membershipActiveOn } from './access';
 
 /** The stage a session sits in, from its first purpose. Confirmation is where the vision is settled. */
 export const STAGE_OF_PURPOSE: Record<WorkshopPurpose, FormationStage> = {
-  kickoff: 'conception', four_q_review: 'conception', vision: 'confirmation', composition: 'composition', validation: 'composition', launch: 'communication',
+  kickoff: 'conception', four_q_review: 'conception', vision: 'confirmation', composition: 'composition', validation: 'composition', launch: 'communication', values: 'conception',
 };
 export const stageOfSession = (w: Pick<Workshop, 'purposes'>): FormationStage => STAGE_OF_PURPOSE[w.purposes[0] ?? 'kickoff'];
 

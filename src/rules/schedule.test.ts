@@ -28,7 +28,8 @@ describe('the sample schedule for 2027–2031', () => {
     expect(items.slice(-1)[0]!.date).toBeNull();
     expect(items.filter((i) => i.kind === 'confirmation').map((i) => i.date)).toEqual(['2026-11-30', '2027-01-29']);
     expect(byMonth(items).map((m) => m.month)).toEqual(['2026-10', '2026-11', '2027-01', '2027-02']);
-    expect(countsByStage(items)).toEqual({ conception: 3, consultation: 2, confirmation: 1, composition: 3, communication: 1 });
+    // v0.32.0: the values session (15 October) joins Conception.
+    expect(countsByStage(items)).toEqual({ conception: 4, consultation: 2, confirmation: 1, composition: 3, communication: 1 });
   });
   it('marks the plan confirmation as needing the board’s resolution when the setting is on, and not otherwise', () => {
     const s = swu();

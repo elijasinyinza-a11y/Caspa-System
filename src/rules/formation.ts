@@ -9,6 +9,8 @@ import { membershipActiveOn } from './access';
 
 export const STAGES: FormationStage[] = ['conception', 'consultation', 'confirmation', 'composition', 'communication'];
 export const PURPOSES: WorkshopPurpose[] = ['kickoff', 'four_q_review', 'vision', 'composition', 'validation', 'launch'];
+/** v0.32.0 (VG-8): what a session may be for. Values group work is optional, so it is not in PURPOSES: no package adds it and no flag asks for it. */
+export const SESSION_PURPOSES: WorkshopPurpose[] = [...PURPOSES.slice(0, 2), 'values', ...PURPOSES.slice(2)];
 export type Format = Workshop['format'];
 
 /** The example packages (specification, "Example packages"; prototype). Sessions as purposes and format. */

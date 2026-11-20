@@ -8,7 +8,12 @@ export const MAX_VALUES = 10;
 export const VALUE_NAME_MAX = 40;
 export const VALUE_MEANING_MAX = 300;
 
-export interface ValueInput { name: string; text: string }
+export interface ValueInput {
+  name: string;
+  text: string;
+  /** v0.32.0 (contract v1.23): the candidates from group work this value came from; kept as the value is edited and moved. */
+  fromCandidateIds?: string[];
+}
 export type ValuesError = 'too_many' | 'name_required' | 'meaning_required' | 'name_too_long' | 'meaning_too_long' | 'duplicate_name';
 
 /** Why a list of values cannot be saved, or null (CV-4). An empty list is allowed: values are optional. */
@@ -35,4 +40,4 @@ export const valuesOf = (statements: readonly VisionStatement[], planId: string)
 
 /** The values as names and meanings, for display and for carrying forward (CV-2). */
 export const valueInputs = (statements: readonly VisionStatement[], planId: string): ValueInput[] =>
-  valuesOf(statements, planId).map((v) => ({ name: v.name ?? '', text: v.text }));
+  valuesOf(statements, planId).map((v) => ({ name: v.name ?? '', text: v.text, ...(v.fromCandidateIds?.length ? { fromCandidateIds: [...v.fromCandidateIds] } : {}) }));

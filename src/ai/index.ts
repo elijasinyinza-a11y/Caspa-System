@@ -94,6 +94,11 @@ export interface AiService {
    * returns the same draft whatever the comments say, and says so.
    */
   summariseConcerns(comments: string[]): Promise<AiDraft>;
+  /**
+   * v0.32.0 (VG-7): tidy how a candidate value's meaning reads, on the scribe's request. Language only: it never
+   * proposes a value, a name or an answer; the scribe accepts, changes or ignores the draft.
+   */
+  tidyValueWording(text: string): Promise<AiDraft>;
 }
 
 export interface CommunicationDraft { label: "AI draft"; what: string; why: string; how: string }
@@ -341,6 +346,12 @@ export const aiStub: AiService = {
   },
   async draftPlan() {
     return structuredClone(SAMPLE_PLAN_DRAFT);
+  },
+  async tidyValueWording(text) {
+    // The stub tidies spacing, the first capital and the closing full stop; a real model would only reword the same meaning.
+    const t = text.replace(/\s+/g, " ").trim();
+    const capped = t.charAt(0).toUpperCase() + t.slice(1);
+    return { label: "AI draft", text: /[.!?]$/.test(capped) ? capped : `${capped}.` };
   },
   async draftHandoverNote(f) {
     // The stub writes from the list by a fixed template; a real model would only reword the same facts.
